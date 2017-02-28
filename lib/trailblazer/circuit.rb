@@ -5,12 +5,12 @@ require "trailblazer/circuit/version"
 
 
 module Trailblazer
+  # Circuit executes ties, finds next step.
 	class Circuit
 		def initialize(name=:default, end_events: {default: End.new(:default)}, suspend_event: Suspend, resume_event: Resume, **)
       @start_class = START
 
       @end_events  = end_events
-      puts "@@@@@ #{@end_events.inspect}"
       # @stop_events    = end_events + suspend_events
 
       # @resume        = resume_event.new(name)
@@ -19,7 +19,7 @@ module Trailblazer
       @suspend_class = suspend_event
 
       @name    = name
-        @map     = yield self
+      @map     = yield self
 		end
 
     def SUSPEND
@@ -183,9 +183,10 @@ module Trailblazer
     def self.Nested(process, start_with=START)
       # TODO: currently, we only support only 1 start event. you can use multiple in BPMN.
       # "The BPMN standard allows for multiple start and end events to be used at the same process level. "
-      ->(start_at, *args) {
-        # puts "@@@@@ #{args.inspect}"
-        process.(start_with, *args) }
+      ->(start_at, options, *args) {
+         # puts "@@@@@ #{options.inspect}"
+        process.(start_with, options, *args)
+      }
     end
 
 		class Right

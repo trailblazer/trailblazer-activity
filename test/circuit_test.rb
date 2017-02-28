@@ -51,7 +51,6 @@ class CircuitTest < Minitest::Spec
           test      => { Circuit::Right => evt.End, Circuit::Left => evt.End(:retry) }
         }
       }
-
     end
 
     it { flow.(flow.Start, return: Circuit::Right).must_equal([flow.End,         {:return=>Trailblazer::Circuit::Right} ]) }
