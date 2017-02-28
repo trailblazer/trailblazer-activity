@@ -4,9 +4,9 @@ class NestedHelper < Minitest::Spec
 Circuit = Trailblazer::Circuit
 
   module Blog
-    Read    = ->(direction, options, *)   { options["Read"] = 1; [ Circuit::Right, options ] }
+    Read    = ->(direction, options, *)    { options["Read"] = 1; [ Circuit::Right, options ] }
     Next    = ->(direction, options, *arg) { options["NextPage"] = arg; [ options["return"], options ] }
-    Comment = ->(direction, options, *)   { options["Comment"] = 2; [ Circuit::Right, options ] }
+    Comment = ->(direction, options, *)    { options["Comment"] = 2; [ Circuit::Right, options ] }
   end
 
   module User
