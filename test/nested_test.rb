@@ -13,7 +13,9 @@ Circuit = Trailblazer::Circuit
     Relax   = ->(direction, options) { options["Relax"]=true; [ Circuit::Right, options ] }
   end
 
-  describe "plain circuit without any nesting" do
+  ### Nested()
+  ###
+  describe "circuit with 1 level of nesting" do
     let(:blog) do
       Circuit.new("blog.read/next") { |evt|
         {
@@ -40,6 +42,43 @@ Circuit = Trailblazer::Circuit
       user.(Circuit.START, options = { "return" => Circuit::Right }).must_equal([user.End, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
+    end
+  end
+
+  ### Nested( End1, End2 )
+  ###
+  describe "circuit with 2 end events in the nested process" do
+    let(:blog) do
+      Circuit.new("blog.read/next", end_events: { default: Circuit::End.new(:default), retry: Circuit::End.new(:retry) } ) { |evt|
+        {
+          evt.Start  => { Circuit::Right => Blog::Read },
+          Blog::Read => { Circuit::Right => Blog::Next },
+          Blog::Next => { Circuit::Right => evt.End, Circuit::Left => evt.End(:retry) },
+        }
+      }
+    end
+
+    let(:user) do
+      Circuit.new("user.blog") { |user|
+        {
+          user.Start => { Circuit::Right => nested=Circuit::Nested(blog) },
+          nested     => { blog.End => User::Relax, blog.End(:retry) => user.End },
+
+          User::Relax => { Circuit::Right => user.End }
+        }
+      }
+    end
+
+    it "runs from Nested->default to Relax" do
+      user.(Circuit.START, options = { "return" => Circuit::Right }).must_equal([user.End, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
+
+      options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
+    end
+
+    it "runs from other Nested end" do
+      user.(Circuit.START, options = { "return" => Circuit::Left }).must_equal([user.End, {"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[]}])
+
+      options.must_equal({"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[]})
     end
   end
 end
