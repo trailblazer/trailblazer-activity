@@ -16,15 +16,19 @@ class ActivityTest < Minitest::Spec
   end
 
   it do
-    process = Trailblazer::Circuit.new(:default, end_events: [:default, :error, :retry] ) do |p|
+    process = Trailblazer::Circuit.new(:default, end: {
+      default: Trailblazer::Circuit::End.new(:default),
+      error:   Trailblazer::Circuit::End.new(:error),
+      retry:   Trailblazer::Circuit::End.new(:retry),
+    } ) do |p|
     end
 
-    process.STOP.must_be_instance_of Trailblazer::Circuit::Stop
-    process.STOP(:error).must_be_instance_of Trailblazer::Circuit::Stop
-    process.STOP(:retry).must_be_instance_of Trailblazer::Circuit::Stop
-    process.STOP(:nope).must_be_nil
-    process.STOP.wont_equal process.STOP(:error)
-    process.STOP(:retry).wont_equal process.STOP(:error)
+    process.End.must_be_instance_of Trailblazer::Circuit::End
+    process.End(:error).must_be_instance_of Trailblazer::Circuit::End
+    process.End(:retry).must_be_instance_of Trailblazer::Circuit::End
+    process.End(:nope).must_be_nil
+    process.End.wont_equal process.End(:error)
+    process.End(:retry).wont_equal process.End(:error)
   end
 
   # no explicit :end_events provided.
@@ -32,8 +36,8 @@ class ActivityTest < Minitest::Spec
     process = Trailblazer::Circuit.new(:default) do |p|
     end
 
-    process.STOP.must_be_instance_of Trailblazer::Circuit::Stop
-    process.STOP(:nope).must_be_nil
+    process.End.must_be_instance_of Trailblazer::Circuit::End
+    process.End(:nope).must_be_nil
   end
 
 

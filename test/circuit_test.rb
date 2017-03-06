@@ -28,13 +28,13 @@ class CircuitTest < Minitest::Spec
     end
 
     it "ends before comment, on next_page" do
-      blog.(Circuit.START, options = { "return" => Circuit::Right }).must_equal([blog.End, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}])
+      blog.(blog.Start, options = { "return" => Circuit::Right }).must_equal([blog.End, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}])
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]})
     end
 
     it "ends on comment" do
-      blog.(Circuit.START, options = { "return" => Circuit::Left }).must_equal([blog.End, {"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2}])
+      blog.(blog.Start, options = { "return" => Circuit::Left }).must_equal([blog.End, {"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2}])
 
       options.must_equal({"return"=> Circuit::Left, "Read"=> 1, "NextPage"=>[], "Comment"=>2})
     end
@@ -45,7 +45,7 @@ class CircuitTest < Minitest::Spec
     test = Circuit::Task(Blog::Test, "blog.test")
 
     let(:flow) do
-      Circuit.new(:reading, end_events: {default: Circuit::End.new(:default), retry: Circuit::End.new(:retry)} ) { |evt|
+      Circuit.new(:reading, end: {default: Circuit::End.new(:default), retry: Circuit::End.new(:retry)} ) { |evt|
         {
           evt.Start => { Circuit::Right => test },
           test      => { Circuit::Right => evt.End, Circuit::Left => evt.End(:retry) }
@@ -56,39 +56,6 @@ class CircuitTest < Minitest::Spec
     it { flow.(flow.Start, return: Circuit::Right).must_equal([flow.End,         {:return=>Trailblazer::Circuit::Right} ]) }
     it { flow.(flow.Start, return: Circuit::Left ).must_equal([flow.End(:retry), {:return=>Trailblazer::Circuit::Left} ]) }
   end
-
-  # o->[ o->Blog::Read->O ]->Blog::NextPage->O
-  # let(:flow) do
-  #   nested=Circuit::Subprocess(Circuit::Nested(level1), "blog.reading")
-
-  #   Circuit.new(:default) { |evt|
-  #     {
-  #       flow.Start => { Circuit::Right   => nested },
-  #       nested         => { level1.STOP.to_id => next_page },
-  #       next_page      => { Circuit::Right   => evt.STOP }
-  #     }
-  #   }
-  # end
-
-
-  # describe "Nested" do
-  #   let(:level1) do
-  #     Circuit.new(:reading) { |evt|
-  #       {
-  #         Circuit.START => { Circuit::Right => read },
-  #         read           => { Circuit::Right => evt.STOP }
-  #       }
-  #     }
-  #   end
-
-
-  #   it "reaches NextPage after level1 STOPs" do
-  #     flow.(Circuit.START, options = {}, "Argh!").must_equal(flow.STOP)
-
-  #     options.must_equal({"Read"=>Circuit::Right, "NextPage"=>"Argh!"})
-  #   end
-  # end
-
 
 =begin
 

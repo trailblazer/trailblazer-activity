@@ -1,4 +1,4 @@
-require "trailblazer/circuit/version"
+  require "trailblazer/circuit/version"
 
 # Start, Suspend, Resume, End can return something other than the next symbol?
 # Nested could replace options with local options
@@ -7,41 +7,14 @@ require "trailblazer/circuit/version"
 module Trailblazer
   # Circuit executes ties, finds next step.
 	class Circuit
-		def initialize(name=:default, end_events: {default: End.new(:default)}, suspend_event: Suspend, resume_event: Resume, **)
-      @start_class = START
-
-      @end_events  = end_events
-      # @stop_events    = end_events + suspend_events
-
-      # @resume        = resume_event.new(name)
-      # @resume_class  = resume_event
-      # @suspend       = suspend_event.new(name, resume_class: resume_event)
-      @suspend_class = suspend_event
+		def initialize(name=:default, events={})
+      @event= {}
+      @event[:start] = events[:start] || { default: Start.new(:default) }
+      @event[:end]   = events[:end]   || { default: End.new(:default) }
 
       @name    = name
       @map     = yield self
 		end
-
-    def SUSPEND
-      @suspend
-    end
-
-    def RESUME
-      @resume
-    end
-
-    def Suspend(options)
-      @suspend_class.new(@name, { resume: @resume }.merge(options))
-    end
-
-    def Resume(options)
-      @resume_class.new(@name, { }.merge(options))
-    end
-
-    def self.START
-      warn "deprecated"
-      START
-    end
 
     def Right
       Right
@@ -51,12 +24,12 @@ module Trailblazer
       Left
     end
 
-    def Start
-      @start_class
+    def Start(name=:default)
+      @event[:start][name]
     end
 
     def End(name=:default) #DSL
-      @end_events[name]
+      @event[:end][name]
     end
 
 		# the idea is to always have a breakpoint state that has only one outgoing edge. we then start from
@@ -71,9 +44,19 @@ module Trailblazer
         direction, options  = activity.(direction, options)
 
         # last task in a process is always either its Stop or its Suspend.
-        return [ direction, options ] if activity.instance_of?(@suspend_class)
+
+
+
+
+        # return [ direction, options ] if activity.instance_of?(@suspend_class)
+
+
+
+
+
+
         # stop execution when STOP.
-        return [ direction, options ] if @end_events.values.include?(activity)
+        return [ direction, options ] if @event[:end].values.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
           puts "[#{@name}]...`#{activity}`[#{direction}] => #{next_activity}"
@@ -104,18 +87,6 @@ module Trailblazer
 		class IllegalOutputSignalError < RuntimeError
 		end
 
-    class Event
-      def self.to_id
-        self
-      end
-    end
-
-    class START < Event
-      def self.call(direction, *args)
-        [Right, *args]
-      end
-    end
-
     class End
       def initialize(name, options={})
         @name    = name
@@ -137,6 +108,16 @@ module Trailblazer
       def call(direction, *args)
         self # TODO: not considered, yet.
         [ self, *args ]
+      end
+    end
+
+    class Start < End
+      def call(direction, *args)
+        [Right, *args]
+      end
+
+      def to_s
+        %{#<Start: #{@name} #{@options.inspect}>}
       end
     end
 
@@ -180,7 +161,7 @@ module Trailblazer
     end
 
     # # run a nested process.
-    def self.Nested(process, start_with=START)
+    def self.Nested(process, start_with=process.Start)
       # TODO: currently, we only support only 1 start event. you can use multiple in BPMN.
       # "The BPMN standard allows for multiple start and end events to be used at the same process level. "
       ->(start_at, options, *args) {
