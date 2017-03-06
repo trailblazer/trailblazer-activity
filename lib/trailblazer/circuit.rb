@@ -5,37 +5,18 @@
 
 
 module Trailblazer
-  # Circuit executes ties, finds next step.
+  # Circuit executes ties, finds next step and stops when reaching a Stop signal (or derived from).
 	class Circuit
-		def initialize(name=:default, events={})
-      @event= {}
-      @event[:start] = events[:start] || { default: Start.new(:default) }
-      @event[:end]   = events[:end]   || { default: End.new(:default) }
-
-      @name    = name
-      @map     = yield self
-		end
-
-    def Right
-      Right
+    def initialize(map, stop_class, name)
+      @name       = name
+      @map        = map
+      @stop_class = stop_class
     end
 
-    def Left
-      Left
-    end
-
-    def Start(name=:default)
-      @event[:start][name]
-    end
-
-    def End(name=:default) #DSL
-      @event[:end][name]
-    end
-
-		# the idea is to always have a breakpoint state that has only one outgoing edge. we then start from
-		# that vertix. it's up to the caller to test if the "persisted" state == requested state.
+        # the idea is to always have a breakpoint state that has only one outgoing edge. we then start from
+    # that vertix. it's up to the caller to test if the "persisted" state == requested state.
     # activity: where to start
-		def call(activity, options) # DISCUSS: should start activity be @activity and we omit it here?
+    def call(activity, options) # DISCUSS: should start activity be @activity and we omit it here?
       # TODO: *args
       direction = nil
 
@@ -44,19 +25,7 @@ module Trailblazer
         direction, options  = activity.(direction, options)
 
         # last task in a process is always either its Stop or its Suspend.
-
-
-
-
-        # return [ direction, options ] if activity.instance_of?(@suspend_class)
-
-
-
-
-
-
-        # stop execution when STOP.
-        return [ direction, options ] if @event[:end].values.include?(activity)
+        return [ direction, options ] if activity.instance_of?(@stop_class)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
           puts "[#{@name}]...`#{activity}`[#{direction}] => #{next_activity}"
@@ -66,9 +35,9 @@ module Trailblazer
           raise IllegalOutputSignalError.new("from #{@name};;#{activity}"+ direction.inspect) unless next_activity
         end
       end
-		end
+    end
 
-	private
+  private
     def next_for(last_activity, emitted_direction)
       in_map        = false
       cfg           = @map.keys.find { |t| t == last_activity } and in_map = true
@@ -80,12 +49,52 @@ module Trailblazer
       next_activity
     end
 
+    class IllegalInputError < RuntimeError
+    end
+
+    class IllegalOutputSignalError < RuntimeError
+    end
+
+    # DSL object to conveniently build a Circuit instance.
+    class Builder
+  		def initialize(name=:default, events={})
+        @event= {}
+        @event[:start] = events[:start] || { default: Start.new(:default) }
+        @event[:end]   = events[:end]   || { default: End.new(:default) }
+
+        @name    = name
+        @circuit    = Circuit.new(yield(self), @event[:end][:default].class, name)
+  		end
+
+      def call(*args)
+        @circuit.(*args)
+      end
+
+      # DISCUSS: expose Builder[:start, :default]
+      def Start(name=:default)
+        @event[:start][name]
+      end
+      def End(name=:default) #DSL
+        @event[:end][name]
+      end
+      def Suspend(name=:default)
+        @event[:suspend][name]
+      end
+      def Resume(name=:default)
+        @event[:resume][name]
+      end
+    end
+
+    def Right
+      Right
+    end
+
+    def Left
+      Left
+    end
 
 
-		class IllegalInputError < RuntimeError
-		end
-		class IllegalOutputSignalError < RuntimeError
-		end
+
 
     class End
       def initialize(name, options={})
@@ -118,45 +127,6 @@ module Trailblazer
 
       def to_s
         %{#<Start: #{@name} #{@options.inspect}>}
-      end
-    end
-
-    class Suspend < End
-      def to_s
-        %{#<Suspend: #{@name}>}
-      end
-
-      def to_resume
-        options = @options.dup
-        options[:__nested] = options[:__nested].to_resume if options[:__nested]
-        options.delete(:resume_class).new(@name, options)
-      end
-
-      def to_suspend(data={})
-        self.class.new(@name, @options.merge(data))
-      end
-
-      def inspect
-        # %{#<Suspend: #{@name} #{@options.inspect}>}
-        %{#<Suspend: #{@name} #{@options.inspect}>}
-      end
-    end
-
-    class Resume < End
-      def to_s
-        %{#<Resume: #{@name}>}
-      end
-
-      def inspect
-        %{#<Resume: #{@name} #{@options.inspect}>}
-      end
-
-      def Resume(options)
-        self.class.new(@name, @options.merge(options))
-      end
-
-      def to_session
-        @options
       end
     end
 

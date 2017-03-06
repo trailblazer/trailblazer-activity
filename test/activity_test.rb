@@ -16,12 +16,10 @@ class ActivityTest < Minitest::Spec
   end
 
   it do
-    process = Trailblazer::Circuit.new(:default, end: {
+    process = Trailblazer::Circuit::Builder.new(:default, end: {
       default: Trailblazer::Circuit::End.new(:default),
       error:   Trailblazer::Circuit::End.new(:error),
-      retry:   Trailblazer::Circuit::End.new(:retry),
-    } ) do |p|
-    end
+      retry:   Trailblazer::Circuit::End.new(:retry) } ) do |p|end
 
     process.End.must_be_instance_of Trailblazer::Circuit::End
     process.End(:error).must_be_instance_of Trailblazer::Circuit::End
@@ -42,15 +40,15 @@ class ActivityTest < Minitest::Spec
 
 
   # Circuit
-  describe "Circuit" do
-    let(:reading) { Trailblazer::Circuit.new(:reading){} }
+  describe "Circuit::Builder" do
+    let(:reading) { Trailblazer::Circuit::Builder.new(:reading){} }
 
     # SUSPEND
     it { reading.SUSPEND.inspect.must_equal %{#<Suspend: reading {:resume=>#<Resume: reading {}>}>} }
     it { reading.Suspend(more: "yes", resume: "please!").inspect.must_equal %{#<Suspend: reading {:resume=>"please!", :more=>\"yes\"}>} }
     it do
       suspend = nil
-      Trailblazer::Circuit.new(:reading){ |prc| suspend = prc.Suspend(more: "yes", resume: "please!") }
+      Trailblazer::Circuit::Builder.new(:reading){ |prc| suspend = prc.Suspend(more: "yes", resume: "please!") }
       suspend.inspect.must_equal %{#<Suspend: reading {:resume=>"please!", :more=>\"yes\"}>}
     end
 
