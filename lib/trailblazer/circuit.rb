@@ -7,10 +7,10 @@
 module Trailblazer
   # Circuit executes ties, finds next step and stops when reaching a Stop signal (or derived from).
 	class Circuit
-    def initialize(map, stop_class, name)
-      @name       = name
-      @map        = map
-      @stop_class = stop_class
+    def initialize(map, stop_events, name)
+      @name        = name
+      @map         = map
+      @stop_events = stop_events
     end
 
         # the idea is to always have a breakpoint state that has only one outgoing edge. we then start from
@@ -25,7 +25,7 @@ module Trailblazer
         direction, options  = activity.(direction, options)
 
         # last task in a process is always either its Stop or its Suspend.
-        return [ direction, options ] if activity.instance_of?(@stop_class)
+        return [ direction, options ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
           puts "[#{@name}]...`#{activity}`[#{direction}] => #{next_activity}"
@@ -58,12 +58,12 @@ module Trailblazer
     # DSL object to conveniently build a Circuit instance.
     class Builder
   		def initialize(name=:default, events={})
-        @event= {}
+        @event = events
         @event[:start] = events[:start] || { default: Start.new(:default) }
         @event[:end]   = events[:end]   || { default: End.new(:default) }
 
         @name    = name
-        @circuit    = Circuit.new(yield(self), @event[:end][:default].class, name)
+        @circuit    = Circuit.new(yield(self), @event[:end].values, name)
   		end
 
       def call(*args)
@@ -102,12 +102,12 @@ module Trailblazer
         @options = options
       end
 
-      def to_id
-        "#{self.class}.#{@name}"
-      end
+      # def to_id
+      #   "#{self.class}.#{@name}"
+      # end
 
       def to_s
-        %{#<End: #{@name} #{@options.inspect}>}
+        %{#<End: #{@name} #{@options.inspect}> #{object_id}}
       end
 
       def inspect
