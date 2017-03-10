@@ -16,16 +16,16 @@ module Trailblazer
         # the idea is to always have a breakpoint state that has only one outgoing edge. we then start from
     # that vertix. it's up to the caller to test if the "persisted" state == requested state.
     # activity: where to start
-    def call(activity, options) # DISCUSS: should start activity be @activity and we omit it here?
+    def call(activity, *args) # DISCUSS: should start activity be @activity and we omit it here?
       # TODO: *args
       direction = nil
 
       loop do
         puts "[#{@name}]. #{activity}"
-        direction, options  = activity.(direction, options)
+        direction, *args  = activity.(direction, *args)
 
         # last task in a process is always either its Stop or its Suspend.
-        return [ direction, options ] if @stop_events.include?(activity)
+        return [ direction, *args ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
           puts "[#{@name}]...`#{activity}`[#{direction}] => #{next_activity}"
@@ -39,6 +39,7 @@ module Trailblazer
 
   private
     def next_for(last_activity, emitted_direction)
+      p @map
       in_map        = false
       cfg           = @map.keys.find { |t| t == last_activity } and in_map = true
       cfg = @map[cfg] if cfg
@@ -78,10 +79,18 @@ module Trailblazer
         @event[:end][name]
       end
       def Suspend(name=:default)
-        @event[:suspend][name]
+        @event[:end][:suspend]
       end
       def Resume(name=:default)
-        @event[:resume][name]
+        @event[:resume]
+      end
+
+      # TODO: test us!
+      def Right
+        Right
+      end
+      def Left
+        Left
       end
     end
 
@@ -107,7 +116,7 @@ module Trailblazer
       # end
 
       def to_s
-        %{#<End: #{@name} #{@options.inspect}> #{object_id}}
+        %{#<End: #{@name} #{@options.inspect}>}
       end
 
       def inspect
@@ -153,20 +162,16 @@ module Trailblazer
       Task.new(step, id)
     end
 
-    def self.Subprocess(step, id)
-      Task(step, id)
-    end
+    # class Task
+    #   def initialize(step, id)
+    #     @step, @to_id = step, id
+    #   end
 
-    class Task
-      def initialize(step, id)
-        @step, @to_id = step, id
-      end
+    #   def call(direction, *args, &block)
+    #     @step.(*args, &block)
+    #   end
 
-      def call(direction, *args, &block)
-        @step.(*args, &block)
-      end
-
-      attr_reader :to_id
-    end
+    #   attr_reader :to_id
+    # end
 	end
 end
