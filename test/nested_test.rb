@@ -17,29 +17,29 @@ Circuit = Trailblazer::Circuit
   ###
   describe "circuit with 1 level of nesting" do
     let(:blog) do
-      Circuit::Builder.new("blog.read/next") { |evt|
+      Circuit::Activity::Build("blog.read/next") { |evt|
         {
-          evt.Start  => { Circuit::Right => Blog::Read },
+          evt[:Start]  => { Circuit::Right => Blog::Read },
           Blog::Read => { Circuit::Right => Blog::Next },
-          Blog::Next => { Circuit::Right => evt.End, Circuit::Left => Blog::Comment },
-          Blog::Comment => { Circuit::Right => evt.End }
+          Blog::Next => { Circuit::Right => evt[:End], Circuit::Left => Blog::Comment },
+          Blog::Comment => { Circuit::Right => evt[:End] }
         }
       }
     end
 
     let(:user) do
-      Circuit::Builder.new("user.blog") { |user|
+      Circuit::Activity::Build("user.blog") { |user|
         {
-          user.Start => { Circuit::Right => nested=Circuit::Nested(blog) },
-          nested     => { blog.End => User::Relax },
+          user[:Start] => { Circuit::Right => nested=Circuit::Nested(blog) },
+          nested     => { blog[:End] => User::Relax },
 
-          User::Relax => { Circuit::Right => user.End }
+          User::Relax => { Circuit::Right => user[:End] }
         }
       }
     end
 
     it "ends before comment, on next_page" do
-      user.(user.Start, options = { "return" => Circuit::Right }).must_equal([user.End, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
+      user.(user[:Start], options = { "return" => Circuit::Right }).must_equal([user[:End], {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
@@ -49,34 +49,34 @@ Circuit = Trailblazer::Circuit
   ###
   describe "circuit with 2 end events in the nested process" do
     let(:blog) do
-      Circuit::Builder.new("blog.read/next", end: { default: Circuit::End.new(:default), retry: Circuit::End.new(:retry) } ) { |evt|
+      Circuit::Activity::Build("blog.read/next", end: { default: Circuit::End.new(:default), retry: Circuit::End.new(:retry) } ) { |evt|
         {
-          evt.Start  => { Circuit::Right => Blog::Read },
+          evt[:Start]  => { Circuit::Right => Blog::Read },
           Blog::Read => { Circuit::Right => Blog::Next },
-          Blog::Next => { Circuit::Right => evt.End, Circuit::Left => evt.End(:retry) },
+          Blog::Next => { Circuit::Right => evt[:End], Circuit::Left => evt[:End, :retry] },
         }
       }
     end
 
     let(:user) do
-      Circuit::Builder.new("user.blog") { |user|
+      Circuit::Activity::Build("user.blog") { |user|
         {
-          user.Start => { Circuit::Right => nested=Circuit::Nested(blog) },
-          nested     => { blog.End => User::Relax, blog.End(:retry) => user.End },
+          user[:Start] => { Circuit::Right => nested=Circuit::Nested(blog) },
+          nested     => { blog[:End] => User::Relax, blog[:End, :retry] => user[:End] },
 
-          User::Relax => { Circuit::Right => user.End }
+          User::Relax => { Circuit::Right => user[:End] }
         }
       }
     end
 
     it "runs from Nested->default to Relax" do
-      user.(user.Start, options = { "return" => Circuit::Right }).must_equal([user.End, {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
+      user.(user[:Start], options = { "return" => Circuit::Right }).must_equal([user[:End], {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
 
       options.must_equal({"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
 
     it "runs from other Nested end" do
-      user.(user.Start, options = { "return" => Circuit::Left }).must_equal([user.End, {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]}])
+      user.(user[:Start], options = { "return" => Circuit::Left }).must_equal([user[:End], {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]}])
 
       options.must_equal({"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]})
     end

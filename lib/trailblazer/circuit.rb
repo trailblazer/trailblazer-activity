@@ -56,44 +56,6 @@ module Trailblazer
     class IllegalOutputSignalError < RuntimeError
     end
 
-    # DSL object to conveniently build a Circuit instance.
-    class Builder
-  		def initialize(name=:default, events={})
-        @event = events
-        @event[:start] = events[:start] || { default: Start.new(:default) }
-        @event[:end]   = events[:end]   || { default: End.new(:default) }
-
-        @name    = name
-        @circuit    = Circuit.new(yield(self), @event[:end].values, name)
-  		end
-
-      def call(*args)
-        @circuit.(*args)
-      end
-
-      # DISCUSS: expose Builder[:start, :default]
-      def Start(name=:default)
-        @event[:start][name]
-      end
-      def End(name=:default) #DSL
-        @event[:end][name]
-      end
-      def Suspend(name=:default)
-        @event[:end][:suspend]
-      end
-      def Resume(name=:default)
-        @event[:resume]
-      end
-
-      # TODO: test us!
-      def Right
-        Right
-      end
-      def Left
-        Left
-      end
-    end
-
     def Right
       Right
     end
@@ -140,12 +102,12 @@ module Trailblazer
     end
 
     # # run a nested process.
-    def self.Nested(process, start_with=process.Start)
+    def self.Nested(activity, start_with=activity[:Start])
       # TODO: currently, we only support only 1 start event. you can use multiple in BPMN.
       # "The BPMN standard allows for multiple start and end events to be used at the same process level. "
       ->(start_at, options, *args) {
          # puts "@@@@@ #{options.inspect}"
-        process.(start_with, options, *args)
+        activity.(start_with, options, *args)
       }
     end
 
@@ -158,20 +120,60 @@ module Trailblazer
     class Left < Right
     end
 
-    def self.Task(step, id)
-      Task.new(step, id)
+    def self.Activity(*args)
+      Activity.new(*args)
     end
 
-    # class Task
-    #   def initialize(step, id)
-    #     @step, @to_id = step, id
-    #   end
 
-    #   def call(direction, *args, &block)
-    #     @step.(*args, &block)
-    #   end
+    # DSL
+    #   events[:Start]
+    #
+    # :private:
+    def self.Events(events)
+      evts = Struct.new(*events.keys) do # [Start, End, Resume]
+        def [](event, name=:default)
+          cfg = super(event.downcase)
+          cfg[name] or raise "[Circuit] Event `#{event}.#{name} unknown."
+        end
+      end
 
-    #   attr_reader :to_id
-    # end
+      evts.new(*events.values)
+    end
+
+    # DSL
+    #   activity[:Start]
+    #   activity.()
+    Activity = Struct.new(:circuit, :events) do
+      def [](*args)
+        events[*args]
+      end
+
+      def call(*args, &block)
+        circuit.(*args, &block)
+      end
+
+      private :circuit
+    end
+
+    # DSL
+    #  Conveniently build an Activity with Circuit instance and
+    # all its signals/events.
+    def Activity::Build(name=:default, events={}, end_events=nil)
+      # default events:
+      start   = events[:start] || { default: Start.new(:default) }
+      _end    = events[:end]   || { default: End.new(:default) }
+
+      events = { start: start }.merge(events)
+      events = { end:   _end  }.merge(events)
+
+      end_events ||= _end.values
+
+      evts = Circuit::Events(events)
+
+      circuit = Circuit.new(yield(evts), end_events, name)
+
+      Activity.new(circuit, evts)
+    end
+
 	end
 end
