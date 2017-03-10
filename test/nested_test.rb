@@ -17,7 +17,7 @@ Circuit = Trailblazer::Circuit
   ###
   describe "circuit with 1 level of nesting" do
     let(:blog) do
-      Circuit::Activity::Build("blog.read/next") { |evt|
+      Circuit::Activity("blog.read/next") { |evt|
         {
           evt[:Start]  => { Circuit::Right => Blog::Read },
           Blog::Read => { Circuit::Right => Blog::Next },
@@ -28,7 +28,7 @@ Circuit = Trailblazer::Circuit
     end
 
     let(:user) do
-      Circuit::Activity::Build("user.blog") { |user|
+      Circuit::Activity("user.blog") { |user|
         {
           user[:Start] => { Circuit::Right => nested=Circuit::Nested(blog) },
           nested     => { blog[:End] => User::Relax },
@@ -49,7 +49,7 @@ Circuit = Trailblazer::Circuit
   ###
   describe "circuit with 2 end events in the nested process" do
     let(:blog) do
-      Circuit::Activity::Build("blog.read/next", end: { default: Circuit::End.new(:default), retry: Circuit::End.new(:retry) } ) { |evt|
+      Circuit::Activity("blog.read/next", end: { default: Circuit::End.new(:default), retry: Circuit::End.new(:retry) } ) { |evt|
         {
           evt[:Start]  => { Circuit::Right => Blog::Read },
           Blog::Read => { Circuit::Right => Blog::Next },
@@ -59,7 +59,7 @@ Circuit = Trailblazer::Circuit
     end
 
     let(:user) do
-      Circuit::Activity::Build("user.blog") { |user|
+      Circuit::Activity("user.blog") { |user|
         {
           user[:Start] => { Circuit::Right => nested=Circuit::Nested(blog) },
           nested     => { blog[:End] => User::Relax, blog[:End, :retry] => user[:End] },

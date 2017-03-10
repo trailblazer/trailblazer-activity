@@ -17,7 +17,7 @@ class CircuitTest < Minitest::Spec
 
   describe "plain circuit without any nesting" do
     let(:blog) do
-      Circuit::Activity::Build("blog.read/next") { |evt|
+      Circuit::Activity("blog.read/next") { |evt|
         {
           evt[:Start]  => { Circuit::Right => Blog::Read },
           Blog::Read => { Circuit::Right => Blog::Next },
@@ -44,7 +44,7 @@ class CircuitTest < Minitest::Spec
     Blog::Test = ->(direction, options) { [ options[:return], options ] }
 
     let(:flow) do
-      Circuit::Activity::Build(:reading, end: {default: Circuit::End.new(:default), retry: Circuit::End.new(:retry)} ) { |evt|
+      Circuit::Activity(:reading, end: {default: Circuit::End.new(:default), retry: Circuit::End.new(:retry)} ) { |evt|
         {
           evt[:Start] => { Circuit::Right => Blog::Test },
           Blog::Test      => { Circuit::Right => evt[:End], Circuit::Left => evt[:End, :retry] }

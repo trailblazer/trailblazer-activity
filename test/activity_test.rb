@@ -10,7 +10,7 @@ class ActivityTest < Minitest::Spec
   end
 
   let (:step)     { ->(*) { snippet } }
-  let (:activity) { Circuit::Activity(step, Circuit::Events(start: { default: "START" }, end: { stop: "END" })) }
+  let (:activity) { Circuit::Activity(step, start: { default: "START" }, end: { stop: "END" }) {} }
 
   # it { activity.circuit.must_equal step }
   # errors: unknown fields

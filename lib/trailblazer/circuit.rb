@@ -158,7 +158,7 @@ module Trailblazer
     # DSL
     #  Conveniently build an Activity with Circuit instance and
     # all its signals/events.
-    def Activity::Build(name=:default, events={}, end_events=nil)
+    def self.Activity(name=:default, events={}, end_events=nil)
       # default events:
       start   = events[:start] || { default: Start.new(:default) }
       _end    = events[:end]   || { default: End.new(:default) }
