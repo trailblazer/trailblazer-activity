@@ -193,9 +193,37 @@ module Trailblazer
     # end
     # TODO: Implementation and MyTask go together.
 
-    # lowest level
-    def self.Task(callable)
-      ->(direction, *args) { callable.(direction, *args) }
+    # NOT lowest level. if you need that, use your own proc.
+    # TODO: how do we track what goes into the callable?
+    #                 adjust what goes into it (e.g. without direction or with kw args)?
+    #                 pre contract -> step -> post contract (are these all just steps, in "mini nested pipe"?)
+    #
+    #
+    # aka "Atom".
+    def self.Task(instance: :context, method: :call)
+      # * ingoing contract (could be implemented as a nested pipe with 3 steps. that would allow us
+      #   to compile it to native ruby method calls later)
+      # * ingoing args
+      ->(direction, args, opts) {
+        instance = opts[:context] if instance==:context # TODO; implement different :context (e.g. :my_context).
+
+
+
+
+        step_args = [args] # TODO: overridable.
+
+        res = instance.send(method, *step_args) # what goes in? kws?
+      # * interpret result (e.g. true=>Right)
+      # * outgoing contract
+      # * outgoing args
+
+        [ *res, opts ]
+
+
+
+
+
+      }
     end
   end
 end
