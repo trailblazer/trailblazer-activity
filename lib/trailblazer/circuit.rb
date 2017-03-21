@@ -6,6 +6,10 @@
 
 module Trailblazer
   # Circuit executes ties, finds next step and stops when reaching a Stop signal (or derived from).
+  #
+  #   circuit.()
+  #
+  # Cicuit doesn't know anything about contexts, options, etc. tasks: what steps follows? call it!
 	class Circuit
     def initialize(map, stop_events, name)
       @name        = name
@@ -39,7 +43,7 @@ module Trailblazer
 
   private
     def next_for(last_activity, emitted_direction)
-      p @map
+      # p @map
       in_map        = false
       cfg           = @map.keys.find { |t| t == last_activity } and in_map = true
       cfg = @map[cfg] if cfg
@@ -140,7 +144,9 @@ module Trailblazer
       evts.new(*events.values)
     end
 
-    # DSL
+    # This is a code structure to encapsulate the circuit execution behavior and the
+    # start, intermediate and end events, within a "physical" business process.
+    #
     #   activity[:Start]
     #   activity.()
     Activity = Struct.new(:circuit, :events) do
@@ -158,7 +164,7 @@ module Trailblazer
     # DSL
     #  Conveniently build an Activity with Circuit instance and
     # all its signals/events.
-    def self.Activity(name=:default, events={}, end_events=nil)
+    def self.Activity(name=:default, events={}, end_events=nil, implementation=false, &block)
       # default events:
       start   = events[:start] || { default: Start.new(:default) }
       _end    = events[:end]   || { default: End.new(:default) }
@@ -169,11 +175,27 @@ module Trailblazer
       end_events ||= _end.values
 
       evts = Circuit::Events(events)
+      circuit = Circuit(name, evts, end_events, &block)
 
-      circuit = Circuit.new(yield(evts), end_events, name)
+      # DISCUSS
+      circuit = implementation.(circuit) if implementation
 
       Activity.new(circuit, evts)
     end
 
-	end
+    def self.Circuit(name=:default, events, end_events)
+      Circuit.new(yield(events), end_events, name)
+    end
+
+
+    # def self.Implementation(context, circuit, *)
+    #   ->(*args) { circuit.(*args, context) }
+    # end
+    # TODO: Implementation and MyTask go together.
+
+    # lowest level
+    def self.Task(callable)
+      ->(direction, *args) { callable.(direction, *args) }
+    end
+  end
 end
