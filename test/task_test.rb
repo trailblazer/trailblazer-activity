@@ -37,7 +37,6 @@ class TieTest < Minitest::Spec
     read    = Circuit::Task(instance: Blog::Read)
     comment = Circuit::Task(instance: Blog, method: :comment)
     rate    = Circuit::Task(instance: :context, method: :rate)
-    rate    = Circuit::Task(instance: :context, method: :rate)
 
     circuit = Circuit::Activity("blog") do |evt|
       {
