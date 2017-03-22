@@ -200,27 +200,29 @@ module Trailblazer
     #
     #
     # aka "Atom".
-    def self.Task(instance: :context, method: :call)
+    def self.Task(instance: :context, method: :call, id:nil)
       # * ingoing contract (could be implemented as a nested pipe with 3 steps. that would allow us
       #   to compile it to native ruby method calls later)
-      # * ingoing args
-      ->(direction, args, opts) {
-        instance = opts[:context] if instance==:context # TODO; implement different :context (e.g. :my_context).
+      ->(direction, options, flow_options={}) {
+        instance = flow_options[:context] if instance==:context # TODO; implement different :context (e.g. :my_context).
 
 
 
+      # * incoming args
+        # step_args = [args] # TODO: overridable.
+        step_args = [ options, **options ]
 
-        step_args = [args] # TODO: overridable.
-
+      # ** call the actual thing
         res = instance.send(method, *step_args) # what goes in? kws?
-      # * interpret result (e.g. true=>Right)
+
+      # * interpret result (e.g. true=>Right) (should we keep doing that in the tie? so the op has it easier with success, etc?)
       # * outgoing contract
       # * outgoing args
 
-        [ *res, opts ]
+        [ *res, flow_options ]
 
 
-
+      # * tracing: incoming, outgoing, direction, etc.
 
 
       }
