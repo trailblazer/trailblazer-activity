@@ -3,33 +3,19 @@ require "test_helper"
 class TaskTest < Minitest::Spec
   Circuit = Trailblazer::Circuit
 
-  class FIXMEHash # TODO: FIXME
-    def initialize(hsh)
-      @hash = hsh
-    end
-
-    def to_hash
-      symbolized = @hash.inject({}) { |memo, (k,v)| memo[k.to_sym] = v; memo } # TODO: Trailblazer::Options::KW
-    end
-
-    def []=(k,v)
-      @hash[k] = v
-    end
-  end
-
   module Blog
-    Read    = ->(options, *)   { options["Read"] = 1; [ Circuit::Right, options ] }
+    Read    = ->(options, *)   { options[:Read] = 1; [ Circuit::Right, options ] }
     # Next    = ->(options, *arg) { options["NextPage"] = arg; [ options["return"], options ] }
 
     module_function
     def comment(options, *)
-      options["Comment"] = 2; [ Circuit::Right, options ]
+      options[:Comment] = 2; [ Circuit::Right, options ]
     end
   end
 
   class Blogger
     def rate(options, **)
-      options["Rate"] = 3; [ Circuit::Right, options ]
+      options[:Rate] = 3; [ Circuit::Right, options ]
     end
   end
 
@@ -49,13 +35,14 @@ class TaskTest < Minitest::Spec
   end
 
   it do
-    direction, result = circuit.(circuit[:Start], options=FIXMEHash.new({}), context: Blogger.new)
+    direction, result = circuit.(circuit[:Start], options={}, context: Blogger.new)
 
     direction.must_equal circuit[:End]
-    options.must_equal({"Read"=>1, "Comment"=>2, "Rate"=>3})
+    options.must_equal({:Read=>1, :Comment=>2, :Rate=>3})
   end
 
   it "executes without flow_options" do
-    direction, result = circuit.(circuit[:Start], options=FIXMEHash.new({}))
+    skip
+    direction, result = circuit.(circuit[:Start], options={})
   end
 end
