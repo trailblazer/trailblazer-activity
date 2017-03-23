@@ -185,12 +185,6 @@ module Trailblazer
       Circuit.new(yield(events), end_events, name)
     end
 
-
-    # def self.Implementation(context, circuit, *)
-    #   ->(*args) { circuit.(*args, context) }
-    # end
-    # TODO: Implementation and MyTask go together.
-
     # NOT lowest level. if you need that, use your own proc.
     # TODO: how do we track what goes into the callable?
     #                 adjust what goes into it (e.g. without direction or with kw args)?
@@ -220,7 +214,7 @@ module Trailblazer
         [ *res, flow_options ]
 
 
-      # * tracing: incoming, outgoing, direction, etc.
+      # * tracing: incoming, outgoing, direction, etc. - do we want that in tasks, too?
 
 
       }
