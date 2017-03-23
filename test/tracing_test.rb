@@ -14,11 +14,12 @@ class TracingTest < Minitest::Spec
   let (:circuit) do
     read    = Circuit::Task(instance: Blog::Read)
     write   = Circuit::Task(instance: Blog::Write)
+    _nest   = Circuit::Nested(circuit2)
 
-    circuit = Circuit::Activity("blog") do |evt|
+    circuit = Circuit::Activity(id: "blog", read=>["Blog::Read"], write=>["Blog::Write"], _nest=> ["[circuit2]", true]) do |evt|
       {
         evt[:Start] => { Circuit::Right => read },
-        read        => { Circuit::Right => _nest = Circuit::Nested(circuit2) },
+        read        => { Circuit::Right => _nest },
         _nest       => { circuit2[:End] => write },
         write       => { Circuit::Right => evt[:End] },
       }
@@ -34,7 +35,7 @@ class TracingTest < Minitest::Spec
     talk    = Circuit::Task(instance: User::Talk)
     speak   = Circuit::Task(instance: User::Speak)
 
-    circuit = Circuit::Activity("user") do |evt|
+    circuit = Circuit::Activity({ id: "user", talk => ["User::Talk"], speak => ["User::Speak"] }) do |evt|
       {
         evt[:Start] => { Circuit::Right => talk },
         talk        => { Circuit::Right => speak },
@@ -44,13 +45,13 @@ class TracingTest < Minitest::Spec
   end
 
   it do
-    direction, result = circuit.(circuit[:Start], options={}, runner: runner=Circuit::Trace.new)
+    direction, result = circuit.(circuit[:Start], options={}, runner: runner=Circuit::Trace.new, stack: stack=[])
 
     direction.must_equal circuit[:End]
     options.must_equal({:read=>1, :talk=>1, :speak=>3, :write=>3})
 
     require "pp"
-    pp runner.to_stack
+    pp stack
   end
 end
 
@@ -61,15 +62,13 @@ module Trailblazer
         @stack = []
       end
 
-      def call(activity, direction, args, flow_options)
-        Run.(activity, direction, args, flow_options).tap do |direction, options|
-          @stack << [activity, direction, options.dup]
-          # puts "@@@@@ tracing=========> #{res.inspect}"
-        end
-      end
+      def call(activity, direction, args, circuit:, stack:, **flow_options)
+        activity_name, is_nested = circuit.instance_variable_get(:@name)[activity]
+        activity_name ||= activity
 
-      def to_stack
-        @stack
+        Run.(activity, direction, args, stack: is_nested ? [] : stack, **flow_options).tap do |direction, outgoing_options, **flow_options|
+          stack << [activity_name, activity, direction, outgoing_options.dup, is_nested ? flow_options[:stack] : nil ]
+        end
       end
     end
   end

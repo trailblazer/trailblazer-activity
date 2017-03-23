@@ -31,7 +31,7 @@ module Trailblazer
         direction, args  = runner.(activity, direction, args, runner: runner, circuit: self, **o)
 
         # last task in a process is always either its Stop or its Suspend.
-        return [ direction, args ] if @stop_events.include?(activity)
+        return [ direction, args, **o ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
           puts "[#{@name}]...`#{activity}`[#{direction}] => #{next_activity}"
