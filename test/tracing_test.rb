@@ -44,9 +44,33 @@ class TracingTest < Minitest::Spec
   end
 
   it do
-    direction, result = circuit.(circuit[:Start], options={})
+    direction, result = circuit.(circuit[:Start], options={}, runner: runner=Circuit::Trace.new)
 
     direction.must_equal circuit[:End]
     options.must_equal({:read=>1, :talk=>1, :speak=>3, :write=>3})
+
+    require "pp"
+    pp runner.to_stack
+  end
+end
+
+module Trailblazer
+  class Circuit
+    class Trace
+      def initialize
+        @stack = []
+      end
+
+      def call(activity, direction, args, flow_options)
+        Run.(activity, direction, args, flow_options).tap do |direction, options|
+          @stack << [activity, direction, options.dup]
+          # puts "@@@@@ tracing=========> #{res.inspect}"
+        end
+      end
+
+      def to_stack
+        @stack
+      end
+    end
   end
 end

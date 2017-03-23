@@ -5,12 +5,12 @@ Circuit = Trailblazer::Circuit
 
   module Blog
     Read    = ->(direction, options, *)    { options["Read"] = 1; [ Circuit::Right, options ] }
-    Next    = ->(direction, options, *arg) { options["NextPage"] = arg; [ options["return"], options ] }
+    Next    = ->(direction, options, *arg) { options["NextPage"] = []; [ options["return"], options ] }
     Comment = ->(direction, options, *)    { options["Comment"] = 2; [ Circuit::Right, options ] }
   end
 
   module User
-    Relax   = ->(direction, options) { options["Relax"]=true; [ Circuit::Right, options ] }
+    Relax   = ->(direction, options, *) { options["Relax"]=true; [ Circuit::Right, options ] }
   end
 
   ### Nested()

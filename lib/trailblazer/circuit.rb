@@ -20,16 +20,18 @@ module Trailblazer
         # the idea is to always have a breakpoint state that has only one outgoing edge. we then start from
     # that vertix. it's up to the caller to test if the "persisted" state == requested state.
     # activity: where to start
-    def call(activity, *args) # DISCUSS: should start activity be @activity and we omit it here?
-      # TODO: *args
+    Run = ->(activity, direction, *args) { activity.(direction, *args) }
+
+    def call(activity, args, runner: Run, **o) # DISCUSS: should start activity be @activity and we omit it here?
+      # TODO: args
       direction = nil
 
       loop do
         puts "[#{@name}]. #{activity}"
-        direction, *args  = activity.(direction, *args)
+        direction, args  = runner.(activity, direction, args, runner: runner, circuit: self, **o)
 
         # last task in a process is always either its Stop or its Suspend.
-        return [ direction, *args ] if @stop_events.include?(activity)
+        return [ direction, args ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
           puts "[#{@name}]...`#{activity}`[#{direction}] => #{next_activity}"
@@ -76,10 +78,6 @@ module Trailblazer
         @name    = name
         @options = options
       end
-
-      # def to_id
-      #   "#{self.class}.#{@name}"
-      # end
 
       def to_s
         %{#<End: #{@name} #{@options.inspect}>}

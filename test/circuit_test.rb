@@ -7,7 +7,7 @@ class CircuitTest < Minitest::Spec
 
   module Blog
     Read    = ->(direction, options, *)   { options["Read"] = 1; [ Circuit::Right, options ] }
-    Next    = ->(direction, options, *arg) { options["NextPage"] = arg; [ options["return"], options ] }
+    Next    = ->(direction, options, *arg) { options["NextPage"] = []; [ options["return"], options ] }
     Comment = ->(direction, options, *)   { options["Comment"] = 2; [ Circuit::Right, options ] }
   end
 
@@ -41,7 +41,7 @@ class CircuitTest < Minitest::Spec
   end
 
   describe "two End events" do
-    Blog::Test = ->(direction, options) { [ options[:return], options ] }
+    Blog::Test = ->(direction, options, *) { [ options[:return], options ] }
 
     let(:flow) do
       Circuit::Activity(:reading, end: {default: Circuit::End.new(:default), retry: Circuit::End.new(:retry)} ) { |evt|
