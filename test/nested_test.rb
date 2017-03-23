@@ -39,7 +39,7 @@ Circuit = Trailblazer::Circuit
     end
 
     it "ends before comment, on next_page" do
-      user.(user[:Start], options = { "return" => Circuit::Right }).must_equal([user[:End], {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
+      user.(user[:Start], options = { "return" => Circuit::Right }).must_equal([user[:End], {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}, {}])
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
@@ -70,13 +70,13 @@ Circuit = Trailblazer::Circuit
     end
 
     it "runs from Nested->default to Relax" do
-      user.(user[:Start], options = { "return" => Circuit::Right }).must_equal([user[:End], {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
+      user.(user[:Start], options = { "return" => Circuit::Right }).must_equal([user[:End], {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}, {}])
 
       options.must_equal({"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
 
     it "runs from other Nested end" do
-      user.(user[:Start], options = { "return" => Circuit::Left }).must_equal([user[:End], {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]}])
+      user.(user[:Start], options = { "return" => Circuit::Left }).must_equal([user[:End], {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]}, {}])
 
       options.must_equal({"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]})
     end

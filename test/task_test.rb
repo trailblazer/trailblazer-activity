@@ -1,6 +1,6 @@
 require "test_helper"
 
-class TieTest < Minitest::Spec
+class TaskTest < Minitest::Spec
   Circuit = Trailblazer::Circuit
 
   class FIXMEHash # TODO: FIXME

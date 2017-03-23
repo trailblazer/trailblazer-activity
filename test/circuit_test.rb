@@ -28,13 +28,13 @@ class CircuitTest < Minitest::Spec
     end
 
     it "ends before comment, on next_page" do
-      blog.(blog[:Start], options = { "return" => Circuit::Right }).must_equal([blog[:End], {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}])
+      blog.(blog[:Start], options = { "return" => Circuit::Right }).must_equal([blog[:End], {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}, {}])
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]})
     end
 
     it "ends on comment" do
-      blog.(blog[:Start], options = { "return" => Circuit::Left }).must_equal([blog[:End], {"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2}])
+      blog.(blog[:Start], options = { "return" => Circuit::Left }).must_equal([blog[:End], {"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2}, {}])
 
       options.must_equal({"return"=> Circuit::Left, "Read"=> 1, "NextPage"=>[], "Comment"=>2})
     end
@@ -52,8 +52,8 @@ class CircuitTest < Minitest::Spec
       }
     end
 
-    it { flow.(flow[:Start], return: Circuit::Right).must_equal([flow[:End],         {:return=>Trailblazer::Circuit::Right} ]) }
-    it { flow.(flow[:Start], return: Circuit::Left ).must_equal([flow[:End, :retry], {:return=>Trailblazer::Circuit::Left} ]) }
+    it { flow.(flow[:Start], return: Circuit::Right).must_equal([flow[:End],         {:return=>Trailblazer::Circuit::Right}, {} ]) }
+    it { flow.(flow[:Start], return: Circuit::Left ).must_equal([flow[:End, :retry], {:return=>Trailblazer::Circuit::Left}, {} ]) }
   end
 end
 
