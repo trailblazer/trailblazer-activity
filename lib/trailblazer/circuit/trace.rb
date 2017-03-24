@@ -7,7 +7,8 @@ module Trailblazer
         activity_name ||= activity
 
         Run.(activity, direction, args, stack: is_nested ? [] : stack, **flow_options).tap do |direction, outgoing_options, **flow_options|
-          stack << [activity_name, activity, direction, outgoing_options.dup, is_nested ? flow_options[:stack] : nil ]
+          # TODO: fix the inspect, we need a snapshot, deep-nested.
+          stack << [activity_name, activity, direction, outgoing_options, outgoing_options.inspect, is_nested ? flow_options[:stack] : nil ]
         end
       end
     end

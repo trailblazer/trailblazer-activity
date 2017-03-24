@@ -55,7 +55,7 @@ class TracingTest < Minitest::Spec
     pp stack
 
     stack.collect{ |ary| ary[0] }.must_equal [circuit[:Start], "Blog::Read", "[circuit2]", "Blog::Write", circuit[:End]]
-    stack[2][4].collect{ |ary| ary[0] }.must_equal [circuit2[:Start], "User::Talk", "User::Speak", circuit2[:End]]
+    stack[2][5].collect{ |ary| ary[0] }.must_equal [circuit2[:Start], "User::Talk", "User::Speak", circuit2[:End]]
   end
 end
 
