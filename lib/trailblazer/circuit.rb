@@ -195,7 +195,7 @@ module Trailblazer
     def self.Task(instance: :context, method: :call, id:nil)
       # * ingoing contract (could be implemented as a nested pipe with 3 steps. that would allow us
       #   to compile it to native ruby method calls later)
-      ->(direction, options, flow_options={}) {
+      ->(direction, options, **flow_options) {
         instance = flow_options[:context] if instance==:context # TODO; implement different :context (e.g. :my_context).
 
 
@@ -221,3 +221,5 @@ module Trailblazer
     end
   end
 end
+
+require "trailblazer/circuit/trace"
