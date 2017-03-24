@@ -1,9 +1,11 @@
 module Trailblazer
   class Circuit
     #   direction, result = circuit.( circuit[:Start], options, runner: Circuit::Trace.new, stack: [] )
+
+    # Every `activity.call` is considered nested
     class Trace
-      def call(activity, direction, args, circuit:, stack:, **flow_options)
-        activity_name, is_nested = circuit.instance_variable_get(:@name)[activity]
+      def call(activity, direction, args, debug:, stack:, **flow_options)
+        activity_name, _ = debug[activity]
         activity_name ||= activity
 
         Run.(activity, direction, args, stack: [], **flow_options).tap do |direction, outgoing_options, **flow_options| # TODO: USE KW ARG FOR :stack
@@ -17,7 +19,6 @@ module Trailblazer
         stack.each do |i|
           puts "  "*level + i[0].to_s
           if i.last.is_a?(Array)
-            # indent = " "*2
             print(i.last, level+1)
           end
         end

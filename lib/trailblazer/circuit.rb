@@ -28,7 +28,7 @@ module Trailblazer
 
       loop do
         puts "[#{@name}]. #{activity}"
-        direction, args  = runner.(activity, direction, args, runner: runner, circuit: self, **o)
+        direction, args  = runner.(activity, direction, args, runner: runner, debug: @name, **o)
 
         # last task in a process is always either its Stop or its Suspend.
         return [ direction, args, **o ] if @stop_events.include?(activity)
