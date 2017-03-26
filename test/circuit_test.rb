@@ -57,5 +57,32 @@ class CircuitTest < Minitest::Spec
   end
 end
 
+class CircuitAlterTest < Minitest::Spec
+  Circuit = Trailblazer::Circuit
+
+  A = ->(direction, options, *) { [ Circuit::Right, options ] }
+  B = ->(direction, options, *) { [ Circuit::Right, options ] }
+
+  let(:circuit) do
+    Circuit::Activity(id: "A/") { |evt|
+      {
+        evt[:Start] => { Circuit::Right => A },
+        A           => { Circuit::Right => evt[:End] }
+      }
+    }
+  end
+
+  it { circuit.to_hash.must_inspect "{#<Start: default {}>=>{Trailblazer::Circuit::Right=>#<Proc:>}, #<Proc:>=>{Trailblazer::Circuit::Right=>#<End: default {}>}}" }
+
+  it { Circuit::Alter(circuit, :append, B) }
+end
+
+module MiniTest::Assertions
+  def assert_inspect(text, subject)
+    subject.inspect.gsub(/0x.+?lambda\)/, "").must_equal(text)
+  end
+end
+Hash.infect_an_assertion :assert_inspect, :must_inspect
+
 # decouple circuit and implementation
 # visible structuring of flow
