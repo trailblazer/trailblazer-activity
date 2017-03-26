@@ -43,6 +43,10 @@ module Trailblazer
       end
     end
 
+    def to_fields
+      [ @map, @stop_events, @name]
+    end
+
   private
     def next_for(last_activity, emitted_direction)
       # p @map
@@ -157,6 +161,13 @@ module Trailblazer
       end
 
       private :circuit
+
+
+      # DISCUSS: do we need that?
+      # :private:
+      def to_circuit
+        circuit
+      end
     end
 
     # DSL
@@ -222,4 +233,5 @@ module Trailblazer
   end
 end
 
+require "trailblazer/circuit/alter"
 require "trailblazer/circuit/trace"
