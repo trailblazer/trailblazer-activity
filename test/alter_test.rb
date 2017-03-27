@@ -21,15 +21,30 @@ class AlterTest < Minitest::Spec
       }
     end
 
+    # Start -> End
+    #       -> End
     it { activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>#<End: left {}>}}" }
+
     it do
       # Start -> A -> End
+      #       ->      End
       _activity = Circuit::Activity::Alter(activity, :before, activity[:End, :right], A, direction: Circuit::Right )
       _activity.must_inspect "{#<Start: default {}>=>{Right=>A, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}}"
 
       # Start -> A -> B -> End
       _activity = Circuit::Activity::Alter(_activity, :before, activity[:End, :right], B, direction: Circuit::Right )
       _activity.must_inspect "{#<Start: default {}>=>{Right=>A, Left=>#<End: left {}>}, A=>{Right=>B}, B=>{Right=>#<End: right {}>}}"
+    end
+
+    # on LEFT track.
+    it do
+      # Start ->      End
+      #       -> A -> End
+      _activity = Circuit::Activity::Alter(activity, :before, activity[:End, :left], A, direction: Circuit::Left )
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>A}, A=>{Left=>#<End: left {}>}}"
+
+      _activity = Circuit::Activity::Alter(_activity, :before, activity[:End, :left], B, direction: Circuit::Left )
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>A}, A=>{Left=>B}, B=>{Left=>#<End: left {}>}}"
     end
 
     describe "multiple lines pointing to A" do
@@ -45,12 +60,17 @@ class AlterTest < Minitest::Spec
 
       # push B before A (which has two inputs).
       it do
+        # Start ->   B -> A -> End
+        #       -> C ^ ->      End
         _activity = Circuit::Activity::Alter(activity, :before, A, B, direction: Circuit::Right )
         _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>C}, C=>{Right=>B, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}, B=>{Right=>A}}"
       end
     end
   end
 
+
+
+  # append ===============
   let(:activity) do
     Circuit::Activity(id: "A/") { |evt|
       {
