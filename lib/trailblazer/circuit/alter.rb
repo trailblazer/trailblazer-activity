@@ -1,15 +1,19 @@
 module Trailblazer
-  class Circuit
-    def self.Alter(circuit, operation, *args)
-      Alter.append(circuit, *args)
+  class Circuit::Activity
+    def self.Alter(activity, operation, *args)
+      Alter.append(activity, *args)
     end
 
     module Alter
       module_function
 
-      def append(circuit, new_function, *)
-        map, stop_events, name = circuit.to_fields
-        end_event = stop_events.first
+      def append(activity, new_function, end_event: :default, **options)
+        circuit, events = activity.values
+        map, end_events, name  = circuit.to_fields # FIXME: there's some redundancy with
+        # the end events in Circuit and Activity.
+
+        end_event = events[:End, end_event]
+
         new_hash  = map.dup # TODO: deep clone.
 
         # find the task pointing to End.
@@ -19,9 +23,10 @@ module Trailblazer
         new_hash[task] = new_hash[task].dup # FIXME: deep clone!
 
         new_hash[task][direction] = new_function
-        new_hash[new_function] = { Right => end_event } # DISCUSS; what direction?
+        new_hash[new_function] = { direction => end_event } # DISCUSS; what direction?
 
-        Circuit.new(new_hash, stop_events, name)
+        circuit = Circuit.new(new_hash, end_events, name) # FIXME: this sucks!
+        Trailblazer::Circuit::Activity.new(circuit, events)
       end
     end
   end

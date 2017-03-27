@@ -151,6 +151,7 @@ module Trailblazer
     #
     #   activity[:Start]
     #   activity.()
+    #   activity.values
     Activity = Struct.new(:circuit, :events) do
       def [](*args)
         events[*args]
@@ -158,15 +159,6 @@ module Trailblazer
 
       def call(*args, &block)
         circuit.(*args, &block)
-      end
-
-      private :circuit
-
-
-      # DISCUSS: do we need that?
-      # :private:
-      def to_circuit
-        circuit
       end
     end
 
@@ -186,7 +178,7 @@ module Trailblazer
       evts = Circuit::Events(events)
       circuit = Circuit(name, evts, end_events, &block)
 
-      # DISCUSS
+      # DISCUSS: remove this!
       circuit = implementation.(circuit) if implementation
 
       Activity.new(circuit, evts)
