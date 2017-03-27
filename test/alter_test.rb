@@ -71,6 +71,24 @@ class AlterTest < Minitest::Spec
     end
   end
 
+  describe "Connect" do
+    let(:activity) do
+      Circuit::Activity({id: "A/"}, ends) { |evt|
+        {
+          evt[:Start] => { Circuit::Right => evt[:End, :right], Circuit::Left => evt[:End, :left] },
+        }
+      }
+    end
+
+    it do
+      _activity = Circuit::Activity::Alter(activity, :before, activity[:End, :right], B, direction: Circuit::Right )
+      activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>#<End: left {}>}}"
+
+      _activity = Circuit::Activity::Connect(_activity, B, Circuit::Left, _activity[:End, :left])
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>#<End: left {}>}, B=>{Right=>#<End: right {}>, Left=>#<End: left {}>}}"
+    end
+  end
+
   # Connect (e.g. decide!->End(:left))
 end
 

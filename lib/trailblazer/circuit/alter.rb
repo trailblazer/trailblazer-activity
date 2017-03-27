@@ -31,5 +31,18 @@ module Trailblazer
         Trailblazer::Circuit::Activity.new(circuit, events)
       end
     end
+
+    def self.Connect(activity, from, direction, to)
+      circuit, events = activity.values
+        map, end_events, name  = circuit.to_fields # FIXME: there's some redundancy with
+
+        new_activity = {} # FIXME: deepdup.
+        map.each { |act, outputs| new_activity[act] = outputs.dup }
+
+      new_activity[from][direction] = to
+
+        circuit = Circuit.new(new_activity, end_events, name) # FIXME: this sucks!
+        Trailblazer::Circuit::Activity.new(circuit, events)
+    end
   end
 end
