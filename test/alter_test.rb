@@ -10,6 +10,47 @@ class AlterTest < Minitest::Spec
   class B
   end
 
+  let (:ends) { {end: { right: Circuit::End.new(:right), left: Circuit::End.new(:left) }} }
+
+  describe "before" do
+    let(:activity) do
+      Circuit::Activity({id: "A/"}, ends) { |evt|
+        {
+          evt[:Start] => { Circuit::Right => evt[:End, :right], Circuit::Left => evt[:End, :left] },
+        }
+      }
+    end
+
+    it { activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>#<End: left {}>}}" }
+    it do
+      # Start -> A -> End
+      _activity = Circuit::Activity::Alter(activity, :before, activity[:End, :right], A, direction: Circuit::Right )
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>A, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}}"
+
+      # Start -> A -> B -> End
+      _activity = Circuit::Activity::Alter(_activity, :before, activity[:End, :right], B, direction: Circuit::Right )
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>A, Left=>#<End: left {}>}, A=>{Right=>B}, B=>{Right=>#<End: right {}>}}"
+    end
+
+    describe "multiple lines pointing to A" do
+      let(:activity) do
+        Circuit::Activity({id: "A/"}, ends) { |evt|
+          {
+            evt[:Start] => { Circuit::Right => A, Circuit::Left => C },
+            C => { Circuit::Right => A, Circuit::Left => evt[:End, :left] },
+            A => { Circuit::Right => evt[:End, :right] },
+          }
+        }
+      end
+
+      # push B before A (which has two inputs).
+      it do
+        _activity = Circuit::Activity::Alter(activity, :before, A, B, direction: Circuit::Right )
+        _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>C}, C=>{Right=>B, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}, B=>{Right=>A}}"
+      end
+    end
+  end
+
   let(:activity) do
     Circuit::Activity(id: "A/") { |evt|
       {
