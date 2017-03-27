@@ -21,6 +21,7 @@ class AlterTest < Minitest::Spec
       }
     end
 
+    # on RIGHT track.
     # Start -> End
     #       -> End
     it { activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>#<End: left {}>}}" }
@@ -43,6 +44,8 @@ class AlterTest < Minitest::Spec
       _activity = Circuit::Activity::Alter(activity, :before, activity[:End, :left], A, direction: Circuit::Left )
       _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>A}, A=>{Left=>#<End: left {}>}}"
 
+      # Start ->           End
+      #       -> A -> B -> End
       _activity = Circuit::Activity::Alter(_activity, :before, activity[:End, :left], B, direction: Circuit::Left )
       _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>A}, A=>{Left=>B}, B=>{Left=>#<End: left {}>}}"
     end
@@ -68,21 +71,7 @@ class AlterTest < Minitest::Spec
     end
   end
 
-
-
-  # append ===============
-  let(:activity) do
-    Circuit::Activity(id: "A/") { |evt|
-      {
-        evt[:Start] => { Circuit::Right => A },
-        A           => { Circuit::Right => B },
-        B           => { Circuit::Right => evt[:End] }
-      }
-    }
-  end
-
-  it { activity.must_inspect "{#<Start: default {}>=>{Right=>A}, A=>{Right=>B}, B=>{Right=>#<End: default {}>}}" }
-  it { Circuit::Activity::Alter(activity, :append, C).must_inspect "{#<Start: default {}>=>{Right=>A}, A=>{Right=>B}, B=>{Right=>C}, C=>{Right=>#<End: default {}>}}" }
+  # Connect (e.g. decide!->End(:left))
 end
 
 module MiniTest::Assertions
