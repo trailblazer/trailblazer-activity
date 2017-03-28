@@ -29,11 +29,11 @@ class AlterTest < Minitest::Spec
     it do
       # Start -> A -> End
       #       ->      End
-      _activity = Circuit::Activity::Alter(activity, :before, activity[:End, :right], A, direction: Circuit::Right )
+      _activity = Circuit::Activity::Before(activity, activity[:End, :right], A, direction: Circuit::Right )
       _activity.must_inspect "{#<Start: default {}>=>{Right=>A, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}}"
 
       # Start -> A -> B -> End
-      _activity = Circuit::Activity::Alter(_activity, :before, activity[:End, :right], B, direction: Circuit::Right )
+      _activity = Circuit::Activity::Before(_activity, activity[:End, :right], B, direction: Circuit::Right )
       _activity.must_inspect "{#<Start: default {}>=>{Right=>A, Left=>#<End: left {}>}, A=>{Right=>B}, B=>{Right=>#<End: right {}>}}"
     end
 
@@ -41,12 +41,12 @@ class AlterTest < Minitest::Spec
     it do
       # Start ->      End
       #       -> A -> End
-      _activity = Circuit::Activity::Alter(activity, :before, activity[:End, :left], A, direction: Circuit::Left )
+      _activity = Circuit::Activity::Before(activity, activity[:End, :left], A, direction: Circuit::Left )
       _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>A}, A=>{Left=>#<End: left {}>}}"
 
       # Start ->           End
       #       -> A -> B -> End
-      _activity = Circuit::Activity::Alter(_activity, :before, activity[:End, :left], B, direction: Circuit::Left )
+      _activity = Circuit::Activity::Before(_activity, activity[:End, :left], B, direction: Circuit::Left )
       _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>A}, A=>{Left=>B}, B=>{Left=>#<End: left {}>}}"
     end
 
@@ -65,7 +65,7 @@ class AlterTest < Minitest::Spec
       it do
         # Start ->   B -> A -> End
         #       -> C ^ ->      End
-        _activity = Circuit::Activity::Alter(activity, :before, A, B, direction: Circuit::Right )
+        _activity = Circuit::Activity::Before(activity, A, B, direction: Circuit::Right )
         _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>C}, C=>{Right=>B, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}, B=>{Right=>A}}"
       end
     end
@@ -81,7 +81,7 @@ class AlterTest < Minitest::Spec
     end
 
     it do
-      _activity = Circuit::Activity::Alter(activity, :before, activity[:End, :right], B, direction: Circuit::Right )
+      _activity = Circuit::Activity::Before(activity, activity[:End, :right], B, direction: Circuit::Right )
       activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>#<End: left {}>}}"
 
       _activity = Circuit::Activity::Connect(_activity, B, Circuit::Left, _activity[:End, :left])

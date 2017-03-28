@@ -15,6 +15,14 @@ _The Circuit of Life._
 
 * An `Operation` simply is a `circuit`, with a limited, linear-only flow.
 
+
+
+## Activity
+
+An `Activity` has start and end events. While *events* in BPMN have behavior and might trigger listeners, in `circuit` an event is simply a state. The activity always ends in an `End` state. It's up to the user to interpret and trigger behavior.
+
+
+
 ## TODO:
 
 * oPTIONS::kW
