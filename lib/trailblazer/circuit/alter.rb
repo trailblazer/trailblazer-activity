@@ -1,39 +1,39 @@
 module Trailblazer
   class Circuit::Activity
+    # Find all `direction` connections TO <old_task> and rewire them to new_task,
+    # then connect new to old with `direction`.
     def self.Before(activity, old_task, new_task, direction:)
-      # find all <direction> lines TO <old_task> and rewire them to new_task, then connect
-      # new to old with <direction>.
-
-      circuit, events = activity.values
-      map, end_events, name  = circuit.to_fields # FIXME: there's some redundancy with
-      # the end events in Circuit and Activity.
-
-      new_activity = {} # FIXME: deepdup.
-      map.each { |act, outputs| new_activity[act] = outputs.dup }
-
-      cfg = new_activity.find_all { |act, outputs| outputs[direction]==old_task }
-
-      # rewire old line to new task.
-      cfg.each { |(activity, outputs)| outputs[direction] = new_task }
-      # connect new_task --> old_task.
-      new_activity[new_task] = { direction => old_task }
-
-
-      circuit = Circuit.new(new_activity, end_events, name) # FIXME: this sucks!
-      Trailblazer::Circuit::Activity.new(circuit, events)
+      Rewrite(activity) do |new_map|
+        cfg = new_map.find_all { |act, outputs| outputs[direction]==old_task }
+        # rewire old line to new task.
+        cfg.each { |(activity, outputs)| outputs[direction] = new_task }
+        # connect new_task --> old_task.
+        new_map[new_task] = { direction => old_task }
+      end
     end
 
     def self.Connect(activity, from, direction, to)
+      Rewrite(activity) do |new_map|
+        new_map[from][direction] = to
+      end
+    end
+
+    # Deep-clones an Activity's circuit and allows to alter its map by yielding it.
+    #
+    # :private:
+    def self.Rewrite(activity)
+      # decompose Activity and Circuit.
       circuit, events = activity.values
-        map, end_events, name  = circuit.to_fields # FIXME: there's some redundancy with
+      map, end_events, name  = circuit.to_fields
 
-        new_activity = {} # FIXME: deepdup.
-        map.each { |act, outputs| new_activity[act] = outputs.dup }
+      new_map = {} # deep-dup.
+      map.each { |act, outputs| new_map[act] = outputs.dup }
 
-      new_activity[from][direction] = to
+      yield new_map # new_map is mutable.
 
-        circuit = Circuit.new(new_activity, end_events, name) # FIXME: this sucks!
-        Trailblazer::Circuit::Activity.new(circuit, events)
+      # recompose to an Activity.
+      circuit = Circuit.new(new_map, end_events, name)
+      Circuit::Activity.new(circuit, events)
     end
   end
 end
