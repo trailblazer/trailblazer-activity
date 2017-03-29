@@ -2,6 +2,14 @@
 
 _The Circuit of Life._
 
+Circuit provides a simplified [flowchart](https://en.wikipedia.org/wiki/Flowchart) implementation with terminals (for example, start or end state), connectors and tasks (processes). It allows to define the flow (the actual *circuit*) and execute it.
+
+Circuit refrains from implementing deciders. The decisions are encoded in the output signals of tasks.
+
+`Circuit` and `workflow` use [BPMN](http://www.bpmn.org/) lingo and concepts for describing processes and flows.
+
+## Example
+
 
 ## minimize Nil errors
 
