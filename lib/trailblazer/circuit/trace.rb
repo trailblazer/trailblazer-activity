@@ -13,6 +13,16 @@ module Trailblazer
           stack << [activity_name, activity, direction, outgoing_options, outgoing_options.inspect, flow_options[:stack].any? ? flow_options[:stack] : nil ]
         end
       end
-    end
+
+      # module_function
+      def self.print(stack, level=1)
+        stack.each do |i|
+          puts "  "*level + i[0].to_s
+          if i.last.is_a?(Array)
+            print(i.last, level+1)
+          end
+        end
+      end
+    end # Trace
   end
 end

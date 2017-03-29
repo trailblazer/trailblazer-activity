@@ -52,7 +52,7 @@ class TracingTest < Minitest::Spec
     direction.must_equal circuit[:End]
     options.must_equal({:read=>1, :talk=>1, :speak=>3, :write=>3})
 
-    Circuit::Presenter.new.tree(stack)
+    Circuit::Trace::Present.tree(stack)
 
     stack.collect{ |ary| ary[0] }.must_equal [circuit[:Start], "Blog::Read", "[circuit2]", "Blog::Write", circuit[:End]]
     stack[2][5].collect{ |ary| ary[0] }.must_equal [circuit2[:Start], "User::Talk", "User::Speak", circuit2[:End]]

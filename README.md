@@ -6,7 +6,7 @@ Circuit provides a simplified [flowchart](https://en.wikipedia.org/wiki/Flowchar
 
 Circuit refrains from implementing deciders. The decisions are encoded in the output signals of tasks.
 
-`Circuit` and `workflow` use [BPMN](http://www.bpmn.org/) lingo and concepts for describing processes and flows.
+`Circuit` and `workflow` use [BPMN](http://www.bpmn.org/) lingo and concepts for describing processes and flows. This document can be found in the [Trailblazer documentation](http://trailblazer.to/gems/trailblazer/circuit.html), too.
 
 ## Example
 
