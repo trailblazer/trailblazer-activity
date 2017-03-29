@@ -1,0 +1,51 @@
+require "test_helper"
+
+class DocsActivityTest < Minitest::Spec
+  Circuit = Trailblazer::Circuit
+
+  #:write
+  module Blog
+    Write = ->(direction, options, *flow) do
+      options[:content] = "World peace!"
+      [ Circuit::Right, options, *flow ]
+    end
+    #:write end
+    #:spell
+    SpellCheck = ->(direction, options, *flow) do
+      direction = options[:content].size > 10 ? Circuit::Right : Circuit::Left
+      [ direction, options, *flow ]
+    end
+    #:spell end
+    Correct    = ->(direction, options, *flow) { [Circuit::Right, options, *flow] }
+    Publish    = ->(direction, options, *flow) { [Circuit::Right, options, *flow] }
+  end
+  #:impl1 end
+
+  it do
+    #:basic
+    activity = Circuit::Activity({id: "Blog/Publish"}) { |evt|
+      {
+        evt[:Start]      => { Circuit::Right => Blog::Write },
+        Blog::Write      => { Circuit::Right => Blog::SpellCheck },
+        Blog::SpellCheck => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct },
+        Blog::Correct    => { Circuit::Right => Blog::SpellCheck },
+        Blog::Publish    => { Circuit::Right => evt[:End] }
+      }
+    }
+    #:basic end
+
+    #:call
+    direction, options, flow = activity.(
+      activity[:Start],
+      { author: "Nick" }
+    )
+    #:call end
+    #:call-ret
+    direction #=> #<End: default {}>
+    options   #=> {:author=>"Nick", :content=>"World peace!"}
+    #:call-ret end
+
+    direction.inspect.must_equal "#<End: default {}>"
+    options.must_equal({:author=>"Nick", :content=>"World peace!"})
+  end
+end
