@@ -1,6 +1,6 @@
 require "test_helper"
 require "trailblazer/circuit/trace"
-require "trailblazer/circuit/presenter"
+require "trailblazer/circuit/present"
 
 class TracingTest < Minitest::Spec
   Circuit = Trailblazer::Circuit

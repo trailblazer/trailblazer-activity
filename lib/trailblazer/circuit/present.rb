@@ -9,7 +9,7 @@ module Trailblazer
 
         def tree(stack, level = 1)
           stack.each do |debug_item|
-            puts FREE_SPACE * level + delimeter(stack, debug_item) + '--' + '> ' + to_name(debug_item)
+            puts FREE_SPACE * level + delimeter(stack, debug_item) + '--' + '> ' + to_name(debug_item) + to_options(debug_item)
 
             if debug_item.last.is_a?(Array)
               tree(debug_item.last, level + 1)
@@ -27,6 +27,12 @@ module Trailblazer
           return debug_item[0].to_s unless color
           colorify(debug_item[0], color)
         end
+
+        def to_options(debug_item)
+          debug_item[4]
+        end
+
+
 
         def colorify(string, color)
           "\e[#{color_table[color]}m#{string}\e[0m"
