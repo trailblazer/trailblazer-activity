@@ -1,4 +1,4 @@
-  require "trailblazer/circuit/version"
+require "trailblazer/circuit/version"
 
 # Start, Suspend, Resume, End can return something other than the next symbol?
 # Nested could replace options with local options
@@ -187,43 +187,9 @@ module Trailblazer
     def self.Circuit(name=:default, events, end_events)
       Circuit.new(yield(events), end_events, name)
     end
-
-    # NOT lowest level. if you need that, use your own proc.
-    # TODO: how do we track what goes into the callable?
-    #                 adjust what goes into it (e.g. without direction or with kw args)?
-    #                 pre contract -> step -> post contract (are these all just steps, in "mini nested pipe"?)
-    #
-    #
-    # aka "Atom".
-    def self.Task(instance: :context, method: :call, id:nil)
-      # * ingoing contract (could be implemented as a nested pipe with 3 steps. that would allow us
-      #   to compile it to native ruby method calls later)
-      ->(direction, options, **flow_options) {
-        instance = flow_options[:context] if instance==:context # TODO; implement different :context (e.g. :my_context).
-
-
-
-      # * incoming args
-        # step_args = [args] # TODO: overridable.
-        step_args = [ options, **options ]
-
-      # ** call the actual thing
-        res = instance.send(method, *step_args) # what goes in? kws?
-
-      # * interpret result (e.g. true=>Right) (should we keep doing that in the tie? so the op has it easier with success, etc?)
-      # * outgoing contract
-      # * outgoing args
-
-        [ *res, flow_options ]
-
-
-      # * tracing: incoming, outgoing, direction, etc. - do we want that in tasks, too?
-
-
-      }
-    end
   end
 end
 
+require "trailblazer/circuit/task"
 require "trailblazer/circuit/alter"
 require "trailblazer/circuit/trace"

@@ -5,7 +5,6 @@ class TaskTest < Minitest::Spec
 
   module Blog
     Read    = ->(options, *)   { options[:Read] = 1; [ Circuit::Right, options ] }
-    # Next    = ->(options, *arg) { options["NextPage"] = arg; [ options["return"], options ] }
 
     module_function
     def comment(options, *)
@@ -20,9 +19,9 @@ class TaskTest < Minitest::Spec
   end
 
   let (:circuit) do
-    read    = Circuit::Task(instance: Blog::Read)
-    comment = Circuit::Task(instance: Blog, method: :comment)
-    rate    = Circuit::Task(instance: :context, method: :rate)
+    read    = Circuit::Task::Binary(Circuit::Task::Args::KW(Blog::Read))
+    comment = Circuit::Task::Binary(Circuit::Task::Args::KW(Blog.method(:comment)))
+    rate    = Circuit::Task::Binary(Circuit::Task::Args::KW(:rate))
 
     circuit = Circuit::Activity("blog") do |evt|
       {
