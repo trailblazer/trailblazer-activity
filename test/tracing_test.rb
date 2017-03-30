@@ -14,8 +14,8 @@ class TracingTest < Minitest::Spec
     # Nested  = ->(options, *) { snippet }
 
   let (:circuit) do
-    read    = Circuit::Task(instance: Blog::Read)
-    write   = Circuit::Task(instance: Blog::Write)
+    read    = Circuit::Task::Binary(Circuit::Task::Args::KW(Blog::Read))
+    write   = Circuit::Task::Binary(Circuit::Task::Args::KW(Blog::Write))
     _nest   = Circuit::Nested(circuit2)
 
     circuit = Circuit::Activity(id: "blog", read=>["Blog::Read"], write=>["Blog::Write"], _nest=> ["[circuit2]", true]) do |evt|
@@ -34,8 +34,8 @@ class TracingTest < Minitest::Spec
   end
 
   let (:circuit2) do
-    talk    = Circuit::Task(instance: User::Talk)
-    speak   = Circuit::Task(instance: User::Speak)
+    talk    = Circuit::Task::Binary(Circuit::Task::Args::KW(User::Talk))
+    speak   = Circuit::Task::Binary(Circuit::Task::Args::KW(User::Speak))
 
     circuit = Circuit::Activity({ id: "user", talk => ["User::Talk"], speak => ["User::Speak"] }) do |evt|
       {

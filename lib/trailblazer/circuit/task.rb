@@ -11,8 +11,8 @@ class Trailblazer::Circuit
     # Returns task to call the proc with (options, flow_options), omitting `direction`.
     # When called, the task always returns a direction signal.
     def Binary(step, on_true=Right, on_false=Left)
-      ->(*args) do # Activity/Task interface.
-        [ step.(*args) ? on_true : on_false, options, flow_options ] # <=> Activity/Task interface
+      ->(direction, *args) do # Activity/Task interface.
+        [ step.(direction, *args) ? on_true : on_false, *args ] # <=> Activity/Task interface
       end
     end
 
@@ -33,13 +33,14 @@ class Trailblazer::Circuit
       # DISCUSS: standardize tmp_options.
       # Calls `proc` with a step interface.
       def call!(proc, direction, options, flow_options, tmp_options={})
-        proc.(options, **options.to_hash(tmp_options))
+        # proc.(options, **options.to_hash(tmp_options))
+        proc.(options, **options.to_hash)
       end
 
       # Make the context's instance method a "lambda" and reuse #call!.
       # TODO: should we make :context a kwarg?
       def meth!(proc, direction, options, flow_options, *args)
-        call!(flow_options[:context].method(proc), options, flow_options, *args)
+        call!(flow_options[:context].method(proc), direction, options, flow_options, *args)
       end
     end
   end
