@@ -117,12 +117,16 @@ class DocsActivityTest < Minitest::Spec
     #:toll
     activity = Circuit::Activity({id: "Blog/Publish"}) { |evt|
       {
-        evt[:Start]      => { Circuit::Right => Blog::Write },
-        Blog::Write      => { Circuit::Right => Blog::SpellCheck3 },
-        Blog::SpellCheck3 => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct, :maybe => Blog::Warn },
-        Blog::Warn       => { Circuit::Right => Blog::Publish },
-        Blog::Correct    => { Circuit::Right => Blog::SpellCheck3 },
-        Blog::Publish    => { Circuit::Right => evt[:End] }
+        evt[:Start]       => { Circuit::Right => Blog::Write },
+        Blog::Write       => { Circuit::Right => Blog::SpellCheck3 },
+        Blog::SpellCheck3 => {
+          Circuit::Right  => Blog::Publish,
+          Circuit::Left   => Blog::Correct,
+          :maybe          => Blog::Warn
+        },
+        Blog::Warn        => { Circuit::Right => Blog::Publish },
+        Blog::Correct     => { Circuit::Right => Blog::SpellCheck3 },
+        Blog::Publish     => { Circuit::Right => evt[:End] }
       }
     }
     #:toll end
@@ -157,6 +161,80 @@ class DocsActivityTest < Minitest::Spec
     )
     direction.inspect.must_equal "#<End: default {}>"
     options.must_equal({:content=>"Let's sdard", :warning=>"Make less mistakes!"})
+
+
+
+    #---
+    #- events
+    #:events
+    activity = Circuit::Activity({id: "Blog/Publish"},
+      end: {
+        default: Circuit::End.new(:published),
+        warn:    Circuit::End.new(:warned),
+        wrong:   Circuit::End.new(:wrong)
+      }
+    ) { |evt|
+      {
+        evt[:Start]       => { Circuit::Right => Blog::Write },
+        Blog::Write       => { Circuit::Right => Blog::SpellCheck3 },
+        Blog::SpellCheck3 => {
+          Circuit::Right  => Blog::Publish,
+          Circuit::Left   => evt[:End, :wrong],
+          :maybe          => Blog::Warn
+        },
+        Blog::Warn        => { Circuit::Right => evt[:End, :warn] },
+        Blog::Correct     => { Circuit::Right => Blog::SpellCheck3 },
+        Blog::Publish     => { Circuit::Right => evt[:End] }
+      }
+    }
+    #:events end
+
+    # 1 error
+    #:events-call
+    direction, options, flow = activity.(
+      activity[:Start],
+      { content: " Let's sdart" }
+    )
+
+    direction #=> #<End: warned {}>
+    options   #=> {:content=>"Let's sdart", :warning=>"Make less mistakes!"}
+    #:events-call end
+
+    direction.inspect.must_equal "#<End: warned {}>"
+    options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})
+
+    # ---
+    # Nested
+    Shop = ->(*args) { args }
+    #: shop
+    complete = Circuit::Activity(
+      {id: "Shop, Blog"},
+      end: { default: Circuit::End.new(:default), error: Circuit::End.new(:error) }
+    ) do |evt|
+      {
+        evt[:Start] => { Circuit::Right => Shop },
+        Shop        => { Circuit::Right => _nested = Circuit::Nested(activity) },
+        _nested     => {
+          activity[:End, :default] => evt[:End], # connect published to our End.
+          activity[:End, :wrong]   => evt[:End, :error],
+          activity[:End, :warn]    => evt[:End, :error]
+        }
+      }
+    end
+    #: shop end
+
+    #:events-call
+    direction, options, flow = complete.(
+      complete[:Start],
+      { content: " Let's sdart" }
+    )
+
+    direction #=> #<End: warned {}>
+    options   #=> {:content=>"Let's sdart", :warning=>"Make less mistakes!"}
+    #:events-call end
+
+    direction.inspect.must_equal "#<End: error {}>"
+    options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})
   end
 end
 
