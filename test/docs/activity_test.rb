@@ -206,7 +206,7 @@ class DocsActivityTest < Minitest::Spec
     # ---
     # Nested
     Shop = ->(*args) { args }
-    #: shop
+    #:nested
     complete = Circuit::Activity(
       {id: "Shop, Blog"},
       end: { default: Circuit::End.new(:default), error: Circuit::End.new(:error) }
@@ -221,17 +221,17 @@ class DocsActivityTest < Minitest::Spec
         }
       }
     end
-    #: shop end
+    #:nested end
 
-    #:events-call
+    #:nested-call
     direction, options, flow = complete.(
       complete[:Start],
       { content: " Let's sdart" }
     )
 
-    direction #=> #<End: warned {}>
+    direction #=> #<End: error {}>
     options   #=> {:content=>"Let's sdart", :warning=>"Make less mistakes!"}
-    #:events-call end
+    #:nested-call end
 
     direction.inspect.must_equal "#<End: error {}>"
     options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})

@@ -21,19 +21,18 @@ module Trailblazer
     # Deep-clones an Activity's circuit and allows to alter its map by yielding it.
     #
     # :private:
-    def self.Rewrite(activity)
+    def self.Rewrite(activity, additional_events={})
       # decompose Activity and Circuit.
       circuit, events = activity.values
+      events = events.to_h.merge(additional_events)
       map, end_events, name  = circuit.to_fields
 
       new_map = {} # deep-dup.
       map.each { |act, outputs| new_map[act] = outputs.dup }
 
-      yield new_map # new_map is mutable.
-
       # recompose to an Activity.
-      circuit = Circuit.new(new_map, end_events, name)
-      Circuit::Activity.new(circuit, events)
+      # new_map is mutable.
+      Circuit::Activity(name, events) { |evts| yield(new_map, evts); new_map }
     end
   end
 end

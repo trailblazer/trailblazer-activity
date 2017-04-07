@@ -90,6 +90,24 @@ class AlterTest < Minitest::Spec
   end
 
   # Connect (e.g. decide!->End(:left))
+
+  describe "Rewrite" do
+    let(:activity) do
+      Circuit::Activity({id: "A/"}, { end: { default: Circuit::End.new(:default) }, suspend: { default: Circuit::End.new(:suspend) } }) { |evt|
+        {
+          evt[:Start] => { Circuit::Right => evt[:End] },
+        }
+      }
+    end
+
+    it do
+      _activity = Circuit::Activity::Rewrite(activity, suspend: { default: Circuit::End.new(:__replaced) }, resume: { default: Circuit::End.new(:resume) } ) do |map, evt|
+        map[evt[:End]] = { evt[:Suspend] => evt[:Resume] }
+      end
+      activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}}"
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}, #<End: default {}>=>{#<End: __replaced {}>=>#<End: resume {}>}}"
+    end
+  end
 end
 
 module MiniTest::Assertions
