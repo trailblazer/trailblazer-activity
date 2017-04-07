@@ -74,9 +74,6 @@ module Trailblazer
       Left
     end
 
-
-
-
     class End
       def initialize(name, options={})
         @name    = name
@@ -118,9 +115,6 @@ module Trailblazer
     end
 
 		class Right
-      def self.to_id
-        self
-      end
     end
 
     class Left < Right
