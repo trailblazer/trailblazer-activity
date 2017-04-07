@@ -101,11 +101,11 @@ class AlterTest < Minitest::Spec
     end
 
     it do
-      _activity = Circuit::Activity::Rewrite(activity, suspend: { default: Circuit::End.new(:__replaced) }, resume: { default: Circuit::End.new(:resume) } ) do |map, evt|
-        map[evt[:End]] = { evt[:Suspend] => evt[:Resume] }
+      _activity = Circuit::Activity::Rewrite(activity) do |map, evt|
+        map[evt[:End]] = { "Right" => evt[:Start] }
       end
       activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}}"
-      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}, #<End: default {}>=>{#<End: __replaced {}>=>#<End: resume {}>}}"
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}, #<End: default {}>=>{\"Right\"=>#<Start: default {}>}}"
     end
   end
 end
