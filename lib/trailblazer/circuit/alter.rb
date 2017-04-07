@@ -20,6 +20,10 @@ module Trailblazer
 
     # Deep-clones an Activity's circuit and allows to alter its map by yielding it.
     #
+    #   activity = Circuit::Activity::Rewrite(activity, suspend: { default: Circuit::End.new(:suspend) } ) do |map, evt|
+    #     map[some_task] = { Circuit::Right => evt[:Suspend] }
+    #   end
+    #
     # :private:
     def self.Rewrite(activity, additional_events={})
       # decompose Activity and Circuit.
