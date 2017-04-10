@@ -89,7 +89,6 @@ module Trailblazer
       end
 
       def call(direction, *args)
-        self # TODO: not considered, yet.
         [ self, *args ]
       end
     end
@@ -114,11 +113,9 @@ module Trailblazer
       }
     end
 
-		class Right
-    end
-
-    class Left < Right
-    end
+    class Direction; end
+		class Right < Direction; end
+    class Left < Direction;  end
   end
 end
 
