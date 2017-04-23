@@ -12,7 +12,7 @@ class AlterTest < Minitest::Spec
 
   let (:ends) { {end: { right: Circuit::End.new(:right), left: Circuit::End.new(:left) }} }
 
-  describe "before" do
+  describe "Before" do
     let(:activity) do
       Circuit::Activity({id: "A/"}, ends) { |evt|
         {
