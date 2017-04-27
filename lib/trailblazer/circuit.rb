@@ -27,14 +27,14 @@ module Trailblazer
       direction = nil
 
       loop do
-        puts "[#{@name}]. #{activity}"
+        # puts "[#{@name}]. #{activity}"
         direction, args  = runner.(activity, direction, args, runner: runner, debug: @name, **o)
 
         # last task in a process is always either its Stop or its Suspend.
         return [ direction, args, **o ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
-          puts "[#{@name}]...`#{activity}`[#{direction}] => #{next_activity}"
+          # puts "[#{@name}]...`#{activity}`[#{direction}] => #{next_activity}"
 
           raise IllegalInputError.new("#{@name} #{activity}") unless in_map
           # last activity didn't emit knowns signal, it's not connected.
