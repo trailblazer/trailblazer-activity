@@ -115,6 +115,22 @@ class AlterTest < Minitest::Spec
       activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}}"
       _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}, #<End: default {}>=>{\"Right\"=>#<Start: default {}>}}"
     end
+
+    #- with :debug and :events option
+    it do
+      _activity = Circuit::Activity::Rewrite(
+        activity,
+        # merge debug hash!
+        debug: { a: 1 },
+        # merge events hash!
+        events: { start: { resume: Circuit::Start.new(:resume) } }
+      ) do |map, evt|
+        map[evt[:Start, :resume]] = { "Right" => Module } # is the new :resume event available?
+      end
+
+      activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}}"
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}, #<Start: resume {}>=>{\"Right\"=>Module}}"
+    end
   end
 end
 
