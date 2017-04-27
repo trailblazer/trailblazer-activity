@@ -2,7 +2,7 @@ module Trailblazer
   class Circuit::Activity
     # Find all `direction` connections TO <old_task> and rewire them to new_task,
     # then connect new to old with `direction`.
-    def self.Before(activity, old_task, new_task, direction:, debug: {}) # FIXME: test debug
+    def self.Before(activity, old_task, new_task, direction:, debug: {})
       Rewrite(activity, debug) do |new_map|
         cfg = new_map.find_all { |act, outputs| outputs[direction]==old_task }
         # rewire old line to new task.

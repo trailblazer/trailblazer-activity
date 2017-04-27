@@ -68,6 +68,14 @@ class AlterTest < Minitest::Spec
         _activity = Circuit::Activity::Before(activity, A, B, direction: Circuit::Right )
         _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>C}, C=>{Right=>B, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}, B=>{Right=>A}}"
       end
+
+      # with :debug option
+      it do
+        _activity = Circuit::Activity::Before(activity, A, B, direction: Circuit::Right, debug: { 1 => "first" } )
+        _activity = Circuit::Activity::Before(_activity, C, A, direction: Circuit::Left, debug: { 2 => "second" } )
+        circuit, stops, debug = _activity.circuit.to_fields
+        debug.inspect.must_equal %{{:id=>\"A/\", 1=>\"first\", 2=>\"second\"}}
+      end
     end
   end
 
