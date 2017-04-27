@@ -12,7 +12,7 @@ module Trailblazer
       end
     end
 
-    def self.Connect(activity, from, direction, to)
+    def self.Connect(activity, from, to, direction:raise)
       Rewrite(activity) do |new_map|
         new_map[from][direction] = to
       end

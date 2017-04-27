@@ -92,7 +92,7 @@ class AlterTest < Minitest::Spec
       _activity = Circuit::Activity::Before(activity, activity[:End, :right], B, direction: Circuit::Right )
       activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: right {}>, Left=>#<End: left {}>}}"
 
-      _activity = Circuit::Activity::Connect(_activity, B, Circuit::Left, _activity[:End, :left])
+      _activity = Circuit::Activity::Connect(_activity, B, _activity[:End, :left], direction: Circuit::Left)
       _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>#<End: left {}>}, B=>{Right=>#<End: right {}>, Left=>#<End: left {}>}}"
     end
   end
