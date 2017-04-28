@@ -26,7 +26,7 @@ module Trailblazer
       loop do
         direction, args  = runner.(activity, direction, args, runner: runner, debug: @name, **o)
 
-        # last task in a process is always either its Stop or its Suspend.
+        # Stop execution of the circuit when we hit a stop event (< End). This could be an activity's End of Suspend.
         return [ direction, args, **o ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
@@ -68,6 +68,7 @@ module Trailblazer
       Left
     end
 
+    # A end event is just another callable task, but will cause the circuit's execution to halt when hit.
     class End
       def initialize(name, options={})
         @name    = name
@@ -76,10 +77,6 @@ module Trailblazer
 
       def to_s
         %{#<End: #{@name} #{@options.inspect}>}
-      end
-
-      def inspect
-        to_s
       end
 
       def call(direction, *args)
