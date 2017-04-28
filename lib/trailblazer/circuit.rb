@@ -1,48 +1,42 @@
 require "trailblazer/circuit/version"
 
-# Start, Suspend, Resume, End can return something other than the next symbol?
-# Nested could replace options with local options
-
-
 module Trailblazer
-  # Circuit executes ties, finds next step and stops when reaching a Stop signal (or derived from).
+  # Running a Circuit instance will run all tasks sequentially depending on the former's result.
+  # Each task is called and retrieves the former task's return value.
   #
-  #   circuit.()
-  #
-  # Cicuit doesn't know anything about contexts, options, etc. tasks: what steps follows? call it!
-	class Circuit
+  #   result = circuit.(start_at, *args)
+  class Circuit
     def initialize(map, stop_events, name)
       @name        = name
       @map         = map
       @stop_events = stop_events
     end
 
-        # the idea is to always have a breakpoint state that has only one outgoing edge. we then start from
-    # that vertix. it's up to the caller to test if the "persisted" state == requested state.
-    # activity: where to start
     Run = ->(activity, direction, *args) { activity.(direction, *args) }
 
-    def call(activity, args, runner: Run, **o) # DISCUSS: should start activity be @activity and we omit it here?
+    # Runs the circuit. Stops when hitting a End event or subclass thereof.
+    # This method throws exceptions when the return value of a task doesn't match
+    # any wiring.
+    # @param activity A task from the circuit where to start
+    # @param args An array of options passed to the first task.
+    def call(activity, args, runner: Run, **o)
       # TODO: args
       direction = nil
 
       loop do
-        # puts "[#{@name}]. #{activity}"
         direction, args  = runner.(activity, direction, args, runner: runner, debug: @name, **o)
 
         # last task in a process is always either its Stop or its Suspend.
         return [ direction, args, **o ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
-          # puts "[#{@name}]...`#{activity}`[#{direction}] => #{next_activity}"
-
           raise IllegalInputError.new("#{@name} #{activity}") unless in_map
-          # last activity didn't emit knowns signal, it's not connected.
           raise IllegalOutputSignalError.new("from #{@name};;#{activity}"+ direction.inspect) unless next_activity
         end
       end
     end
 
+    # Returns the circuit's components.
     def to_fields
       [ @map, @stop_events, @name]
     end
@@ -108,7 +102,6 @@ module Trailblazer
       # TODO: currently, we only support only 1 start event. you can use multiple in BPMN.
       # "The BPMN standard allows for multiple start and end events to be used at the same process level. "
       ->(start_at, options, *args) {
-         # puts "@@@@@ #{options.inspect}"
         activity.(start_with, options, *args)
       }
     end
