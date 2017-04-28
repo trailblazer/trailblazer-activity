@@ -110,10 +110,10 @@ class AlterTest < Minitest::Spec
 
     it do
       _activity = Circuit::Activity::Rewrite(activity) do |map, evt|
-        map[evt[:End]] = { "Right" => evt[:Start] }
+        map[evt[:End]] = { "+Right" => evt[:Start] }
       end
       activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}}"
-      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}, #<End: default {}>=>{\"Right\"=>#<Start: default {}>}}"
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}, #<End: default {}>=>{+Right=>#<Start: default {}>}}"
     end
 
     #- with :debug and :events option
@@ -125,11 +125,11 @@ class AlterTest < Minitest::Spec
         # merge events hash!
         events: { start: { resume: Circuit::Start.new(:resume) } }
       ) do |map, evt|
-        map[evt[:Start, :resume]] = { "Right" => Module } # is the new :resume event available?
+        map[evt[:Start, :resume]] = { "+Right" => Module } # is the new :resume event available?
       end
 
       activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}}"
-      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}, #<Start: resume {}>=>{\"Right\"=>Module}}"
+      _activity.must_inspect "{#<Start: default {}>=>{Right=>#<End: default {}>}, #<Start: resume {}>=>{+Right=>Module}}"
     end
   end
 end

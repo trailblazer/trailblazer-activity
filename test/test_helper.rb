@@ -2,7 +2,7 @@ $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require "trailblazer-circuit"
 
 require "minitest/autorun"
-require "raise"
+# require "raise"
 
 module MiniTest::Assertions
   def assert_activity_inspect(text, subject)
@@ -23,9 +23,25 @@ class Trailblazer::Circuit
     event.instance_eval { "#<#{self.class.to_s.split("::").last}: #{@name} #{@options}>" }
   end
 
-  def self.ActivityInspect(activity)
-    raise
+  def self.ActivityInspect(activity, strip: ["AlterTest::"])
+    strip += ["Trailblazer::Circuit::"]
+    stripped = ->(target) { strip_for(target, strip) }
+
     map, _ = activity.circuit.to_fields
-    raise map.inspect
+
+    content = map.collect do |task, connections|
+      bla =
+      connections.collect do |direction, target|
+        target_str = target.kind_of?(End) ? EndInspect(target) : stripped.(target)
+        "#{stripped.(direction)}=>#{target_str}"
+      end.join(", ")
+      "#{stripped.(task)}=>{#{bla}}"
+    end.join(", ")
+    "{#{content}}"
+  end
+
+  def self.strip_for(target, strings)
+    strings.each { |stripped| target = target.to_s.gsub(stripped, "") }
+    target
   end
 end
