@@ -51,7 +51,7 @@ class DocsActivityTest < Minitest::Spec
     options   #=> {:content=>"Let's start writing"}
     #:call-ret end
 
-    direction.inspect.must_equal "#<End: default {}>"
+    direction.must_inspect_end_fixme "#<End: default {}>"
     options.must_equal({:content=>"Let's start writing"})
 
     # ---
@@ -143,7 +143,7 @@ class DocsActivityTest < Minitest::Spec
     #:toll-call-ret end
 
     # no errors
-    direction.inspect.must_equal "#<End: default {}>"
+    direction.must_inspect_end_fixme "#<End: default {}>"
     options.must_equal({:content=>"Let's start"})
 
     # 1 error
@@ -151,7 +151,7 @@ class DocsActivityTest < Minitest::Spec
       activity[:Start],
       { content: " Let's sdart" }
     )
-    direction.inspect.must_equal "#<End: default {}>"
+    direction.must_inspect_end_fixme "#<End: default {}>"
     options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})
 
     # 3 error
@@ -159,7 +159,7 @@ class DocsActivityTest < Minitest::Spec
       activity[:Start],
       { content: " Led's sdard" }
     )
-    direction.inspect.must_equal "#<End: default {}>"
+    direction.must_inspect_end_fixme "#<End: default {}>"
     options.must_equal({:content=>"Let's sdard", :warning=>"Make less mistakes!"})
 
 
@@ -200,7 +200,7 @@ class DocsActivityTest < Minitest::Spec
     options   #=> {:content=>"Let's sdart", :warning=>"Make less mistakes!"}
     #:events-call end
 
-    direction.inspect.must_equal "#<End: warned {}>"
+    direction.must_inspect_end_fixme "#<End: warned {}>"
     options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})
 
     # ---
@@ -233,7 +233,7 @@ class DocsActivityTest < Minitest::Spec
     options   #=> {:content=>"Let's sdart", :warning=>"Make less mistakes!"}
     #:nested-call end
 
-    direction.inspect.must_equal "#<End: error {}>"
+    direction.must_inspect_end_fixme "#<End: error {}>"
     options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})
   end
 end

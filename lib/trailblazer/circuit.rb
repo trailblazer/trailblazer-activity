@@ -94,6 +94,14 @@ module Trailblazer
       end
     end
 
+    def self.End(name, options={})
+      End.new(name, options)
+    end
+
+    def self.Start(name, options={})
+      Start.new(name, options)
+    end
+
     # # run a nested process.
     def self.Nested(activity, start_with=activity[:Start])
       # TODO: currently, we only support only 1 start event. you can use multiple in BPMN.
