@@ -75,10 +75,6 @@ module Trailblazer
         @options = options
       end
 
-      def to_s
-        %{#<End: #{@name} #{@options.inspect}>}
-      end
-
       def call(direction, *args)
         [ self, *args ]
       end
@@ -86,11 +82,7 @@ module Trailblazer
 
     class Start < End
       def call(direction, *args)
-        [Right, *args]
-      end
-
-      def to_s
-        %{#<Start: #{@name} #{@options.inspect}>}
+        [ Right, *args ]
       end
     end
 
@@ -111,9 +103,9 @@ module Trailblazer
       }
     end
 
-    class Direction; end
+    class Direction;         end
 		class Right < Direction; end
-    class Left < Direction;  end
+    class Left  < Direction; end
   end
 end
 

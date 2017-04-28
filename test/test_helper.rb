@@ -35,7 +35,8 @@ class Trailblazer::Circuit
         target_str = target.kind_of?(End) ? EndInspect(target) : stripped.(target)
         "#{stripped.(direction)}=>#{target_str}"
       end.join(", ")
-      "#{stripped.(task)}=>{#{bla}}"
+      task_str = task.kind_of?(End) ? EndInspect(task) : stripped.(task)
+      "#{task_str}=>{#{bla}}"
     end.join(", ")
     "{#{content}}"
   end
