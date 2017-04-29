@@ -40,11 +40,12 @@ class CircuitTest < Minitest::Spec
     end
   end
 
+  #- Circuit::End()
   describe "two End events" do
     Blog::Test = ->(direction, options, *) { [ options[:return], options ] }
 
     let(:flow) do
-      Circuit::Activity(:reading, end: {default: Circuit::End.new(:default), retry: Circuit::End.new(:retry)} ) { |evt|
+      Circuit::Activity(:reading, end: {default: Circuit::End(:default), retry: Circuit::End(:retry)} ) { |evt|
         {
           evt[:Start] => { Circuit::Right => Blog::Test },
           Blog::Test      => { Circuit::Right => evt[:End], Circuit::Left => evt[:End, :retry] }

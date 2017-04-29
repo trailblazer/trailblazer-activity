@@ -60,15 +60,8 @@ module Trailblazer
     class IllegalOutputSignalError < RuntimeError
     end
 
-    def Right
-      Right
-    end
-
-    def Left
-      Left
-    end
-
-    # A end event is just another callable task, but will cause the circuit's execution to halt when hit.
+    # End event is just another callable task.
+    # Any instance of subclass of End will halt the circuit's execution when hit.
     class End
       def initialize(name, options={})
         @name    = name
@@ -86,15 +79,12 @@ module Trailblazer
       end
     end
 
+    # Builder for Circuit::End when defining the Activity's circuit.
     def self.End(name, options={})
       End.new(name, options)
     end
 
-    def self.Start(name, options={})
-      Start.new(name, options)
-    end
-
-    # # run a nested process.
+    # Builder for running a nested process from a specific `start_at` position.
     def self.Nested(activity, start_with=activity[:Start])
       # TODO: currently, we only support only 1 start event. you can use multiple in BPMN.
       # "The BPMN standard allows for multiple start and end events to be used at the same process level. "
