@@ -86,8 +86,6 @@ module Trailblazer
 
     # Builder for running a nested process from a specific `start_at` position.
     def self.Nested(activity, start_with=activity[:Start])
-      # TODO: currently, we only support only 1 start event. you can use multiple in BPMN.
-      # "The BPMN standard allows for multiple start and end events to be used at the same process level. "
       ->(start_at, options, *args) {
         activity.(start_with, options, *args)
       }

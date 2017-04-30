@@ -16,22 +16,16 @@ module Trailblazer
       end
     end
 
-    # Conveniently build an Activity with Circuit instance and events.
-    def self.Activity(name=:default, events={}, end_events=nil, implementation=false, &block)
+    # Builder for an Activity with Circuit instance and events.
+    def self.Activity(name=:default, events={}, &block)
       # default events:
       start   = events[:start] || { default: Start.new(:default) }
       _end    = events[:end]   || { default: End.new(:default) }
 
-      events = { start: start }.merge(events)
-      events = { end:   _end  }.merge(events)
-
-      end_events ||= _end.values
+      events = { start: start, end: _end }.merge(events)
 
       evts = Events(events)
-      circuit = Circuit(name, evts, end_events, &block)
-
-      # DISCUSS: remove this!
-      circuit = implementation.(circuit) if implementation
+      circuit = Circuit(name, evts, _end.values, &block)
 
       Activity.new(circuit, evts)
     end
