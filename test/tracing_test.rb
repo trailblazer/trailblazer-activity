@@ -6,9 +6,9 @@ class TracingTest < Minitest::Spec
   Circuit = Trailblazer::Circuit
 
   module Blog
-    Read    = ->(options, *) { options[:read] = 1;  [ Circuit::Right, options ] }
-    # Nest    = ->(options, *) { options["Nest"] = 2; Nested.(Circuit::Start, options) [ Circuit::Right, options ] }
-    Write   = ->(options, *) { options[:write] = 3; [ Circuit::Right, options ] }
+    Read    = ->(options, flow_options) { options[:read] = 1;  [ Circuit::Right, options, flow_options ] }
+    # Nest    = ->(options, flow_options) { options["Nest"] = 2; Nested.(Circuit::Start, options) [ Circuit::Right, options, flow_options ] }
+    Write   = ->(options, flow_options) { options[:write] = 3; [ Circuit::Right, options, flow_options ] }
   end
 
     # Nested  = ->(options, *) { snippet }
@@ -29,8 +29,8 @@ class TracingTest < Minitest::Spec
   end
 
   module User
-    Talk    = ->(options, *) { options[:talk] = 1;  [ Circuit::Right, options ] }
-    Speak   = ->(options, *) { options[:speak] = 3; [ Circuit::Right, options ] }
+    Talk    = ->(options, flow_options) { options[:talk] = 1;  [ Circuit::Right, options, flow_options   ] }
+    Speak   = ->(options, flow_options) { options[:speak] = 3; [ Circuit::Right, options, flow_options ] }
   end
 
   let (:circuit2) do
@@ -47,11 +47,13 @@ class TracingTest < Minitest::Spec
   end
 
   it do
-    direction, result = circuit.(circuit[:Start], options={}, runner: runner=Circuit::Trace.new, stack: stack=[])
+    direction, result, flow_options = circuit.(circuit[:Start], options={}, runner: Circuit::Trace.new, stack: [])
 
     direction.must_equal circuit[:End]
     options.must_equal({:read=>1, :talk=>1, :speak=>3, :write=>3})
 
+
+    stack = flow_options[:stack]
     Circuit::Trace::Present.tree(stack)
 
     stack.collect{ |ary| ary[0] }.must_equal [circuit[:Start], "Blog::Read", "[circuit2]", "Blog::Write", circuit[:End]]

@@ -5,3 +5,4 @@ require "minitest/autorun"
 # require "raise"
 
 require "trailblazer/circuit/testing"
+require "raise"

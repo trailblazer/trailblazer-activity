@@ -21,13 +21,14 @@ module Trailblazer
     # @param args An array of options passed to the first task.
     def call(activity, args, runner: Run, **o)
       # TODO: args
-      direction = nil
+      direction    = nil
+      flow_options = { runner: runner, debug: @name }.merge(o) # DISCUSS: make this better?
 
       loop do
-        direction, args  = runner.(activity, direction, args, runner: runner, debug: @name, **o)
+        direction, args, flow_options = runner.( activity, direction, args, flow_options )
 
         # Stop execution of the circuit when we hit a stop event (< End). This could be an activity's End of Suspend.
-        return [ direction, args, **o ] if @stop_events.include?(activity)
+        return [ direction, args, flow_options ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
           raise IllegalInputError.new("#{@name} #{activity}") unless in_map
