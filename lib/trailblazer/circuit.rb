@@ -2,9 +2,18 @@ require "trailblazer/circuit/version"
 
 module Trailblazer
   # Running a Circuit instance will run all tasks sequentially depending on the former's result.
-  # Each task is called and retrieves the former task's return value.
+  # Each task is called and retrieves the former task's return values.
+  #
+  # Note: Please use #Activity as a public circuit builder.
+  #
+  # @param map         [Hash] Defines the wiring.
+  # @param stop_events [Array] Tasks that stop execution of the circuit.
+  # @param name        [Hash] Names for tracing, debugging and exceptions. `:id` is a reserved key for circuit name.
   #
   #   result = circuit.(start_at, *args)
+  #
+  # @see Activity
+  # @api semi-private
   class Circuit
     def initialize(map, stop_events, name)
       @name        = name
@@ -17,12 +26,13 @@ module Trailblazer
     # Runs the circuit. Stops when hitting a End event or subclass thereof.
     # This method throws exceptions when the return value of a task doesn't match
     # any wiring.
+    #
     # @param activity A task from the circuit where to start
     # @param args An array of options passed to the first task.
-    def call(activity, args, runner: Run, **o)
+    def call(activity, args, runner: Run, **flow_options)
       # TODO: args
       direction    = nil
-      flow_options = { runner: runner, debug: @name }.merge(o) # DISCUSS: make this better?
+      flow_options = { runner: runner, debug: @name }.merge(flow_options) # DISCUSS: make this better?
 
       loop do
         direction, args, flow_options = runner.( activity, direction, args, flow_options )
@@ -31,8 +41,9 @@ module Trailblazer
         return [ direction, args, flow_options ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
-          raise IllegalInputError.new("#{@name} #{activity}") unless in_map
-          raise IllegalOutputSignalError.new("from #{@name};;#{activity}"+ direction.inspect) unless next_activity
+          activity_name = @name[activity] || activity # TODO: this must be implemented only once, somewhere.
+          raise IllegalInputError.new("#{@name[:id]} #{activity_name}") unless in_map
+          raise IllegalOutputSignalError.new("from #{@name[:id]}: `#{activity_name}`===>[ #{direction.inspect} ]") unless next_activity
         end
       end
     end

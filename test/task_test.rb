@@ -23,7 +23,7 @@ class TaskTest < Minitest::Spec
     comment = Circuit::Task::Binary(Circuit::Task::Args::KW(Blog.method(:comment)))
     rate    = Circuit::Task::Binary(Circuit::Task::Args::KW(:rate))
 
-    circuit = Circuit::Activity("blog") do |evt|
+    circuit = Circuit::Activity(id: "blog") do |evt|
       {
         evt[:Start] => { Circuit::Right => read },
         read        => { Circuit::Right => comment },
