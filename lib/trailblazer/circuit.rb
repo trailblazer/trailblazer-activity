@@ -37,7 +37,7 @@ module Trailblazer
       loop do
         direction, args, flow_options = runner.( activity, direction, args, flow_options )
 
-        # Stop execution of the circuit when we hit a stop event (< End). This could be an activity's End of Suspend.
+        # Stop execution of the circuit when we hit a stop event (< End). This could be an activity's End or Suspend.
         return [ direction, args, flow_options ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|

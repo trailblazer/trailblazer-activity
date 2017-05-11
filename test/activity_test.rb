@@ -18,7 +18,10 @@ class ActivityTest < Minitest::Spec
   it { assert_raises { activity[:Start, :__not_existing] } }
   # start
   it { activity[:Start].must_equal "START" }
+  it { activity["Start"].must_equal "START" }
   it { activity[:Start, :default].must_equal "START" }
+  it { activity[:Start, "default"].must_equal "START" }
+
   # end
   it { activity[:End, :stop].must_equal "END" }
 end

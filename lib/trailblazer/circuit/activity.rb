@@ -34,15 +34,14 @@ module Trailblazer
       Circuit.new(yield(events), end_events, name)
     end
 
-    # DSL
-    #   events[:Start]
-    #
-    # :private:
+    # @data structure to hold events for an activity, keyed by type, then name.
+    # @api private
     def self.Events(events)
       evts = Struct.new(*events.keys) do # [Start, End, Resume]
         def [](event, name=:default)
           cfg = super(event.downcase)
-          cfg[name] or raise "[Circuit] Event `#{event}.#{name} unknown."
+          cfg[name.to_sym] or raise "[Circuit] Event `#{event}.#{name} unknown."
+          # DISCUSS: the event type's events should also be a Struct to avoid :symbol vs. string.
         end
       end
 
