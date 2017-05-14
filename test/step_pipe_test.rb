@@ -8,7 +8,7 @@ class StepPipeTest < Minitest::Spec
   Uuid  = ->(direction, options, flow_options) { options["uuid"]=999;     [ SpecialDirection, options, flow_options] }
 
   module Trace
-    CaptureArgs   = ->(direction, options, flow_options) { flow_options[:stack] << options; [direction, options, flow_options] }
+    CaptureArgs   = ->(direction, options, flow_options) { flow_options[:stack] << [flow_options[:step], :args, options.dup]; [direction, options, flow_options] }
     CaptureReturn = ->(direction, options, flow_options) { flow_options[:stack] << [options[:result_direction], options]; [direction, options, flow_options] }
   end
 
@@ -31,8 +31,9 @@ class StepPipeTest < Minitest::Spec
         Input                => { Circuit::Right => Inject },
         Inject               => { Circuit::Right => Trace::CaptureArgs },
         Trace::CaptureArgs   => { Circuit::Right => Call },
-        Call                 => { Circuit::Right => Trace::CaptureReturn },
-        Trace::CaptureReturn => { Circuit::Right => Output },
+        Call                 => { Circuit::Right => Output },
+        # Call                 => { Circuit::Right => Trace::CaptureReturn },
+        # Trace::CaptureReturn => { Circuit::Right => Output },
         Output               => { Circuit::Right => act[:End] }
       }
     end
@@ -57,6 +58,13 @@ class StepPipeTest < Minitest::Spec
       }
     end
 
-    activity.(activity[:Start], options = {}, { runner: Pipeline::Runner, stack: [] })
+    activity.(activity[:Start], options = {}, { runner: Pipeline::Runner, stack: stack=[] })
+
+    stack.must_equal(
+    [
+      [activity[:Start], :args, {:a=>Module}],
+      [Model,            :args, {:a=>Module}],
+      [Uuid,             :args, {:a=>Module, "model"=>String}],
+      [activity[:End],   :args, {:a=>Module, "model"=>String, "uuid"=>999}]])
   end
 end
