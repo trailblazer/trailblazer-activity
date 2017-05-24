@@ -11,7 +11,7 @@ class StepPipeTest < Minitest::Spec
 
   module Trace
     CaptureArgs   = ->(direction, options, flow_options) { flow_options[:stack] << [flow_options[:step], :args,   options.dup]; [direction, options, flow_options] }
-    CaptureReturn = ->(direction, options, flow_options) { flow_options[:stack] << [flow_options[:step], :return, flow_options[:result_direction], options]; [direction, options, flow_options] }
+    CaptureReturn = ->(direction, options, flow_options) { flow_options[:stack] << [flow_options[:step], :return, flow_options[:result_direction], options.dup]; [direction, options, flow_options] }
   end
 
   class Pipeline
@@ -92,7 +92,7 @@ class StepPipeTest < Minitest::Spec
     step_runners = {
       nil   => Pipeline::Step,
       Model => model_pipe,
-      Uuid  => Pipeline::Step,
+      Uuid  => model_pipe,
     }
 
     direction, options, flow_options = activity.(activity[:Start], options = {}, { runner: Pipeline::Runner, stack: stack=[], step_runners: step_runners })
@@ -100,13 +100,14 @@ class StepPipeTest < Minitest::Spec
     direction.must_equal activity[:End] # the actual activity's End signal.
     options  .must_equal({"model"=>String, "uuid"=>999})
 
-
     stack.must_equal(
     [
       # [activity[:Start], :args, {}],
-      [Model,            :args, {} ],
-      [Model,            :return, Trailblazer::Circuit::Right, { "model"=>String, "uuid"=>999 } ],
-      # [Uuid,             :args, {:current_user=>Module, "model"=>String}], # DISCUSS: do we want the tmp vars around here?
+      [Model,            :args, {}],
+      [Model,            :return, Circuit::Right, { "model"=>String }],
+      [Uuid,             :args, { "model"=>String }],
+      [Uuid,             :return, SpecialDirection, { "model"=>String, "uuid"=>999 }],
+      # DISCUSS: do we want the tmp vars around here?
       # [activity[:End],   :args, {:current_user=>Module, "model"=>String, "uuid"=>999}]
     ])
   end
