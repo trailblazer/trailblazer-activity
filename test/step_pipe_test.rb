@@ -17,11 +17,9 @@ class StepPipeTest < Minitest::Spec
       flow_options[:stack].indent!
 
       flow_options[:stack] << [flow_options[:step], :args,   nil, options.dup, flow_options[:debug]]; [direction, options, flow_options] }
-      # flow_options[:stack] << [flow_options[:step].to_s, :args]; [direction, options, flow_options] }
 
     CaptureReturn = ->(direction, options, flow_options) {
       flow_options[:stack] << [flow_options[:step], :return, flow_options[:result_direction], options.dup];
-      # flow_options[:stack] << [flow_options[:step].to_s, :return];
 
 
       flow_options[:stack].unindent!
@@ -207,7 +205,7 @@ class StepPipeTest < Minitest::Spec
 
       require "trailblazer/circuit/present"
 
-      Circuit::Trace::Present.tree(flow_options[:stack].to_a)
+      puts Circuit::Trace::Present.tree(flow_options[:stack].to_a)
 
 
 

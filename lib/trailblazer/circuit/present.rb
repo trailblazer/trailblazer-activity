@@ -1,23 +1,35 @@
+require "hirb"
+
 module Trailblazer
   class Circuit
     class Trace
       # TODO:
       # * Struct for debug_item
       module Present
-        FREE_SPACE = (' ' * 3).freeze
         module_function
 
-        def tree(stack, level = 1)
-          stack.each do |debug_item|
-            puts FREE_SPACE * level + delimeter(stack, debug_item) + '--' + '> ' + to_name(debug_item) + to_options(debug_item)
+        def tree(stack, level=1, tree=[])
+          tree_for(stack, level, tree)
 
-            if debug_item.last.is_a?(Array)
-              tree(debug_item.last, level + 1)
-            end
-          end
+          Object.new.extend(Hirb::Console).
+            view(tree, :class=>:tree, :type=>:directory)
         end
 
-        # private
+        def tree_for(stack, level, tree)
+          stack.each do |debug_item|
+            if debug_item.size == 2 # flat
+              tree << [ level, debug_item[0][0] ]
+            else # nesting
+              tree << [ level, debug_item[0][0] ]
+
+              tree_for(debug_item[1..-2], level + 1, tree)
+
+              tree << [ level+1, debug_item[-1][0] ]
+            end
+
+            tree
+          end
+        end
 
         def to_name(debug_item)
           track = debug_item[2]
@@ -55,14 +67,6 @@ module Trailblazer
             blue:   34,
             pink:   35
           }
-        end
-
-        def delimeter(stack, debug_item)
-          if stack.last == debug_item || debug_item.last.is_a?(Array)
-            '`'
-          else
-            '|'
-          end
         end
       end
     end
