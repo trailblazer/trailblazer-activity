@@ -35,26 +35,13 @@ class StepPipeTest < Minitest::Spec
     Input  = ->(direction, options, flow_options) { [direction, options, flow_options] }
       # FIXME: wrong direction and flow_options here!
     Call   = ->(direction, options, flow_options) {
+      step = flow_options[:step]
+      is_nested = (step.inspect =~ /circuit.rb/)
 
-
-      # FIXME:
-      # original_stack = flow_options[:stack]
-      is_nested = (flow_options[:step].inspect =~ /circuit.rb/)
-
-      flow_options[:result_direction], options, flow_options = flow_options[:step].( direction, options,
+      flow_options[:result_direction], options, flow_options = step.( direction, options,
         # FIXME: only pass :runner to nesteds.
               is_nested ? flow_options.merge( runner: flow_options[:_runner] ) : flow_options )
-  # put flow_options[:step]
-
-  require "pp"
-  puts "@@@@@ #{is_nested}"
-  # nested_stack = flow_options[:stack]
-  #     # pp nested_stack
-  #     original_stack << nested_stack
-
-      # flow_options[:stack] = original_stack
-
-      [ direction, options, flow_options]  }
+      [ direction, options, flow_options.merge( step: step ) ]  }
     Output = ->(direction, options, flow_options) { [direction, options, flow_options] }
 
     Step = Circuit::Activity({ id: "runner/pipeline.default" }, end: { default: End.new(:default) }) do |act|
