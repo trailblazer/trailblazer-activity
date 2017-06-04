@@ -2,7 +2,7 @@ require "test_helper"
 
 class StackTest < Minitest::Spec
   it do
-    stack = Trailblazer::Circuit::Stack.new
+    stack = Trailblazer::Circuit::Trace::Stack.new
     # stack.indent!
     stack << 1
     stack << 2
