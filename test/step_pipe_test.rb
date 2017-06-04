@@ -7,6 +7,8 @@ class StepPipeTest < Minitest::Spec
   Model = ->(direction, options, flow_options) { options["model"]=String; [direction, options, flow_options] }
   Uuid  = ->(direction, options, flow_options) { options["uuid"]=999;     [ SpecialDirection, options, flow_options] }
   Save  = ->(direction, options, flow_options) { options["saved"]=true;   [direction, options, flow_options] }
+  Upload = ->(direction, options, flow_options) { options["bits"]=64;   [direction, options, flow_options] }
+  Cleanup  = ->(direction, options, flow_options) { options["ok"]=true;   [direction, options, flow_options] }
 
   MyInject = ->(direction, options, flow_options) { [direction, options.merge( current_user: Module ), flow_options] }
 
@@ -15,9 +17,11 @@ class StepPipeTest < Minitest::Spec
       flow_options[:stack].indent!
 
       flow_options[:stack] << [flow_options[:step], :args,   nil, options.dup, flow_options[:debug]]; [direction, options, flow_options] }
+      # flow_options[:stack] << [flow_options[:step].to_s, :args]; [direction, options, flow_options] }
 
     CaptureReturn = ->(direction, options, flow_options) {
       flow_options[:stack] << [flow_options[:step], :return, flow_options[:result_direction], options.dup];
+      # flow_options[:stack] << [flow_options[:step].to_s, :return];
 
 
       flow_options[:stack].unindent!
@@ -38,14 +42,15 @@ class StepPipeTest < Minitest::Spec
     Input  = ->(direction, options, flow_options) { [direction, options, flow_options] }
       # FIXME: wrong direction and flow_options here!
     Call   = ->(direction, options, flow_options) {
-      step = flow_options[:step]
+      step  = flow_options[:step]
+      debug = flow_options[:debug]
       is_nested = (step.instance_of?(Circuit::Nested))
 
       flow_options[:result_direction], options, flow_options = step.( direction, options,
         # FIXME: only pass :runner to nesteds.
               is_nested ? flow_options.merge( runner: flow_options[:_runner], debug: step.activity.circuit.instance_variable_get(:@name) ) : flow_options )
 
-      [ direction, options, flow_options.merge( step: step ) ]
+      [ direction, options, flow_options.merge( step: step, debug: debug ) ]
     }
     Output = ->(direction, options, flow_options) { [direction, options, flow_options] }
 
@@ -144,11 +149,22 @@ class StepPipeTest < Minitest::Spec
   end
 
   describe "nested trailing" do
+    let (:more_nested) do
+      Circuit::Activity(id: "more_nested") do |act|
+        {
+          act[:Start] => { Circuit::Right => Upload },
+          Upload        => { Circuit::Right => act[:End] }
+        }
+      end
+    end
+
     let (:nested) do
       Circuit::Activity(id: "nested") do |act|
         {
-          act[:Start] => { Circuit::Right => Save },
-          Save        => { Circuit::Right => act[:End] }
+          act[:Start] => { Circuit::Right    => Save },
+          Save        => { Circuit::Right    => __nested = Circuit::Nested(more_nested) },
+          __nested    => { more_nested[:End] => Cleanup },
+          Cleanup     => { Circuit::Right => act[:End] }
         }
       end
     end
@@ -176,15 +192,25 @@ class StepPipeTest < Minitest::Spec
         { runner: Pipeline::Runner, stack: Circuit::Stack.new, step_runners: step_runners, debug: activity.circuit.instance_variable_get(:@name) })
 
       direction.must_equal activity[:End] # the actual activity's End signal.
-      options  .must_equal({"model"=>String, "uuid"=>999, "saved" => true})
+      options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
+      # require "pp"
+      # pp flow_options[:stack].to_a
 
-      require "pp"
       flow_options[:stack].to_a[2][0].last.must_equal({:id=>"outsideg"})
       flow_options[:stack].to_a[2][1].first.last.must_equal({:id=>"nested"})
       flow_options[:stack].to_a[3][0].last.must_equal({:id=>"outsideg"})
 
-      puts flow_options[:stack].to_a
+
+
+
+
+      require "trailblazer/circuit/present"
+
+      Circuit::Trace::Present.tree(flow_options[:stack].to_a)
+
+
+
 
       flow_options[:stack].to_a.must_equal(
       [
