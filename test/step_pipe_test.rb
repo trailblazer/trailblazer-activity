@@ -19,7 +19,6 @@ class StepPipeTest < Minitest::Spec
 
     class End < Circuit::End
       def call(direction, options, flow_options)
-        put :c, flow_options[:result_direction]
         [flow_options[:result_direction], options, flow_options]
       end
     end
@@ -28,7 +27,7 @@ class StepPipeTest < Minitest::Spec
     Call   = ->(direction, options, flow_options) {
       step  = flow_options[:step]
       debug = flow_options[:debug]
-      is_nested = (step.instance_of?(Circuit::Nested))
+      is_nested = step.instance_of?(Circuit::Nested)
 
       flow_options[:result_direction], options, flow_options = step.( direction, options,
         # FIXME: only pass :runner to nesteds.
@@ -55,17 +54,14 @@ class StepPipeTest < Minitest::Spec
 
     # Find the respective pipeline per step and run it.
     class Runner
-      def self.call(step, direction, options, flow_options)
-        # put step
-
-        # DISCUSS: step_runner is an activity.
+      def self.call(step, direction, options, runner:, **flow_options)
         step_runner = flow_options[:step_runners][step] || flow_options[:step_runners][nil] # DISCUSS: default could be more explicit@
 
-        # pipeline_options = { step: step, stack: flow_options[:stack], step_runners: flow_options[:step_runners], runner: flow_options[:runner] }
-        pipeline_options = { step: step, stack: flow_options[:stack], step_runners: flow_options[:step_runners], _runner: Runner, debug: flow_options[:debug] }
+        # we can't pass :runner in here since the Step::Pipeline would call itself again, then.
+        # However, we need the runner in nested activities.
+        pipeline_options = flow_options.merge( step: step, _runner: Runner )
 
         # Circuit#call
-        original_flow_options_debug = flow_options[:debug]
         step_runner.( step_runner[:Start], options, pipeline_options )
       end
     end
