@@ -109,7 +109,6 @@ module Trailblazer
       end
 
       def call(start_at, *args)
-        puts "@@@@@ #{@activity.inspect}"
         @activity.(@start_with, *args)
       end
 

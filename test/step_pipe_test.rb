@@ -11,73 +11,16 @@ class StepPipeTest < Minitest::Spec
   Model = ->(direction, options, flow_options) { options["model"]=String; [direction, options, flow_options] }
   Uuid  = ->(direction, options, flow_options) { options["uuid"]=999;     [ SpecialDirection, options, flow_options] }
   Save  = ->(direction, options, flow_options) { options["saved"]=true;   [direction, options, flow_options] }
-  Upload = ->(direction, options, flow_options) { options["bits"]=64;   [direction, options, flow_options] }
+  Upload   = ->(direction, options, flow_options) { options["bits"]=64;   [direction, options, flow_options] }
   Cleanup  = ->(direction, options, flow_options) { options["ok"]=true;   [direction, options, flow_options] }
 
   MyInject = ->(direction, options, flow_options) { [direction, options.merge( current_user: Module ), flow_options] }
-
-
-
-  let (:activity) do
-    Circuit::Activity(id: "bla") do |act|
-      {
-        act[:Start] => { Circuit::Right => Model },
-        Model       => { Circuit::Right => Uuid },
-        Uuid        => { SpecialDirection => act[:End] }
-      }
-    end
-  end
-
-  it do
-    # FIXME: inserts CaptureArgs wrongly if not-existent before
-    # model_pipe = Circuit::Activity::Before( Pipeline::Step, Trace::CaptureArgs, MyInject, direction: Circuit::Right )
-    model_pipe = Pipeline::Step
-# put Pipeline::Step
-
-    # this is done by Operation/Activity
-    step_runners = {
-      nil   => Pipeline::Step,
-      Model => model_pipe,
-      Uuid  => Pipeline::Step,
-    }
-
-    direction, options, flow_options = activity.(activity[:Start], options = {}, { runner: Pipeline::Runner, stack: stack=[], step_runners: step_runners })
-
-    direction.must_equal activity[:End] # the actual activity's End signal.
-    options  .must_equal({"model"=>String, "uuid"=>999})
-
-    stack.must_equal []
-  end
 
   #- tracing
   let (:with_tracing) do
     model_pipe = Circuit::Activity::Before( Wrapped::Activity, Wrapped::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right )
     model_pipe = Circuit::Activity::Before( model_pipe, Wrapped::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right )
   end
-
-  # it "traces flat" do
-  #   step_runners = {
-  #     nil   => Wrapped::Activity,
-  #     Model => with_tracing,
-  #     Uuid  => with_tracing,
-  #   }
-
-  #   direction, options, flow_options = activity.(activity[:Start], options = {}, { runner: Wrapped::Runner, stack: stack=[], step_runners: step_runners })
-
-  #   direction.must_equal activity[:End] # the actual activity's End signal.
-  #   options  .must_equal({"model"=>String, "uuid"=>999})
-
-  #   stack.must_equal(
-  #   [
-  #     # [activity[:Start], :args, nil, {}],
-  #     [Model,            :args, nil, {}],
-  #     [Model,            :return, Circuit::Right, { "model"=>String }],
-  #     [Uuid,             :args, nil, { "model"=>String }],
-  #     [Uuid,             :return, SpecialDirection, { "model"=>String, "uuid"=>999 }],
-  #     # DISCUSS: do we want the tmp vars around here?
-  #     # [activity[:End],   :args, nil, {:current_user=>Module, "model"=>String, "uuid"=>999}]
-  #   ])
-  # end
 
   describe "nested trailing" do
     let (:more_nested) do
@@ -124,9 +67,6 @@ class StepPipeTest < Minitest::Spec
       direction.must_equal activity[:End] # the actual activity's End signal.
       options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
-      # require "pp"
-      # pp flow_options[:stack].to_a
-
       flow_options[:stack].to_a[2][0].last.must_equal({:id=>"outsideg"})
       flow_options[:stack].to_a[2][1].first.last.must_equal({:id=>"nested"})
       flow_options[:stack].to_a[3][0].last.must_equal({:id=>"outsideg"})
@@ -137,21 +77,23 @@ class StepPipeTest < Minitest::Spec
 
       require "trailblazer/circuit/present"
 
-      puts Circuit::Trace::Present.tree(flow_options[:stack].to_a)
+      puts tree = Circuit::Trace::Present.tree(flow_options[:stack].to_a)
 
-
-
-
-      flow_options[:stack].to_a.must_equal(
-      [
-        # [activity[:Start], :args, nil, {}],
-        [Model,            :args, nil, {}],
-        [Model,            :return, Circuit::Right, { "model"=>String }],
-        [Uuid,             :args, nil, { "model"=>String }],
-        [Uuid,             :return, SpecialDirection, { "model"=>String, "uuid"=>999 }],
-        # DISCUSS: do we want the tmp vars around here?
-        # [activity[:End],   :args, nil, {:current_user=>Module, "model"=>String, "uuid"=>999}]
-      ])
+      tree.gsub(/0x\w+/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
+|-- #<Proc:@test/step_pipe_test.rb:11 (lambda)>
+|-- #<Trailblazer::Circuit::Nested:>
+|   |-- #<Trailblazer::Circuit::Start:>
+|   |-- #<Proc:@test/step_pipe_test.rb:13 (lambda)>
+|   |-- #<Trailblazer::Circuit::Nested:>
+|   |   |-- #<Trailblazer::Circuit::Start:>
+|   |   |-- more_nested.Upload
+|   |   |-- #<Trailblazer::Circuit::End:>
+|   |   `-- #<Trailblazer::Circuit::Nested:>
+|   |-- #<Proc:@test/step_pipe_test.rb:15 (lambda)>
+|   |-- #<Trailblazer::Circuit::End:>
+|   `-- #<Trailblazer::Circuit::Nested:>
+|-- #<Proc:@test/step_pipe_test.rb:12 (lambda)>
+`-- #<Trailblazer::Circuit::End:>}
     end
   end
 end

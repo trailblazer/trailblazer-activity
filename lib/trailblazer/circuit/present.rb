@@ -11,8 +11,7 @@ module Trailblazer
         def tree(stack, level=1, tree=[])
           tree_for(stack, level, tree)
 
-          Object.new.extend(Hirb::Console).
-            view(tree, :class=>:tree, :type=>:directory)
+          Hirb::Console.format_output(tree, class: :tree, type: :directory)
         end
 
         def tree_for(stack, level, tree)
