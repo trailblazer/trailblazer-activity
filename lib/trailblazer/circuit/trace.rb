@@ -18,5 +18,35 @@ module Trailblazer
         return direction, options, _flow_options.merge(stack: stack, debug: debug)
       end
     end # Trace
+
+    # Mutable/stateful per design. We want a (global) stack!
+    class Stack
+      def initialize
+        @nested  = []
+        @stack   = [ @nested ]
+      end
+
+      def indent!
+        current << indented = []
+        @stack << indented
+      end
+
+      def unindent!
+        @stack.pop
+      end
+
+      def <<(args)
+        current << args
+      end
+
+      def to_a
+        @nested
+      end
+
+      private
+      def current
+        @stack.last
+      end
+    end
   end
 end

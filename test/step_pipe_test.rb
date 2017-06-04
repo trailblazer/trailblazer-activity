@@ -11,14 +11,24 @@ class StepPipeTest < Minitest::Spec
   MyInject = ->(direction, options, flow_options) { [direction, options.merge( current_user: Module ), flow_options] }
 
   module Trace
-    CaptureArgs   = ->(direction, options, flow_options) { flow_options[:stack] << [flow_options[:step], :args,   nil, options.dup]; [direction, options, flow_options] }
-    CaptureReturn = ->(direction, options, flow_options) { flow_options[:stack] << [flow_options[:step], :return, flow_options[:result_direction], options.dup]; [direction, options, flow_options] }
+    CaptureArgs   = ->(direction, options, flow_options) {
+      flow_options[:stack].indent!
+
+      flow_options[:stack] << [flow_options[:step], :args,   nil, options.dup]; [direction, options, flow_options] }
+
+    CaptureReturn = ->(direction, options, flow_options) {
+      flow_options[:stack] << [flow_options[:step], :return, flow_options[:result_direction], options.dup];
+
+
+      flow_options[:stack].unindent!
+
+      [direction, options, flow_options] }
   end
 
   class Pipeline
     class End < Circuit::End
       def call(direction, options, flow_options)
-        put :c, flow_options[:result_direction]
+        # put :c, flow_options[:result_direction]
         [flow_options[:result_direction], options, flow_options]
       end
     end
@@ -28,21 +38,21 @@ class StepPipeTest < Minitest::Spec
 
 
       # FIXME:
-      original_stack = flow_options[:stack]
+      # original_stack = flow_options[:stack]
       is_nested = (flow_options[:step].inspect =~ /circuit.rb/)
 
       flow_options[:result_direction], options, flow_options = flow_options[:step].( direction, options,
         # FIXME: only pass :runner to nesteds.
-              is_nested ? flow_options.merge( runner: flow_options[:_runner], stack: [] ) : flow_options )
+              is_nested ? flow_options.merge( runner: flow_options[:_runner] ) : flow_options )
   # put flow_options[:step]
 
   require "pp"
   puts "@@@@@ #{is_nested}"
-  nested_stack = flow_options[:stack]
-      pp nested_stack
-      original_stack << nested_stack
+  # nested_stack = flow_options[:stack]
+  #     # pp nested_stack
+  #     original_stack << nested_stack
 
-      flow_options[:stack] = original_stack
+      # flow_options[:stack] = original_stack
 
       [ direction, options, flow_options]  }
     Output = ->(direction, options, flow_options) { [direction, options, flow_options] }
@@ -164,16 +174,16 @@ class StepPipeTest < Minitest::Spec
         nil   => with_tracing,
       }
 
-      direction, options, flow_options = activity.(activity[:Start], options = {}, { runner: Pipeline::Runner, stack: stack=[], step_runners: step_runners })
+      direction, options, flow_options = activity.(activity[:Start], options = {}, { runner: Pipeline::Runner, stack: Circuit::Stack.new, step_runners: step_runners })
 
       direction.must_equal activity[:End] # the actual activity's End signal.
       options  .must_equal({"model"=>String, "uuid"=>999, "saved" => true})
 
 
       require "pp"
-      pp stack
+      pp flow_options[:stack].to_a
 
-      stack.must_equal(
+      flow_options[:stack].to_a.must_equal(
       [
         # [activity[:Start], :args, nil, {}],
         [Model,            :args, nil, {}],
