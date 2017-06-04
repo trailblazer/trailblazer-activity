@@ -21,7 +21,9 @@ module Trailblazer
       @stop_events = stop_events
     end
 
-    Run = ->(activity, direction, *args) { activity.(direction, *args) }
+    Run = ->(activity, direction, *args) {
+      puts "normal Run: #{activity}"
+      activity.(direction, *args) }
 
     # Runs the circuit. Stops when hitting a End event or subclass thereof.
     # This method throws exceptions when the return value of a task doesn't match
