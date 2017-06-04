@@ -1,4 +1,5 @@
 require "test_helper"
+require "trailblazer/circuit/trace"
 
 class StepPipeTest < Minitest::Spec
   Circuit          = Trailblazer::Circuit
@@ -11,21 +12,6 @@ class StepPipeTest < Minitest::Spec
   Cleanup  = ->(direction, options, flow_options) { options["ok"]=true;   [direction, options, flow_options] }
 
   MyInject = ->(direction, options, flow_options) { [direction, options.merge( current_user: Module ), flow_options] }
-
-  module Trace
-    CaptureArgs   = ->(direction, options, flow_options) {
-      flow_options[:stack].indent!
-
-      flow_options[:stack] << [flow_options[:step], :args,   nil, options.dup, flow_options[:debug]]; [direction, options, flow_options] }
-
-    CaptureReturn = ->(direction, options, flow_options) {
-      flow_options[:stack] << [flow_options[:step], :return, flow_options[:result_direction], options.dup];
-
-
-      flow_options[:stack].unindent!
-
-      [direction, options, flow_options] }
-  end
 
   class Pipeline
     class Start < Circuit::Start
@@ -118,8 +104,8 @@ class StepPipeTest < Minitest::Spec
 
   #- tracing
   let (:with_tracing) do
-    model_pipe = Circuit::Activity::Before( Pipeline::Step, Pipeline::Call, Trace::CaptureArgs, direction: Circuit::Right )
-    model_pipe = Circuit::Activity::Before( model_pipe, Pipeline::Step[:End], Trace::CaptureReturn, direction: Circuit::Right )
+    model_pipe = Circuit::Activity::Before( Pipeline::Step, Pipeline::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right )
+    model_pipe = Circuit::Activity::Before( model_pipe, Pipeline::Step[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right )
   end
 
   it "traces flat" do
@@ -187,7 +173,7 @@ class StepPipeTest < Minitest::Spec
       direction, options, flow_options = activity.(
         activity[:Start],
         options = {},
-        { runner: Pipeline::Runner, stack: Circuit::Stack.new, step_runners: step_runners, debug: activity.circuit.instance_variable_get(:@name) })
+        { runner: Pipeline::Runner, stack: Circuit::Trace::Stack.new, step_runners: step_runners, debug: activity.circuit.instance_variable_get(:@name) })
 
       direction.must_equal activity[:End] # the actual activity's End signal.
       options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})

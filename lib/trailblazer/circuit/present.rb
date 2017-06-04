@@ -2,7 +2,7 @@ require "hirb"
 
 module Trailblazer
   class Circuit
-    class Trace
+    module Trace
       # TODO:
       # * Struct for debug_item
       module Present
