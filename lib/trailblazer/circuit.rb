@@ -34,7 +34,7 @@ module Trailblazer
     def call(activity, args, runner: Run, **flow_options)
       # TODO: args
       direction    = nil
-      flow_options = { runner: runner, debug: @name }.merge(flow_options) # DISCUSS: make this better?
+      flow_options = { runner: runner }.merge(flow_options) # DISCUSS: make this better?
 
       loop do
         direction, args, flow_options = runner.( activity, direction, args, flow_options )
@@ -99,10 +99,21 @@ module Trailblazer
     end
 
     # Builder for running a nested process from a specific `start_at` position.
-    def self.Nested(activity, start_with=activity[:Start])
-      ->(start_at, options, *args) {
-        activity.(start_with, options, *args)
-      }
+    def self.Nested(*args)
+      Nested.new(*args)
+    end
+
+    class Nested
+      def initialize(activity, start_with=activity[:Start])
+        @activity, @start_with = activity, start_with
+      end
+
+      def call(start_at, *args)
+        puts "@@@@@ #{@activity.inspect}"
+        @activity.(@start_with, *args)
+      end
+
+      attr_reader :activity
     end
 
     class Direction;         end
