@@ -5,4 +5,4 @@ gemspec
 
 gem "minitest-line"
 
-gem "hirb"
+gem "trailblazer-args", path: "../args"
