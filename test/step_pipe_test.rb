@@ -44,7 +44,7 @@ class StepPipeTest < Minitest::Spec
     end
 
     let (:activity) do
-      Circuit::Activity(id: "outsideg") do |act|
+      Circuit::Activity(id: "outsideg", Model=>"outsideg.Model", Uuid=>"outsideg.Uuid") do |act|
         {
           act[:Start] => { Circuit::Right => Model },
           Model       => { Circuit::Right => __nested = Circuit::Nested( nested ) },
@@ -67,9 +67,10 @@ class StepPipeTest < Minitest::Spec
       direction.must_equal activity[:End] # the actual activity's End signal.
       options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
-      flow_options[:stack].to_a[2][0].last.must_equal({:id=>"outsideg"})
-      flow_options[:stack].to_a[2][1].first.last.must_equal({:id=>"nested"})
-      flow_options[:stack].to_a[3][0].last.must_equal({:id=>"outsideg"})
+      # unit tests, 2BRM
+      # flow_options[:stack].to_a[2][0].last.must_equal({:id=>"outsideg"})
+      # flow_options[:stack].to_a[2][1].first.last.must_equal({:id=>"nested"})
+      # flow_options[:stack].to_a[3][0].last.must_equal({:id=>"outsideg"})
 
 
 
@@ -80,7 +81,7 @@ class StepPipeTest < Minitest::Spec
       puts tree = Circuit::Trace::Present.tree(flow_options[:stack].to_a)
 
       tree.gsub(/0x\w+/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
-|-- #<Proc:@test/step_pipe_test.rb:11 (lambda)>
+|-- outsideg.Model
 |-- #<Trailblazer::Circuit::Nested:>
 |   |-- #<Trailblazer::Circuit::Start:>
 |   |-- #<Proc:@test/step_pipe_test.rb:13 (lambda)>
@@ -92,7 +93,7 @@ class StepPipeTest < Minitest::Spec
 |   |-- #<Proc:@test/step_pipe_test.rb:15 (lambda)>
 |   |-- #<Trailblazer::Circuit::End:>
 |   `-- #<Trailblazer::Circuit::Nested:>
-|-- #<Proc:@test/step_pipe_test.rb:12 (lambda)>
+|-- outsideg.Uuid
 `-- #<Trailblazer::Circuit::End:>}
     end
   end
