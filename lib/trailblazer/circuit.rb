@@ -125,3 +125,5 @@ require "trailblazer/circuit/activity"
 require "trailblazer/circuit/task"
 require "trailblazer/circuit/alter"
 require "trailblazer/circuit/trace"
+
+require "trailblazer/context"

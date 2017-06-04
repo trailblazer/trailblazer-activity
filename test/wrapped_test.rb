@@ -1,7 +1,6 @@
 require "test_helper"
 require "trailblazer/circuit/trace"
 require "trailblazer/circuit/wrapped"
-require "trailblazer/args/options"
 
 class StepPipeTest < Minitest::Spec
   Circuit          = Trailblazer::Circuit
