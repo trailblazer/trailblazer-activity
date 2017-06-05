@@ -2,7 +2,6 @@ class Trailblazer::Circuit
   module Activity::Wrapped
     # Input  = ->(direction, options, flow_options) { [direction, options, flow_options] }
 
-    # FIXME: wrong direction and flow_options here!
     def self.call_activity(direction, options, flow_options, wrap_config, original_flow_options)
       task  = wrap_config[:step]
 
