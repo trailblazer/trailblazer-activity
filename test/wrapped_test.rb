@@ -79,17 +79,17 @@ class StepPipeTest < Minitest::Spec
 
       puts tree = Circuit::Trace::Present.tree(flow_options[:stack].to_a)
 
-      tree.gsub(/0x\w+/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
+      tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
 |-- outsideg.Model
 |-- #<Trailblazer::Circuit::Nested:>
 |   |-- #<Trailblazer::Circuit::Start:>
-|   |-- #<Proc:@test/wrapped_test.rb:13 (lambda)>
+|   |-- #<Proc:.rb:12 (lambda)>
 |   |-- #<Trailblazer::Circuit::Nested:>
 |   |   |-- #<Trailblazer::Circuit::Start:>
 |   |   |-- more_nested.Upload
 |   |   |-- #<Trailblazer::Circuit::End:>
 |   |   `-- #<Trailblazer::Circuit::Nested:>
-|   |-- #<Proc:@test/wrapped_test.rb:15 (lambda)>
+|   |-- #<Proc:.rb:14 (lambda)>
 |   |-- #<Trailblazer::Circuit::End:>
 |   `-- #<Trailblazer::Circuit::Nested:>
 |-- outsideg.Uuid

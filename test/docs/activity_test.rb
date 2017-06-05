@@ -58,8 +58,6 @@ class DocsActivityTest < Minitest::Spec
     #- tracing
 
     #:trace-act
-    require "trailblazer/circuit/present"
-
     activity = Circuit::Activity({id: "Blog/Publish",
       Blog::Write=>"Blog::Write",Blog::SpellCheck=>"Blog::SpellCheck",Blog::Correct=>"Blog::Correct", Blog::Publish=>"Blog::Publish" }) { |evt|
       {
@@ -73,16 +71,13 @@ class DocsActivityTest < Minitest::Spec
     #:trace-act end
 
     #:trace-call
-    stack=[]
-
-    direction, options, flow = activity.(
+    stack, _ = Circuit::Trace.( activity,
       activity[:Start],
-      { content: "Let's start writing" },
-      runner: Trailblazer::Circuit::Trace.new, stack: stack
+      { content: "Let's start writing" }
     )
     #:trace-call end
 
-    Circuit::Trace::Present.tree(stack)
+    puts Circuit::Trace::Present.tree(stack)
 =begin
   #:trace-res
   Circuit::Trace::Present.tree(stack)

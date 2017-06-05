@@ -1,9 +1,32 @@
 module Trailblazer
   class Circuit
-    # Insert the trace steps as follows:
+    # Trace#call will call the activities and trace what steps are called, options passed,
+    # and the order and nesting.
     #
-    #   model_pipe = Circuit::Activity::Before( Pipeline::Step, Pipeline::Call, Trace.method(:capture_args), direction: Circuit::Right )
+    #   stack, _ = Trailblazer::Circuit::Trace.(activity, activity[:Start], { id: 1 })
+    #   puts Trailblazer::Circuit::Present.tree(stack) # renders the trail.
     module Trace
+      def self.call(activity, direction, options, flow_options={})
+        # activity_wrap is the circuit/pipeline that wraps each step and implements tracing (and more, like input/output contracts, etc!).
+        activity_wrap = Activity::Before( Activity::Wrapped::Activity, Activity::Wrapped::Call, Trace.method(:capture_args), direction: Right )
+        activity_wrap = Activity::Before( activity_wrap, Activity::Wrapped::Activity[:End], Trace.method(:capture_return), direction: Right )
+
+        step_runners = {
+          nil   => activity_wrap, # call all steps with tracing.
+        }
+
+        tracing_flow_options = {
+          runner:       Activity::Wrapped::Runner,
+          stack:        Circuit::Trace::Stack.new,
+          step_runners: step_runners,
+          debug:        activity.circuit.instance_variable_get(:@name)
+        }
+
+        direction, options, flow_options = activity.( direction, options, tracing_flow_options.merge(flow_options) )
+
+        return flow_options[:stack].to_a, direction, options, flow_options
+      end
+
       def self.capture_args(direction, options, flow_options)
         flow_options[:stack].indent!
 
