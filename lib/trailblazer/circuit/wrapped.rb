@@ -45,7 +45,7 @@ class Trailblazer::Circuit
 
     # Find the respective wrap per step, and run it.
     class Runner
-      def self.call(step, direction, options, runner:, **flow_options)
+      def self.call(step, direction, options, runner:raise, **flow_options)
         # TODO: test this decider!
         step_runner = flow_options[:step_runners][step] || flow_options[:step_runners][nil] # DISCUSS: default could be more explicit@
 
