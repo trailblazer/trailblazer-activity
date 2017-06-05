@@ -25,8 +25,8 @@ module Trailblazer
 
   # only public creator: Build
   class Context # :data object:
-    def initialize(wrapped_options)
-      @mutable_options, @wrapped_options = {}, wrapped_options
+    def initialize(wrapped_options, mutable_options)
+      @wrapped_options, @mutable_options = wrapped_options, mutable_options
     end
 
     def [](name)
@@ -35,6 +35,12 @@ module Trailblazer
 
     def []=(name, value)
       @mutable_options[name] = value
+    end
+
+    def merge(hash)
+      original, mutable_options = decompose
+
+      ctx = Trailblazer::Context( original, mutable_options.merge(hash) )
     end
 
     # Return the Context's two components. Used when computing the new output for
@@ -66,7 +72,7 @@ module Trailblazer
     end
   end
 
-  def self.Context(wrapped_options)
-    Context.new(wrapped_options)
+  def self.Context(wrapped_options, mutable_options={})
+    Context.new(wrapped_options, mutable_options)
   end
 end

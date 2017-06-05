@@ -29,16 +29,15 @@ module Trailblazer
     #
     # @param activity A task from the circuit where to start
     # @param args An array of options passed to the first task.
-    def call(activity, args, runner: Run, **flow_options)
-      # TODO: args
-      direction    = nil
-      flow_options = { runner: runner }.merge(flow_options) # DISCUSS: make this better?
+    def call(activity, options, flow_options={}, *args)
+      direction = nil
+      runner    = flow_options[:runner] || Run
 
       loop do
-        direction, args, flow_options = runner.( activity, direction, args, flow_options )
+        direction, options, flow_options = runner.( activity, direction, options, flow_options, *args )
 
         # Stop execution of the circuit when we hit a stop event (< End). This could be an activity's End or Suspend.
-        return [ direction, args, flow_options ] if @stop_events.include?(activity)
+        return [ direction, options, flow_options ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
           activity_name = @name[activity] || activity # TODO: this must be implemented only once, somewhere.
@@ -124,5 +123,6 @@ require "trailblazer/circuit/task"
 require "trailblazer/circuit/alter"
 require "trailblazer/circuit/trace"
 require "trailblazer/circuit/present"
+require "trailblazer/circuit/wrapped"
 
 require "trailblazer/context"

@@ -86,7 +86,7 @@ class StepPipeTest < Minitest::Spec
 |   |-- #<Proc:.rb:12 (lambda)>
 |   |-- #<Trailblazer::Circuit::Nested:>
 |   |   |-- #<Trailblazer::Circuit::Start:>
-|   |   |-- more_nested.Upload
+|   |   |-- #<Proc:.rb:13 (lambda)>
 |   |   |-- #<Trailblazer::Circuit::End:>
 |   |   `-- #<Trailblazer::Circuit::Nested:>
 |   |-- #<Proc:.rb:14 (lambda)>

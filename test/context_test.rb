@@ -74,6 +74,16 @@ class ArgsTest < Minitest::Spec
     ctx.to_hash.must_equal({ :repository=>"User", :a=>String })
   end
 
+  describe "#merge" do
+    it do
+      ctx = Trailblazer::Context(immutable)
+
+      merged = ctx.merge( current_user: Module )
+
+      merged.to_hash.must_equal({:repository=>"User", :current_user=>Module})
+      ctx.to_hash.must_equal({:repository=>"User"})
+    end
+  end
 
 
 

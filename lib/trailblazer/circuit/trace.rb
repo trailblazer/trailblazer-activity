@@ -27,20 +27,20 @@ module Trailblazer
         return flow_options[:stack].to_a, direction, options, flow_options
       end
 
-      def self.capture_args(direction, options, flow_options)
-        flow_options[:stack].indent!
+      def self.capture_args(direction, options, flow_options, wrap_config, original_flow_options)
+        original_flow_options[:stack].indent!
 
-        flow_options[:stack] << [ flow_options[:step], :args, nil, options.dup, flow_options[:debug] ]
+        original_flow_options[:stack] << [ wrap_config[:step], :args, nil, options.dup, original_flow_options[:debug] ]
 
-        [ direction, options, flow_options ]
+        [ direction, options, flow_options, wrap_config, original_flow_options ]
       end
 
-      def self.capture_return(direction, options, flow_options)
-        flow_options[:stack] << [ flow_options[:step], :return, flow_options[:result_direction], options.dup ]
+      def self.capture_return(direction, options, flow_options, wrap_config, original_flow_options)
+        original_flow_options[:stack] << [ wrap_config[:step], :return, flow_options[:result_direction], options.dup ]
 
-        flow_options[:stack].unindent!
+        original_flow_options[:stack].unindent!
 
-        [ direction, options, flow_options ]
+        [ direction, options, flow_options, wrap_config, original_flow_options ]
       end
 
       # Mutable/stateful per design. We want a (global) stack!
