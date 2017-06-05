@@ -40,7 +40,7 @@ class Trailblazer::Circuit
       # Make the context's instance method a "lambda" and reuse #call!.
       # TODO: should we make :context a kwarg?
       def meth!(proc, direction, options, flow_options, *args)
-        call!(flow_options[:context].method(proc), direction, options, flow_options, *args)
+        call!(flow_options[:exec_context].method(proc), direction, options, flow_options, *args)
       end
     end
   end

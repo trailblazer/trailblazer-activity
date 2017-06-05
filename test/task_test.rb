@@ -34,7 +34,7 @@ class TaskTest < Minitest::Spec
   end
 
   it do
-    direction, result = circuit.(circuit[:Start], options={}, context: Blogger.new)
+    direction, result = circuit.(circuit[:Start], options={}, exec_context: Blogger.new)
 
     direction.must_equal circuit[:End]
     options.must_equal({:Read=>1, :Comment=>2, :Rate=>3})
