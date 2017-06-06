@@ -1,3 +1,9 @@
+# 0.0.4
+
+* Simpler tracing with `Stack`.
+* Added `Context`.
+* Simplified `Circuit#call`.
+
 # 0.0.3
 
 * Make the first argument to `#Activity` (`@name`) always a Hash where `:id` is a reserved key for the name of the circuit.
