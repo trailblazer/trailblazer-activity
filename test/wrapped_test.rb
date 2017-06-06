@@ -58,24 +58,35 @@ class StepPipeTest < Minitest::Spec
         nil   => with_tracing,
       }
 
+      wrap_alterations = [
+        ->(wrap_circuit) do
+          wrap_circuit = Circuit::Activity::Before( wrap_circuit, Wrapped::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right )
+          wrap_circuit = Circuit::Activity::Before( wrap_circuit, Wrapped::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right )
+        end
+      ]
+
+      # dynamic additions from the outside (e.g. tracing)
+      wrap_alterations = { nil => wrap_alterations }
+
+      # in __call__, we now need to merge the step's wrap with the alterations.
+      def __call__
+        # merge dynamic runtime part (e.g. tracing) with the static wrap
+        wraps = self["__task_wraps__"].collect { |task, wrap_circuit| [ task, wrap_alterations[nil].(wrap_circuit) ] }
+
+        step_runners: wraps
+      end
+
+
       direction, options, flow_options = activity.(
         activity[:Start],
         options = {},
-        { runner: Wrapped::Runner, stack: Circuit::Trace::Stack.new, step_runners: step_runners, debug: activity.circuit.instance_variable_get(:@name) })
+        { runner: Wrapped::Runner, stack: Circuit::Trace::Stack.new,
+          step_runners: step_runners,
+          debug: activity.circuit.instance_variable_get(:@name) })
 
       direction.must_equal activity[:End] # the actual activity's End signal.
       options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
-      # unit tests, 2BRM
-      # flow_options[:stack].to_a[2][0].last.must_equal({:id=>"outsideg"})
-      # flow_options[:stack].to_a[2][1].first.last.must_equal({:id=>"nested"})
-      # flow_options[:stack].to_a[3][0].last.must_equal({:id=>"outsideg"})
-
-
-
-
-
-      require "trailblazer/circuit/present"
 
       puts tree = Circuit::Trace::Present.tree(flow_options[:stack].to_a)
 
