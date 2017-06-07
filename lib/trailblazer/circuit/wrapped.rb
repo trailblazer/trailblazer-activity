@@ -40,19 +40,14 @@ class Trailblazer::Circuit
 
     class End < Trailblazer::Circuit::End
       def call(direction, options, flow_options, wrap_config, *args)
-        [ wrap_config[:result_direction], options, flow_options, wrap_config, *args ]
+        [ wrap_config[:result_direction], options, flow_options ] # note how we don't return the appended internal args.
       end
     end
 
     Activity = Trailblazer::Circuit::Activity({ id: "task.wrap" }, end: { default: End.new(:default) }) do |act|
       {
-        act[:Start]          => { Right => Call },                  # options from outside
-        # Input                => { Circuit::Right => Trace::CaptureArgs },
-        # MyInject               => { Circuit::Right => Trace::CaptureArgs },
-        # Trace::CaptureArgs   => { Circuit::Right => Call  },
-        Call                 => { Right => act[:End] },
-        # Trace::CaptureReturn => { Circuit::Right => Output },
-        # Output               => { Circuit::Right => act[:End] }
+        act[:Start] => { Right => Call },                  # options from outside
+        Call        => { Right => act[:End] },
       }
     end # Activity
   end
