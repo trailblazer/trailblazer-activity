@@ -1,5 +1,30 @@
 class Trailblazer::Circuit
   module Activity::Wrapped
+    # The runner is passed into Circuit#call( runner: Runner ) and is called for every task in the circuit.
+    # Its primary job is to actually `call` the task.
+    #
+    # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
+    class Runner
+      # private flow_options[ :step_runners ]
+      def self.call(task, direction, options, flow_options)
+        # TODO: test this decider!
+        task_wrap = flow_options[:step_runners][task] || flow_options[:step_runners][nil] # DISCUSS: default could be more explicit@
+
+        # we can't pass :runner in here since the Step::Pipeline would call itself again, then.
+        # However, we need the runner in nested activities.
+        wrap_config = { step: task }
+
+        # Call the task_wrap circuit:
+        #   |-- Start
+        #   |-- Trace.capture_args   [optional]
+        #   |-- Call (call actual task)
+        #   |-- Trace.capture_return [optional]
+        #   |-- End
+        # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
+        task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options ) # all tasks in Wrap have to implement this signature.
+      end
+    end # Runner
+
     # Input  = ->(direction, options, flow_options) { [direction, options, flow_options] }
 
     def self.call_activity(direction, options, flow_options, wrap_config, original_flow_options)
@@ -31,28 +56,6 @@ class Trailblazer::Circuit
         # Trace::CaptureReturn => { Circuit::Right => Output },
         # Output               => { Circuit::Right => act[:End] }
       }
-    end
-
-    # Find the respective wrap per task, and run it.
-    class Runner
-      # private flow_options[ :step_runners ]
-      def self.call(task, direction, options, flow_options)
-        # TODO: test this decider!
-        task_wrap = flow_options[:step_runners][task] || flow_options[:step_runners][nil] # DISCUSS: default could be more explicit@
-
-        # we can't pass :runner in here since the Step::Pipeline would call itself again, then.
-        # However, we need the runner in nested activities.
-        wrap_config = { step: task }
-
-        # Call the task_wrap circuit:
-        #   |-- Start
-        #   |-- Trace.capture_args   [optional]
-        #   |-- Call (call actual task)
-        #   |-- Trace.capture_return [optional]
-        #   |-- End
-        # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
-        task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options ) # all tasks in Wrap have to implement this signature.
-      end
-    end # Runner
+    end # Activity
   end
 end
