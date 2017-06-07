@@ -11,8 +11,7 @@ class Trailblazer::Circuit
       def self.call(task, direction, options, task_wraps:raise, wrap_alterations:{}, **flow_options)
         # TODO: test this decider!
         task_wrap   = task_wraps[task] || raise("test me!")
-
-        task_wrap   = extend_task_wrap(task_wrap, wrap_alterations[task])
+        task_wrap   = wrap_alterations.(task, task_wrap)
 
         wrap_config = { task: task }
 
@@ -24,12 +23,6 @@ class Trailblazer::Circuit
         #   |-- End
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
         task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options.merge( task_wraps: task_wraps, wrap_alterations: wrap_alterations) )
-      end
-
-      def self.extend_task_wrap(original_wrap_circuit, alteration)
-        return original_wrap_circuit unless alteration
-
-        alteration.inject(original_wrap_circuit) { |circuit, alteration| alteration.(circuit) }
       end
     end # Runner
 
@@ -44,9 +37,13 @@ class Trailblazer::Circuit
     end
 
     class Alterations < Wraps
+      # Find alterations for `task` and apply them to `task_wrap`.
+      # This usually means that tracing steps/tasks are added, input/output contracts added, etc.
+      def call(task, task_wrap)
+        self[task].
+          inject(task_wrap) { |circuit, alteration| alteration.(circuit) }
+      end
     end
-
-    # Input  = ->(direction, options, flow_options) { [direction, options, flow_options] }
 
     def self.call_activity(direction, options, flow_options, wrap_config, original_flow_options)
       task  = wrap_config[:task]
@@ -58,8 +55,6 @@ class Trailblazer::Circuit
     end
 
     Call = method(:call_activity)
-
-    # Output = ->(direction, options, flow_options) { [direction, options, flow_options] }
 
     class End < Trailblazer::Circuit::End
       def call(direction, options, flow_options, wrap_config, *args)
