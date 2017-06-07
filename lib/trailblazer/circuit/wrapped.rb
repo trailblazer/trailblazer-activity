@@ -1,18 +1,16 @@
 class Trailblazer::Circuit
+  # Lingo: task_wrap
   module Activity::Wrapped
     # The runner is passed into Circuit#call( runner: Runner ) and is called for every task in the circuit.
     # Its primary job is to actually `call` the task.
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
     class Runner
-      # private flow_options[ :step_runners ]
+      # private flow_options[ :task_wraps ] # DISCUSS: move to separate arg?
       def self.call(task, direction, options, flow_options)
         # TODO: test this decider!
-        task_wrap = flow_options[:step_runners][task] || flow_options[:step_runners][nil] # DISCUSS: default could be more explicit@
-
-        # we can't pass :runner in here since the Step::Pipeline would call itself again, then.
-        # However, we need the runner in nested activities.
-        wrap_config = { step: task }
+        task_wrap   = flow_options[:task_wraps][task] || flow_options[:task_wraps][nil]
+        wrap_config = { task: task }
 
         # Call the task_wrap circuit:
         #   |-- Start
@@ -28,7 +26,7 @@ class Trailblazer::Circuit
     # Input  = ->(direction, options, flow_options) { [direction, options, flow_options] }
 
     def self.call_activity(direction, options, flow_options, wrap_config, original_flow_options)
-      task  = wrap_config[:step]
+      task  = wrap_config[:task]
 
       # Call the actual task we're wrapping here.
       wrap_config[:result_direction], options, flow_options = task.( direction, options, original_flow_options )

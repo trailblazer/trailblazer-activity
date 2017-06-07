@@ -54,7 +54,7 @@ class StepPipeTest < Minitest::Spec
     end
 
     it "trail" do
-      step_runners = {
+      task_wraps = {
         nil   => with_tracing,
       }
 
@@ -69,11 +69,12 @@ class StepPipeTest < Minitest::Spec
       wrap_alterations = { nil => wrap_alterations }
 
       # in __call__, we now need to merge the step's wrap with the alterations.
-      def __call__
+      def __call__(direction, options, flow_options)
         # merge dynamic runtime part (e.g. tracing) with the static wrap
         wraps = self["__task_wraps__"].collect { |task, wrap_circuit| [ task, wrap_alterations[nil].(wrap_circuit) ] }
 
-        step_runners: wraps
+        # task_wraps: wraps
+        # debug: activity.circuit.instance_variable_get(:@name)
       end
 
 
@@ -81,7 +82,7 @@ class StepPipeTest < Minitest::Spec
         activity[:Start],
         options = {},
         { runner: Wrapped::Runner, stack: Circuit::Trace::Stack.new,
-          step_runners: step_runners,
+          task_wraps: task_wraps,
           debug: activity.circuit.instance_variable_get(:@name) })
 
       direction.must_equal activity[:End] # the actual activity's End signal.
