@@ -10,7 +10,7 @@ class Trailblazer::Circuit
       # @api private
       def self.call(task, direction, options, task_wraps:raise, wrap_alterations:{}, **flow_options)
         # TODO: test this decider!
-        task_wrap   = task_wraps[task] || task_wraps[nil] || raise("test me!")
+        task_wrap   = task_wraps[task] || raise("test me!")
 
         task_wrap   = extend_task_wrap(task_wrap, wrap_alterations[task])
 
