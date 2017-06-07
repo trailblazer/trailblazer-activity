@@ -1,3 +1,7 @@
+# 0.0.5
+
+* The `Wrapped::Runner` now applies `Alterations` to each task's `Circuit`. This means you can inject `:task_alterations` into `Circuit#call`, which will then be merged into the task's original circuit, and then run. While this might sound like crazy talk, this allows any kind of external injection (tracing, input/output contracts, step dependency injections, ...) for specific or all tasks of any circuit.
+
 # 0.0.4
 
 * Simpler tracing with `Stack`.
