@@ -54,10 +54,6 @@ class StepPipeTest < Minitest::Spec
     end
 
     it "trail" do
-      task_wraps = {
-        nil   => with_tracing,
-      }
-
       wrap_alterations = [
         ->(wrap_circuit) do
           wrap_circuit = Circuit::Activity::Before( wrap_circuit, Wrapped::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right )
@@ -65,25 +61,46 @@ class StepPipeTest < Minitest::Spec
         end
       ]
 
-      # dynamic additions from the outside (e.g. tracing)
-      wrap_alterations = { nil => wrap_alterations }
+
 
       # in __call__, we now need to merge the step's wrap with the alterations.
-      def __call__(direction, options, flow_options)
-        # merge dynamic runtime part (e.g. tracing) with the static wrap
-        wraps = self["__task_wraps__"].collect { |task, wrap_circuit| [ task, wrap_alterations[nil].(wrap_circuit) ] }
+      # def __call__(start_at, options, flow_options)
+      #   # merge dynamic runtime part (e.g. tracing) with the static wrap
+      #   # DISCUSS: now, the operation knows about those wraps, we should shift that to the Wrapped::Runner.
+      #   wrap_alterations = flow_options[:wrap_alterations]
+      #   task_wraps = self["__task_wraps__"].collect { |task, wrap_circuit| [ task, wrap_alterations[nil].(wrap_circuit) ] }.to_h
+      #   activity   = self["__activity__"]
 
-        # task_wraps: wraps
-        # debug: activity.circuit.instance_variable_get(:@name)
-      end
+
+      #   activity.(start_at, options, flow_options.merge(
+      #     exec_context: new,
+      #     task_wraps:   task_wraps,
+      #     debug:        activity.circuit.instance_variable_get(:@name) ))
+
+
+      #   # task_wraps: wraps
+      #   # debug: activity.circuit.instance_variable_get(:@name)
+      # end
+
+      # # Trace.call
+      # __call__( self["__activity__"][:Start], options, { runner: Wrapped::Runner, wrap_alterations: wrap_alterations } )
 
 
       direction, options, flow_options = activity.(
         activity[:Start],
         options = {},
-        { runner: Wrapped::Runner, stack: Circuit::Trace::Stack.new,
-          task_wraps: task_wraps,
-          debug: activity.circuit.instance_variable_get(:@name) })
+        {
+
+          # Wrapped::Runner specific:
+          runner:           Wrapped::Runner,
+          task_wraps:       Wrapped::Wraps.new(Wrapped::Activity),      # wrap per task of the activity.
+          wrap_alterations: Wrapped::Alterations.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
+
+          # Trace specific:
+          stack:      Circuit::Trace::Stack.new,
+          debug:      activity.circuit.instance_variable_get(:@name) # optional, eg. per Activity.
+        }
+      )
 
       direction.must_equal activity[:End] # the actual activity's End signal.
       options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})

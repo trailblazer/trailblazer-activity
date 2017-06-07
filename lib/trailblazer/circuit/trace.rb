@@ -7,24 +7,25 @@ module Trailblazer
     #   puts Trailblazer::Circuit::Present.tree(stack) # renders the trail.
     module Trace
       def self.call(activity, direction, options, flow_options={})
-        # activity_wrap is the circuit/pipeline that wraps each step and implements tracing (and more, like input/output contracts, etc!).
-        activity_wrap = Activity::Before( Activity::Wrapped::Activity, Activity::Wrapped::Call, Trace.method(:capture_args), direction: Right )
-        activity_wrap = Activity::Before( activity_wrap, Activity::Wrapped::Activity[:End], Trace.method(:capture_return), direction: Right )
-
-        step_runners = {
-          nil   => activity_wrap, # call all steps with tracing.
-        }
-
         tracing_flow_options = {
-          runner:       Activity::Wrapped::Runner,
-          stack:        Circuit::Trace::Stack.new,
-          step_runners: step_runners,
-          debug:        activity.circuit.instance_variable_get(:@name)
+          runner:           Activity::Wrapped::Runner,
+          stack:            Trace::Stack.new,
+          wrap_alterations: Activity::Wrapped::Alterations.new(Trace.Alterations),
+          task_wraps:       Activity::Wrapped::Wraps.new(Activity::Wrapped::Activity),
+          debug: {}, # TODO: set that in Activity::call?
         }
 
         direction, options, flow_options = activity.( direction, options, tracing_flow_options.merge(flow_options) )
 
         return flow_options[:stack].to_a, direction, options, flow_options
+      end
+
+      # Default tracing tasks to be plugged into the wrap circuit.
+      def self.Alterations
+        [
+        ->(wrap_circuit) { Activity::Before( wrap_circuit, Activity::Wrapped::Call,           Trace.method(:capture_args),   direction: Right ) },
+        ->(wrap_circuit) { Activity::Before( wrap_circuit, Activity::Wrapped::Activity[:End], Trace.method(:capture_return), direction: Right ) },
+        ]
       end
 
       def self.capture_args(direction, options, flow_options, wrap_config, original_flow_options)

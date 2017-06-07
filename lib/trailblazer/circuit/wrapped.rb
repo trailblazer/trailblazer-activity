@@ -7,9 +7,13 @@ class Trailblazer::Circuit
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
     class Runner
       # private flow_options[ :task_wraps ] # DISCUSS: move to separate arg?
-      def self.call(task, direction, options, flow_options)
+      # @api private
+      def self.call(task, direction, options, task_wraps:raise, wrap_alterations:{}, **flow_options)
         # TODO: test this decider!
-        task_wrap   = flow_options[:task_wraps][task] || flow_options[:task_wraps][nil]
+        task_wrap   = task_wraps[task] || task_wraps[nil] || raise("test me!")
+
+        task_wrap   = extend_task_wrap(task_wrap, wrap_alterations[task])
+
         wrap_config = { task: task }
 
         # Call the task_wrap circuit:
@@ -19,9 +23,28 @@ class Trailblazer::Circuit
         #   |-- Trace.capture_return [optional]
         #   |-- End
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
-        task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options ) # all tasks in Wrap have to implement this signature.
+        task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options.merge( task_wraps: task_wraps, wrap_alterations: wrap_alterations) )
+      end
+
+      def self.extend_task_wrap(original_wrap_circuit, alteration)
+        return original_wrap_circuit unless alteration
+
+        alteration.inject(original_wrap_circuit) { |circuit, alteration| alteration.(circuit) }
       end
     end # Runner
+
+    class Wraps
+      def initialize(default, hash={})
+        @default, @hash = default, hash
+      end
+
+      def [](task)
+        @hash.fetch(task) { @default }
+      end
+    end
+
+    class Alterations < Wraps
+    end
 
     # Input  = ->(direction, options, flow_options) { [direction, options, flow_options] }
 
