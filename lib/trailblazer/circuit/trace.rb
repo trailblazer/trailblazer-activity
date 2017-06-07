@@ -20,11 +20,13 @@ module Trailblazer
         return flow_options[:stack].to_a, direction, options, flow_options
       end
 
+      # TODO: test alterations with any wrap_circuit.
+
       # Default tracing tasks to be plugged into the wrap circuit.
       def self.Alterations
         [
-        ->(wrap_circuit) { Activity::Before( wrap_circuit, Activity::Wrapped::Call,           Trace.method(:capture_args),   direction: Right ) },
-        ->(wrap_circuit) { Activity::Before( wrap_circuit, Activity::Wrapped::Activity[:End], Trace.method(:capture_return), direction: Right ) },
+        ->(wrap_circuit) { Activity::Before( wrap_circuit, Activity::Wrapped::Call, Trace.method(:capture_args),   direction: Right ) },
+        ->(wrap_circuit) { Activity::Before( wrap_circuit, wrap_circuit[:End],      Trace.method(:capture_return), direction: Right ) },
         ]
       end
 
