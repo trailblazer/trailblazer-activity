@@ -8,10 +8,10 @@ class Trailblazer::Circuit
     class Runner
       # private flow_options[ :task_wraps ] # DISCUSS: move to separate arg?
       # @api private
-      def self.call(task, direction, options, task_wraps:raise, wrap_alterations:{}, **flow_options)
+      def self.call(task, direction, options, task_wraps:raise, wrap_alterations:nil, **flow_options)
         # TODO: test this decider!
         task_wrap   = task_wraps[task] || raise("test me!")
-        task_wrap   = wrap_alterations.(task, task_wrap)
+        task_wrap   = wrap_alterations.(task, task_wrap) if wrap_alterations # FIXME: test with empty wrap_alteration.
 
         wrap_config = { task: task }
 
