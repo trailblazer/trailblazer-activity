@@ -7,9 +7,9 @@ class Trailblazer::Circuit
     class Runner
       # private flow_options[ :task_wraps ] # DISCUSS: move to separate arg?
       # @api private
-      def self.call(task, direction, options, task_wraps:raise, wrap_alterations:nil, **flow_options)
+      def self.call(task, direction, options, wrap_set:raise, wrap_alterations:nil, **flow_options)
         # TODO: test this decider!
-        task_wrap   = task_wraps[task] || raise("test me!")
+        task_wrap   = wrap_set.(task) || raise("test me!")
         task_wrap   = wrap_alterations.(task, task_wrap) if wrap_alterations # FIXME: test with empty wrap_alteration.
 
         wrap_config = { task: task }
@@ -21,7 +21,7 @@ class Trailblazer::Circuit
         #   |-- Trace.capture_return [optional]
         #   |-- End
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
-        task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options.merge( task_wraps: task_wraps, wrap_alterations: wrap_alterations) )
+        task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options.merge( wrap_set: wrap_set, wrap_alterations: wrap_alterations) )
       end
     end # Runner
 
@@ -66,7 +66,13 @@ class Trailblazer::Circuit
         @default, @hash = default, hash
       end
 
-      def [](task)
+      def call(task)
+        get(task)
+      end
+
+      private
+
+      def get(task)
         @hash.fetch(task) { @default }
       end
     end
@@ -75,7 +81,7 @@ class Trailblazer::Circuit
       # Find alterations for `task` and apply them to `task_wrap`.
       # This usually means that tracing steps/tasks are added, input/output contracts added, etc.
       def call(task, task_wrap)
-        self[task].
+        get(task).
           inject(task_wrap) { |circuit, alteration| alteration.(circuit) }
       end
     end

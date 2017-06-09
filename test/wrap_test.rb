@@ -14,10 +14,6 @@ class StepPipeTest < Minitest::Spec
   MyInject = ->(direction, options, flow_options) { [direction, options.merge( current_user: Module ), flow_options] }
 
   #- tracing
-  let (:with_tracing) do
-    model_pipe = Circuit::Activity::Before( Wrap::Activity, Wrap::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right )
-    model_pipe = Circuit::Activity::Before( model_pipe, Wrap::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right )
-  end
 
   describe "nested trailing" do
     let (:more_nested) do
@@ -90,8 +86,8 @@ class StepPipeTest < Minitest::Spec
         {
 
           # Wrap::Runner specific:
-          runner:           Wrap::Runner,
-          task_wraps:       Wrap::Wraps.new(Wrap::Activity),      # wrap per task of the activity.
+          runner:      Wrap::Runner,
+          wrap_set:         Wrap::Wraps.new(Wrap::Activity),      # wrap per task of the activity.
           wrap_alterations: Wrap::Alterations.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
 
           # Trace specific:

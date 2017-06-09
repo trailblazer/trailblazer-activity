@@ -11,8 +11,8 @@ module Trailblazer
           runner:           Wrap::Runner,
           stack:            Trace::Stack.new,
           wrap_alterations: Wrap::Alterations.new(Trace.Alterations),
-          task_wraps:       Wrap::Wraps.new(Wrap::Activity),
-          debug: {}, # TODO: set that in Activity::call?
+          wrap_set:         Wrap::Wraps.new(Wrap::Activity),
+          debug:            {}, # usually set that in Activity::call.
         }
 
         direction, options, flow_options = activity.( direction, options, tracing_flow_options.merge(flow_options) )
