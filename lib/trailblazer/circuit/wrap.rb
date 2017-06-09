@@ -5,12 +5,13 @@ class Trailblazer::Circuit
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
     class Runner
-      # private flow_options[ :task_wraps ] # DISCUSS: move to separate arg?
+      NIL_WRAPS      = "Please provide a :wrap_set"
+      NIL_ALTERATION = "Please provide :wrap_alterations" # these are here for Ruby 2.0 compat.
+
       # @api private
-      def self.call(task, direction, options, wrap_set:raise, wrap_alterations:nil, **flow_options)
-        # TODO: test this decider!
-        task_wrap   = wrap_set.(task) || raise("test me!")
-        task_wrap   = wrap_alterations.(task, task_wrap) if wrap_alterations # FIXME: test with empty wrap_alteration.
+      def self.call(task, direction, options, wrap_set:raise(NIL_WRAPS), wrap_alterations:raise(NIL_ALTERATION), **flow_options)
+        task_wrap   = wrap_set.(task)                    # find wrap for this specific task.
+        task_wrap   = wrap_alterations.(task, task_wrap) # apply alterations.
 
         wrap_config = { task: task }
 
@@ -61,6 +62,11 @@ class Trailblazer::Circuit
       }
     end # Activity
 
+    # Wraps::call always returns a circuit, which is usually the specifically wrapped original task.
+    #
+    # === DESIGN
+    # By moving the "default" decision to this object, you can control what task gets wrapped
+    # with what wrap, allowing you to only wrap "focussed" tasks, for example.
     class Wraps
       def initialize(default, hash={})
         @default, @hash = default, hash
@@ -77,9 +83,13 @@ class Trailblazer::Circuit
       end
     end
 
+    # Alterations::call finds alterations for `task` and apply them to `task_wrap`.
+    # This usually means that tracing steps/tasks are added, input/output contracts added, etc.
+    #
+    # === DESIGN
+    # By moving the "default" decision to this object, you can inject, say, a tracing alteration
+    # that is only applied to a specific task and returns all others unchanged.
     class Alterations < Wraps
-      # Find alterations for `task` and apply them to `task_wrap`.
-      # This usually means that tracing steps/tasks are added, input/output contracts added, etc.
       def call(task, task_wrap)
         get(task).
           inject(task_wrap) { |circuit, alteration| alteration.(circuit) }

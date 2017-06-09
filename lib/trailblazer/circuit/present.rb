@@ -17,6 +17,8 @@ module Trailblazer
         def tree_for(stack, level, tree)
           stack.each do |debug_item|
             if debug_item.size == 2 # flat
+              puts "@@@@@ss #{debug_item
+              .inspect}"
               tree << [ level,  debug_item[0].last[debug_item[0][0]] || debug_item[0][0] ]
             else # nesting
               tree << [ level, debug_item[0][0] ]

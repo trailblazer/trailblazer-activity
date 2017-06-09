@@ -47,6 +47,70 @@ class StepPipeTest < Minitest::Spec
       end
     end
 
+    #---
+    #-
+    describe "Wrap::Runner#call with invalid input" do
+      def runner(flow_options, activity=more_nested)
+        direction, options, flow_options = activity.(
+          activity[:Start],
+          {},
+          {
+            runner: Wrap::Runner,
+          }.merge(flow_options)
+        )
+      end
+
+      let(:wrap_alterations) do
+        [
+          ->(wrap_circuit) do
+            wrap_circuit = Circuit::Activity::Before( wrap_circuit, Wrap::Call, Circuit::Trace.method(:capture_args),   direction: Circuit::Right )
+            wrap_circuit = Circuit::Activity::Before( wrap_circuit, Wrap::Call, Circuit::Trace.method(:capture_return), direction: Circuit::Right )
+          end
+        ]
+      end
+
+      # no :wrap_set
+      it do
+        assert_raises do
+          direction, options, flow_options = runner( wrap_alterations: Wrap::Alterations.new(wrap_alterations) )
+        end.to_s.must_equal %{Please provide a :wrap_set}
+      end
+
+      # no :wrap_alterations, default Wrap
+      it do
+        assert_raises do
+          direction, options, flow_options = runner( wrap_set: Wrap::Wraps.new(Wrap::Activity) )
+        end.to_s.must_equal %{Please provide :wrap_alterations}
+      end
+
+      # specific wrap for A, default for B.
+      it do
+        only_for_wrap = ->(direction, options, *args) { options[:upload] ||= []; options[:upload]<<1; [ direction, options, *args ] }
+        upload_wrap   = Circuit::Activity::Before( Wrap::Activity, Wrap::Call, only_for_wrap, direction: Circuit::Right )
+        wrap_set      = Wrap::Wraps.new(Wrap::Activity, Upload => upload_wrap)
+
+        direction, options, flow_options = runner(
+          wrap_set:         wrap_set,
+          wrap_alterations: Wrap::Alterations.new(wrap_alterations),
+
+          stack:            Circuit::Trace::Stack.new,
+          debug:            {} # TODO: crashes without :debug.
+        )
+
+        # upload should contain only one 1.
+        options.inspect.must_equal %{{:upload=>[1], \"bits\"=>64}}
+
+        tree = Circuit::Trace::Present.tree(flow_options[:stack].to_a)
+
+        # all three tasks should be executed.
+        tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
+|-- #<Proc:.rb:11 (lambda)>
+`-- #<Trailblazer::Circuit::End:>}
+      end
+    end
+
+    #---
+    #- Tracing
     it "trail" do
       wrap_alterations = [
         ->(wrap_circuit) do
@@ -86,7 +150,7 @@ class StepPipeTest < Minitest::Spec
         {
 
           # Wrap::Runner specific:
-          runner:      Wrap::Runner,
+          runner:           Wrap::Runner,
           wrap_set:         Wrap::Wraps.new(Wrap::Activity),      # wrap per task of the activity.
           wrap_alterations: Wrap::Alterations.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
 
