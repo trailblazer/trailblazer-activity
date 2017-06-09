@@ -8,10 +8,10 @@ module Trailblazer
     module Trace
       def self.call(activity, direction, options, flow_options={})
         tracing_flow_options = {
-          runner:           Activity::Wrapped::Runner,
+          runner:           Wrap::Runner,
           stack:            Trace::Stack.new,
-          wrap_alterations: Activity::Wrapped::Alterations.new(Trace.Alterations),
-          task_wraps:       Activity::Wrapped::Wraps.new(Activity::Wrapped::Activity),
+          wrap_alterations: Wrap::Alterations.new(Trace.Alterations),
+          task_wraps:       Wrap::Wraps.new(Wrap::Activity),
           debug: {}, # TODO: set that in Activity::call?
         }
 
@@ -25,7 +25,7 @@ module Trailblazer
       # Default tracing tasks to be plugged into the wrap circuit.
       def self.Alterations
         [
-        ->(wrap_circuit) { Activity::Before( wrap_circuit, Activity::Wrapped::Call, Trace.method(:capture_args),   direction: Right ) },
+        ->(wrap_circuit) { Activity::Before( wrap_circuit, Wrap::Call, Trace.method(:capture_args),   direction: Right ) },
         ->(wrap_circuit) { Activity::Before( wrap_circuit, wrap_circuit[:End],      Trace.method(:capture_return), direction: Right ) },
         ]
       end

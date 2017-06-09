@@ -1,6 +1,5 @@
 class Trailblazer::Circuit
-  # Lingo: task_wrap
-  module Activity::Wrapped
+  module Wrap
     # The runner is passed into Circuit#call( runner: Runner ) and is called for every task in the circuit.
     # Its primary job is to actually `call` the task.
     #
@@ -26,6 +25,42 @@ class Trailblazer::Circuit
       end
     end # Runner
 
+    # The call_task method implements one default step `Call` in the Wrap::Activity circuit.
+    # It calls the actual, wrapped task.
+    def self.call_task(direction, options, flow_options, wrap_config, original_flow_options)
+      task  = wrap_config[:task]
+
+      # Call the actual task we're wrapping here.
+      wrap_config[:result_direction], options, flow_options = task.( direction, options, original_flow_options )
+
+      [ direction, options, flow_options, wrap_config, original_flow_options ]
+    end
+
+    Call = method(:call_task)
+
+    class End < Trailblazer::Circuit::End
+      def call(direction, options, flow_options, wrap_config, *args)
+        [ wrap_config[:result_direction], options, flow_options ] # note how we don't return the appended internal args.
+      end
+    end
+
+    # Wrap::Activity is the actual circuit that implements the Task wrap. This circuit is
+    # also known as `task_wrap`.
+    #
+    # Example with tracing:
+    #
+    #   |-- Start
+    #   |-- Trace.capture_args   [optional]
+    #   |-- Call (call actual task)
+    #   |-- Trace.capture_return [optional]
+    #   |-- End
+    Activity = Trailblazer::Circuit::Activity({ id: "task.wrap" }, end: { default: End.new(:default) }) do |act|
+      {
+        act[:Start] => { Right => Call }, # see Wrap::call_task
+        Call        => { Right => act[:End] },
+      }
+    end # Activity
+
     class Wraps
       def initialize(default, hash={})
         @default, @hash = default, hash
@@ -44,29 +79,5 @@ class Trailblazer::Circuit
           inject(task_wrap) { |circuit, alteration| alteration.(circuit) }
       end
     end
-
-    def self.call_activity(direction, options, flow_options, wrap_config, original_flow_options)
-      task  = wrap_config[:task]
-
-      # Call the actual task we're wrapping here.
-      wrap_config[:result_direction], options, flow_options = task.( direction, options, original_flow_options )
-
-      [ direction, options, flow_options, wrap_config, original_flow_options ]
-    end
-
-    Call = method(:call_activity)
-
-    class End < Trailblazer::Circuit::End
-      def call(direction, options, flow_options, wrap_config, *args)
-        [ wrap_config[:result_direction], options, flow_options ] # note how we don't return the appended internal args.
-      end
-    end
-
-    Activity = Trailblazer::Circuit::Activity({ id: "task.wrap" }, end: { default: End.new(:default) }) do |act|
-      {
-        act[:Start] => { Right => Call },                  # options from outside
-        Call        => { Right => act[:End] },
-      }
-    end # Activity
   end
 end

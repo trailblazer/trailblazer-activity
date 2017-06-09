@@ -123,6 +123,6 @@ require "trailblazer/circuit/task"
 require "trailblazer/circuit/alter"
 require "trailblazer/circuit/trace"
 require "trailblazer/circuit/present"
-require "trailblazer/circuit/wrapped"
+require "trailblazer/circuit/wrap"
 
 require "trailblazer/context"

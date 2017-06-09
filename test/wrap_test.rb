@@ -1,11 +1,9 @@
 require "test_helper"
-require "trailblazer/circuit/trace"
-require "trailblazer/circuit/wrapped"
 
 class StepPipeTest < Minitest::Spec
   Circuit          = Trailblazer::Circuit
   SpecialDirection = Class.new
-  Wrapped = Circuit::Activity::Wrapped
+  Wrap             = Circuit::Wrap
 
   Model = ->(direction, options, flow_options) { options["model"]=String; [direction, options, flow_options] }
   Uuid  = ->(direction, options, flow_options) { options["uuid"]=999;     [ SpecialDirection, options, flow_options] }
@@ -17,8 +15,8 @@ class StepPipeTest < Minitest::Spec
 
   #- tracing
   let (:with_tracing) do
-    model_pipe = Circuit::Activity::Before( Wrapped::Activity, Wrapped::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right )
-    model_pipe = Circuit::Activity::Before( model_pipe, Wrapped::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right )
+    model_pipe = Circuit::Activity::Before( Wrap::Activity, Wrap::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right )
+    model_pipe = Circuit::Activity::Before( model_pipe, Wrap::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right )
   end
 
   describe "nested trailing" do
@@ -56,8 +54,8 @@ class StepPipeTest < Minitest::Spec
     it "trail" do
       wrap_alterations = [
         ->(wrap_circuit) do
-          wrap_circuit = Circuit::Activity::Before( wrap_circuit, Wrapped::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right )
-          wrap_circuit = Circuit::Activity::Before( wrap_circuit, Wrapped::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right )
+          wrap_circuit = Circuit::Activity::Before( wrap_circuit, Wrap::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right )
+          wrap_circuit = Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right )
         end
       ]
 
@@ -66,7 +64,7 @@ class StepPipeTest < Minitest::Spec
       # in __call__, we now need to merge the step's wrap with the alterations.
       # def __call__(start_at, options, flow_options)
       #   # merge dynamic runtime part (e.g. tracing) with the static wrap
-      #   # DISCUSS: now, the operation knows about those wraps, we should shift that to the Wrapped::Runner.
+      #   # DISCUSS: now, the operation knows about those wraps, we should shift that to the Wrap::Runner.
       #   wrap_alterations = flow_options[:wrap_alterations]
       #   task_wraps = self["__task_wraps__"].collect { |task, wrap_circuit| [ task, wrap_alterations[nil].(wrap_circuit) ] }.to_h
       #   activity   = self["__activity__"]
@@ -83,7 +81,7 @@ class StepPipeTest < Minitest::Spec
       # end
 
       # # Trace.call
-      # __call__( self["__activity__"][:Start], options, { runner: Wrapped::Runner, wrap_alterations: wrap_alterations } )
+      # __call__( self["__activity__"][:Start], options, { runner: Wrap::Runner, wrap_alterations: wrap_alterations } )
 
 
       direction, options, flow_options = activity.(
@@ -91,10 +89,10 @@ class StepPipeTest < Minitest::Spec
         options = {},
         {
 
-          # Wrapped::Runner specific:
-          runner:           Wrapped::Runner,
-          task_wraps:       Wrapped::Wraps.new(Wrapped::Activity),      # wrap per task of the activity.
-          wrap_alterations: Wrapped::Alterations.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
+          # Wrap::Runner specific:
+          runner:           Wrap::Runner,
+          task_wraps:       Wrap::Wraps.new(Wrap::Activity),      # wrap per task of the activity.
+          wrap_alterations: Wrap::Alterations.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
 
           # Trace specific:
           stack:      Circuit::Trace::Stack.new,
@@ -112,13 +110,13 @@ class StepPipeTest < Minitest::Spec
 |-- outsideg.Model
 |-- #<Trailblazer::Circuit::Nested:>
 |   |-- #<Trailblazer::Circuit::Start:>
-|   |-- #<Proc:.rb:12 (lambda)>
+|   |-- #<Proc:.rb:10 (lambda)>
 |   |-- #<Trailblazer::Circuit::Nested:>
 |   |   |-- #<Trailblazer::Circuit::Start:>
-|   |   |-- #<Proc:.rb:13 (lambda)>
+|   |   |-- #<Proc:.rb:11 (lambda)>
 |   |   |-- #<Trailblazer::Circuit::End:>
 |   |   `-- #<Trailblazer::Circuit::Nested:>
-|   |-- #<Proc:.rb:14 (lambda)>
+|   |-- #<Proc:.rb:12 (lambda)>
 |   |-- #<Trailblazer::Circuit::End:>
 |   `-- #<Trailblazer::Circuit::Nested:>
 |-- outsideg.Uuid
