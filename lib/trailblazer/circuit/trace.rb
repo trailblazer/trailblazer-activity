@@ -8,11 +8,11 @@ module Trailblazer
     module Trace
       def self.call(activity, direction, options, flow_options={})
         tracing_flow_options = {
-          runner:           Wrap::Runner,
-          stack:            Trace::Stack.new,
-          wrap_alterations: Wrap::Alterations.new(Trace.Alterations),
-          wrap_set:         Wrap::Wraps.new(Wrap::Activity),
-          debug:            {}, # usually set that in Activity::call.
+          runner:       Wrap::Runner,
+          stack:        Trace::Stack.new,
+          wrap_runtime: Wrap::Alterations.new(default: Trace.Alterations),
+          wrap_static:  Wrap::Alterations.new,
+          debug:        {}, # usually set that in Activity::call.
         }
 
         direction, options, flow_options = activity.( direction, options, tracing_flow_options.merge(flow_options) )

@@ -5,13 +5,14 @@ class Trailblazer::Circuit
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
     class Runner
-      NIL_WRAPS      = "Please provide a :wrap_set"
-      NIL_ALTERATION = "Please provide :wrap_alterations" # these are here for Ruby 2.0 compat.
+      NIL_WRAPS      = "Please provide :wrap_static"  # here for Ruby 2.0 compat.
+      NIL_ALTERATION = "Please provide :wrap_runtime" # here for Ruby 2.0 compat.
 
       # @api private
-      def self.call(task, direction, options, wrap_set:raise(NIL_WRAPS), wrap_alterations:raise(NIL_ALTERATION), **flow_options)
-        task_wrap   = wrap_set.(task)                    # find wrap for this specific task.
-        task_wrap   = wrap_alterations.(task, task_wrap) # apply alterations.
+      def self.call(task, direction, options, wrap_static:raise(NIL_WRAPS), wrap_runtime:raise(NIL_ALTERATION), **flow_options)
+        # compute the task's wrap by applying alterations both static and from runtime.
+        task_wrap   = wrap_static.(task, Activity)   # find static wrap for this specific task, Activity is the default wrap.
+        task_wrap   = wrap_runtime.(task, task_wrap) # apply runtime alterations.
 
         wrap_config = { task: task }
 
@@ -22,7 +23,7 @@ class Trailblazer::Circuit
         #   |-- Trace.capture_return [optional]
         #   |-- End
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
-        task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options.merge( wrap_set: wrap_set, wrap_alterations: wrap_alterations) )
+        task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options.merge( wrap_static: wrap_static, wrap_runtime: wrap_runtime) )
       end
     end # Runner
 
@@ -62,37 +63,36 @@ class Trailblazer::Circuit
       }
     end # Activity
 
-    # Wraps::call always returns a circuit, which is usually the specifically wrapped original task.
+    # Alterations#call finds alterations for `task` and applies them to `task_wrap`.
+    # Each alteration receives the result of the former one, starting with `task_wrap`.
+    #
+    # This is used to add tracing steps, input/output contracts, and more at runtime,
+    # or to maintain specific static task_wraps, as for each step in an operation.
+    #
+    # Note that an alteration doesn't have to respect its `task_wrap` and can simply return
+    # an arbitrary Circuit.
     #
     # === DESIGN
     # By moving the "default" decision to this object, you can control what task gets wrapped
     # with what wrap, allowing you to only wrap "focussed" tasks, for example.
-    class Wraps
-      def initialize(default, hash={})
-        @default, @hash = default, hash
+    #
+    # It also allows to inject, say, a tracing alteration that is only applied to a specific task
+    # and returns all others unchanged.
+    class Alterations
+      def initialize(map: {}, default: [ Proc.new{Wrap::Activity} ])
+        @default_alterations, @map = default, map
       end
 
-      def call(task)
-        get(task)
+      # @returns Circuit
+      def call(task, target_wrap)
+        get(task). # list of alterations.
+          inject(target_wrap) { |circuit, alteration| alteration.(circuit) }
       end
 
       private
 
       def get(task)
-        @hash.fetch(task) { @default }
-      end
-    end
-
-    # Alterations::call finds alterations for `task` and apply them to `task_wrap`.
-    # This usually means that tracing steps/tasks are added, input/output contracts added, etc.
-    #
-    # === DESIGN
-    # By moving the "default" decision to this object, you can inject, say, a tracing alteration
-    # that is only applied to a specific task and returns all others unchanged.
-    class Alterations < Wraps
-      def call(task, task_wrap)
-        get(task).
-          inject(task_wrap) { |circuit, alteration| alteration.(circuit) }
+        @map[task] || @default_alterations
       end
     end
   end
