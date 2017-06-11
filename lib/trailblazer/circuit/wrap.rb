@@ -4,15 +4,13 @@ class Trailblazer::Circuit
     # Its primary job is to actually `call` the task.
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
-    class Runner
+    module Runner
       NIL_WRAPS      = "Please provide :wrap_static"  # here for Ruby 2.0 compat.
       NIL_ALTERATION = "Please provide :wrap_runtime" # here for Ruby 2.0 compat.
 
       # @api private
       def self.call(task, direction, options, wrap_static:raise(NIL_WRAPS), wrap_runtime:raise(NIL_ALTERATION), **flow_options)
-        # compute the task's wrap by applying alterations both static and from runtime.
-        task_wrap   = wrap_static.(task, Activity)   # find static wrap for this specific task, Activity is the default wrap.
-        task_wrap   = wrap_runtime.(task, task_wrap) # apply runtime alterations.
+        task_wrap   = apply_alterations(task, wrap_static, wrap_runtime)
 
         wrap_config = { task: task }
 
@@ -24,6 +22,14 @@ class Trailblazer::Circuit
         #   |-- End
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
         task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options.merge( wrap_static: wrap_static, wrap_runtime: wrap_runtime) )
+      end
+
+      private
+
+      # Compute the task's wrap by applying alterations both static and from runtime.
+      def self.apply_alterations(task, wrap_static, wrap_runtime, default_wrap=Activity)
+        task_wrap = wrap_static.(task, Activity)   # find static wrap for this specific task, Activity is the default wrap.
+        task_wrap = wrap_runtime.(task, task_wrap) # apply runtime alterations.
       end
     end # Runner
 
