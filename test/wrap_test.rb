@@ -144,7 +144,6 @@ class StepPipeTest < Minitest::Spec
         activity[:Start],
         options = {},
         {
-
           # Wrap::Runner specific:
           runner:       Wrap::Runner,
           wrap_static:  Wrap::Alterations.new,
@@ -178,5 +177,9 @@ class StepPipeTest < Minitest::Spec
 |-- outsideg.Uuid
 `-- #<Trailblazer::Circuit::End:>}
     end
+  end
+
+  it do
+    Circuit::Wrap::Alterations.new.("unknown task", "default").must_equal "default"
   end
 end

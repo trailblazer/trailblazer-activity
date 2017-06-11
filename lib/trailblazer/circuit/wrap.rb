@@ -79,7 +79,9 @@ class Trailblazer::Circuit
     # It also allows to inject, say, a tracing alteration that is only applied to a specific task
     # and returns all others unchanged.
     class Alterations
-      def initialize(map: {}, default: [ Proc.new{Wrap::Activity} ])
+      PassThrough = ->(task_wrap) { task_wrap }
+
+      def initialize(map: {}, default: [ PassThrough ])
         @default_alterations, @map = default, map
       end
 
