@@ -32,8 +32,7 @@ class Trailblazer::Circuit
 
       # DISCUSS: standardize tmp_options.
       # Calls `proc` with a step interface.
-      def call!(proc, direction, options, flow_options, tmp_options={})
-        # proc.(options, **options.to_hash(tmp_options))
+      def call!(proc, direction, options, flow_options, *args)
         proc.(options, **options.to_hash)
       end
 
