@@ -6,7 +6,7 @@ module Trailblazer
     #   stack, _ = Trailblazer::Circuit::Trace.(activity, activity[:Start], { id: 1 })
     #   puts Trailblazer::Circuit::Present.tree(stack) # renders the trail.
     module Trace
-      def self.call(activity, direction, options, flow_options={})
+      def self.call(activity, direction, options, flow_options={}, &block)
         tracing_flow_options = {
           runner:       Wrap::Runner,
           stack:        Trace::Stack.new,
@@ -15,12 +15,16 @@ module Trailblazer
           debug:        {}, # usually set that in Activity::call.
         }
 
-        direction, options, flow_options = activity.( direction, options, tracing_flow_options.merge(flow_options) )
+        direction, options, flow_options = call_circuit( activity, direction, options, tracing_flow_options.merge(flow_options), &block )
 
         return flow_options[:stack].to_a, direction, options, flow_options
       end
 
       # TODO: test alterations with any wrap_circuit.
+      def self.call_circuit(activity, *args, &block)
+        return activity.(*args) unless block
+        block.(activity, *args)
+      end
 
       # Default tracing tasks to be plugged into the wrap circuit.
       def self.Alterations
