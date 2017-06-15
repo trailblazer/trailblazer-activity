@@ -17,8 +17,8 @@ class Trailblazer::Circuit
     end
 
     module Args
-      module_function
       # Returns a {Proc} that, when called, invokes the `proc` argument with keyword arguments.
+      # This is known as "step (call) interface".
       #
       # This is commonly used by `Operation::step` to wrap the argument and make it
       # callable in the circuit.
@@ -41,7 +41,7 @@ class Trailblazer::Circuit
       #
       #   task.(options = {}, exec_context: A.new)
       #   options["i got called"] #=> true
-      def KW(proc)
+      def self.KW(proc)
         if proc.is_a? Symbol
           ->(*args) { meth!(proc, *args) } # Activity interface
         else
@@ -49,17 +49,18 @@ class Trailblazer::Circuit
         end
       end
 
-      # DISCUSS: standardize tmp_options.
-      # Calls `proc` with a step interface.
-      def call!(proc, direction, options, flow_options, *args)
+      # Calls `proc` with a "step" interface.
+      def self.call!(proc, direction, options, flow_options, *args)
         proc.(options, **options.to_hash)
       end
 
       # Make the context's instance method a "lambda" and reuse #call!.
       # TODO: should we make :context a kwarg?
-      def meth!(proc, direction, options, flow_options, *args)
+      def self.meth!(proc, direction, options, flow_options, *args)
         call!(flow_options[:exec_context].method(proc), direction, options, flow_options, *args)
       end
+
+      private_class_method :call!, :meth!
     end
   end
 end
