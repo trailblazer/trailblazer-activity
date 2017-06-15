@@ -18,10 +18,29 @@ class Trailblazer::Circuit
 
     module Args
       module_function
-      # :private:
-      # Return task to call the proc with keyword arguments. Ruby >= 2.0.
-      # This is used by `Operation::step` to wrap the argument and make it
+      # Returns a {Proc} that, when called, invokes the `proc` argument with keyword arguments.
+      #
+      # This is commonly used by `Operation::step` to wrap the argument and make it
       # callable in the circuit.
+      #
+      #   my_proc = ->(options, **kws) { options["i got called"] = true }
+      #   task    = Trailblazer::Circuit::Args::KW(my_proc)
+      #   task.(options = {})
+      #   options["i got called"] #=> true
+      #
+      # Alternatively, you can pass a symbol and an `:exec_context`.
+      #
+      #   my_proc = :some_method
+      #   task    = Trailblazer::Circuit::Args::KW(my_proc)
+      #
+      #   class A
+      #     def some_method(options, **kws)
+      #       options["i got called"] = true
+      #     end
+      #   end
+      #
+      #   task.(options = {}, exec_context: A.new)
+      #   options["i got called"] #=> true
       def KW(proc)
         if proc.is_a? Symbol
           ->(*args) { meth!(proc, *args) } # Activity interface
