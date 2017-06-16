@@ -1,3 +1,7 @@
+# 0.0.7
+
+* It is now `Trailblazer::Args`.
+
 # 0.0.6
 
 * `Wrapped` is now `Wrap`. Also, a consistent `Alterations` interface allows tweaking here.
