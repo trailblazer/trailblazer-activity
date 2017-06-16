@@ -30,7 +30,7 @@ module Trailblazer
         if proc.is_a? Symbol
           ->(*args) { call_method!(proc, *args) }
         else
-          ->(*args) { call_callable!(proc,   *args) }
+          ->(*args) { call_callable!(proc, *args) }
         end
       end
 
@@ -49,7 +49,7 @@ module Trailblazer
       end
 
       # Make the context's instance method a "lambda" and reuse #call!.
-      def call_method!(proc, options, exec_context:raise, **)
+      def call_method!(proc, options, exec_context:raise, **flow_options)
         call!(exec_context.method(proc), options)
       end
     end
