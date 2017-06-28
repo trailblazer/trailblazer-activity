@@ -8,34 +8,34 @@ module Trailblazer
 
   class Option
     # Generic builder for a callable "option".
-    # @param implementation [Class, Module] implements the process of calling the proc
+    # @param call_implementation [Class, Module] implements the process of calling the proc
     #   while passing arguments/options to it in a specific style (e.g. kw args, step interface).
     # @return [Proc] when called, this proc will evaluate its option (at run-time).
-    def self.build(implementation, proc)
+    def self.build(call_implementation, proc)
       if proc.is_a? Symbol
-        ->(*args) { implementation.call_method!(proc, *args) }
+        ->(*args) { call_implementation.evaluate_method(proc, *args) }
       else
-        ->(*args) { implementation.call_callable!(proc, *args) }
+        ->(*args) { call_implementation.evaluate_callable(proc, *args) }
       end
     end
 
-    # Calls `proc.(*args)` forwarding all arguments.
+    # A call implementation invoking `proc.(*args)` and plainly forwarding all arguments.
     # Override this for your own step strategy (see KW#call!).
     # @private
     def self.call!(proc, *args)
       proc.(*args)
     end
 
-    # Note that both #call_callable! and #call_method! drop most of the args.
+    # Note that both #evaluate_callable and #evaluate_method drop most of the args.
     # If you need those, override this class.
     # @private
-    def self.call_callable!(proc, *args)
+    def self.evaluate_callable(proc, *args)
       call!(proc, *args)
     end
 
     # Make the context's instance method a "lambda" and reuse #call!.
     # @private
-    def self.call_method!(proc, *args, exec_context:raise, **flow_options)
+    def self.evaluate_method(proc, *args, exec_context:raise, **flow_options)
       call!(exec_context.method(proc), *args)
     end
 
@@ -68,7 +68,8 @@ module Trailblazer
     end
 
     class KW < Option
-      # Calls `proc` with a "step interface".
+      # A different call implementation that calls `proc` with a "step interface".
+      #   your_code.(options, **options)
       # @private
       def self.call!(proc, options, *)
         proc.(options, **options.to_hash) # Step interface: (options, **)
