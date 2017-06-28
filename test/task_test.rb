@@ -19,9 +19,9 @@ class TaskTest < Minitest::Spec
   end
 
   let (:circuit) do
-    read    = Circuit::Task::Binary( ->(direction, options, flow_options) { Trailblazer::Args::KW(Blog::Read).(options, flow_options) } )
-    comment = Circuit::Task::Binary( ->(direction, options, flow_options) { Trailblazer::Args::KW(Blog.method(:comment)).(options, flow_options) } )
-    rate    = Circuit::Task::Binary( ->(direction, options, flow_options) { Trailblazer::Args::KW(:rate).(options, flow_options) } )
+    read    = Circuit::Task::Binary( ->(direction, options, flow_options) { Trailblazer::Option::KW(Blog::Read).(options, flow_options) } )
+    comment = Circuit::Task::Binary( ->(direction, options, flow_options) { Trailblazer::Option::KW(Blog.method(:comment)).(options, flow_options) } )
+    rate    = Circuit::Task::Binary( ->(direction, options, flow_options) { Trailblazer::Option::KW(:rate).(options, flow_options) } )
 
     circuit = Circuit::Activity(id: "blog") do |evt|
       {

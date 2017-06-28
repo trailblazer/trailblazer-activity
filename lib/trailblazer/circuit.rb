@@ -120,7 +120,7 @@ end
 
 require "trailblazer/circuit/activity"
 require "trailblazer/circuit/task"
-require "trailblazer/circuit/args"
+require "trailblazer/option"
 require "trailblazer/circuit/alter"
 require "trailblazer/circuit/trace"
 require "trailblazer/circuit/present"
