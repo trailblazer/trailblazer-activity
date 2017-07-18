@@ -30,7 +30,8 @@ module Trailblazer
     end
 
     def [](name)
-      @mutable_options[name] || @wrapped_options[name]
+      return @mutable_options[name] if @mutable_options.key?(name)
+      @wrapped_options[name]
     end
 
     def []=(name, value)

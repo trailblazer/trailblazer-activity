@@ -5,6 +5,8 @@ class ArgsTest < Minitest::Spec
 
   let (:immutable) { { repository: "User" } }
 
+  let (:ctx) { ctx = Trailblazer::Context(immutable) }
+
   it do
     ctx = Trailblazer::Context(immutable)
 
@@ -44,6 +46,14 @@ class ArgsTest < Minitest::Spec
 
     # it {  }
     new_ctx.to_hash.must_equal({ :repository=>"User", a: Module, current_user: Class })
+  end
+
+  it "allows false/nil values" do
+    ctx["x"] = false
+    ctx["x"].must_equal false
+
+    ctx["x"] = nil
+    ctx["x"].must_equal nil
   end
 
   #---
