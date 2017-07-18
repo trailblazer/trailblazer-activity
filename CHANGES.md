@@ -1,3 +1,7 @@
+# 0.0.9
+
+* Fix `Context#[]`, it returned `nil` when it should return `false`.
+
 # 0.0.8
 
 * Make `Trailblazer::Option` and `Trailblazer::Option::KW` a mix of lambda and object so it's easily extendable.
