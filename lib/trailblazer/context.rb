@@ -52,6 +52,9 @@ module Trailblazer
       [ @wrapped_options, @mutable_options ]
     end
 
+
+
+
     # TODO: massive performance bottleneck. also, we could already "know" here what keys the
     # transformation wants.
     # FIXME: ToKeywordArguments()
@@ -64,13 +67,6 @@ module Trailblazer
           options.each { |k, v| hash[k.to_sym] = v }
         end
       end
-    end
-
-    def Build
-      wrapped_options, mutable_options = *decompose
-      wrapped_options = yield(wrapped_options, mutable_options) if block_given?
-
-      Trailblazer::Context(wrapped_options)
     end
   end
 
