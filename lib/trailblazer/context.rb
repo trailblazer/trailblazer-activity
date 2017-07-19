@@ -54,6 +54,7 @@ module Trailblazer
 
     # TODO: massive performance bottleneck. also, we could already "know" here what keys the
     # transformation wants.
+    # FIXME: ToKeywordArguments()
     def to_hash
       {}.tap do |hash|
         # arr = to_runtime_data << to_mutable_data << tmp_options
