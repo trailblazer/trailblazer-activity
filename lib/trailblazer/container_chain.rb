@@ -12,7 +12,7 @@ class Trailblazer::Context::ContainerChain # used to be called Resolver.
 
   # @param name Symbol or String to lookup a value stored in one of the containers.
   def [](name)
-    @containers.find { |container| container.key?(name) && (return container[name]) }
+    self.class.find(@containers, name)
   end
 
   # @private
@@ -20,9 +20,9 @@ class Trailblazer::Context::ContainerChain # used to be called Resolver.
     @containers.find { |container| container.key?(name) }
   end
 
-
-
-
+  def self.find(containers, name)
+    containers.find { |container| container.key?(name) && (return container[name]) }
+  end
 
 
 
