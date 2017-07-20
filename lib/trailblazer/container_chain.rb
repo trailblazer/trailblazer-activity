@@ -1,3 +1,4 @@
+# @private
 class Trailblazer::Context::ContainerChain # used to be called Resolver.
   # Keeps a list of containers. When looking up a key/value, containers are traversed in
   # the order they were added until key is found.
@@ -6,8 +7,9 @@ class Trailblazer::Context::ContainerChain # used to be called Resolver.
   #
   # @note ContainerChain is an immutable data structure, it does not support writing.
   # @param containers Array of <Container> objects (splatted)
-  def initialize(*containers)
+  def initialize(containers, to_hash: nil)
     @containers = containers
+    @to_hash    = to_hash
   end
 
   # @param name Symbol or String to lookup a value stored in one of the containers.
@@ -27,9 +29,9 @@ class Trailblazer::Context::ContainerChain # used to be called Resolver.
 
 
 
-
+  # @private
   def to_hash
-    # FIXME: dry container, etc?
+    return @to_hash.(@containers) if @to_hash # FIXME: introduce pattern matching so we can have different "transformers" for each container type.
     @containers.each_with_object({}) { |container, hash| hash.merge!(container.to_hash) }
   end
 end
