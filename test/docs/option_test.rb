@@ -36,28 +36,63 @@ class OptionTest < Minitest::Spec
 
       option = Trailblazer::Option(:with_positional_and_keywords)
 
-      # evaluate the option.
-      result = option.( positional, keywords, exec_context: step )
-
-      assert_result result
+      assert_result option.( positional, keywords, exec_context: step )
     end
 
     it "-> {} lambda" do
       option = Trailblazer::Option(WITH_POSITIONAL_AND_KEYWORDS)
 
-      # evaluate the option.
-      result = option.( positional, keywords, { exec_context: "something" } )
-
-      assert_result result
+      assert_result option.( positional, keywords, { exec_context: "something" } )
     end
 
     it "callable" do
       option = Trailblazer::Option(WithPositionalAndKeywords)
 
-      # evaluate the option.
-      result = option.( positional, keywords, { exec_context: "something" } )
+      assert_result option.( positional, keywords, { exec_context: "something" } )
+    end
+  end
 
-      assert_result result
+  describe "positionals" do
+    def assert_result_pos(result)
+      result.must_equal( [1,2, [3, 4]] )
+    end
+
+    class Step
+      def with_positionals(a, b, *args)
+        [ a, b, args ]
+      end
+    end
+
+    WITH_POSITIONALS = ->(a, b, *args) do
+      [ a, b, args ]
+    end
+
+    class WithPositionals
+      def self.call(a, b, *args)
+        [ a, b, args ]
+      end
+    end
+
+    let(:positionals) { [1, 2, 3, 4] }
+
+    it ":method" do
+      step = Step.new
+
+      option = Trailblazer::Option(:with_positionals)
+
+      assert_result_pos option.( *positionals, exec_context: step )
+    end
+
+    it "-> {} lambda" do
+      option = Trailblazer::Option(WITH_POSITIONALS)
+
+      assert_result_pos option.( *positionals, { exec_context: "something" } )
+    end
+
+    it "callable" do
+      option = Trailblazer::Option(WithPositionals)
+
+      assert_result_pos option.( *positionals, { exec_context: "something" } )
     end
   end
 end
