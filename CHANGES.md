@@ -1,3 +1,9 @@
+# 0.0.11
+
+* Temporarily allow injecting a `to_hash` transformer into a `ContainerChain`. This allows to ignore
+certain container types such as `Dry::Container` in the KW transformation. Note that this is a temp
+fix and will be replaced with proper pattern matching.
+
 # 0.0.10
 
 * Introduce `Context::ContainerChain` to eventually replace the heavy-weight `Skill` object.
