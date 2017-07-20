@@ -1,3 +1,8 @@
+# 0.0.10
+
+* Introduce `Context::ContainerChain` to eventually replace the heavy-weight `Skill` object.
+* Fix a bug in `Option` where wrong args were passed when used without `flow_options`.
+
 # 0.0.9
 
 * Fix `Context#[]`, it returned `nil` when it should return `false`.
