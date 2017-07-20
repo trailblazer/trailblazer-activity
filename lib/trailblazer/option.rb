@@ -29,7 +29,7 @@ module Trailblazer
     # Note that both #evaluate_callable and #evaluate_method drop most of the args.
     # If you need those, override this class.
     # @private
-    def self.evaluate_callable(proc, *args)
+    def self.evaluate_callable(proc, *args, **flow_options)
       call!(proc, *args)
     end
 
@@ -67,6 +67,7 @@ module Trailblazer
       Option.build(KW, proc)
     end
 
+    # TODO: It would be cool if call! was typed and had `options SymbolizedHash` or something.
     class KW < Option
       # A different call implementation that calls `proc` with a "step interface".
       #   your_code.(options, **options)
