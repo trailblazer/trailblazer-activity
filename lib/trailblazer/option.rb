@@ -1,5 +1,3 @@
-# TODO: test all this, for christ's sake.
-
 module Trailblazer
   # @note This might go to trailblazer-args along with `Context` at some point.
   def self.Option(proc)
