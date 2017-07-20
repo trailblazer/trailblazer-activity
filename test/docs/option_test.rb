@@ -1,17 +1,17 @@
 require "test_helper"
 
 class OptionTest < Minitest::Spec
-  class Step
-    def with_positional_and_keywords(options, a:nil, **more_options)
+  describe "positional and kws" do
+    class Step
+      def with_positional_and_keywords(options, a:nil, **more_options)
+        [ options, a, more_options ]
+      end
+    end
+
+    WITH_POSITIONAL_AND_KEYWORDS = ->(options, a:nil, **more_options) do
       [ options, a, more_options ]
     end
-  end
 
-  WITH_POSITIONAL_AND_KEYWORDS = ->(options, a:nil, **more_options) do
-    [ options, a, more_options ]
-  end
-
-  describe "positional and kws" do
     let(:positional) { { a: 1 } }
     let(:keywords)   { { a: 2, b: 3 } }
 
