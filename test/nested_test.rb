@@ -80,5 +80,59 @@ Circuit = Trailblazer::Circuit
 
       options.must_equal({"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]})
     end
+
+    #---
+    #- Nested( activity, start_at )
+    let(:with_nested_and_start_at) do
+      Circuit::Activity(id: "user.blog") { |user|
+        {
+          user[:Start] => { Circuit::Right => nested=Circuit::Nested(blog, Blog::Next) },
+          nested     => { blog[:End] => User::Relax },
+
+          User::Relax => { Circuit::Right => user[:End] }
+        }
+      }
+    end
+
+    it "runs Nested from alternative start" do
+      with_nested_and_start_at.(with_nested_and_start_at[:Start], options = { "return" => Circuit::Right }).
+        must_equal( [with_nested_and_start_at[:End], {"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true}, nil] )
+
+      options.must_equal({"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true})
+    end
+
+    #---
+    #- Nested( activity ) { ... }
+    describe "Nested with block" do
+      let(:process) do
+        class Workout
+          def self.__call__(direction, options, flow_options)
+            options[:workout]   = 9
+
+            [ direction, options, flow_options ]
+          end
+        end
+
+        nested = Circuit::Nested( Workout, "no start_at needed" ) do |activity:, start_at:, args:|
+          activity.__call__(start_at, *args)
+        end
+
+        Circuit::Activity(id: "user.blog") { |user|
+          {
+            user[:Start] => { Circuit::Right => nested },
+            nested     => { "no start_at needed" => User::Relax },
+
+            User::Relax => { Circuit::Right => user[:End] }
+          }
+        }
+      end
+
+      it "runs Nested from alternative start" do
+        process.(process[:Start], options = { "return" => Circuit::Right }).
+          must_equal( [process[:End], {"return"=>Circuit::Right, :workout=>9, "Relax"=>true}, nil] )
+
+        options.must_equal({"return"=>Circuit::Right, :workout=>9, "Relax"=>true})
+      end
+    end
   end
 end
