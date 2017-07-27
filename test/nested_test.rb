@@ -113,7 +113,7 @@ Circuit = Trailblazer::Circuit
           end
         end
 
-        nested = Circuit::Nested( Workout, "no start_at needed" ) do |activity:, start_at:, args:|
+        nested = Circuit::Nested( Workout, "no start_at needed" ) do |activity:nil, start_at:nil, args:nil|
           activity.__call__(start_at, *args)
         end
 
