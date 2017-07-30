@@ -2,11 +2,29 @@ module Trailblazer
   class Circuit::Activity
     # Find all `direction` connections TO <old_task> and rewire them to new_task,
     # then connect new to old with `direction`.
-    def self.Before(activity, old_task, new_task, direction:raise, **kws)
+    #
+    # Note that {Before} with `:direction` finds the edges/connections by object identity (e.g. `Circuit::Right`).
+
+    def self.Before(activity, old_task, new_task, direction: raise, predecessors: nil, **kws)
       Rewrite(activity, **kws) do |new_map|
-        cfg = new_map.find_all { |act, outputs| outputs[direction]==old_task }
-        # rewire old line to new task.
-        cfg.each { |(activity, outputs)| outputs[direction] = new_task }
+        # Example graph:
+        #
+        # D ---Lv    End
+        # A -R> B -> End
+        # C ---R^
+        cfg = if predecessors
+          # find all ingoing arrows into {old_task} (B) that are connected to specified {predecessors} (A, D).
+          predecessors.collect { |predecessor| [ predecessor, new_map[predecessor].invert[old_task] ] }
+          # => [ [A, Right], [D, Left] ] (both point to B and were specified predecessors)
+        else
+          # find all ingoing arrows into {old_task} (B) where arrow is of type {direction} (R).
+          new_map.collect { |predecessor, outputs| outputs[direction] == old_task ? [ predecessor, direction ] : nil }.compact
+          # => [ [A, Right], [C, Right] ] (both point to B via a R arrow)
+        end
+
+        # rewire old_task's predecessors to new_task.
+        cfg.each { |(predecessor, direction)| new_map[predecessor][direction] = new_task }
+
         # connect new_task --> old_task.
         new_map[new_task] = { direction => old_task }
       end

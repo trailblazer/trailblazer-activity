@@ -13,6 +13,8 @@ class AlterTest < Minitest::Spec
   let (:ends) { {end: { right: Circuit::End.new(:right), left: Circuit::End.new(:left) }} }
 
   describe "Before" do
+    # Start -> End
+    #       -> End
     let(:activity) do
       Circuit::Activity({id: "A/"}, ends) { |evt|
         {
@@ -52,6 +54,8 @@ class AlterTest < Minitest::Spec
 
     describe "multiple lines pointing to A" do
       let(:activity) do
+        # Start ->   A  ->   End
+        #       -> C ^  ->   End
         Circuit::Activity({id: "A/"}, ends) { |evt|
           {
             evt[:Start] => { Circuit::Right => A, Circuit::Left => C },
@@ -77,10 +81,51 @@ class AlterTest < Minitest::Spec
         debug.inspect.must_equal %{{:id=>\"A/\", 1=>\"first\", 2=>\"second\"}}
       end
     end
+
+    describe ":connections" do
+      describe "multiple lines pointing to A" do
+        D = Class.new
+
+        let(:activity) do
+
+          #       -> D-v  ----------|
+          # Start ->   A  ->   End  |
+          #       -> C-^  ->   End <-
+          Circuit::Activity({id: "A/"}, ends) { |evt|
+            {
+              evt[:Start] => { Circuit::Right => A, Circuit::Left => C, "to-D" => D },
+              C => { Circuit::Right => A, Circuit::Left => evt[:End, :left] },
+              A => { Circuit::Right => evt[:End, :right] },
+              D => { Circuit::Right => A, Circuit::Left => evt[:End, :left] }
+            }
+          }
+        end
+
+        #- with :direction, everything points to B
+        it do
+          #       -> D-v  ---------------|
+          # Start ->   B -> A  ->   End  |
+          #       -> C-^       ->   End <-
+          _activity = Circuit::Activity::Before(activity, A, B, direction: Circuit::Right )
+          _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>C, to-D=>D}, C=>{Right=>B, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}, D=>{Right=>B, Left=>#<End: left {}>}, B=>{Right=>A}}"
+        end
+
+        #- with :predecessors, D still points to A since we say so.
+        it do
+          #       -> D------v  ----------|
+          # Start ->   B -> A  ->   End  |
+          #       -> C-^       ->   End <-
+          _activity = Circuit::Activity::Before(activity, A, B, direction: Circuit::Right, predecessors: [ activity[:Start], C ] )
+          _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>C, to-D=>D}, C=>{Right=>B, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}, D=>{Right=>A, Left=>#<End: left {}>}, B=>{Right=>A}}"
+        end
+      end
+    end
   end
 
   describe "Connect" do
     let(:activity) do
+      # Start -> End
+      #       -> End
       Circuit::Activity({id: "A/"}, ends) { |evt|
         {
           evt[:Start] => { Circuit::Right => evt[:End, :right], Circuit::Left => evt[:End, :left] },
