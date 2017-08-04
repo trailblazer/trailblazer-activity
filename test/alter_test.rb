@@ -111,12 +111,13 @@ class AlterTest < Minitest::Spec
         end
 
         #- with :predecessors, D still points to A since we say so.
+        #  :direction is the type of the new edge between B and A.
         it do
-          #       -> D------v  ----------|
-          # Start ->   B -> A  ->   End  |
-          #       -> C-^       ->   End <-
-          _activity = Circuit::Activity::Before(activity, A, B, direction: Circuit::Right, predecessors: [ activity[:Start], C ] )
-          _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>C, to-D=>D}, C=>{Right=>B, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}, D=>{Right=>A, Left=>#<End: left {}>}, B=>{Right=>A}}"
+          #       -> D-------v  ----------|
+          # Start ->   B -L> A  ->   End  |
+          #       -> C-^        ->   End <-
+          _activity = Circuit::Activity::Before(activity, A, B, direction: Circuit::Left, predecessors: [ activity[:Start], C ] )
+          _activity.must_inspect "{#<Start: default {}>=>{Right=>B, Left=>C, to-D=>D}, C=>{Right=>B, Left=>#<End: left {}>}, A=>{Right=>#<End: right {}>}, D=>{Right=>A, Left=>#<End: left {}>}, B=>{Left=>A}}"
         end
       end
     end

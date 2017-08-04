@@ -1,4 +1,4 @@
-# "di" step_di: order:  1. runtime, 2. { contract.class: A } (dynamic at runtime?)
+  # "di" step_di: order:  1. runtime, 2. { contract.class: A } (dynamic at runtime?)
 
 =begin
   * test "stripe scenario"
@@ -31,6 +31,10 @@ module Trailblazer
 
     def [](name)
       ContainerChain.find( [@mutable_options, @wrapped_options], name )
+    end
+
+    def key?(name)
+      @mutable_options.key?(name) || @wrapped_options.key?(name)
     end
 
     def []=(name, value)
