@@ -1,3 +1,10 @@
+# 0.0.12
+
+* In `Activity::Before`, allow specifying what predecessing tasks to connect to the new_task via the
+`:predecessors` option, and without knowing the direction. This will be the new preferred style in `Trailblazer:::Sequence`
+where we can always assume directions are limited to `Right` and `Left` (e.g., with nested activities, this changes to a
+colorful selection of directions).
+
 # 0.0.11
 
 * Temporarily allow injecting a `to_hash` transformer into a `ContainerChain`. This allows to ignore

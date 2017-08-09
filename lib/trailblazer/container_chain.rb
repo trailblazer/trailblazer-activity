@@ -26,8 +26,9 @@ class Trailblazer::Context::ContainerChain # used to be called Resolver.
     containers.find { |container| container.key?(name) && (return container[name]) }
   end
 
-
-
+  def keys
+    @containers.collect(&:keys).flatten
+end
 
   # @private
   def to_hash

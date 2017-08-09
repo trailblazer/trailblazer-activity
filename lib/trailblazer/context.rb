@@ -1,4 +1,4 @@
-# "di" step_di: order:  1. runtime, 2. { contract.class: A } (dynamic at runtime?)
+  # "di" step_di: order:  1. runtime, 2. { contract.class: A } (dynamic at runtime?)
 
 =begin
   * test "stripe scenario"
@@ -33,6 +33,10 @@ module Trailblazer
       ContainerChain.find( [@mutable_options, @wrapped_options], name )
     end
 
+    def key?(name)
+      @mutable_options.key?(name) || @wrapped_options.key?(name)
+    end
+
     def []=(name, value)
       @mutable_options[name] = value
     end
@@ -54,6 +58,10 @@ module Trailblazer
     end
 
 
+    def keys
+      @mutable_options.keys + @wrapped_options.keys # FIXME.
+    end
+
 
 
     # TODO: maybe we shouldn't allow to_hash from context?
@@ -68,7 +76,8 @@ module Trailblazer
         end
       end
     end
-        # FIXME
+
+    # FIXME
       # TODO: rename Context::Hash::Immutable
       class Immutable
         def initialize(hash)
@@ -91,12 +100,14 @@ module Trailblazer
           @hash.merge(hash)
         end
 
+        def keys
+          @hash.keys
+        end
+
         # DISCUSS: raise in #[]=
         # each
         # TODO: Skill could inherit
       end
-
-
   end
 
   def self.Context(wrapped_options, mutable_options={})
