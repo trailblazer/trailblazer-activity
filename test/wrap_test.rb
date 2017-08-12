@@ -92,7 +92,7 @@ class StepPipeTest < Minitest::Spec
           wrap_runtime:  Wrap::Alterations.new(default: wrap_alterations),
 
           stack:         Circuit::Trace::Stack.new,
-          debug:         {} # TODO: crashes without :debug.
+          introspection: { } # TODO: crashes without :debug.
         )
 
         # upload should contain only one 1.
@@ -151,7 +151,7 @@ class StepPipeTest < Minitest::Spec
 
           # Trace specific:
           stack:      Circuit::Trace::Stack.new,
-          debug:      activity.circuit.instance_variable_get(:@name) # optional, eg. per Activity.
+          introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
         }
       )
 

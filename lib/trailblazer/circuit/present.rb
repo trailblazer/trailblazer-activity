@@ -14,12 +14,20 @@ module Trailblazer
           Hirb::Console.format_output(tree, class: :tree, type: :directory)
         end
 
+        # API HERE is: we only know the current element (e.g. task), input, output, and have an "introspection" object that tells us more about the element.
+        # TODO: the debug_item's "api" sucks, this should be a struct.
         def tree_for(stack, level, tree)
           stack.each do |debug_item|
+            task = debug_item[0][0]
+
             if debug_item.size == 2 # flat
-              tree << [ level,  debug_item[0].last[debug_item[0][0]] || debug_item[0][0] ]
+              introspect = debug_item[0].last
+
+              name = (node = introspect[task]) ? node[:id] : task
+
+              tree << [ level,  name ]
             else # nesting
-              tree << [ level, debug_item[0][0] ]
+              tree << [ level, task ]
 
               tree_for(debug_item[1..-2], level + 1, tree)
 

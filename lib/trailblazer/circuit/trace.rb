@@ -5,6 +5,8 @@ module Trailblazer
     #
     #   stack, _ = Trailblazer::Circuit::Trace.(activity, activity[:Start], { id: 1 })
     #   puts Trailblazer::Circuit::Present.tree(stack) # renders the trail.
+    #
+    # Hooks into the TaskWrap.
     module Trace
       def self.call(activity, direction, options, flow_options={}, &block)
         tracing_flow_options = {
@@ -12,7 +14,7 @@ module Trailblazer
           stack:        Trace::Stack.new,
           wrap_runtime: Wrap::Alterations.new(default: Trace.Alterations),
           wrap_static:  Wrap::Alterations.new,
-          debug:        {}, # usually set that in Activity::call.
+          introspection:        {}, # usually set that in Activity::call.
         }
 
         direction, options, flow_options = call_circuit( activity, direction, options, tracing_flow_options.merge(flow_options), &block )
@@ -37,7 +39,7 @@ module Trailblazer
       def self.capture_args(direction, options, flow_options, wrap_config, original_flow_options)
         original_flow_options[:stack].indent!
 
-        original_flow_options[:stack] << [ wrap_config[:task], :args, nil, options.dup, original_flow_options[:debug] ]
+        original_flow_options[:stack] << [ wrap_config[:task], :args, nil, options.dup, original_flow_options[:introspection] ]
 
         [ direction, options, flow_options, wrap_config, original_flow_options ]
       end
