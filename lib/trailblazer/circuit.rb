@@ -123,7 +123,6 @@ module Trailblazer
 end
 
 require "trailblazer/circuit/activity"
-require "trailblazer/circuit/task"
 require "trailblazer/option"
 require "trailblazer/circuit/alter"
 require "trailblazer/circuit/trace"
