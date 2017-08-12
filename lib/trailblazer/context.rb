@@ -53,6 +53,9 @@ module Trailblazer
       [ @wrapped_options, @mutable_options ]
     end
 
+    def key?(name)
+      ContainerChain.find( [@mutable_options, @wrapped_options], name )
+    end
 
 
     def keys
@@ -60,6 +63,8 @@ module Trailblazer
     end
 
 
+
+    # TODO: maybe we shouldn't allow to_hash from context?
     # TODO: massive performance bottleneck. also, we could already "know" here what keys the
     # transformation wants.
     # FIXME: ToKeywordArguments()
@@ -108,4 +113,4 @@ module Trailblazer
   def self.Context(wrapped_options, mutable_options={})
     Context.new(wrapped_options, mutable_options)
   end
-end
+end # Trailblazer
