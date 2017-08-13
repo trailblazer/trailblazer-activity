@@ -15,9 +15,9 @@ class Trailblazer::Circuit
         # Call the task_wrap circuit:
         #   |-- Start
         #   |-- Trace.capture_args   [optional]
-        #   |-- Call (call actual task)
+        #   |-- Call (call actual task) id: "task_wrap.call_task"
         #   |-- Trace.capture_return [optional]
-        #   |-- End
+        #   |-- Wrap::End
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
         task_wrap_activity.( nil, options, {}, wrap_config, flow_options.merge( wrap_static: wrap_static, wrap_runtime: wrap_runtime) )
       end
@@ -63,6 +63,7 @@ class Trailblazer::Circuit
     #   |-- Call (call actual task)
     #   |-- Trace.capture_return [optional]
     #   |-- End
+
     # Activity = Trailblazer::Circuit::Activity({ id: "task.wrap" }, end: { default: End.new(:default) }) do |act|
     #   {
     #     act[:Start] => { Right => Call }, # see Wrap::call_task

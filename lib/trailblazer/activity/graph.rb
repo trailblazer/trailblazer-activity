@@ -27,12 +27,13 @@ module Trailblazer
       end
 
       # Single entry point for adding nodes and edges to the graph.
-      private def connect_for!(source, edge, target)
+      def connect_for!(source, edge, target)
         # raise if find_all( source[:id] ).any?
         self[:graph][source] ||= {}
         self[:graph][target] ||= {} # keep references to all nodes, even when detached.
         self[:graph][source][edge] = target
       end
+      private :connect_for!
 
       # Builds a node from the provided `:node` argument array.
       def attach!(target:raise, edge:raise, source:self)
