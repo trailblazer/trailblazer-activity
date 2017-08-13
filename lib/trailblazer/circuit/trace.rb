@@ -12,7 +12,7 @@ module Trailblazer
         tracing_flow_options = {
           runner:       Wrap::Runner,
           stack:        Trace::Stack.new,
-          wrap_runtime: Hash.new(Trace.wirings),
+          wrap_runtime: ::Hash.new(Trace.wirings),
           # Note that we don't pass :wrap_static here, that's handled by Task.__call__.
           introspection:        {}, # usually set that in Activity::call.
         }
