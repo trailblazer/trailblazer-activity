@@ -8,9 +8,11 @@ class Trailblazer::Circuit
       NIL_ALTERATION = "Please provide :wrap_runtime" # here for Ruby 2.0 compat.
 
       # @api private
+      # Runner signature: call( task, direction, options, flow_options, *args )
       def self.call(task, direction, options, wrap_static: Hash.new(Wrap.initial_activity), wrap_runtime:raise(NIL_ALTERATION), **flow_options)
-        task_wrap_activity   = apply_wirings(task, wrap_static, wrap_runtime)
         wrap_config = { task: task }
+
+        task_wrap_activity = apply_wirings(task, wrap_static, wrap_runtime)
 
         # Call the task_wrap circuit:
         #   |-- Start
@@ -19,6 +21,8 @@ class Trailblazer::Circuit
         #   |-- Trace.capture_return [optional]
         #   |-- Wrap::End
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
+
+        # call the wrap for the task.
         task_wrap_activity.( nil, options, {}, wrap_config, flow_options.merge( wrap_static: wrap_static, wrap_runtime: wrap_runtime) )
       end
 

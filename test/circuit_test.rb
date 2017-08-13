@@ -58,6 +58,23 @@ class CircuitTest < Minitest::Spec
     it { flow.(flow[:Start], return: Circuit::Right)[0..1].must_equal([flow[:End],         {:return=>Trailblazer::Circuit::Right} ]) }
     it { flow.(flow[:Start], return: Circuit::Left )[0..1].must_equal([flow[:End, :retry], {:return=>Trailblazer::Circuit::Left} ]) }
   end
+
+  describe "arbitrary args for Circuit#call are passed and returned" do
+    Plus    = ->(direction, options, flow_options, a, b)      { [ direction, options, flow_options, a + b, 1 ] }
+    PlusOne = ->(direction, options, flow_options, ab_sum, i) { [ direction, options, flow_options, ab_sum.to_s, i+1 ] }
+
+    let(:flow) do
+      Circuit::Activity({ id: :reading }, end: {default: Circuit::End(:default)} ) { |evt|
+        {
+          evt[:Start] => { Circuit::Right => Plus },
+          Plus        => { Circuit::Right => PlusOne },
+          PlusOne     => { Circuit::Right => evt[:End] },
+        }
+      }
+    end
+
+    it { flow.( flow[:Start], {}, {a:"B"}, 1, 2 ).must_equal [ flow[:End], {}, {a:"B"}, "3", 2 ] }
+  end
 end
 
 # decouple circuit and implementation

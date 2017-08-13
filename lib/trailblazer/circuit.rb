@@ -34,10 +34,10 @@ module Trailblazer
       runner    = flow_options[:runner] || Run
 
       loop do
-        direction, options, flow_options = runner.( activity, direction, options, flow_options, *args )
+        direction, options, flow_options, *args = runner.( activity, direction, options, flow_options, *args )
 
         # Stop execution of the circuit when we hit a stop event (< End). This could be an activity's End or Suspend.
-        return [ direction, options, flow_options ] if @stop_events.include?(activity)
+        return [ direction, options, flow_options, *args ] if @stop_events.include?(activity)
 
         activity = next_for(activity, direction) do |next_activity, in_map|
           activity_name = @name[activity] || activity # TODO: this must be implemented only once, somewhere.
