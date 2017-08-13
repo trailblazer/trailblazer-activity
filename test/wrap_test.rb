@@ -67,13 +67,6 @@ class StepPipeTest < Minitest::Spec
         ]
       end
 
-      # no :wrap_set
-      it do
-        assert_raises do
-          direction, options, flow_options = runner( wrap_runtime: "Wrap::Alterations.new(default: wrap_alterations)" )
-        end.to_s.must_equal %{Please provide :wrap_static}
-      end
-
       # no :wrap_alterations, default Wrap
       it do
         assert_raises do

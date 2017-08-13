@@ -12,8 +12,8 @@ module Trailblazer
         tracing_flow_options = {
           runner:       Wrap::Runner,
           stack:        Trace::Stack.new,
-          wrap_runtime: Wrap::Alterations.new(default: Trace.Alterations),
-          wrap_static:  Wrap::Alterations.new,
+          wrap_runtime: Hash.new(Trace.wirings),
+          # Note that we don't pass :wrap_static here, that's handled by Task.__call__.
           introspection:        {}, # usually set that in Activity::call.
         }
 
@@ -29,10 +29,10 @@ module Trailblazer
       end
 
       # Default tracing tasks to be plugged into the wrap circuit.
-      def self.Alterations
+      def self.wirings
         [
-        ->(wrap_circuit) { Activity::Before( wrap_circuit, Wrap::Call, Trace.method(:capture_args),   direction: Right ) },
-        ->(wrap_circuit) { Activity::Before( wrap_circuit, wrap_circuit[:End],      Trace.method(:capture_return), direction: Right ) },
+          [ :insert_before!, "task_wrap.call_task", node: [ Trace.method(:capture_args),   id: "task_wrap.capture_args" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ],
+          [ :insert_before!, [:End, :default],      node: [ Trace.method(:capture_return), id: "task_wrap.capture_return" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ],
         ]
       end
 

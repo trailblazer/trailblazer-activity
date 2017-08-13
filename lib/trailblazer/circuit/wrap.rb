@@ -5,13 +5,11 @@ class Trailblazer::Circuit
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
     module Runner
-      NIL_WRAPS      = "Please provide :wrap_static"  # here for Ruby 2.0 compat.
       NIL_ALTERATION = "Please provide :wrap_runtime" # here for Ruby 2.0 compat.
 
       # @api private
-      def self.call(task, direction, options, wrap_static:raise(NIL_WRAPS), wrap_runtime:raise(NIL_ALTERATION), **flow_options)
+      def self.call(task, direction, options, wrap_static: Hash.new(Wrap.initial_activity), wrap_runtime:raise(NIL_ALTERATION), **flow_options)
         task_wrap_activity   = apply_alterations(task, wrap_static, wrap_runtime)
-
         wrap_config = { task: task }
 
         # Call the task_wrap circuit:
