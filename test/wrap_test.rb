@@ -50,13 +50,14 @@ class StepPipeTest < Minitest::Spec
     #---
     #-
     describe "Wrap::Runner#call with invalid input" do
-      def runner(flow_options, activity=more_nested)
+      def runner(flow_options, static_wraps={}, activity=more_nested)
         direction, options, flow_options = activity.(
           activity[:Start],
           {},
           {
             runner: Wrap::Runner,
-          }.merge(flow_options)
+          }.merge(flow_options),
+          static_wraps
         )
       end
 
@@ -70,7 +71,7 @@ class StepPipeTest < Minitest::Spec
       # no :wrap_alterations, default Wrap
       it do
         assert_raises do
-          direction, options, flow_options = runner( wrap_static: "Wrap::Alterations.new ")
+          direction, options, flow_options = runner( bla: "Ignored" )
         end.to_s.must_equal %{Please provide :wrap_runtime}
       end
 
@@ -82,12 +83,14 @@ class StepPipeTest < Minitest::Spec
         wrap_static         = Hash.new( Trailblazer::Circuit::Wrap.initial_activity )
         wrap_static[Upload] = Trailblazer::Activity.merge( Trailblazer::Circuit::Wrap.initial_activity, upload_wrap )
 
-        direction, options, flow_options = runner(
-          wrap_static:   wrap_static,
-          wrap_runtime:  Hash.new(wrap_alterations),
+        direction, options, flow_options, *ret = runner(
+          {
+            wrap_runtime:  Hash.new(wrap_alterations),
 
-          stack:         Circuit::Trace::Stack.new,
-          introspection: { } # TODO: crashes without :debug.
+            stack:         Circuit::Trace::Stack.new,
+            introspection: { } # TODO: crashes without :debug.
+          },
+          wrap_static
         )
 
         # upload should contain only one 1.

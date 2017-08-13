@@ -5,14 +5,13 @@ class Trailblazer::Circuit
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
     module Runner
-      NIL_ALTERATION = "Please provide :wrap_runtime" # here for Ruby 2.0 compat.
-
       # @api private
-      # Runner signature: call( task, direction, options, flow_options, *args )
-      def self.call(task, direction, options, wrap_static: Hash.new(Wrap.initial_activity), wrap_runtime:raise(NIL_ALTERATION), **flow_options)
-        wrap_config = { task: task }
+      # Runner signature: call( task, direction, options, flow_options, static_wraps )
+      def self.call(task, direction, options, flow_options, static_wraps = Hash.new(Wrap.initial_activity))
+        wrap_config   = { task: task }
+        runtime_wraps = flow_options[:wrap_runtime] || raise("Please provide :wrap_runtime")
 
-        task_wrap_activity = apply_wirings(task, wrap_static, wrap_runtime)
+        task_wrap_activity = apply_wirings(task, static_wraps, runtime_wraps)
 
         # Call the task_wrap circuit:
         #   |-- Start
@@ -23,7 +22,9 @@ class Trailblazer::Circuit
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
 
         # call the wrap for the task.
-        task_wrap_activity.( nil, options, {}, wrap_config, flow_options.merge( wrap_static: wrap_static, wrap_runtime: wrap_runtime) )
+        ret = task_wrap_activity.( nil, options, {}, wrap_config, flow_options )
+
+        [ *ret, static_wraps ] # return everything plus the static_wraps for the next task in the circuit.
       end
 
       private
