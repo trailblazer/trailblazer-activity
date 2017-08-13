@@ -61,35 +61,37 @@ class StepPipeTest < Minitest::Spec
       end
 
       let(:wrap_alterations) do
-        wrap_alterations = [
-          ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right ) },
-          ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right ) },
+        [
+          [ :insert_before!, "task_wrap.call_task", node: [ Circuit::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
+          [ :insert_before!, [:End, :default], node: [ Circuit::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
         ]
       end
 
       # no :wrap_set
       it do
         assert_raises do
-          direction, options, flow_options = runner( wrap_runtime: Wrap::Alterations.new(default: wrap_alterations) )
+          direction, options, flow_options = runner( wrap_runtime: "Wrap::Alterations.new(default: wrap_alterations)" )
         end.to_s.must_equal %{Please provide :wrap_static}
       end
 
       # no :wrap_alterations, default Wrap
       it do
         assert_raises do
-          direction, options, flow_options = runner( wrap_static: Wrap::Alterations.new )
+          direction, options, flow_options = runner( wrap_static: "Wrap::Alterations.new ")
         end.to_s.must_equal %{Please provide :wrap_runtime}
       end
 
       # specific wrap for A, default for B.
       it do
         only_for_wrap = ->(direction, options, *args) { options[:upload] ||= []; options[:upload]<<1; [ direction, options, *args ] }
-        upload_wrap   = Circuit::Activity::Before( Wrap::Activity, Wrap::Call, only_for_wrap, direction: Circuit::Right )
-        wrap_static   = Wrap::Alterations.new( map: { Upload => [ Proc.new{upload_wrap} ] } )
+        upload_wrap   = [ [ :insert_before!, "task_wrap.call_task", node: [ only_for_wrap, { id: "task_wrap.upload" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ] ]
+
+        wrap_static         = Hash.new( Trailblazer::Circuit::Wrap.initial_activity )
+        wrap_static[Upload] = Trailblazer::Activity.merge( Trailblazer::Circuit::Wrap.initial_activity, upload_wrap )
 
         direction, options, flow_options = runner(
           wrap_static:   wrap_static,
-          wrap_runtime:  Wrap::Alterations.new(default: wrap_alterations),
+          wrap_runtime:  Hash.new(wrap_alterations),
 
           stack:         Circuit::Trace::Stack.new,
           introspection: { } # TODO: crashes without :debug.
@@ -111,34 +113,11 @@ class StepPipeTest < Minitest::Spec
     #- Tracing
     it "trail" do
       wrap_alterations = [
-        ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right ) },
-        ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right ) },
+        [ :insert_before!, "task_wrap.call_task", node: [ Circuit::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
+        [ :insert_before!, [:End, :default], node: [ Circuit::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
+        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right ) },
+        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right ) },
       ]
-
-
-
-      # in __call__, we now need to merge the step's wrap with the alterations.
-      # def __call__(start_at, options, flow_options)
-      #   # merge dynamic runtime part (e.g. tracing) with the static wrap
-      #   # DISCUSS: now, the operation knows about those wraps, we should shift that to the Wrap::Runner.
-      #   wrap_alterations = flow_options[:wrap_alterations]
-      #   task_wraps = self["__task_wraps__"].collect { |task, wrap_circuit| [ task, wrap_alterations[nil].(wrap_circuit) ] }.to_h
-      #   activity   = self["__activity__"]
-
-
-      #   activity.(start_at, options, flow_options.merge(
-      #     exec_context: new,
-      #     task_wraps:   task_wraps,
-      #     debug:        activity.circuit.instance_variable_get(:@name) ))
-
-
-      #   # task_wraps: wraps
-      #   # debug: activity.circuit.instance_variable_get(:@name)
-      # end
-
-      # # Trace.call
-      # __call__( self["__activity__"][:Start], options, { runner: Wrap::Runner, wrap_alterations: wrap_alterations } )
-
 
       direction, options, flow_options = activity.(
         activity[:Start],
@@ -146,8 +125,8 @@ class StepPipeTest < Minitest::Spec
         {
           # Wrap::Runner specific:
           runner:       Wrap::Runner,
-          wrap_static:  Wrap::Alterations.new,
-          wrap_runtime: Wrap::Alterations.new(default: wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
+          wrap_static:  Hash.new( Trailblazer::Circuit::Wrap.initial_activity ),
+          wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
 
           # Trace specific:
           stack:      Circuit::Trace::Stack.new,
@@ -177,9 +156,5 @@ class StepPipeTest < Minitest::Spec
 |-- outsideg.Uuid
 `-- #<Trailblazer::Circuit::End:>}
     end
-  end
-
-  it do
-    Circuit::Wrap::Alterations.new.("unknown task", "default").must_equal "default"
   end
 end

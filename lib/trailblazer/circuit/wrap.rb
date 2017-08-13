@@ -10,7 +10,7 @@ class Trailblazer::Circuit
 
       # @api private
       def self.call(task, direction, options, wrap_static:raise(NIL_WRAPS), wrap_runtime:raise(NIL_ALTERATION), **flow_options)
-        task_wrap   = apply_alterations(task, wrap_static, wrap_runtime)
+        task_wrap_activity   = apply_alterations(task, wrap_static, wrap_runtime)
 
         wrap_config = { task: task }
 
@@ -21,15 +21,18 @@ class Trailblazer::Circuit
         #   |-- Trace.capture_return [optional]
         #   |-- End
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
-        task_wrap.( task_wrap[:Start], options, {}, wrap_config, flow_options.merge( wrap_static: wrap_static, wrap_runtime: wrap_runtime) )
+        task_wrap_activity.( nil, options, {}, wrap_config, flow_options.merge( wrap_static: wrap_static, wrap_runtime: wrap_runtime) )
       end
 
       private
 
       # Compute the task's wrap by applying alterations both static and from runtime.
-      def self.apply_alterations(task, wrap_static, wrap_runtime, default_wrap=Activity)
-        task_wrap = wrap_static.(task, Activity)   # find static wrap for this specific task, Activity is the default wrap.
-        task_wrap = wrap_runtime.(task, task_wrap) # apply runtime alterations.
+      def self.apply_alterations(task, wrap_static, wrap_runtime)
+        wrap_activity = wrap_static[task]   # find static wrap for this specific task, or default wrap activity.
+
+        # Apply runtime alterations.
+        # Grab the additional wirings for the particular `task` from `wrap_runtime` (returns default otherwise).
+        wrap_activity = Trailblazer::Activity.merge(wrap_activity, wrap_runtime[task])
       end
     end # Runner
 
@@ -62,46 +65,20 @@ class Trailblazer::Circuit
     #   |-- Call (call actual task)
     #   |-- Trace.capture_return [optional]
     #   |-- End
-    Activity = Trailblazer::Circuit::Activity({ id: "task.wrap" }, end: { default: End.new(:default) }) do |act|
-      {
-        act[:Start] => { Right => Call }, # see Wrap::call_task
-        Call        => { Right => act[:End] },
-      }
-    end # Activity
+    # Activity = Trailblazer::Circuit::Activity({ id: "task.wrap" }, end: { default: End.new(:default) }) do |act|
+    #   {
+    #     act[:Start] => { Right => Call }, # see Wrap::call_task
+    #     Call        => { Right => act[:End] },
+    #   }
+    # end # Activity
 
-    # Alterations#call finds alterations for `task` and applies them to `task_wrap`.
-    # Each alteration receives the result of the former one, starting with `task_wrap`.
-    #
-    # This is used to add tracing steps, input/output contracts, and more at runtime,
-    # or to maintain specific static task_wraps, as for each step in an operation.
-    #
-    # Note that an alteration doesn't have to respect its `task_wrap` and can simply return
-    # an arbitrary Circuit.
-    #
-    # === DESIGN
-    # By moving the "default" decision to this object, you can control what task gets wrapped
-    # with what wrap, allowing you to only wrap "focussed" tasks, for example.
-    #
-    # It also allows to inject, say, a tracing alteration that is only applied to a specific task
-    # and returns all others unchanged.
-    class Alterations
-      PassThrough = ->(task_wrap) { task_wrap }
-
-      def initialize(map: {}, default: [ PassThrough ])
-        @default_alterations, @map = default, map
-      end
-
-      # @returns Circuit
-      def call(task, target_wrap)
-        get(task). # list of alterations.
-          inject(target_wrap) { |circuit, alteration| alteration.(circuit) }
-      end
-
-      private
-
-      def get(task)
-        @map[task] || @default_alterations
-      end
+    def self.initial_activity
+      Trailblazer::Activity.from_wirings(
+        [
+          [ :attach!, target: [ End.new(:default), type: :event, id: [:End, :default] ], edge: [ Right, {} ] ],
+          [ :insert_before!, [:End, :default], node: [ Call, id: "task_wrap.call_task" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ]
+        ]
+      )
     end
   end
 end

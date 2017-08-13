@@ -131,3 +131,5 @@ require "trailblazer/circuit/wrap"
 
 require "trailblazer/context"
 require "trailblazer/container_chain"
+
+require "trailblazer/activity"
