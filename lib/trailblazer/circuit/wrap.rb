@@ -9,7 +9,7 @@ class Trailblazer::Circuit
 
       # @api private
       def self.call(task, direction, options, wrap_static: Hash.new(Wrap.initial_activity), wrap_runtime:raise(NIL_ALTERATION), **flow_options)
-        task_wrap_activity   = apply_alterations(task, wrap_static, wrap_runtime)
+        task_wrap_activity   = apply_wirings(task, wrap_static, wrap_runtime)
         wrap_config = { task: task }
 
         # Call the task_wrap circuit:
@@ -25,7 +25,7 @@ class Trailblazer::Circuit
       private
 
       # Compute the task's wrap by applying alterations both static and from runtime.
-      def self.apply_alterations(task, wrap_static, wrap_runtime)
+      def self.apply_wirings(task, wrap_static, wrap_runtime)
         wrap_activity = wrap_static[task]   # find static wrap for this specific task, or default wrap activity.
 
         # Apply runtime alterations.
