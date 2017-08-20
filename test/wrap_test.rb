@@ -17,32 +17,32 @@ class StepPipeTest < Minitest::Spec
 
   describe "nested trailing" do
     let (:more_nested) do
-      Circuit::Activity(id: "more_nested", Upload=>"more_nested.Upload") do |act|
+      Trailblazer::Activity.from_hash do |start, _end|
         {
-          act[:Start] => { Circuit::Right => Upload },
-          Upload        => { Circuit::Right => act[:End] }
+          start => { Circuit::Right => Upload },
+          Upload        => { Circuit::Right => _end }
         }
       end
     end
 
     let (:nested) do
-      Circuit::Activity(id: "nested") do |act|
+      Trailblazer::Activity.from_hash do |start, _end|
         {
-          act[:Start] => { Circuit::Right    => Save },
+          start => { Circuit::Right    => Save },
           Save        => { Circuit::Right    => __nested = Circuit::Nested(more_nested) },
-          __nested    => { more_nested[:End] => Cleanup },
-          Cleanup     => { Circuit::Right => act[:End] }
+          __nested    => { more_nested.end_events.first => Cleanup },
+          Cleanup     => { Circuit::Right => _end }
         }
       end
     end
 
     let (:activity) do
-      Circuit::Activity(id: "outsideg", Model=>"outsideg.Model", Uuid=>"outsideg.Uuid") do |act|
+      Trailblazer::Activity.from_hash do |start, _end|
         {
-          act[:Start] => { Circuit::Right => Model },
+          start => { Circuit::Right => Model },
           Model       => { Circuit::Right => __nested = Circuit::Nested( nested ) },
-          __nested    => { nested[:End] => Uuid },
-          Uuid        => { SpecialDirection => act[:End] }
+          __nested    => { nested.end_events.first => Uuid },
+          Uuid        => { SpecialDirection => _end }
         }
       end
     end
@@ -52,7 +52,7 @@ class StepPipeTest < Minitest::Spec
     describe "Wrap::Runner#call with invalid input" do
       def runner(flow_options, static_wraps={}, activity=more_nested)
         direction, options, flow_options = activity.(
-          activity[:Start],
+          nil,
           {},
           {
             runner: Wrap::Runner,
