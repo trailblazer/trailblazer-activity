@@ -122,9 +122,7 @@ module Trailblazer
   end
 end
 
-require "trailblazer/circuit/activity"
 require "trailblazer/option"
-require "trailblazer/circuit/alter"
 require "trailblazer/circuit/trace"
 require "trailblazer/circuit/present"
 require "trailblazer/circuit/wrap"

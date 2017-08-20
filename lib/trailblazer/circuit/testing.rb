@@ -9,7 +9,7 @@ module MiniTest::Assertions
 end
 
 
-Trailblazer::Circuit::Activity.infect_an_assertion :assert_activity_inspect, :must_inspect
+Trailblazer::Activity.infect_an_assertion :assert_activity_inspect, :must_inspect
 Trailblazer::Circuit::End.infect_an_assertion      :assert_event_inspect,    :must_inspect_end_fixme
 
 class Trailblazer::Circuit
