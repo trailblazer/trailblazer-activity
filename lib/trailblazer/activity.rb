@@ -16,6 +16,27 @@ module Trailblazer
       new(start)
     end
 
+    def self.from_hash(end_evt=Circuit::End.new(:default), start_evt=Circuit::Start.new(:default), &block)
+      hash  = yield(start_evt, end_evt)
+      graph = Graph::Start( start_evt, id: [:Start, :default] )
+
+      hash.each do |source_task, connections|
+        source = graph.find_all { |node| node[:_wrapped] == source_task }.first or raise "#{source_task} unknown"
+
+        connections.each do |signal, task| # FIXME: id sucks
+          if existing = graph.find_all { |node| node[:_wrapped] == task }.first
+            graph.connect!( source: source[:id], target: existing, edge: [signal, {}] )
+          else
+            graph.attach!( source: source[:id], target: [task, id: task], edge: [signal, {}] )
+          end
+
+          # puts "connecting #{source[:id]} => #{signal} => #{task}"
+        end
+      end
+
+      new(graph)
+    end
+
     def self.merge(activity, wirings)
       graph = activity.graph
 
@@ -38,7 +59,8 @@ module Trailblazer
     end
 
     def call(start_at, *args)
-      @circuit.( @start_event, *args )
+      # TODO: start_at || really?
+      @circuit.( start_at || @start_event, *args )
     end
 
     def end_events

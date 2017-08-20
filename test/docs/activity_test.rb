@@ -29,20 +29,22 @@ class DocsActivityTest < Minitest::Spec
 
   it do
     #:basic
-    activity = Circuit::Activity({id: "Blog/Publish"}) { |evt|
+    activity = Trailblazer::Activity.from_hash do |start, _end|
       {
-        evt[:Start]      => { Circuit::Right => Blog::Write },
+        start            => { Circuit::Right => Blog::Write },
         Blog::Write      => { Circuit::Right => Blog::SpellCheck },
         Blog::SpellCheck => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct },
         Blog::Correct    => { Circuit::Right => Blog::SpellCheck },
-        Blog::Publish    => { Circuit::Right => evt[:End] }
+        Blog::Publish    => { Circuit::Right => _end }
       }
-    }
+    end
     #:basic end
+
+    # Activity.from_hash
 
     #:call
     direction, options, flow = activity.(
-      activity[:Start],
+      nil,
       { content: "Let's start writing   " } # gets trimmed in Write.
     )
     #:call end
@@ -58,21 +60,21 @@ class DocsActivityTest < Minitest::Spec
     #- tracing
 
     #:trace-act
-    activity = Circuit::Activity({id: "Blog/Publish",
-      Blog::Write=>"Blog::Write",Blog::SpellCheck=>"Blog::SpellCheck",Blog::Correct=>"Blog::Correct", Blog::Publish=>"Blog::Publish" }) { |evt|
+    activity = Trailblazer::Activity.from_hash do |start, _end|
+      # Blog::Write=>"Blog::Write",Blog::SpellCheck=>"Blog::SpellCheck",Blog::Correct=>"Blog::Correct", Blog::Publish=>"Blog::Publish" }) { |evt|
       {
-        evt[:Start]      => { Circuit::Right => Blog::Write },
+        start      => { Circuit::Right => Blog::Write },
         Blog::Write      => { Circuit::Right => Blog::SpellCheck },
         Blog::SpellCheck => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct },
         Blog::Correct    => { Circuit::Right => Blog::SpellCheck },
-        Blog::Publish    => { Circuit::Right => evt[:End] }
+        Blog::Publish    => { Circuit::Right => _end }
       }
-    }
+    end
     #:trace-act end
 
     #:trace-call
     stack, _ = Circuit::Trace.( activity,
-      activity[:Start],
+      nil,
       { content: "Let's start writing" }
     )
     #:trace-call end
@@ -110,9 +112,9 @@ class DocsActivityTest < Minitest::Spec
     Blog::Warn = ->(direction, options, *flow) { options[:warning] = "Make less mistakes!"; [Circuit::Right, options, *flow] }
 
     #:toll
-    activity = Circuit::Activity({id: "Blog/Publish"}) { |evt|
+    activity = Trailblazer::Activity.from_hash do |start, _end|
       {
-        evt[:Start]       => { Circuit::Right => Blog::Write },
+        start       => { Circuit::Right => Blog::Write },
         Blog::Write       => { Circuit::Right => Blog::SpellCheck3 },
         Blog::SpellCheck3 => {
           Circuit::Right  => Blog::Publish,
@@ -121,14 +123,14 @@ class DocsActivityTest < Minitest::Spec
         },
         Blog::Warn        => { Circuit::Right => Blog::Publish },
         Blog::Correct     => { Circuit::Right => Blog::SpellCheck3 },
-        Blog::Publish     => { Circuit::Right => evt[:End] }
+        Blog::Publish     => { Circuit::Right => _end }
       }
-    }
+    end
     #:toll end
 
     #:toll-call
     direction, options, flow = activity.(
-      activity[:Start],
+      nil,
       { content: " Let's start  " }
     )
     #:toll-call end
@@ -143,7 +145,7 @@ class DocsActivityTest < Minitest::Spec
 
     # 1 error
     direction, options, flow = activity.(
-      activity[:Start],
+      nil,
       { content: " Let's sdart" }
     )
     direction.must_inspect_end_fixme "#<End: default {}>"
@@ -151,7 +153,7 @@ class DocsActivityTest < Minitest::Spec
 
     # 3 error
     direction, options, flow = activity.(
-      activity[:Start],
+      nil,
       { content: " Led's sdard" }
     )
     direction.must_inspect_end_fixme "#<End: default {}>"
@@ -162,32 +164,30 @@ class DocsActivityTest < Minitest::Spec
     #---
     #- events
     #:events
-    activity = Circuit::Activity({id: "Blog/Publish"},
-      end: {
-        default: Circuit::End.new(:published),
-        warn:    Circuit::End.new(:warned),
-        wrong:   Circuit::End.new(:wrong)
-      }
-    ) { |evt|
+    warn    = Circuit::End.new(:warned)
+    wrong   = Circuit::End.new(:wrong)
+    default = Circuit::End.new(:published)
+
+    activity = Trailblazer::Activity.from_hash(default) do |start, _end|
       {
-        evt[:Start]       => { Circuit::Right => Blog::Write },
+        start       => { Circuit::Right => Blog::Write },
         Blog::Write       => { Circuit::Right => Blog::SpellCheck3 },
         Blog::SpellCheck3 => {
           Circuit::Right  => Blog::Publish,
-          Circuit::Left   => evt[:End, :wrong],
+          Circuit::Left   => wrong,
           :maybe          => Blog::Warn
         },
-        Blog::Warn        => { Circuit::Right => evt[:End, :warn] },
-        Blog::Correct     => { Circuit::Right => Blog::SpellCheck3 },
-        Blog::Publish     => { Circuit::Right => evt[:End] }
+        Blog::Warn        => { Circuit::Right => warn },
+        # Blog::Correct     => { Circuit::Right => Blog::SpellCheck3 },
+        Blog::Publish     => { Circuit::Right => _end }
       }
-    }
+    end
     #:events end
 
     # 1 error
     #:events-call
     direction, options, flow = activity.(
-      activity[:Start],
+      nil,
       { content: " Let's sdart" }
     )
 
@@ -202,17 +202,14 @@ class DocsActivityTest < Minitest::Spec
     # Nested
     Shop = ->(*args) { args }
     #:nested
-    complete = Circuit::Activity(
-      {id: "Shop, Blog"},
-      end: { default: Circuit::End.new(:default), error: Circuit::End.new(:error) }
-    ) do |evt|
+    complete = Trailblazer::Activity.from_hash(default) do |start, _end|
       {
-        evt[:Start] => { Circuit::Right => Shop },
+        start => { Circuit::Right => Shop },
         Shop        => { Circuit::Right => _nested = Circuit::Nested(activity) },
         _nested     => {
-          activity[:End, :default] => evt[:End], # connect published to our End.
-          activity[:End, :wrong]   => evt[:End, :error],
-          activity[:End, :warn]    => evt[:End, :error]
+          default   => _end, # connect published to our End.
+          wrong     => error = Circuit::End.new(:error),
+          warn      => error
         }
       }
     end
@@ -220,7 +217,7 @@ class DocsActivityTest < Minitest::Spec
 
     #:nested-call
     direction, options, flow = complete.(
-      complete[:Start],
+      nil,
       { content: " Let's sdart" }
     )
 

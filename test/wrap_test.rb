@@ -116,7 +116,7 @@ class StepPipeTest < Minitest::Spec
       ]
 
       direction, options, flow_options = activity.(
-        activity[:Start],
+        nil,
         options = {},
         {
           # Wrap::Runner specific:
@@ -130,7 +130,7 @@ class StepPipeTest < Minitest::Spec
         }
       )
 
-      direction.must_equal activity[:End] # the actual activity's End signal.
+      direction.must_equal activity.end_events.first # the actual activity's End signal.
       options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
 

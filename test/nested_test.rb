@@ -17,29 +17,29 @@ Circuit = Trailblazer::Circuit
   ###
   describe "circuit with 1 level of nesting" do
     let(:blog) do
-      Circuit::Activity(id: "blog.read/next") { |evt|
+     Trailblazer::Activity.from_hash { |start, _end|
         {
-          evt[:Start]  => { Circuit::Right => Blog::Read },
+          start  => { Circuit::Right => Blog::Read },
           Blog::Read => { Circuit::Right => Blog::Next },
-          Blog::Next => { Circuit::Right => evt[:End], Circuit::Left => Blog::Comment },
-          Blog::Comment => { Circuit::Right => evt[:End] }
+          Blog::Next => { Circuit::Right => _end, Circuit::Left => Blog::Comment },
+          Blog::Comment => { Circuit::Right => _end }
         }
       }
     end
 
     let(:user) do
-      Circuit::Activity(id: "user.blog") { |user|
+      Trailblazer::Activity.from_hash { |start, _end|
         {
-          user[:Start] => { Circuit::Right => nested=Circuit::Nested(blog) },
-          nested     => { blog[:End] => User::Relax },
+          start => { Circuit::Right => nested=Circuit::Nested(blog) },
+          nested     => { blog.end_events.first => User::Relax },
 
-          User::Relax => { Circuit::Right => user[:End] }
+          User::Relax => { Circuit::Right => _end }
         }
       }
     end
 
     it "ends before comment, on next_page" do
-      user.(user[:Start], options = { "return" => Circuit::Right }).must_equal([user[:End], {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}, nil])
+      user.(nil, options = { "return" => Circuit::Right }).must_equal([user.end_events.first, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}, nil])
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
@@ -49,34 +49,35 @@ Circuit = Trailblazer::Circuit
   ###
   describe "circuit with 2 end events in the nested process" do
     let(:blog) do
-      Circuit::Activity({ id: "blog.read/next" }, end: { default: Circuit::End.new(:default), retry: Circuit::End.new(:retry) } ) { |evt|
+      _retry = Circuit::End.new(:retry)
+      Trailblazer::Activity.from_hash { |start, _end|
         {
-          evt[:Start]  => { Circuit::Right => Blog::Read },
+          start  => { Circuit::Right => Blog::Read },
           Blog::Read => { Circuit::Right => Blog::Next },
-          Blog::Next => { Circuit::Right => evt[:End], Circuit::Left => evt[:End, :retry] },
+          Blog::Next => { Circuit::Right => _end, Circuit::Left => _retry },
         }
       }
     end
 
     let(:user) do
-      Circuit::Activity(id: "user.blog") { |user|
+      Trailblazer::Activity.from_hash { |start, _end|
         {
-          user[:Start] => { Circuit::Right => nested=Circuit::Nested(blog) },
-          nested     => { blog[:End] => User::Relax, blog[:End, :retry] => user[:End] },
+          start => { Circuit::Right => nested=Circuit::Nested(blog) },
+          nested     => { blog.end_events.first => User::Relax, blog.end_events[1] => _end },
 
-          User::Relax => { Circuit::Right => user[:End] }
+          User::Relax => { Circuit::Right => _end }
         }
       }
     end
 
     it "runs from Nested->default to Relax" do
-      user.(user[:Start], options = { "return" => Circuit::Right }).must_equal([user[:End], {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}, nil])
+      user.(nil, options = { "return" => Circuit::Right }).must_equal([user.end_events.first, {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}, nil])
 
       options.must_equal({"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
 
     it "runs from other Nested end" do
-      user.(user[:Start], options = { "return" => Circuit::Left }).must_equal([user[:End], {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]}, nil])
+      user.(nil, options = { "return" => Circuit::Left }).must_equal([user.end_events.first, {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]}, nil])
 
       options.must_equal({"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]})
     end
@@ -84,19 +85,19 @@ Circuit = Trailblazer::Circuit
     #---
     #- Nested( activity, start_at )
     let(:with_nested_and_start_at) do
-      Circuit::Activity(id: "user.blog") { |user|
+      Trailblazer::Activity.from_hash { |start, _end|
         {
-          user[:Start] => { Circuit::Right => nested=Circuit::Nested(blog, Blog::Next) },
-          nested     => { blog[:End] => User::Relax },
+          start => { Circuit::Right => nested=Circuit::Nested(blog, Blog::Next) },
+          nested     => { blog.end_events.first => User::Relax },
 
-          User::Relax => { Circuit::Right => user[:End] }
+          User::Relax => { Circuit::Right => _end }
         }
       }
     end
 
     it "runs Nested from alternative start" do
-      with_nested_and_start_at.(with_nested_and_start_at[:Start], options = { "return" => Circuit::Right }).
-        must_equal( [with_nested_and_start_at[:End], {"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true}, nil] )
+      with_nested_and_start_at.(nil, options = { "return" => Circuit::Right }).
+        must_equal( [with_nested_and_start_at.end_events.first, {"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true}, nil] )
 
       options.must_equal({"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true})
     end
@@ -117,19 +118,19 @@ Circuit = Trailblazer::Circuit
           activity.__call__(start_at, *args)
         end
 
-        Circuit::Activity(id: "user.blog") { |user|
+        Trailblazer::Activity.from_hash { |start, _end|
           {
-            user[:Start] => { Circuit::Right => nested },
+            start => { Circuit::Right => nested },
             nested     => { "no start_at needed" => User::Relax },
 
-            User::Relax => { Circuit::Right => user[:End] }
+            User::Relax => { Circuit::Right => _end }
           }
         }
       end
 
       it "runs Nested from alternative start" do
-        process.(process[:Start], options = { "return" => Circuit::Right }).
-          must_equal( [process[:End], {"return"=>Circuit::Right, :workout=>9, "Relax"=>true}, nil] )
+        process.(nil, options = { "return" => Circuit::Right }).
+          must_equal( [process.end_events.first, {"return"=>Circuit::Right, :workout=>9, "Relax"=>true}, nil] )
 
         options.must_equal({"return"=>Circuit::Right, :workout=>9, "Relax"=>true})
       end
