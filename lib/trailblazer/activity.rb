@@ -1,16 +1,15 @@
+require "trailblazer/activity/graph"
+require "trailblazer/activity/nested"
 require "trailblazer/activity/version"
-require "trailblazer/option"
 
 require "trailblazer/circuit"
 require "trailblazer/circuit/trace"
 require "trailblazer/circuit/present"
 require "trailblazer/circuit/wrap"
 
+require "trailblazer/option"
 require "trailblazer/context"
 require "trailblazer/container_chain"
-
-require "trailblazer/activity/graph"
-require "trailblazer/activity/nested"
 
 module Trailblazer
   class Activity
@@ -80,8 +79,8 @@ module Trailblazer
       @circuit     = to_circuit(@graph) # graph is an immutable object.
     end
 
+    # Calls the internal circuit. `start_at` defaults to the Activity's start event if `nil` is given.
     def call(start_at, *args)
-      # TODO: start_at || really?
       @circuit.( start_at || @start_event, *args )
     end
 
