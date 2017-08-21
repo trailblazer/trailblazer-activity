@@ -1,0 +1,1 @@
+require "trailblazer/activity"

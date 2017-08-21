@@ -1,5 +1,3 @@
-require "trailblazer/circuit/version"
-
 module Trailblazer
   # Running a Circuit instance will run all tasks sequentially depending on the former's result.
   # Each task is called and retrieves the former task's return values.
@@ -121,13 +119,3 @@ module Trailblazer
     class Left  < Direction; end
   end
 end
-
-require "trailblazer/option"
-require "trailblazer/circuit/trace"
-require "trailblazer/circuit/present"
-require "trailblazer/circuit/wrap"
-
-require "trailblazer/context"
-require "trailblazer/container_chain"
-
-require "trailblazer/activity"

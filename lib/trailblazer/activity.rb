@@ -1,6 +1,17 @@
+require "trailblazer/activity/version"
+require "trailblazer/activity/graph"
+require "trailblazer/option"
+
+require "trailblazer/circuit"
+require "trailblazer/circuit/trace"
+require "trailblazer/circuit/present"
+require "trailblazer/circuit/wrap"
+
+require "trailblazer/context"
+require "trailblazer/container_chain"
+
 module Trailblazer
   class Activity
-    require "trailblazer/activity/graph"
 
     # Only way to build an Activity.
     def self.from_wirings(wirings, &block)
@@ -29,8 +40,6 @@ module Trailblazer
           else
             graph.attach!( source: source[:id], target: [task, id: task], edge: [signal, {}] )
           end
-
-          # puts "connecting #{source[:id]} => #{signal} => #{task}"
         end
       end
 
