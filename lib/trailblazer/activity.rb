@@ -1,5 +1,3 @@
-require "trailblazer/activity/graph"
-require "trailblazer/activity/nested"
 require "trailblazer/activity/version"
 
 require "trailblazer/circuit"
@@ -13,6 +11,9 @@ require "trailblazer/container_chain"
 
 module Trailblazer
   class Activity
+
+  require "trailblazer/activity/graph"
+  require "trailblazer/activity/nested"
 
     # Only way to build an Activity.
     def self.from_wirings(wirings, &block)

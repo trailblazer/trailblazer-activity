@@ -1,3 +1,7 @@
+# 0.1.1
+
+* Fix loading order.
+
 # 0.0.12
 
 * In `Activity::Before`, allow specifying what predecessing tasks to connect to the new_task via the
