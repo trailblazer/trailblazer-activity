@@ -2,6 +2,7 @@ require "test_helper"
 
 class DocsActivityTest < Minitest::Spec
   Circuit = Trailblazer::Circuit
+  Activity = Trailblazer::Activity
 
   class SpellChecker
     def self.error_count(string)
@@ -29,7 +30,7 @@ class DocsActivityTest < Minitest::Spec
 
   it do
     #:basic
-    activity = Trailblazer::Activity.from_hash do |start, _end|
+    activity = Activity.from_hash do |start, _end|
       {
         start            => { Circuit::Right => Blog::Write },
         Blog::Write      => { Circuit::Right => Blog::SpellCheck },
@@ -60,7 +61,7 @@ class DocsActivityTest < Minitest::Spec
     #- tracing
 
     #:trace-act
-    activity = Trailblazer::Activity.from_hash do |start, _end|
+    activity = Activity.from_hash do |start, _end|
       # Blog::Write=>"Blog::Write",Blog::SpellCheck=>"Blog::SpellCheck",Blog::Correct=>"Blog::Correct", Blog::Publish=>"Blog::Publish" }) { |evt|
       {
         start      => { Circuit::Right => Blog::Write },
@@ -112,7 +113,7 @@ class DocsActivityTest < Minitest::Spec
     Blog::Warn = ->(direction, options, *flow) { options[:warning] = "Make less mistakes!"; [Circuit::Right, options, *flow] }
 
     #:toll
-    activity = Trailblazer::Activity.from_hash do |start, _end|
+    activity = Activity.from_hash do |start, _end|
       {
         start       => { Circuit::Right => Blog::Write },
         Blog::Write       => { Circuit::Right => Blog::SpellCheck3 },
@@ -168,7 +169,7 @@ class DocsActivityTest < Minitest::Spec
     wrong   = Circuit::End.new(:wrong)
     default = Circuit::End.new(:published)
 
-    activity = Trailblazer::Activity.from_hash(default) do |start, _end|
+    activity = Activity.from_hash(default) do |start, _end|
       {
         start       => { Circuit::Right => Blog::Write },
         Blog::Write       => { Circuit::Right => Blog::SpellCheck3 },
@@ -202,10 +203,10 @@ class DocsActivityTest < Minitest::Spec
     # Nested
     Shop = ->(*args) { args }
     #:nested
-    complete = Trailblazer::Activity.from_hash(default) do |start, _end|
+    complete = Activity.from_hash(default) do |start, _end|
       {
         start => { Circuit::Right => Shop },
-        Shop        => { Circuit::Right => _nested = Circuit::Nested(activity) },
+        Shop        => { Circuit::Right => _nested = Activity::Nested(activity) },
         _nested     => {
           default   => _end, # connect published to our End.
           wrong     => error = Circuit::End.new(:error),

@@ -2,6 +2,7 @@ require "test_helper"
 
 class StepPipeTest < Minitest::Spec
   Circuit          = Trailblazer::Circuit
+  Activity         = Trailblazer::Activity
   SpecialDirection = Class.new
   Wrap             = Circuit::Wrap
 
@@ -29,7 +30,7 @@ class StepPipeTest < Minitest::Spec
       Trailblazer::Activity.from_hash do |start, _end|
         {
           start => { Circuit::Right    => Save },
-          Save        => { Circuit::Right    => __nested = Circuit::Nested(more_nested) },
+          Save        => { Circuit::Right    => __nested = Activity::Nested(more_nested) },
           __nested    => { more_nested.end_events.first => Cleanup },
           Cleanup     => { Circuit::Right => _end }
         }
@@ -40,7 +41,7 @@ class StepPipeTest < Minitest::Spec
       Trailblazer::Activity.from_hash do |start, _end|
         {
           start => { Circuit::Right => Model },
-          Model       => { Circuit::Right => __nested = Circuit::Nested( nested ) },
+          Model       => { Circuit::Right => __nested = Activity::Nested( nested ) },
           __nested    => { nested.end_events.first => Uuid },
           Uuid        => { SpecialDirection => _end }
         }
@@ -100,7 +101,7 @@ class StepPipeTest < Minitest::Spec
 
         # all three tasks should be executed.
         tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
-|-- #<Proc:.rb:11 (lambda)>
+|-- #<Proc:.rb:12 (lambda)>
 `-- #<Trailblazer::Circuit::End:>}
       end
     end
@@ -138,17 +139,17 @@ class StepPipeTest < Minitest::Spec
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
 |-- outsideg.Model
-|-- #<Trailblazer::Circuit::Nested:>
+|-- #<Trailblazer::Activity::Nested:>
 |   |-- #<Trailblazer::Circuit::Start:>
-|   |-- #<Proc:.rb:10 (lambda)>
-|   |-- #<Trailblazer::Circuit::Nested:>
+|   |-- #<Proc:.rb:11 (lambda)>
+|   |-- #<Trailblazer::Activity::Nested:>
 |   |   |-- #<Trailblazer::Circuit::Start:>
-|   |   |-- #<Proc:.rb:11 (lambda)>
+|   |   |-- #<Proc:.rb:12 (lambda)>
 |   |   |-- #<Trailblazer::Circuit::End:>
-|   |   `-- #<Trailblazer::Circuit::Nested:>
-|   |-- #<Proc:.rb:12 (lambda)>
+|   |   `-- #<Trailblazer::Activity::Nested:>
+|   |-- #<Proc:.rb:13 (lambda)>
 |   |-- #<Trailblazer::Circuit::End:>
-|   `-- #<Trailblazer::Circuit::Nested:>
+|   `-- #<Trailblazer::Activity::Nested:>
 |-- outsideg.Uuid
 `-- #<Trailblazer::Circuit::End:>}
     end

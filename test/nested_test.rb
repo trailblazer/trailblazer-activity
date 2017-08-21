@@ -1,7 +1,8 @@
 require "test_helper"
 
 class NestedHelper < Minitest::Spec
-Circuit = Trailblazer::Circuit
+  Circuit = Trailblazer::Circuit
+  Activity = Trailblazer::Activity
 
   module Blog
     Read    = ->(direction, options, *)    { options["Read"] = 1; [ Circuit::Right, options ] }
@@ -30,7 +31,7 @@ Circuit = Trailblazer::Circuit
     let(:user) do
       Trailblazer::Activity.from_hash { |start, _end|
         {
-          start => { Circuit::Right => nested=Circuit::Nested(blog) },
+          start => { Circuit::Right => nested=Activity::Nested(blog) },
           nested     => { blog.end_events.first => User::Relax },
 
           User::Relax => { Circuit::Right => _end }
@@ -62,7 +63,7 @@ Circuit = Trailblazer::Circuit
     let(:user) do
       Trailblazer::Activity.from_hash { |start, _end|
         {
-          start => { Circuit::Right => nested=Circuit::Nested(blog) },
+          start => { Circuit::Right => nested=Activity::Nested(blog) },
           nested     => { blog.end_events.first => User::Relax, blog.end_events[1] => _end },
 
           User::Relax => { Circuit::Right => _end }
@@ -87,7 +88,7 @@ Circuit = Trailblazer::Circuit
     let(:with_nested_and_start_at) do
       Trailblazer::Activity.from_hash { |start, _end|
         {
-          start => { Circuit::Right => nested=Circuit::Nested(blog, Blog::Next) },
+          start => { Circuit::Right => nested=Activity::Nested(blog, Blog::Next) },
           nested     => { blog.end_events.first => User::Relax },
 
           User::Relax => { Circuit::Right => _end }
@@ -114,7 +115,7 @@ Circuit = Trailblazer::Circuit
           end
         end
 
-        nested = Circuit::Nested( Workout, "no start_at needed" ) do |activity:nil, start_at:nil, args:nil|
+        nested = Activity::Nested( Workout, "no start_at needed" ) do |activity:nil, start_at:nil, args:nil|
           activity.__call__(start_at, *args)
         end
 

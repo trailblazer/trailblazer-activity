@@ -1,19 +1,3 @@
-  # "di" step_di: order:  1. runtime, 2. { contract.class: A } (dynamic at runtime?)
-
-=begin
-  * test "stripe scenario"
-    def pay!(options, stripe: Stripe.new) # can be overridden in e.g. test via runtime dependencies or container.
-  * problem: HOW TO payment.stripe.engine ? step M, underscore_dots: true
-  * Create["payment.stripe.engine"] = Stripe.new
-
-=end
-
-=begin
-* In an operation, there's always a Context object that holds the Containers and the initial mutable data.
-* SIMPLE/CURRENT WAY: we can simply pass this on without wrapping (no boundaries)
-  * wrap for Nested, unwrap after Nested
-=end
-
 # TODO: mark/make all but mutable_options as frozen.
 # The idea of Skill is to have a generic, ordered read/write interface that
 # collects mutable runtime-computed data while providing access to compile-time

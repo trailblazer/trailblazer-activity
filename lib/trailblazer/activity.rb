@@ -1,5 +1,4 @@
 require "trailblazer/activity/version"
-require "trailblazer/activity/graph"
 require "trailblazer/option"
 
 require "trailblazer/circuit"
@@ -9,6 +8,9 @@ require "trailblazer/circuit/wrap"
 
 require "trailblazer/context"
 require "trailblazer/container_chain"
+
+require "trailblazer/activity/graph"
+require "trailblazer/activity/nested"
 
 module Trailblazer
   class Activity
@@ -27,6 +29,17 @@ module Trailblazer
       new(start)
     end
 
+    # Build an activity from a hash.
+    #
+    #   activity = Trailblazer::Activity.from_hash do |start, _end|
+    #     {
+    #       start            => { Circuit::Right => Blog::Write },
+    #       Blog::Write      => { Circuit::Right => Blog::SpellCheck },
+    #       Blog::SpellCheck => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct },
+    #       Blog::Correct    => { Circuit::Right => Blog::SpellCheck },
+    #       Blog::Publish    => { Circuit::Right => _end }
+    #     }
+    #   end
     def self.from_hash(end_evt=Circuit::End.new(:default), start_evt=Circuit::Start.new(:default), &block)
       hash  = yield(start_evt, end_evt)
       graph = Graph::Start( start_evt, id: [:Start, :default] )
