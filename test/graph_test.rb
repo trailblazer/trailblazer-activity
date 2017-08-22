@@ -234,13 +234,21 @@ class GraphTest < Minitest::Spec
     exception.message.must_equal "The ID `A` has been added before."
   end
 
-  # raises when no ID
+  # #attach! raises when no ID
   it do
     exc = assert_raises do
       start.attach!(target: [ "something", {} ], edge: [ Circuit::Right, type: :railway ] )
     end
 
     exc.inspect.must_equal %{#<RuntimeError: No ID was provided for something>}
+  end
+
+  # automatic ID for edges
+  it do
+    start.attach!(target: [ "something", id: :something ], edge: [ Circuit::Right, type: :railway ] )
+
+    edge, node = start.successors(start).first
+    edge[:id].must_equal "[:Start, :default]-Trailblazer::Circuit::Right-something"
   end
 end
 # TODO: test attach! properly.

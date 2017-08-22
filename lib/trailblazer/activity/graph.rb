@@ -46,7 +46,7 @@ module Trailblazer
         target = target.kind_of?(Node) ? target : (find_all { |_target| _target[:id] == target }[0] || raise( "#{target} not found"))
         source = source.kind_of?(Node) ? source : (find_all { |_source| _source[:id] == source }[0] || raise( "#{source} not found"))
 
-        edge = Edge(*edge)
+        edge = Edge(source, edge, target)
 
         connect_for!(source, edge, target)
 
@@ -71,7 +71,7 @@ module Trailblazer
 
         # connect new_task --> old_task.
         if outgoing
-          edge = Edge(*outgoing)
+          edge = Edge(new_node, outgoing, old_node)
 
           connect_for!(new_node, edge, old_node)
         end
@@ -88,8 +88,9 @@ module Trailblazer
         nodes.find_all(&block)
       end
 
-      def Edge(wrapped, options)
-        edge = Edge.new(options.merge( _wrapped: wrapped ))
+      def Edge(source, (wrapped, options), target)
+        id   = "#{source[:id]}-#{wrapped}-#{target[:id]}"
+        edge = Edge.new(options.merge( _wrapped: wrapped, id: id ))
       end
 
       # @private
