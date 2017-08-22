@@ -35,7 +35,7 @@ module Trailblazer
       end
       private :connect_for!
 
-      # Builds a node from the provided `:node` argument array.
+      # Builds a node from the provided `:target` argument array.
       def attach!(target:raise, edge:raise, source:self)
         target = target.kind_of?(Node) ? target : Node(*target)
 
@@ -92,8 +92,9 @@ module Trailblazer
         edge = Edge.new(options.merge( _wrapped: wrapped ))
       end
 
-      def Node(wrapped, options)
-        Node.new( options.merge( _wrapped: wrapped ) )
+      # @private
+      def Node(wrapped, id:raise("No ID was provided for #{wrapped}"), **options)
+        Node.new( options.merge( id: id, _wrapped: wrapped ) )
       end
 
       # private

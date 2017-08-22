@@ -236,7 +236,11 @@ class GraphTest < Minitest::Spec
 
   # raises when no ID
   it do
+    exc = assert_raises do
+      start.attach!(target: [ "something", {} ], edge: [ Circuit::Right, type: :railway ] )
+    end
 
+    exc.inspect.must_equal %{#<RuntimeError: No ID was provided for something>}
   end
 end
 # TODO: test attach! properly.
