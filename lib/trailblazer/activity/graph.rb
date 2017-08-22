@@ -88,9 +88,9 @@ module Trailblazer
         nodes.find_all(&block)
       end
 
-      def Edge(source, (wrapped, options), target)
+      def Edge(source, (wrapped, options), target) # FIXME: test required id. test source and target
         id   = "#{source[:id]}-#{wrapped}-#{target[:id]}"
-        edge = Edge.new(options.merge( _wrapped: wrapped, id: id ))
+        edge = Edge.new(options.merge( _wrapped: wrapped, id: id, source: source, target: target ))
       end
 
       # @private
@@ -106,7 +106,7 @@ module Trailblazer
       end
 
       def successors(node)
-        ( self[:graph][node] || {} )
+        ( self[:graph][node].to_a || [] ) # FIXME: test we get node and edges
       end
 
       def to_h(include_leafs:true)
