@@ -104,7 +104,7 @@ module Trailblazer
       end
 
       def successors(node)
-        ( self[:graph][node] || {} ).values
+        ( self[:graph][node] || {} )
       end
 
       def to_h(include_leafs:true)

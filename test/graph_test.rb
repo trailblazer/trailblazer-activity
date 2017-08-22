@@ -233,6 +233,11 @@ class GraphTest < Minitest::Spec
 
     exception.message.must_equal "The ID `A` has been added before."
   end
+
+  # raises when no ID
+  it do
+
+  end
 end
 # TODO: test attach! properly.
 # TODO: test double entries in find_all
