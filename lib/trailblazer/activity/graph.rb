@@ -33,13 +33,19 @@ module Trailblazer
       # Single entry point for adding nodes and edges to the graph.
       # @returns target Node
       # @returns edge Edge the edge created connecting source and target.
-      def connect_for!(source, edge_args, target)
+      def connect_for!(source, edge_args=nil, target=nil, old_edge:nil)
         # raise if find_all( source[:id] ).any?
+        self[:graph][source] ||= {}
+
+        return if edge_args.nil?
+
+        self[:graph][source].delete(old_edge)
 
         edge = Edge(source, edge_args, target)
 
-        self[:graph][source] ||= {}
+
         self[:graph][target] ||= {} # keep references to all nodes, even when detached.
+
         self[:graph][source][edge] = target
 
         return target, edge
@@ -72,12 +78,10 @@ module Trailblazer
 
         # rewire old_task's predecessors to new_task.
         if rewired_connections.size == 0 # this happens when we're inserting "before" an orphaned node.
-          self[:graph][new_node] = {} # FIXME: redundant in #connect_for!
+          connect_for!(new_node)
         else
           rewired_connections.each { |(node, edge)|
-            self[:graph][node].delete(edge)
-
-            node, edge = connect_for!(node, [edge[:_wrapped], edge.to_h], new_node)
+            node, edge = connect_for!(node, [edge[:_wrapped], edge.to_h], new_node, old_edge: edge)
             new_incoming_edges << edge
           }
         end
