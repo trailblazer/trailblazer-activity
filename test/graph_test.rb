@@ -1,6 +1,13 @@
 require "test_helper"
 
 class GraphTest < Minitest::Spec
+  require "trailblazer/test/assertions"
+  include Trailblazer::Test::Assertions
+
+  def assert_exposes(model, expected)
+    super(model, expected, reader: :[])
+  end
+
   class A
     Right = Class.new
   end
@@ -29,24 +36,75 @@ class GraphTest < Minitest::Spec
 
     # right: End::Success.new(:right)
     # right_end  = start.connect!(Graph::Node( End::Success.new(:right), type: :end ), Graph::Edge(Circuit::Right, type: :right) )
-    right_end  = start.connect!(target: start.Node( right_end_evt, type: :end, id: [:End, :right] ), edge: [ Circuit::Right, type: :right ] )
-    left_end   = start.attach!(target: [ left_end_evt, type: :event, id: [:End, :left] ], edge: [ Circuit::Left,  type: :left ] )
+    right_end, to_right  = start.connect!(target: start.Node( right_end_evt, type: :end, id: [:End, :right] ), edge: [ Circuit::Right, type: :right ] )
+    left_end,  to_left   = start.attach!(target: [ left_end_evt, type: :event, id: [:End, :left] ], edge: [ Circuit::Left,  type: :left ] )
 
-    a, edge = start.insert_before!(
+  #- successors
+    start.successors(start).must_equal [ [right_end, to_right], [left_end, to_left] ]
+
+    assert_exposes to_right,
+      {
+        id:     "[:Start, :default]-Trailblazer::Circuit::Right-[:End, :right]",
+        source: start,
+        target: right_end
+      }
+
+    assert_exposes to_left,
+      {
+        id:     "[:Start, :default]-Trailblazer::Circuit::Left-[:End, :left]",
+        source: start,
+        target: left_end
+      }
+
+  # Start => A => End.right
+  #   |_          End.left
+
+  #- insert_before!
+    a, edges = start.insert_before!(
       right_end,
-      node:     [ A, id: [:A] ],
+      node:     [ A, id: :A ],
       outgoing: [ A::Right, type: :right ],
       incoming: ->(edge) { edge[:type] == :right }
     )
+# edges.size.must_equal 1
+    assert_exposes a, { id: :A, _wrapped: A }
+    assert_exposes edges[1],
+      {
+        id: "A-GraphTest::A::Right-[:End, :right]",
+        source: a,
+        target: right_end
+      }
 
-    a.must_be_instance_of Graph::Node
-    edge.must_be_nil
+    from_a = start.successors(a)
+    right_end, to_right_end =  from_a[0]
+    from_a.must_equal [ [right_end, to_right_end] ]
+
+    assert_exposes to_right_end,
+      {
+        id:     "A-GraphTest::A::Right-[:End, :right]",
+        source: a,
+        target: right_end
+      }
+
+    start_successors = start.successors(start)
+    start_successors.size.must_equal 2
+
+    start_successors[0].must_equal [left_end, to_left]
+    start_successors[1][0].must_equal a#, edges[0]]
+
+    assert_exposes start_successors[1][1],
+      {
+        id:     "[:Start, :default]-Trailblazer::Circuit::Right-A",
+        source: start,
+        target: a
+      }
 
     start.to_h( include_leafs: false).must_equal({
       start_evt => { Circuit::Right => A, Circuit::Left => left_end_evt },
       A         => { A::Right => right_end_evt },
     })
 
+  #- insert_before!
     b, _ = start.insert_before!(
       a,
       node:     [ B, id: [:B] ],
@@ -243,12 +301,40 @@ class GraphTest < Minitest::Spec
     exc.inspect.must_equal %{#<RuntimeError: No ID was provided for something>}
   end
 
+  #---
+  #- Edges
+
   # automatic ID for edges
   it do
-    start.attach!(target: [ "something", id: :something ], edge: [ Circuit::Right, type: :railway ] )
+    start.attach!(target: ["a", id: :a], edge: [ Circuit::Right, type: :railway ] )
 
-    edge, node = start.successors(start).first
-    edge[:id].must_equal "[:Start, :default]-Trailblazer::Circuit::Right-something"
+    edge, a = start.successors(start).first
+
+  # edge references source and target
+    edge[:id].must_equal "[:Start, :default]-Trailblazer::Circuit::Right-a"
+    edge[:source].must_equal start
+    edge[:target].must_equal a
+
+  # now, we append another a.
+  #   start => a => b
+    start.attach!(target: ["b", id: :b], edge: [Circuit::Left, type: :special], source: :a )
+
+    edge, a = start.successors(start).first
+
+  # edge start => a
+    edge[:id].must_equal "[:Start, :default]-Trailblazer::Circuit::Right-a"
+    edge[:source].must_equal start
+    edge[:target].must_equal a
+
+    edge, b = start.successors(a).first
+
+  # edge a => b
+    edge[:id].must_equal "a-Trailblazer::Circuit::Left-b"
+    edge[:source].must_equal a
+    edge[:target].must_equal b
+
+  # insert_before
+  #   start => c => a =>
   end
 end
 # TODO: test attach! properly.

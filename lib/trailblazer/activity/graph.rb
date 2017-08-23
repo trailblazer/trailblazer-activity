@@ -9,11 +9,15 @@ module Trailblazer
     # TODO: make Edge, Node, Start Hash::Immutable ?
     class Edge
       def initialize(data)
-        @data = data
+        @data = data.freeze
       end
 
       def [](key)
         @data[key]
+      end
+
+      def to_h
+        @data.to_h
       end
     end
 
@@ -27,11 +31,18 @@ module Trailblazer
       end
 
       # Single entry point for adding nodes and edges to the graph.
-      def connect_for!(source, edge, target)
+      # @returns target Node
+      # @returns edge Edge the edge created connecting source and target.
+      def connect_for!(source, edge_args, target)
         # raise if find_all( source[:id] ).any?
+
+        edge = Edge(source, edge_args, target)
+
         self[:graph][source] ||= {}
         self[:graph][target] ||= {} # keep references to all nodes, even when detached.
         self[:graph][source][edge] = target
+
+        return target, edge
       end
       private :connect_for!
 
@@ -46,16 +57,13 @@ module Trailblazer
         target = target.kind_of?(Node) ? target : (find_all { |_target| _target[:id] == target }[0] || raise( "#{target} not found"))
         source = source.kind_of?(Node) ? source : (find_all { |_source| _source[:id] == source }[0] || raise( "#{source} not found"))
 
-        edge = Edge(source, edge, target)
-
         connect_for!(source, edge, target)
-
-        target
       end
 
       def insert_before!(old_node, node:raise, outgoing:nil, incoming:raise)
         old_node = find_all(old_node)[0] || raise( "#{old_node} not found") unless old_node.kind_of?(Node)
         new_node = Node(*node)
+        new_incoming_edges = []
 
         raise IllegalNodeError.new("The ID `#{new_node[:id]}` has been added before.") if find_all( new_node[:id] ).any?
 
@@ -66,17 +74,21 @@ module Trailblazer
         if rewired_connections.size == 0 # this happens when we're inserting "before" an orphaned node.
           self[:graph][new_node] = {} # FIXME: redundant in #connect_for!
         else
-          rewired_connections.each { |(node, edge)| connect_for!(node, edge, new_node) }
+          rewired_connections.each { |(node, edge)|
+            self[:graph][node].delete(edge)
+
+            node, edge = connect_for!(node, [edge[:_wrapped], edge.to_h], new_node)
+            new_incoming_edges << edge
+          }
         end
 
         # connect new_task --> old_task.
         if outgoing
-          edge = Edge(new_node, outgoing, old_node)
-
-          connect_for!(new_node, edge, old_node)
+          node, edge = connect_for!(new_node, outgoing, old_node)
+          new_incoming_edges << edge
         end
 
-        return new_node
+        return new_node, new_incoming_edges
       end
 
       def find_all(id=nil, &block)
@@ -106,7 +118,7 @@ module Trailblazer
       end
 
       def successors(node)
-        ( self[:graph][node].to_a || [] ) # FIXME: test we get node and edges
+        ( self[:graph][node].invert.to_a || [] ) # FIXME: test we get node and edges
       end
 
       def to_h(include_leafs:true)
