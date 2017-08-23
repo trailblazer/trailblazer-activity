@@ -18,7 +18,7 @@ module Trailblazer
     # Only way to build an Activity.
     def self.from_wirings(wirings, &block)
       start_evt  = Circuit::Start.new(:default)
-      start_args = [ start_evt, { type: :event, id: [:Start, :default] } ]
+      start_args = [ start_evt, { type: :event, id: "Start.default" } ]
 
       start      = block ? Graph::Start( *start_args, &block ) : Graph::Start(*start_args)
 
@@ -42,7 +42,7 @@ module Trailblazer
     #   end
     def self.from_hash(end_evt=Circuit::End.new(:default), start_evt=Circuit::Start.new(:default), &block)
       hash  = yield(start_evt, end_evt)
-      graph = Graph::Start( start_evt, id: [:Start, :default] )
+      graph = Graph::Start( start_evt, id: "Start.default" )
 
       hash.each do |source_task, connections|
         source = graph.find_all { |node| node[:_wrapped] == source_task }.first or raise "#{source_task} unknown"

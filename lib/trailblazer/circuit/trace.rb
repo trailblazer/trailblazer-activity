@@ -32,7 +32,7 @@ module Trailblazer
       def self.wirings
         [
           [ :insert_before!, "task_wrap.call_task", node: [ Trace.method(:capture_args),   id: "task_wrap.capture_args" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ],
-          [ :insert_before!, [:End, :default],      node: [ Trace.method(:capture_return), id: "task_wrap.capture_return" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ],
+          [ :insert_before!, "End.default",      node: [ Trace.method(:capture_return), id: "task_wrap.capture_return" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ],
         ]
       end
 

@@ -65,7 +65,7 @@ class StepPipeTest < Minitest::Spec
       let(:wrap_alterations) do
         [
           [ :insert_before!, "task_wrap.call_task", node: [ Circuit::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
-          [ :insert_before!, [:End, :default], node: [ Circuit::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
+          [ :insert_before!, "End.default", node: [ Circuit::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
         ]
       end
 
@@ -111,7 +111,7 @@ class StepPipeTest < Minitest::Spec
     it "trail" do
       wrap_alterations = [
         [ :insert_before!, "task_wrap.call_task", node: [ Circuit::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
-        [ :insert_before!, [:End, :default], node: [ Circuit::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
+        [ :insert_before!, "End.default", node: [ Circuit::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
         # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right ) },
         # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right ) },
       ]

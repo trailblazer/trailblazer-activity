@@ -79,8 +79,8 @@ class Trailblazer::Circuit
     def self.initial_activity
       Trailblazer::Activity.from_wirings(
         [
-          [ :attach!, target: [ End.new(:default), type: :event, id: [:End, :default] ], edge: [ Right, {} ] ],
-          [ :insert_before!, [:End, :default], node: [ Call, id: "task_wrap.call_task" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ]
+          [ :attach!, target: [ End.new(:default), type: :event, id: "End.default" ], edge: [ Right, {} ] ],
+          [ :insert_before!, "End.default", node: [ Call, id: "task_wrap.call_task" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ]
         ]
       )
     end

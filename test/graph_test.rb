@@ -28,10 +28,10 @@ class GraphTest < Minitest::Spec
   let(:right_end_evt) { Circuit::End.new(:right) }
   let(:left_end_evt)  { Circuit::End.new(:left) }
   let(:start_evt)     { Circuit::Start.new(:default) }
-  let(:start)         { Graph::Start( start_evt, type: :event, id: [:Start, :default] ) }
+  let(:start)         { Graph::Start( start_evt, type: :event, id: "Start.default" ) }
 
   it do
-    start[:id].must_equal [:Start, :default]
+    start[:id].must_equal "Start.default"
     start[:_wrapped].must_equal start_evt
 
     # right: End::Success.new(:right)
@@ -44,14 +44,14 @@ class GraphTest < Minitest::Spec
 
     assert_exposes to_right,
       {
-        id:     "[:Start, :default]-Trailblazer::Circuit::Right-[:End, :right]",
+        id:     "Start.default-Trailblazer::Circuit::Right-[:End, :right]",
         source: start,
         target: right_end
       }
 
     assert_exposes to_left,
       {
-        id:     "[:Start, :default]-Trailblazer::Circuit::Left-[:End, :left]",
+        id:     "Start.default-Trailblazer::Circuit::Left-[:End, :left]",
         source: start,
         target: left_end
       }
@@ -94,7 +94,7 @@ class GraphTest < Minitest::Spec
 
     assert_exposes start_successors[1][1],
       {
-        id:     "[:Start, :default]-Trailblazer::Circuit::Right-A",
+        id:     "Start.default-Trailblazer::Circuit::Right-A",
         source: start,
         target: a
       }
@@ -311,7 +311,7 @@ class GraphTest < Minitest::Spec
     a, edge = start.successors(start).first
 
   # edge references source and target
-    edge[:id].must_equal "[:Start, :default]-Trailblazer::Circuit::Right-a"
+    edge[:id].must_equal "Start.default-Trailblazer::Circuit::Right-a"
     edge[:source].must_equal start
     edge[:target].must_equal a
 
@@ -322,7 +322,7 @@ class GraphTest < Minitest::Spec
     a, edge = start.successors(start).first
 
   # edge start => a
-    edge[:id].must_equal "[:Start, :default]-Trailblazer::Circuit::Right-a"
+    edge[:id].must_equal "Start.default-Trailblazer::Circuit::Right-a"
     edge[:source].must_equal start
     edge[:target].must_equal a
 
