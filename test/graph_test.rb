@@ -151,8 +151,8 @@ class GraphTest < Minitest::Spec
 
   #- insert with id
   it do
-    right_end  = start.attach!(target: [ right_end_evt, type: :event, id: [:End, :right] ], edge: [ Circuit::Right, type: :right ] )
-    left_end   = start.attach!(target: [ left_end_evt, type: :event, id: [:End, :left] ], edge: [ Circuit::Left,  type: :left ] )
+    right_end, _  = start.attach!(target: [ right_end_evt, type: :event, id: [:End, :right] ], edge: [ Circuit::Right, type: :right ] )
+    left_end, _   = start.attach!(target: [ left_end_evt, type: :event, id: [:End, :left] ], edge: [ Circuit::Left,  type: :left ] )
 
     d, edge = start.insert_before!(
       [:End, :right],
@@ -207,7 +207,7 @@ class GraphTest < Minitest::Spec
   #- detach a node via #insert_before! without :outgoing
   #- then, connect! that "leaf" node.
   it do
-    right_end = start.attach!(target: [ right_end_evt, type: :event, id: [:End, :right] ], edge: [ Circuit::Right, type: :railway ] )
+    right_end, _ = start.attach!(target: [ right_end_evt, type: :event, id: [:End, :right] ], edge: [ Circuit::Right, type: :railway ] )
     right_end_evt = right_end[:_wrapped]
 
     a, edge = start.insert_before!(
@@ -238,7 +238,7 @@ class GraphTest < Minitest::Spec
   #- detach a node via #insert_before! without :outgoing
   #- then, insert_before! another node "before" the orphaned, and omit :outgoing.
   it do
-    right_end = start.attach!(target: [ right_end_evt, type: :event, id: [:End, :right] ], edge: [ Circuit::Right, type: :railway ] )
+    right_end, _ = start.attach!(target: [ right_end_evt, type: :event, id: [:End, :right] ], edge: [ Circuit::Right, type: :railway ] )
     right_end_evt = right_end[:_wrapped]
 
     a, edge = start.insert_before!(
@@ -308,7 +308,7 @@ class GraphTest < Minitest::Spec
   it do
     start.attach!(target: ["a", id: :a], edge: [ Circuit::Right, type: :railway ] )
 
-    edge, a = start.successors(start).first
+    a, edge = start.successors(start).first
 
   # edge references source and target
     edge[:id].must_equal "[:Start, :default]-Trailblazer::Circuit::Right-a"
@@ -319,14 +319,14 @@ class GraphTest < Minitest::Spec
   #   start => a => b
     start.attach!(target: ["b", id: :b], edge: [Circuit::Left, type: :special], source: :a )
 
-    edge, a = start.successors(start).first
+    a, edge = start.successors(start).first
 
   # edge start => a
     edge[:id].must_equal "[:Start, :default]-Trailblazer::Circuit::Right-a"
     edge[:source].must_equal start
     edge[:target].must_equal a
 
-    edge, b = start.successors(a).first
+    b, edge = start.successors(a).first
 
   # edge a => b
     edge[:id].must_equal "a-Trailblazer::Circuit::Left-b"
