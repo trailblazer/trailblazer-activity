@@ -122,7 +122,7 @@ module Trailblazer
       end
 
       def successors(node)
-        ( self[:graph][node].invert.to_a || [] ) # FIXME: test we get node and edges
+        ( self[:graph][node] || [] ).collect { |edge, target| [target, edge] }
       end
 
       def to_h(include_leafs:true)

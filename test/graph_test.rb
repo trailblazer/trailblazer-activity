@@ -336,6 +336,14 @@ class GraphTest < Minitest::Spec
   # insert_before
   #   start => c => a =>
   end
+
+  it do
+    a, right = start.attach!(target: ["a", id: :a], edge: [ Circuit::Right, type: :railway ] )
+    _a, left = start.connect!(target: :a,           edge: [ Circuit::Left,  type: :railway ] )
+
+    start.successors(start).must_equal [[a, right], [_a, left]]
+    start.successors(a).must_equal []
+  end
 end
 # TODO: test attach! properly.
 # TODO: test double entries in find_all
