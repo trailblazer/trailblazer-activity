@@ -73,7 +73,7 @@ module Trailblazer
         old_node = find_all(old_node)[0] || raise( "#{old_node} not found") unless old_node.kind_of?(Node) # FIXME: do we really need this?
         new_node = add!(node)
 
-        incoming_tuples     = predecessors(old_node)
+        incoming_tuples = predecessors(old_node)
         rewired_incoming_connections = incoming_tuples.find_all { |(node, edge)| incoming.(edge) }
 
         # rewire old_task's predecessors to new_task.

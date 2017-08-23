@@ -3,6 +3,7 @@
 * Consistent return values for all graph operations: `node, edge`.
 * `Edge` now always gets an id.
 * `#connect_for!` always throws away the old edge, fixing a bug where graph and circuit would look different.
+* Internal simplifications for `Graph` alteration methods.
 
 # 0.1.1
 
