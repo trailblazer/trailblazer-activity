@@ -60,15 +60,19 @@ class GraphTest < Minitest::Spec
   #   |_          End.left
 
   #- insert_before!
-    a, edges = start.insert_before!(
+    a = start.insert_before!(
       right_end,
       node:     [ A, id: :A ],
       outgoing: [ A::Right, type: :right ],
       incoming: ->(edge) { edge[:type] == :right }
     )
-# edges.size.must_equal 1
+
     assert_exposes a, { id: :A, _wrapped: A }
-    assert_exposes edges[1],
+
+    # TODO: test predecessors
+    before_a, _ = start.successors(a)
+
+    assert_exposes before_a[1],
       {
         id: "A-GraphTest::A::Right-[:End, :right]",
         source: a,
