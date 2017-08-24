@@ -1,3 +1,5 @@
+require "forwardable"
+
 module Trailblazer
   # Note that Graph is a superset of a real directed graph. For instance, it might contain detached nodes.
   # == Design
@@ -6,7 +8,7 @@ module Trailblazer
   module Activity::Graph
     # Task => { name: "Nested{Task}", type: :subprocess, boundary_events: { Circuit::Left => {} }  }
 
-    # TODO: make Edge, Node, Start Hash::Immutable ?
+    # Edge keeps references to its peer nodes via the `:source` and `:target` options.
     class Edge
       def initialize(data)
         @data = data.freeze
@@ -21,6 +23,7 @@ module Trailblazer
       end
     end
 
+    # Node does only save meta data, and has *no* references to edges.
     class Node < Edge
     end
 
@@ -30,31 +33,7 @@ module Trailblazer
         super
       end
 
-      # Single entry point for adding nodes and edges to the graph.
-      # @return target Node
-      # @return edge Edge the edge created connecting source and target.
-      def connect_for!(source, edge_args, target, old_edge:nil)
-        edge = Edge(source, edge_args, target)
-
-        self[:graph][source][edge] = target
-
-        self[:graph][source].delete(old_edge) # FIXME: shouldn't be here
-
-        return target, edge
-      end
-
-      def add!(node_args)
-        new_node = Node(*node_args)
-
-        raise IllegalNodeError.new("The ID `#{new_node[:id]}` has been added before.") if find_all( new_node[:id] ).any?
-
-        self[:graph][new_node] = {}
-        new_node
-      end
-
-      private :connect_for!, :add!
-
-      # Builds a node from the provided `:target` arguments.
+      # Builds a node from the provided `:target` arguments and attaches it via `:edge` to `:source`.
       # @param target: Array wrapped, options
       def attach!(target:raise, edge:raise, source:self)
         target = add!(target)
@@ -63,8 +42,8 @@ module Trailblazer
       end
 
       def connect!(target:raise, edge:raise, source:self)
-        target = target.kind_of?(Node) ? target : (find_all { |_target| _target[:id] == target }[0] || raise( "#{target} not found")) # FIXME: only needed for recompile_activity.
-        source = source.kind_of?(Node) ? source : (find_all { |_source| _source[:id] == source }[0] || raise( "#{source} not found"))
+        target = target.kind_of?(Node) ? target : (find_all(target)[0] || raise( "#{target} not found")) # FIXME: only needed for recompile_activity.
+        source = source.kind_of?(Node) ? source : (find_all(source)[0] || raise( "#{source} not found"))
 
         connect_for!(source, edge, target)
       end
@@ -73,15 +52,11 @@ module Trailblazer
         old_node = find_all(old_node)[0] || raise( "#{old_node} not found") unless old_node.kind_of?(Node) # FIXME: do we really need this?
         new_node = add!(node)
 
-        incoming_tuples = predecessors(old_node)
-        rewired_incoming_connections = incoming_tuples.find_all { |(node, edge)| incoming.(edge) }
+        incoming_edges = predecessors(old_node)
+        rewired_edges  = incoming_edges.find_all { |(node, edge)| incoming.(edge) }
 
         # rewire old_task's predecessors to new_task.
-        if rewired_incoming_connections.any? # the opposite happens when we're inserting "before" an orphaned node.
-          rewired_incoming_connections.each { |node, edge|
-            node, edge = connect_for!(node, [edge[:_wrapped], edge.to_h], new_node, old_edge: edge)
-          }
-        end
+        rewired_edges.each { |left_node, edge| reconnect!(left_node, edge, new_node) }
 
         # connect new_task --> old_task.
         if outgoing
@@ -96,16 +71,6 @@ module Trailblazer
         nodes = nodes.uniq
 
         nodes.find_all(& block || ->(node) { node[:id] == id })
-      end
-
-      def Edge(source, (wrapped, options), target) # FIXME: test required id. test source and target
-        id   = "#{source[:id]}-#{wrapped}-#{target[:id]}"
-        edge = Edge.new(options.merge( _wrapped: wrapped, id: id, source: source, target: target ))
-      end
-
-      # @private
-      def Node(wrapped, id:raise("No ID was provided for #{wrapped}"), **options)
-        Node.new( options.merge( id: id, _wrapped: wrapped ) )
       end
 
       def predecessors(target_node)
@@ -132,6 +97,54 @@ module Trailblazer
         end
 
         hash
+      end
+
+      # @private
+      def Node(wrapped, id:raise("No ID was provided for #{wrapped}"), **options)
+        Node.new( options.merge( id: id, _wrapped: wrapped ) )
+      end
+
+    private
+
+      # Single entry point for adding nodes and edges to the graph.
+      # @private
+      # @return target Node
+      # @return edge Edge the edge created connecting source and target.
+      def connect_for!(source, edge_args, target)
+        edge = Edge(source, edge_args, target)
+
+        self[:graph][source][edge] = target
+
+        return target, edge
+      end
+
+      # Removes edge.
+      # @private
+      def unconnect!(node, edge)
+        self[:graph][node].delete(edge)
+      end
+
+      # @private
+      # Create a Node and add it to the graph, without connecting it.
+      def add!(node_args)
+        new_node = Node(*node_args)
+
+        raise IllegalNodeError.new("The ID `#{new_node[:id]}` has been added before.") if find_all( new_node[:id] ).any?
+
+        self[:graph][new_node] = {}
+        new_node
+      end
+
+      # @private
+      def reconnect!(left_node, edge, new_node)
+        unconnect!(left_node, edge) # dump the old edge.
+        connect_for!(left_node, [ edge[:_wrapped], edge.to_h ], new_node)
+      end
+
+      # @private
+      def Edge(source, (wrapped, options), target) # FIXME: test required id. test source and target
+        id   = "#{source[:id]}-#{wrapped}-#{target[:id]}"
+        edge = Edge.new(options.merge( _wrapped: wrapped, id: id, source: source, target: target ))
       end
     end
 

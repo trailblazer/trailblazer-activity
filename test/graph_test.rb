@@ -34,9 +34,7 @@ class GraphTest < Minitest::Spec
     start[:id].must_equal "Start.default"
     start[:_wrapped].must_equal start_evt
 
-    # right: End::Success.new(:right)
-    # right_end  = start.connect!(Graph::Node( End::Success.new(:right), type: :end ), Graph::Edge(Circuit::Right, type: :right) )
-    right_end, to_right  = start.connect!(target: start.Node( right_end_evt, type: :end, id: [:End, :right] ), edge: [ Circuit::Right, type: :right ] )
+    right_end, to_right  = start.attach!(target: [ right_end_evt, type: :end, id: [:End, :right] ], edge: [ Circuit::Right, type: :right ] )
     left_end,  to_left   = start.attach!(target: [ left_end_evt, type: :event, id: [:End, :left] ], edge: [ Circuit::Left,  type: :left ] )
 
   #- successors
