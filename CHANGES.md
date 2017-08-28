@@ -1,3 +1,7 @@
+# 0.1.3
+
+* Introduce `Activity#outputs` and ditch `#end_events`.
+
 # 0.1.2
 
 * Consistent return values for all graph operations: `node, edge`.
