@@ -86,7 +86,15 @@ module Trailblazer
     end
 
     def end_events
-      @circuit.to_fields[1]
+      outputs.keys
+    end
+
+    # Returns a hash mapping the circuit {Event} to its meta data.
+    #
+    #   activity.outputs #=> { #<End ..> => { role: :success }, #<End ..> => { role: :failure } }
+    def outputs
+      # DISCUSS: add more meta data?
+      ::Hash[ graph.find_all { |node| graph.successors(node).size == 0 }.collect { |node| [ node[:_wrapped], { role: node[:role] } ] } ]
     end
 
     # @private
@@ -97,9 +105,6 @@ module Trailblazer
     private
 
     def to_circuit(graph)
-      end_events = graph.find_all { |node| graph.successors(node).size == 0 } # Find leafs of graph.
-        .collect { |n| n[:_wrapped] } # unwrap the actual End event instance from the Node.
-
       Circuit.new(graph.to_h( include_leafs: false ), end_events, {})
     end
 

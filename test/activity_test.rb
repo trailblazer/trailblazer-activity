@@ -15,7 +15,7 @@ class ActivityTest < Minitest::Spec
     Trailblazer::Activity.from_wirings(
       [
         [ :attach!, target: [ A, id: "A", type: :task ], edge: [ Circuit::Right, type: :railway ] ],
-        [ :attach!, source: "A", target: [ end_for_success, type: :event, id: [:End, :success] ], edge: [ Circuit::Right, type: :railway ] ],
+        [ :attach!, source: "A", target: [ end_for_success, type: :event, role: :success, id: "End.success" ], edge: [ Circuit::Right, type: :railway ] ],
       ]
     )
   end
@@ -35,7 +35,7 @@ class ActivityTest < Minitest::Spec
 
   it do
     wirings = [
-      [ :insert_before!, [:End, :success], node: [ B, id: :B ], outgoing: [ Circuit::Right, type: :railway ], incoming: ->(edge) { edge[:type] == :railway } ]
+      [ :insert_before!, "End.success", node: [ B, id: :B ], outgoing: [ Circuit::Right, type: :railway ], incoming: ->(edge) { edge[:type] == :railway } ]
     ]
 
     extended = Trailblazer::Activity.merge(activity, wirings)
@@ -62,6 +62,13 @@ class ActivityTest < Minitest::Spec
         {}
       ]
     )
+  end
+
+  describe "#outputs" do
+    let(:end_for_failure) { Circuit::End.new(:fail) }
+    let(:extended) { Trailblazer::Activity.merge(activity, [[ :attach!, source: "A", target: [ end_for_failure, role: :failure, id: "End.fail" ], edge: [ Circuit::Right, {} ] ]] ) }
+
+    it { extended.outputs.must_equal( end_for_success => { role: :success }, end_for_failure => { role: :failure } ) }
   end
 end
 
