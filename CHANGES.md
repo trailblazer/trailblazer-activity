@@ -1,3 +1,7 @@
+# 0.1.4
+
+* `Nested` now uses kw args for `start_at` and the new `call` option. The latter allows to set the called method on the nested activity, e.g. `__call`.
+
 # 0.1.3
 
 * Introduce `Activity#outputs` and ditch `#end_events`.

@@ -14,7 +14,7 @@ class NestedHelper < Minitest::Spec
     Relax   = ->(direction, options, *) { options["Relax"]=true; [ Circuit::Right, options ] }
   end
 
-  ### Nested()
+  ### Nested( )
   ###
   describe "circuit with 1 level of nesting" do
     let(:blog) do
@@ -31,7 +31,7 @@ class NestedHelper < Minitest::Spec
     let(:user) do
       Trailblazer::Activity.from_hash { |start, _end|
         {
-          start => { Circuit::Right => nested=Activity::Nested(blog) },
+          start => { Circuit::Right => nested=Activity::Nested( blog ) },
           nested     => { blog.end_events.first => User::Relax },
 
           User::Relax => { Circuit::Right => _end }
@@ -63,7 +63,7 @@ class NestedHelper < Minitest::Spec
     let(:user) do
       Trailblazer::Activity.from_hash { |start, _end|
         {
-          start => { Circuit::Right => nested=Activity::Nested(blog) },
+          start => { Circuit::Right => nested=Activity::Nested( blog ) },
           nested     => { blog.end_events.first => User::Relax, blog.end_events[1] => _end },
 
           User::Relax => { Circuit::Right => _end }
@@ -88,7 +88,7 @@ class NestedHelper < Minitest::Spec
     let(:with_nested_and_start_at) do
       Trailblazer::Activity.from_hash { |start, _end|
         {
-          start => { Circuit::Right => nested=Activity::Nested(blog, Blog::Next) },
+          start => { Circuit::Right => nested=Activity::Nested(  blog, start_at: Blog::Next ) },
           nested     => { blog.end_events.first => User::Relax },
 
           User::Relax => { Circuit::Right => _end }
@@ -104,7 +104,7 @@ class NestedHelper < Minitest::Spec
     end
 
     #---
-    #- Nested( activity ) { ... }
+    #- Nested(  activity ) { ... }
     describe "Nested with block" do
       let(:process) do
         class Workout
@@ -115,7 +115,7 @@ class NestedHelper < Minitest::Spec
           end
         end
 
-        nested = Activity::Nested( Workout, "no start_at needed" ) do |activity:nil, start_at:nil, args:nil|
+        nested = Activity::Nested(  Workout, start_at: "no start_at needed" ) do |activity:nil, start_at:nil, args:nil|
           activity.__call__(start_at, *args)
         end
 
@@ -130,6 +130,39 @@ class NestedHelper < Minitest::Spec
       end
 
       it "runs Nested from alternative start" do
+        process.(nil, options = { "return" => Circuit::Right }).
+          must_equal( [process.end_events.first, {"return"=>Circuit::Right, :workout=>9, "Relax"=>true}, nil] )
+
+        options.must_equal({"return"=>Circuit::Right, :workout=>9, "Relax"=>true})
+      end
+    end
+
+
+    #---
+    #- Nested(  activity, call: :__call__ ) { ... }
+    describe "Nested with :call option" do
+      let(:process) do
+        class Workout
+          def self.__call__(direction, options, flow_options)
+            options[:workout]   = 9
+
+            [ direction=Circuit::Right, options, flow_options ]
+          end
+        end
+
+        nested = Activity::Nested( Workout, call: :__call__ )
+
+        Trailblazer::Activity.from_hash { |start, _end|
+          {
+            start       => { Circuit::Right => nested },
+            nested      => { Circuit::Right => User::Relax },
+
+            User::Relax => { Circuit::Right => _end }
+          }
+        }
+      end
+
+      it "runs Nested process with __call__" do
         process.(nil, options = { "return" => Circuit::Right }).
           must_equal( [process.end_events.first, {"return"=>Circuit::Right, :workout=>9, "Relax"=>true}, nil] )
 

@@ -8,14 +8,14 @@ module Trailblazer
     # Nested allows to have tasks with a different call interface and start event.
     # @param activity Activity interface
     class Nested
-      def initialize(activity, start_with=nil, &block)
-        @activity, @start_with, @block = activity, start_with, block
+      def initialize(activity, start_at: nil, call: :call, &block)
+        @activity, @start_at, @call, @block = activity, start_at, call, block
       end
 
       def call(start_at, *args)
-        return @block.(activity: activity, start_at: @start_with, args: args) if @block
+        return @block.(activity: activity, start_at: @start_at, args: args) if @block
 
-        @activity.(@start_with, *args)
+        @activity.public_send(@call, @start_at, *args)
       end
 
       # @private
