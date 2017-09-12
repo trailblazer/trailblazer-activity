@@ -138,7 +138,7 @@ stack, _ = Circuit::Trace.( activity,
 
 The `stack` can then be passed to a presenter.
 
-```ruby
+```
 Circuit::Trace::Present.tree(stack)
  |--> #<Start: default {}>{:content=>"Let's start writing"}
  |--> Blog::Write{:content=>"Let's start writing"}
