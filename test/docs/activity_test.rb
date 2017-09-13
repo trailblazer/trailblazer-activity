@@ -62,9 +62,8 @@ class DocsActivityTest < Minitest::Spec
 
     #:trace-act
     activity = Activity.from_hash do |start, _end|
-      # Blog::Write=>"Blog::Write",Blog::SpellCheck=>"Blog::SpellCheck",Blog::Correct=>"Blog::Correct", Blog::Publish=>"Blog::Publish" }) { |evt|
       {
-        start      => { Circuit::Right => Blog::Write },
+        start            => { Circuit::Right => Blog::Write },
         Blog::Write      => { Circuit::Right => Blog::SpellCheck },
         Blog::SpellCheck => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct },
         Blog::Correct    => { Circuit::Right => Blog::SpellCheck },
@@ -74,16 +73,16 @@ class DocsActivityTest < Minitest::Spec
     #:trace-act end
 
     #:trace-call
-    stack, _ = Circuit::Trace.( activity,
+    stack, _ = Trailblazer::Activity::Trace.( activity,
       nil,
       { content: "Let's start writing" }
     )
     #:trace-call end
 
-    puts Circuit::Trace::Present.tree(stack)
+    puts Trailblazer::Activity::Trace::Present.tree(stack)
 =begin
   #:trace-res
-  Circuit::Trace::Present.tree(stack)
+  puts Trailblazer::Activity::Trace::Present.tree(stack)
    |--> #<Start: default {}>{:content=>"Let's start writing"}
    |--> Blog::Write{:content=>"Let's start writing"}
    |--> Blog::SpellCheck{:content=>"Let's start writing"}

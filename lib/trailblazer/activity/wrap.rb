@@ -1,6 +1,6 @@
-class Trailblazer::Circuit
+class Trailblazer::Activity
   module Wrap
-    # The runner is passed into Circuit#call( runner: Runner ) and is called for every task in the circuit.
+    # The runner is passed into Activity#call( runner: Runner ) and is called for every task in the circuit.
     # Its primary job is to actually `call` the task.
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
@@ -69,7 +69,7 @@ class Trailblazer::Circuit
     #   |-- Trace.capture_return [optional]
     #   |-- End
 
-    # Activity = Trailblazer::Circuit::Activity({ id: "task.wrap" }, end: { default: End.new(:default) }) do |act|
+    # Activity = Trailblazer::Activity::Activity({ id: "task.wrap" }, end: { default: End.new(:default) }) do |act|
     #   {
     #     act[:Start] => { Right => Call }, # see Wrap::call_task
     #     Call        => { Right => act[:End] },
@@ -79,8 +79,8 @@ class Trailblazer::Circuit
     def self.initial_activity
       Trailblazer::Activity.from_wirings(
         [
-          [ :attach!, target: [ End.new(:default), type: :event, id: "End.default" ], edge: [ Right, {} ] ],
-          [ :insert_before!, "End.default", node: [ Call, id: "task_wrap.call_task" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ]
+          [ :attach!, target: [ End.new(:default), type: :event, id: "End.default" ], edge: [ Trailblazer::Circuit::Right, {} ] ],
+          [ :insert_before!, "End.default", node: [ Call, id: "task_wrap.call_task" ], outgoing: [ Trailblazer::Circuit::Right, {} ], incoming: ->(*) { true } ]
         ]
       )
     end

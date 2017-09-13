@@ -1,9 +1,6 @@
 require "trailblazer/activity/version"
 
 require "trailblazer/circuit"
-require "trailblazer/circuit/trace"
-require "trailblazer/circuit/present"
-require "trailblazer/circuit/wrap"
 
 require "trailblazer/option"
 require "trailblazer/context"
@@ -14,6 +11,9 @@ module Trailblazer
 
   require "trailblazer/activity/graph"
   require "trailblazer/activity/nested"
+  require "trailblazer/activity/trace"
+  require "trailblazer/activity/present"
+  require "trailblazer/activity/wrap"
 
     # Only way to build an Activity.
     def self.from_wirings(wirings, &block)

@@ -1,3 +1,5 @@
+# TODO: remove or move.
+
 module MiniTest::Assertions
   def assert_activity_inspect(text, subject)
     Trailblazer::Circuit::ActivityInspect(subject).must_equal text

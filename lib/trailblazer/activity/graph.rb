@@ -1,5 +1,3 @@
-require "forwardable"
-
 module Trailblazer
   # Note that Graph is a superset of a real directed graph. For instance, it might contain detached nodes.
   # == Design

@@ -1,10 +1,10 @@
 module Trailblazer
-  class Circuit
+  class Activity
     # Trace#call will call the activities and trace what steps are called, options passed,
     # and the order and nesting.
     #
-    #   stack, _ = Trailblazer::Circuit::Trace.(activity, activity[:Start], { id: 1 })
-    #   puts Trailblazer::Circuit::Present.tree(stack) # renders the trail.
+    #   stack, _ = Trailblazer::Activity::Trace.(activity, activity[:Start], { id: 1 })
+    #   puts Trailblazer::Activity::Present.tree(stack) # renders the trail.
     #
     # Hooks into the TaskWrap.
     module Trace
@@ -31,8 +31,8 @@ module Trailblazer
       # Default tracing tasks to be plugged into the wrap circuit.
       def self.wirings
         [
-          [ :insert_before!, "task_wrap.call_task", node: [ Trace.method(:capture_args),   id: "task_wrap.capture_args" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ],
-          [ :insert_before!, "End.default",      node: [ Trace.method(:capture_return), id: "task_wrap.capture_return" ], outgoing: [ Right, {} ], incoming: ->(*) { true } ],
+          [ :insert_before!, "task_wrap.call_task", node: [ Trace.method(:capture_args),   id: "task_wrap.capture_args" ], outgoing: [ Circuit::Right, {} ], incoming: ->(*) { true } ],
+          [ :insert_before!, "End.default",      node: [ Trace.method(:capture_return), id: "task_wrap.capture_return" ], outgoing: [ Circuit::Right, {} ], incoming: ->(*) { true } ],
         ]
       end
 

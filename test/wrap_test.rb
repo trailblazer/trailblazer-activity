@@ -4,7 +4,7 @@ class StepPipeTest < Minitest::Spec
   Circuit          = Trailblazer::Circuit
   Activity         = Trailblazer::Activity
   SpecialDirection = Class.new
-  Wrap             = Circuit::Wrap
+  Wrap             = Activity::Wrap
 
   Model = ->(direction, options, flow_options) { options["model"]=String; [direction, options, flow_options] }
   Uuid  = ->(direction, options, flow_options) { options["uuid"]=999;     [ SpecialDirection, options, flow_options] }
@@ -64,8 +64,8 @@ class StepPipeTest < Minitest::Spec
 
       let(:wrap_alterations) do
         [
-          [ :insert_before!, "task_wrap.call_task", node: [ Circuit::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
-          [ :insert_before!, "End.default", node: [ Circuit::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
+          [ :insert_before!, "task_wrap.call_task", node: [ Activity::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
+          [ :insert_before!, "End.default", node: [ Activity::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
         ]
       end
 
@@ -81,14 +81,14 @@ class StepPipeTest < Minitest::Spec
         only_for_wrap = ->(direction, options, *args) { options[:upload] ||= []; options[:upload]<<1; [ direction, options, *args ] }
         upload_wrap   = [ [ :insert_before!, "task_wrap.call_task", node: [ only_for_wrap, { id: "task_wrap.upload" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ] ]
 
-        wrap_static         = Hash.new( Trailblazer::Circuit::Wrap.initial_activity )
-        wrap_static[Upload] = Trailblazer::Activity.merge( Trailblazer::Circuit::Wrap.initial_activity, upload_wrap )
+        wrap_static         = Hash.new( Trailblazer::Activity::Wrap.initial_activity )
+        wrap_static[Upload] = Trailblazer::Activity.merge( Trailblazer::Activity::Wrap.initial_activity, upload_wrap )
 
         direction, options, flow_options, *ret = runner(
           {
             wrap_runtime:  Hash.new(wrap_alterations),
 
-            stack:         Circuit::Trace::Stack.new,
+            stack:         Activity::Trace::Stack.new,
             introspection: { } # TODO: crashes without :debug.
           },
           wrap_static
@@ -97,7 +97,7 @@ class StepPipeTest < Minitest::Spec
         # upload should contain only one 1.
         options.inspect.must_equal %{{:upload=>[1], \"bits\"=>64}}
 
-        tree = Circuit::Trace::Present.tree(flow_options[:stack].to_a)
+        tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
 
         # all three tasks should be executed.
         tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
@@ -110,10 +110,10 @@ class StepPipeTest < Minitest::Spec
     #- Tracing
     it "trail" do
       wrap_alterations = [
-        [ :insert_before!, "task_wrap.call_task", node: [ Circuit::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
-        [ :insert_before!, "End.default", node: [ Circuit::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
-        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Circuit::Trace.method(:capture_args), direction: Circuit::Right ) },
-        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Circuit::Trace.method(:capture_return), direction: Circuit::Right ) },
+        [ :insert_before!, "task_wrap.call_task", node: [ Activity::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
+        [ :insert_before!, "End.default", node: [ Activity::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
+        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Activity::Trace.method(:capture_args), direction: Circuit::Right ) },
+        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Activity::Trace.method(:capture_return), direction: Circuit::Right ) },
       ]
 
       direction, options, flow_options = activity.(
@@ -122,11 +122,11 @@ class StepPipeTest < Minitest::Spec
         {
           # Wrap::Runner specific:
           runner:       Wrap::Runner,
-          wrap_static:  Hash.new( Trailblazer::Circuit::Wrap.initial_activity ),
+          wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ),
           wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
 
           # Trace specific:
-          stack:      Circuit::Trace::Stack.new,
+          stack:      Activity::Trace::Stack.new,
           introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
         }
       )
@@ -135,7 +135,7 @@ class StepPipeTest < Minitest::Spec
       options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
 
-      puts tree = Circuit::Trace::Present.tree(flow_options[:stack].to_a)
+      puts tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
 |-- outsideg.Model
