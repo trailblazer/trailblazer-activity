@@ -1,7 +1,6 @@
-require "trailblazer/activity/version"
-
 require "trailblazer/circuit"
 
+# TODO: move to separate gem.
 require "trailblazer/option"
 require "trailblazer/context"
 require "trailblazer/container_chain"
@@ -9,6 +8,7 @@ require "trailblazer/container_chain"
 module Trailblazer
   class Activity
 
+  require "trailblazer/activity/version"
   require "trailblazer/activity/graph"
   require "trailblazer/activity/nested"
   require "trailblazer/activity/trace"
