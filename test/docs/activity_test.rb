@@ -32,11 +32,12 @@ class DocsActivityTest < Minitest::Spec
     #:basic
     activity = Activity.from_hash do |start, _end|
       {
-        start            => { Circuit::Right => Blog::Write },
-        Blog::Write      => { Circuit::Right => Blog::SpellCheck },
-        Blog::SpellCheck => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct },
-        Blog::Correct    => { Circuit::Right => Blog::SpellCheck },
-        Blog::Publish    => { Circuit::Right => _end }
+        start            => { Trailblazer::Circuit::Right => Blog::Write },
+        Blog::Write      => { Trailblazer::Circuit::Right => Blog::SpellCheck },
+        Blog::SpellCheck => { Trailblazer::Circuit::Right => Blog::Publish,
+                              Trailblazer::Circuit::Left => Blog::Correct },
+        Blog::Correct    => { Trailblazer::Circuit::Right => Blog::SpellCheck },
+        Blog::Publish    => { Trailblazer::Circuit::Right => _end }
       }
     end
     #:basic end
