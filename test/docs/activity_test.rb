@@ -200,13 +200,13 @@ class DocsActivityTest < Minitest::Spec
     options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})
 
     # ---
-    # Nested
+    # Subprocess
     Shop = ->(*args) { args }
     #:nested
     complete = Activity.from_hash(default) do |start, _end|
       {
         start => { Circuit::Right => Shop },
-        Shop        => { Circuit::Right => _nested = Activity::Nested(activity) },
+        Shop        => { Circuit::Right => _nested = Activity::Subprocess(activity) },
         _nested     => {
           default   => _end, # connect published to our End.
           wrong     => error = Circuit::End.new(:error),

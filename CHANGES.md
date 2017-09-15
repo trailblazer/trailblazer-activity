@@ -1,3 +1,9 @@
+# 0.1.6
+
+* `Nested` now is `Subprocess` because it literally does nothing else but calling a _process_ (or activity).
+
+# 0.1.5
+
 # 0.1.4
 
 * `Nested` now uses kw args for `start_at` and the new `call` option. The latter allows to set the called method on the nested activity, e.g. `__call`.

@@ -30,7 +30,7 @@ class StepPipeTest < Minitest::Spec
       Trailblazer::Activity.from_hash do |start, _end|
         {
           start => { Circuit::Right    => Save },
-          Save        => { Circuit::Right    => __nested = Activity::Nested(more_nested) },
+          Save        => { Circuit::Right    => __nested = Activity::Subprocess(more_nested) },
           __nested    => { more_nested.end_events.first => Cleanup },
           Cleanup     => { Circuit::Right => _end }
         }
@@ -41,7 +41,7 @@ class StepPipeTest < Minitest::Spec
       Trailblazer::Activity.from_hash do |start, _end|
         {
           start => { Circuit::Right => Model },
-          Model       => { Circuit::Right => __nested = Activity::Nested( nested ) },
+          Model       => { Circuit::Right => __nested = Activity::Subprocess( nested ) },
           __nested    => { nested.end_events.first => Uuid },
           Uuid        => { SpecialDirection => _end }
         }
@@ -139,17 +139,17 @@ class StepPipeTest < Minitest::Spec
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
 |-- outsideg.Model
-|-- #<Trailblazer::Activity::Nested:>
+|-- #<Trailblazer::Activity::Subprocess:>
 |   |-- #<Trailblazer::Circuit::Start:>
 |   |-- #<Proc:.rb:11 (lambda)>
-|   |-- #<Trailblazer::Activity::Nested:>
+|   |-- #<Trailblazer::Activity::Subprocess:>
 |   |   |-- #<Trailblazer::Circuit::Start:>
 |   |   |-- #<Proc:.rb:12 (lambda)>
 |   |   |-- #<Trailblazer::Circuit::End:>
-|   |   `-- #<Trailblazer::Activity::Nested:>
+|   |   `-- #<Trailblazer::Activity::Subprocess:>
 |   |-- #<Proc:.rb:13 (lambda)>
 |   |-- #<Trailblazer::Circuit::End:>
-|   `-- #<Trailblazer::Activity::Nested:>
+|   `-- #<Trailblazer::Activity::Subprocess:>
 |-- outsideg.Uuid
 `-- #<Trailblazer::Circuit::End:>}
     end

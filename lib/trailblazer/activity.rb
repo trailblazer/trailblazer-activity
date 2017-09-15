@@ -10,7 +10,7 @@ module Trailblazer
 
   require "trailblazer/activity/version"
   require "trailblazer/activity/graph"
-  require "trailblazer/activity/nested"
+  require "trailblazer/activity/subprocess"
   require "trailblazer/activity/trace"
   require "trailblazer/activity/present"
   require "trailblazer/activity/wrap"

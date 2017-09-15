@@ -1,13 +1,13 @@
 module Trailblazer
   class Activity
       # Builder for running a nested process from a specific `start_at` position.
-    def self.Nested(*args, &block)
-      Nested.new(*args, &block)
+    def self.Subprocess(*args, &block)
+      Subprocess.new(*args, &block)
     end
 
-    # Nested allows to have tasks with a different call interface and start event.
+    # Subprocess allows to have tasks with a different call interface and start event.
     # @param activity Activity interface
-    class Nested
+    class Subprocess
       def initialize(activity, start_at: nil, call: :call, &block)
         @activity, @start_at, @call, @block = activity, start_at, call, block
       end
