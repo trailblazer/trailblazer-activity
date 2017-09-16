@@ -2,6 +2,14 @@
 
 An _activity_ is a collection of connected _tasks_ with one _start event_ and one (or many) _end_ events.
 
+## Installation
+
+To use activities you need one gem, only.
+
+```ruby
+gem "trailblazer-activity"
+```
+
 ## Overview
 
 > Since TRB 2.1, we use [BPMN](http://www.bpmn.org/) lingo and concepts for describing workflows and processes.
