@@ -1,163 +1,101 @@
-# Circuit
+# Activity
 
-_The Circuit of Life._
-
-Circuit provides a simplified [flowchart](https://en.wikipedia.org/wiki/Flowchart) implementation with terminals (for example, start or end state), connectors and tasks (processes). It allows to define the flow (the actual *circuit*) and execute it.
-
-Circuit refrains from implementing deciders. The decisions are encoded in the output signals of tasks.
-
-`Circuit` and `workflow` use [BPMN](http://www.bpmn.org/) lingo and concepts for describing processes and flows. This document can be found in the [Trailblazer documentation](http://trailblazer.to/gems/workflow/circuit.html), too.
-
-> The `circuit` gem is the lowest level of abstraction and is used in `operation` and `workflow`, which both provide higher-level APIs for the Railway pattern and complex BPMN workflows.
-
-## Installation
-
-To use circuits, activities and nested tasks, you need one gem, only.
-
-```ruby
-gem "trailblazer-circuit"
-```
-
-The `trailblazer-circuit` gem is often just called the `circuit` gem. It ships with the `operation` gem and implements the internal Railway.
+An _activity_ is a collection of connected _tasks_ with one _start event_ and one (or many) _end_ events.
 
 ## Overview
 
-The following diagram illustrates a common use-case for `circuit`, the task of publishing a blog post.
+> Since TRB 2.1, we use [BPMN](http://www.bpmn.org/) lingo and concepts for describing workflows and processes.
 
-<img src="http://trailblazer.to/images/diagrams/blog-bpmn1.png">
+An activity is a workflow that contains one or several tasks. It is the main concept to organize control flow in Trailblazer.
+
+The following diagram illustrates an exemplary workflow where a user writes and publishes a blog post.
+
+<img src="http://trb.to/images/diagrams/blog-bpmn1.png">
 
 After writing and spell-checking, the author has the chance to publish the post or, in case of typos, go back, correct, and go through the same flow, again. Note that there's only a handful of defined transistions, or connections. An author, for example, is not allowed to jump from "correct" into "publish" without going through the check.
 
-The `circuit` gem allows you to define this *activity* and takes care of implementing the control flow, running the activity and making sure no invalid paths are taken.
+The `activity` gem allows you to define this *activity* and takes care of implementing the control flow, running the activity and making sure no invalid paths are taken.
 
-Your job is solely to implement the tasks and deciders put into this activity - you don't have to take care of executing it in the right order, and so on.
+Your job is solely to implement the tasks and deciders put into this activity - Trailblazer makes sure it is executed it in the right order, and so on.
 
-## Definition
+To eventually run this activity, three things have to be done.
 
-In order to define an activity, you can use the BPMN editor of your choice and run it through the Trailblazer circuit generator, use our online tool (if [you're a PRO member](http://pro.trailblazer.to)) or simply define it using plain Ruby.
+1. The activity needs be defined. Easiest is to use the [Activity.from_hash builder](#activity-fromhash).
+2. It's the programmer's job (that's you!) to implement the actual tasks (the "boxes"). Use [tasks for that](#task).
+3. After defining and implementing, you can run the activity with any data [by `call`ing it](#activity-call).
+
+## Operation vs. Activity
+
+An `Activity` allows to define and maintain a graph, that at runtime will be used as a "circuit". Or, in other words, it defines the boxes, circles, arrows and signals between them, and makes sure when running the activity, the circuit with your rules will be executed.
+
+Please note that an `Operation` simply provides a neat DSL for creating an `Activity` with a railway-oriented wiring (left and right track). An operation _always_ maintains an activity internally.
+
+```ruby
+class Create < Trailblazer::Operation
+  step :exists?, pass_fast: true
+  step :policy
+  step :validate
+  fail :log_err
+  step :persist
+  fail :log_db_err
+  step :notify
+end
+```
+
+Check the operation to the left. The DSL to create the activity with its graph is very different to `Activity`, but the outcome is a simple activity instance.
+
+<img src="http://trb.to/images/graph/op-vs-activity.png">
+
+When `call`ing an operation, several transformations on the arguments are applied, and those are passed to the `Activity#call` invocation. After the activity finished, its output is transformed into a `Result` object.
+
+## Activity
+
+To understand how an activity works and what it performs in your application logic, it's easiest to see how activities are defined, and used.
+
+## Activity: From_Hash
+
+Instead of using an operation, you can manually define activities by using the `Activity.from_hash` builder.
 
 ```ruby
 activity = Activity.from_hash do |start, _end|
   {
-    start            => { Circuit::Right => Blog::Write },
-    Blog::Write      => { Circuit::Right => Blog::SpellCheck },
-    Blog::SpellCheck => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct },
-    Blog::Correct    => { Circuit::Right => Blog::SpellCheck },
-    Blog::Publish    => { Circuit::Right => _end }
+    start            => { Trailblazer::Circuit::Right => Blog::Write },
+    Blog::Write      => { Trailblazer::Circuit::Right => Blog::SpellCheck },
+    Blog::SpellCheck => { Trailblazer::Circuit::Right => Blog::Publish,
+                          Trailblazer::Circuit::Left => Blog::Correct },
+    Blog::Correct    => { Trailblazer::Circuit::Right => Blog::SpellCheck },
+    Blog::Publish    => { Trailblazer::Circuit::Right => _end }
   }
 end
 ```
 
-The `Activity` function is a convenient tool to create an activity. Note that the yielded object allows to access *events* from the activity, such as the `Start` and `End` event that are created per default.
 
-This defines the control flow - the next step is to actually implement the tasks in this activity.
+The block yields a generic start and end event instance. You then connect every _task_ in that hash (hash keys) to another task or event via the emitted _signal_.
 
-## Task
+## Activity: Call
 
-A *task* usually maps to a particular box in your diagram. Its API is very simple: a task needs to expose a `call` method, allowing it to be a lambda or any other callable object.
-
-```ruby
-module Blog
-  Write = ->(direction, options, *flow) do
-    options[:content] = options[:content].strip
-    [ Circuit::Right, options, *flow ]
-  end
-end
-```
-
-It receives all arguments returned from the task run before. This means a task should return everything it receives.
-
-To transport data across the flow, you can change the return value. In this example, we use one global hash `options` that is passed from task to task and used for writing.
-
-The first return value is crucial: it dictates what will be the next step when executing the flow.
-
-For example, the `SpellCheck` task needs to decide which route to take.
+To run the activity, you want to `call` it.
 
 ```ruby
-SpellCheck = ->(direction, options, *flow) do
-  direction = SpellChecker.error_count(options[:content]) ? Circuit::Right : Circuit::Left
-  [ direction, options, *flow ]
-end
+my_options = {}
+last_signal, options, flow_options, _ = activity.( nil, my_options, {} )
 ```
 
-It's as simple as returning the appropriate signal.
+1. The `start` event is `call`ed and per default returns the generic _signal_`Trailblazer::Circuit::Right`.
+2. This emitted (or returned) signal is connected to the next task `Blog::Write`, which is now `call`ed.
+3. `Blog::Write` emits another `Right` signal that leads to `Blog::SpellCheck` being `call`ed.
+4. `Blog::SpellCheck` defines two outgoing signals and hence can decide what next task to call by emitting either `Right` if the spell check was ok, or `Left` if the post contains typos.
+5. ...and so on.
 
-> You can use any object as a direction signal and return it, as long as it's defined in the circuit.
+<img src="http://trb.to/images/graph/blogpost-activity.png">
 
-## Call
+Visualizing an activity as a graph makes it very straight-forward to understanding the mechanics of the flow.
 
-After defining circuit and implementing the tasks, the circuit can be executed using its very own `call` method.
 
-```ruby
-direction, options, flow = activity.(
-  nil,
-  { content: "Let's start writing   " } # gets trimmed in Write.
-)
-```
+Note how signals translate to edges (or connections) in the graph, and tasks become vertices (or nodes).
 
-The first argument is where to start the circuit. Usually, this will be the activity's `Start` event accessable via `activity[:Start]`.
+The return values are the `last_signal`, which is usually the end event (they return themselves as a signal), the last `options` that usually contains all kinds of data from running the activity, and additional args.
 
-All options are passed straight to the first task, which in turn has to make sure it returns an appropriate result set.
+## More
 
-The activity's return set is the last run task and all arguments from the last task.
-
-```ruby
-direction #=> #<End: default {}>
-options   #=> {:content=>"Let's start writing"}
-```
-
-As opposed to higher abstractions such as `Operation`, it is completely up to the developer what interfaces they provide to tasks and their return values. What is a mutable hash here could be an explicit array of return values in another implementation style, and so on.
-
-## Tracing
-
-For debugging or simply understanding the flows of circuits, you can use tracing.
-
-```ruby
-activity = Activity.from_hash do |start, _end|
-  # Blog::Write=>"Blog::Write",Blog::SpellCheck=>"Blog::SpellCheck",Blog::Correct=>"Blog::Correct", Blog::Publish=>"Blog::Publish" }) { |evt|
-  {
-    start      => { Circuit::Right => Blog::Write },
-    Blog::Write      => { Circuit::Right => Blog::SpellCheck },
-    Blog::SpellCheck => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct },
-    Blog::Correct    => { Circuit::Right => Blog::SpellCheck },
-    Blog::Publish    => { Circuit::Right => _end }
-  }
-end
-```
-
-The second argument to `Activity` takes debugging information, so you can set readable names for tasks.
-
-When invoking the activity, the `:runner` option will activate tracing and write debugging information about any executed task onto the `:stack` array.
-
-```ruby
-stack, _ = Circuit::Trace.( activity,
-  nil,
-  { content: "Let's start writing" }
-)
-```
-
-The `stack` can then be passed to a presenter.
-
-```
-Circuit::Trace::Present.tree(stack)
- |--> #<Start: default {}>{:content=>"Let's start writing"}
- |--> Blog::Write{:content=>"Let's start writing"}
- |--> Blog::SpellCheck{:content=>"Let's start writing"}
- |--> Blog::Publish{:content=>"Let's start writing"}
- `--> #<End: default {}>{:content=>"Let's start writing"}
- ```
-
-Tracing is extremely efficient to find out what is going wrong and supersedes cryptic debuggers by many times. Note that tracing also works for deeply nested circuits.
-
-> 🌅 In future versions of Trailblazer, our own debugger will take advantage of the explicit, traceable nature of circuits and also integrate with Ruby's exception handling.
-> Also, more options will make debugging of complex, nested workflows easier.
-
-## Event
-
-* how to add more ends, etc.
-
-## Nested
-
-## Operation
-
-If you need a higher abstraction of `circuit`, check out Trailblazer's [operation](http://trailblazer.to/gems/operation/2.0/api.html) implemenation which provides a simple Railway-oriented interface to create linear circuits.
+The [full documentation](http://trb.to/gems/activity/0.2/api.html) for this gem and many more interesting things can be found on the Trailblazer website.
