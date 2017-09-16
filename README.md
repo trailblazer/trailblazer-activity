@@ -50,7 +50,7 @@ class Create < Trailblazer::Operation
 end
 ```
 
-Check the operation to the left. The DSL to create the activity with its graph is very different to `Activity`, but the outcome is a simple activity instance.
+Check the operation above. The DSL to create the activity with its graph is very different to `Activity`, but the outcome is a simple activity instance.
 
 <img src="http://trb.to/images/graph/op-vs-activity.png">
 
