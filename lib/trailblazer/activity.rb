@@ -75,14 +75,9 @@ module Trailblazer
     end
 
     def initialize(graph)
-      @graph       = graph
-      @start_event = @graph[:_wrapped]
-      @circuit     = to_circuit(@graph) # graph is an immutable object.
-    end
-
-    # Calls the internal circuit. `start_at` defaults to the Activity's start event if `nil` is given.
-    def call(start_at, *args)
-      @circuit.( start_at || @start_event, *args )
+      @graph               = graph
+      @default_start_event = graph[:_wrapped]
+      @circuit             = to_circuit( @graph ) # graph is an immutable object.
     end
 
     def end_events
@@ -97,12 +92,18 @@ module Trailblazer
       ::Hash[ graph.find_all { |node| graph.successors(node).size == 0 }.collect { |node| [ node[:_wrapped], { role: node[:role] } ] } ]
     end
 
+    def call(args, start_event: default_start_event)
+      @circuit.( args, task: start_event )
+    end
+
     # @private
     attr_reader :circuit
     # @private
     attr_reader :graph
 
     private
+
+    attr_reader :default_start_event
 
     def to_circuit(graph)
       Circuit.new(graph.to_h( include_leafs: false ), end_events, {})
@@ -120,6 +121,9 @@ module Trailblazer
       def [](task)
         @graph.find_all { |node| node[:_wrapped] == task  }.first
       end
+    end
+
+    module Interface
     end
   end
 end

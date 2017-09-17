@@ -6,3 +6,5 @@ require "minitest/autorun"
 require "trailblazer/circuit/testing"
 
 require "pp"
+
+Inspect = Trailblazer::Activity::Inspect
