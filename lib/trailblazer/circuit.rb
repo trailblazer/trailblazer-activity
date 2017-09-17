@@ -19,28 +19,31 @@ module Trailblazer
       @name        = name
     end
 
-    Run = ->(activity, direction, *args) { activity.(direction, *args) }
+    Run = ->(*args, task: raise, **circuit_options) { task.(*args, circuit_options) }
 
-    # Runs the circuit. Stops when hitting a End event or subclass thereof.
-    # This method throws exceptions when the return value of a task doesn't match
+    # Runs the circuit until we hit a stop event.
+    #
+    # This method throws exceptions when the returned value of a task doesn't match
     # any wiring.
     #
-    # @param activity A task from the circuit where to start
-    # @param args An array of options passed to the first task.
-    def call(activity, options, flow_options={}, *args)
-      direction = nil
-      runner    = flow_options[:runner] || Run
-
+    # @param task An event or task of this circuit from where to start
+    # @param options anything you want to pass to the first task
+    # @param flow_options Library-specific flow control data
+    # @return [last_signal, options, flow_options, *args]
+    def call(*args, task: raise, runner: Run, last_signal: nil, **circuit_options)
       loop do
-        direction, options, flow_options, *args = runner.( activity, direction, options, flow_options, *args )
+        last_signal, *args = runner.(
+          *args,
+          circuit_options.merge( task: task, last_signal: last_signal, runner: runner )
+        )
 
-        # Stop execution of the circuit when we hit a stop event (< End). This could be an activity's End or Suspend.
-        return [ direction, options, flow_options, *args ] if @stop_events.include?(activity)
+        # Stop execution of the circuit when we hit a stop event (< End). This could be an task's End or Suspend.
+        return [ last_signal, *args ] if @stop_events.include?(task) # DISCUSS: return circuit_options here?
 
-        activity = next_for(activity, direction) do |next_activity, in_map|
-          activity_name = @name[activity] || activity # TODO: this must be implemented only once, somewhere.
-          raise IllegalInputError.new("#{@name[:id]} #{activity_name}") unless in_map
-          raise IllegalOutputSignalError.new("from #{@name[:id]}: `#{activity_name}`===>[ #{direction.inspect} ]") unless next_activity
+        task = next_for(task, last_signal) do |next_task, in_map|
+          task_name = @name[task] || task # TODO: this must be implemented only once, somewhere.
+          raise IllegalInputError.new("#{@name[:id]} #{task_name}") unless in_map
+          raise IllegalOutputSignalError.new("from #{@name[:id]}: `#{task_name}`===>[ #{last_signal.inspect} ]") unless next_task
         end
       end
     end
@@ -51,16 +54,16 @@ module Trailblazer
     end
 
   private
-    def next_for(last_activity, emitted_direction)
+    def next_for(last_task, emitted_signal)
       # p @map
       in_map        = false
-      cfg           = @map.keys.find { |t| t == last_activity } and in_map = true
+      cfg           = @map.keys.find { |t| t == last_task } and in_map = true
       cfg = @map[cfg] if cfg
       cfg         ||= {}
-      next_activity = cfg[emitted_direction]
-      yield next_activity, in_map
+      next_task = cfg[emitted_signal]
+      yield next_task, in_map
 
-      next_activity
+      next_task
     end
 
     class IllegalInputError < RuntimeError
@@ -77,13 +80,13 @@ module Trailblazer
         @options = options
       end
 
-      def call(direction, *args)
+      def call(signal, *args)
         [ self, *args ]
       end
     end
 
     class Start < End
-      def call(direction, *args)
+      def call(signal, *args)
         [ Right, *args ]
       end
     end

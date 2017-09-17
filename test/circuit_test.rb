@@ -1,81 +1,65 @@
-require 'test_helper'
-
-# TODO: 3-level nesting test.
+require "test_helper"
 
 class CircuitTest < Minitest::Spec
-	Circuit = Trailblazer::Circuit
+  it do
+    start = ->(options, *args, **) { options[:start] = 1; [ "to a", options, *args ] }
+    a =     ->(options, *args, **) { options[:a] = 2;     [ "from a", options, *args ] }
+    b =     ->(options, *args, **) { options[:b] = 3;     [ "from b", options, *args ] }
+    _end =  ->(options, *args, **) { options[:_end] = 4;  [ "the end", options, *args ] }
 
-  module Blog
-    Read    = ->(direction, options, *args)   { options["Read"] = 1; [ Circuit::Right, options, args ] }
-    Next    = ->(direction, options, *args) { options["NextPage"] = []; [ options["return"], options, args ] }
-    Comment = ->(direction, options, *args)   { options["Comment"] = 2; [ Circuit::Right, options, args ] }
+    map = {
+      start => { "to a" => a, "to b" => b },
+      a => { "from a" => b },
+      b => { "from b" => _end}
+    }
+
+    circuit = Trailblazer::Circuit.new( map, [ _end ], {} ) # FIXME: last arg
+
+    ctx = {}
+
+    last_signal, ctx, i, j, *bla = circuit.( ctx, 1, 2, task: start )
+
+    ctx.inspect.must_equal %{{:start=>1, :a=>2, :b=>3, :_end=>4}}
+    last_signal.must_equal "the end"
+    i.must_equal 1
+    j.must_equal 2
+    bla.must_equal []
+
+    # ---
+
+    MyRunner = ->(*args, task:, **circuit_options) do
+      MyTrace.( *args, circuit_options.merge(task: task) )
+
+      task.( *args, **circuit_options )
+    end
+
+    MyTrace = ->( options, flow_options, *args, **circuit_options ) { flow_options[:stack] << circuit_options[:task] }
+
+    ctx = {}
+    flow_options = { stack: [] }
+
+    last_signal, ctx, i, j, *bla = circuit.( ctx, flow_options, 2, task: start, runner: MyRunner )
+
+    flow_options.must_equal( stack: [ start, a, b, _end ] )
+
+
+    #---
+    c =     ->(options, *args, **) { options[:c] = 6;     [ "from c", options, *args ] }
+    nest_map  = {
+      start => { "to_a" => c },
+      c     => { "from c" => _end }
+    }
+
+    nest = Trailblazer::Circuit.new( nest_map, [ _end ], {} ) # FIXME: last arg
+
+
+    outer_map = {
+      start => { "to a" => a, "to b" => b },
+      a     => { "from a" => nest },
+      nest  => { "from nest" => b },
+      b     => { "from b" => _end}
+    }
+
   end
 
-  # let(:read)      { Circuit::Task(Blog::Read, "blog.read") }
-  # let(:next_page) { Circuit::Task(Blog::NextPage, "blog.next") }
-  # let(:comment)   { Circuit::Task(Blog::Comment, "blog.comment") }
-
-  describe "plain circuit without any nesting" do
-    let(:blog) do
-      Trailblazer::Activity.from_hash { |start, _end|
-        {
-          start      => { Circuit::Right => Blog::Read },
-          Blog::Read => { Circuit::Right => Blog::Next },
-          Blog::Next => { Circuit::Right => _end, Circuit::Left => Blog::Comment },
-          Blog::Comment => { Circuit::Right => _end }
-        }
-      }
-    end
-
-    it "ends before comment, on next_page" do
-      direction, _options = blog.(nil, options = { "return" => Circuit::Right })
-      [direction, _options].must_equal([blog.end_events.first, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}])
-
-      options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]})
-    end
-
-    it "ends on comment" do
-      direction, _options = blog.(nil, options = { "return" => Circuit::Left })
-      [direction, _options].must_equal([blog.end_events.first, {"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2}])
-
-      options.must_equal({"return"=> Circuit::Left, "Read"=> 1, "NextPage"=>[], "Comment"=>2})
-    end
-  end
-
-  #- Circuit::End()
-  describe "two End events" do
-    Blog::Test = ->(direction, options, *) { [ options[:return], options ] }
-
-    let(:flow) do
-      Trailblazer::Activity.from_hash { |start, _end|
-        {
-          start => { Circuit::Right => Blog::Test },
-          Blog::Test      => { Circuit::Right => _end, Circuit::Left => Circuit::End(:retry) }
-        }
-      }
-    end
-
-    it { flow.(nil, return: Circuit::Right)[0..1].must_equal([flow.end_events.first,         {:return=>Trailblazer::Circuit::Right} ]) }
-    it { flow.(nil, return: Circuit::Left )[0..1].must_equal([flow.end_events.last, {:return=>Trailblazer::Circuit::Left} ]) }
-  end
-
-  describe "arbitrary args for Circuit#call are passed and returned" do
-    Plus    = ->(direction, options, flow_options, a, b)      { [ direction, options, flow_options, a + b, 1 ] }
-    PlusOne = ->(direction, options, flow_options, ab_sum, i) { [ direction, options, flow_options, ab_sum.to_s, i+1 ] }
-
-    let(:flow) do
-      Trailblazer::Activity.from_hash { |start, _end|
-        {
-          start => { Circuit::Right => Plus },
-          Plus        => { Circuit::Right => PlusOne },
-          PlusOne     => { Circuit::Right => _end },
-        }
-      }
-    end
-
-    it { flow.( nil, {}, {a:"B"}, 1, 2 ).must_equal [ flow.end_events.first, {}, {a:"B"}, "3", 2 ] }
-  end
 end
-
-# decouple circuit and implementation
-# visible structuring of flow
