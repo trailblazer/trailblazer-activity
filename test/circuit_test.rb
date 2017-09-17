@@ -1,10 +1,11 @@
 require "test_helper"
 
 class CircuitTest < Minitest::Spec
-  Start = ->(options, *args, **) { options[:start] = 1; [ "to a", options, *args ] }
-  A =     ->(options, *args, **) { options[:a] = 2;     [ "from a", options, *args ] }
-  B =     ->(options, *args, **) { options[:b] = 3;     [ "from b", options, *args ] }
-  End =  ->(options, *args, **) { options[:_end] = 4;  [ "the end", options, *args ] }
+  Start   = ->(options, *args) { options[:start] = 1; [ "to a", options, *args ] }
+  A       = ->(options, *args) { options[:a] = 2;     [ "from a", options, *args ] }
+  B       = ->(options, *args) { options[:b] = 3;     [ "from b", options, *args ] }
+  End     = ->(options, *args) { options[:_end] = 4;  [ "the end", options, *args ] }
+  C       = ->(options, *args) { options[:c] = 6;     [ "from c", options, *args ] }
 
   it do
     map = {
@@ -19,34 +20,31 @@ class CircuitTest < Minitest::Spec
 
     last_signal, ctx, i, j, *bla = circuit.( ctx, 1, 2, task: Start )
 
-    ctx.inspect.must_equal %{{:start=>1, :a=>2, :b=>3, :End=>4}}
+    ctx.inspect.must_equal %{{:start=>1, :a=>2, :b=>3, :_end=>4}}
     last_signal.must_equal "the end"
     i.must_equal 1
     j.must_equal 2
-    bla.must_equal []
+    bla.size.must_equal 4
 
     # ---
 
     ctx = {}
     flow_options = { stack: [] }
 
-    last_signal, ctx, i, j, *bla = circuit.( ctx, flow_options, 2, task: start, runner: MyRunner )
+    last_signal, ctx, i, j, *bla = circuit.( ctx, flow_options, 2, task: Start, runner: MyRunner )
 
-    flow_options.must_equal( stack: [ start, A, b, End ] )
+    flow_options.must_equal( stack: [ Start, A, B, End ] )
   end
 
-  MyRunner = ->(*args, task:, **circuit_options) do
-    MyTrace.( *args, circuit_options.merge(task: task) )
+  MyRunner = ->(*args, task:) do
+    MyTrace.( *args, task: task )
 
-    task.( *args, **circuit_options )
+    task.( *args )
   end
 
   MyTrace = ->( options, flow_options, *args, **circuit_options ) { flow_options[:stack] << circuit_options[:task] }
 
-  C =     ->(options, *args, **) { options[:c] = 6;     [ "from c", options, *args ] }
-
   let(:nestable) do
-
     nest_map  = {
       Start => { "to a" => C },
       C     => { "from c" => End }
@@ -80,7 +78,7 @@ class CircuitTest < Minitest::Spec
     last_signal.must_equal "the end"
     i.must_equal 1
     j.must_equal 2
-    bla.must_equal []
+    bla.size.must_equal 7
   end
 
   it "allows using a custom :runner" do
@@ -90,6 +88,11 @@ class CircuitTest < Minitest::Spec
 
     last_signal, ctx, flow_options, j, *bla = outer.( ctx, flow_options, 2, task: Start, runner: MyRunner )
 
+    ctx.inspect.must_equal %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
+    last_signal.must_equal "the end"
     flow_options.must_equal( stack: [ Start, A, nestable, Start, C, End, B, End ] )
+    j.must_equal 2
+    # bla.must_equal [{task: Start, last_signal: nil, runner: MyRunner}]
+    bla.size.must_equal 7
   end
 end
