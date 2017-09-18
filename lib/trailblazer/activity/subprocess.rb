@@ -9,18 +9,15 @@ module Trailblazer
     # Subprocess allows to have tasks with a different call interface and start event.
     # @param activity any object with an {Activity interface}
     class Subprocess
-      def initialize(activity, call: :call, **activity_options, &block)
+      def initialize(activity, call: :call, **options, &block)
         @activity = activity
-        @activity_options = activity_options
+        @options = options
         @call     = call
         @block    = block
       end
 
       def call(args)
-        return @block.(activity: @activity, start_event: @start_event, args: args) if @block
-
-        # fixme.
-        @activity.public_send(@call, args, @activity_options)
+        @activity.public_send(@call, args, @options)
       end
 
       # @private

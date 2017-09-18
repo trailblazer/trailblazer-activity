@@ -5,13 +5,13 @@ class SubprocessHelper < Minitest::Spec
   Activity = Trailblazer::Activity
 
   module Blog
-    Read    = ->(direction, options, *)    { options["Read"] = 1; [ Circuit::Right, options ] }
-    Next    = ->(direction, options, *arg) { options["NextPage"] = []; [ options["return"], options ] }
-    Comment = ->(direction, options, *)    { options["Comment"] = 2; [ Circuit::Right, options ] }
+    Read    = ->((options, *))    { options["Read"] = 1; [ Circuit::Right, [options] ] }
+    Next    = ->((options, *arg)) { options["NextPage"] = []; [ options["return"], [options] ] }
+    Comment = ->((options, *))    { options["Comment"] = 2; [ Circuit::Right, [options] ] }
   end
 
   module User
-    Relax   = ->(direction, options, *) { options["Relax"]=true; [ Circuit::Right, options ] }
+    Relax   = ->((options, *)) { options["Relax"]=true; [ Circuit::Right, [options] ] }
   end
 
   ### Subprocess( )
@@ -40,7 +40,7 @@ class SubprocessHelper < Minitest::Spec
     end
 
     it "ends before comment, on next_page" do
-      user.(nil, options = { "return" => Circuit::Right }).must_equal([user.end_events.first, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}, nil])
+      user.([options = { "return" => Circuit::Right }, {}]).must_equal([user.end_events.first, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
@@ -102,41 +102,6 @@ class SubprocessHelper < Minitest::Spec
 
       options.must_equal({"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true})
     end
-
-    #---
-    #- Subprocess(  activity ) { ... }
-    describe "Subprocess with block" do
-      let(:process) do
-        class Workout
-          def self.__call__(direction, options, flow_options)
-            options[:workout]   = 9
-
-            [ direction, options, flow_options ]
-          end
-        end
-
-        nested = Activity::Subprocess(  Workout, start_at: "no start_at needed" ) do |activity:nil, start_at:nil, args:nil|
-          activity.__call__(start_at, *args)
-        end
-
-        Trailblazer::Activity.from_hash { |start, _end|
-          {
-            start => { Circuit::Right => nested },
-            nested     => { "no start_at needed" => User::Relax },
-
-            User::Relax => { Circuit::Right => _end }
-          }
-        }
-      end
-
-      it "runs Subprocess from alternative start" do
-        process.(nil, options = { "return" => Circuit::Right }).
-          must_equal( [process.end_events.first, {"return"=>Circuit::Right, :workout=>9, "Relax"=>true}, nil] )
-
-        options.must_equal({"return"=>Circuit::Right, :workout=>9, "Relax"=>true})
-      end
-    end
-
 
     #---
     #- Subprocess(  activity, call: :__call__ ) { ... }

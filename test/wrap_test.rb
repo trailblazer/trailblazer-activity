@@ -92,6 +92,7 @@ class WrapTest < Minitest::Spec
 
             wrap_static
           ],
+          # runner: Wrap::Runner,
         )
 
         # upload should contain only one 1.
@@ -134,11 +135,12 @@ class WrapTest < Minitest::Spec
           Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
 
         ],
+
         # runner: Wrap::Runner
       )
 
       signal.must_equal activity.end_events.first # the actual activity's End signal.
-      options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
+      options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
 
       puts tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
