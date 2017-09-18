@@ -2,6 +2,9 @@ require "test_helper"
 
 require "trailblazer/activity"
 
+# Public API tests
+# For Activity#call, see test/call_test.rb.
+
 class ActivityTest < Minitest::Spec
   Circuit = Trailblazer::Circuit
 
@@ -73,10 +76,6 @@ class ActivityTest < Minitest::Spec
     let(:extended) { Trailblazer::Activity.merge(activity, [[ :attach!, source: "A", target: [ end_for_failure, role: :failure, id: "End.fail" ], edge: [ Circuit::Right, {} ] ]] ) }
 
     it { extended.outputs.must_equal( end_for_success => { role: :success }, end_for_failure => { role: :failure } ) }
-  end
-
-  describe "#default_start_event" do
-    it { Inspect.(activity.default_start_event).must_equal %{#<Trailblazer::Circuit::Start: @name=:default, @options={}>} }
   end
 end
 

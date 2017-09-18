@@ -8,9 +8,7 @@ class CallTest < Minitest::Spec
 
   module Blog
     Read    = ->((options, *args))   { options["Read"] = 1; [ Circuit::Right, [options, *args] ] }
-    Next    = ->((options, *args)) { options["NextPage"] = []; puts "@@@@@x #{options.inspect}"; [
-
-     options["return"], [options, *args] ] }
+    Next    = ->((options, *args)) { options["NextPage"] = []; [ options["return"], [options, *args] ] }
     Comment = ->((options, *args))   { options["Comment"] = 2; [ Circuit::Right, [options, *args] ] }
   end
 
@@ -74,6 +72,44 @@ class CallTest < Minitest::Spec
     end
 
     it { flow.( [ {}, {a:"B"}, 1, 2 ] ).must_equal [ flow.end_events.first, [ {}, {a:"B"}, "3", 2 ] ] }
+  end
+
+  describe "multiple Start events" do
+    let(:alternative_start) { ->(args) { [ "custom signal", args ] } }
+
+    let(:blog) do
+      activity = Activity.from_hash { |start, _end|
+        {
+          start             => { Circuit::Right => Blog::Read },
+          Blog::Read        => { Circuit::Right => _end },
+
+          # alternative_start => { "custom signal" => Blog::Comment },
+          # Blog::Comment     => { Circuit::Right => _end }
+        }
+      }
+
+      wirings = [
+        [ :insert_before!, "Start.default", node: [ alternative_start, id: "alternative_start" ], incoming: ->(edge) { false } ],
+        [ :attach!, source: "alternative_start", target: [ Blog::Comment, id: "Blog::Comment" ], edge: [ "custom signal", {} ] ],
+        [ :connect!, source: "Blog::Comment", target: activity.end_events[0], edge: [ Circuit::Right, {} ] ],
+      ]
+
+      extended = Trailblazer::Activity.merge(activity, wirings)
+    end
+
+    it "runs from default start" do
+      signal, ( options, * ) = blog.( [ options={}, {} ] )
+
+      signal.must_equal blog.end_events[0]
+      options.must_equal( {"Read"=>1} )
+    end
+
+    it "starts from :start_event" do
+      signal, ( options, * ) = blog.( [ options={}, {} ], start_event: alternative_start )
+
+      signal.must_equal blog.end_events[0]
+      options.must_equal( {"Comment"=>2} )
+    end
   end
 end
 
