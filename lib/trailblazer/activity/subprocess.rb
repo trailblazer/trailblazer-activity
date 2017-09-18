@@ -16,11 +16,11 @@ module Trailblazer
         @block    = block
       end
 
-      def call(last_signal, *args)
+      def call(args)
         return @block.(activity: @activity, start_event: @start_event, args: args) if @block
 
         # fixme.
-        @activity.public_send(@call, *args, @activity_options)
+        @activity.public_send(@call, args, @activity_options)
       end
 
       # @private

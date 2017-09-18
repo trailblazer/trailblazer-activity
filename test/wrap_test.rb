@@ -1,6 +1,6 @@
 require "test_helper"
 
-class StepPipeTest < Minitest::Spec
+class WrapTest < Minitest::Spec
   Circuit          = Trailblazer::Circuit
   Activity         = Trailblazer::Activity
   SpecialDirection = Class.new
@@ -52,7 +52,7 @@ class StepPipeTest < Minitest::Spec
     #-
     describe "Wrap::Runner#call with invalid input" do
       def runner(flow_options, static_wraps={}, activity=more_nested)
-        direction, options, flow_options = activity.(
+        signal, options, flow_options = activity.(
           [ options = {} ],
           static_wraps,
           {
@@ -71,19 +71,19 @@ class StepPipeTest < Minitest::Spec
       # no :wrap_alterations, default Wrap
       it do
         assert_raises do
-          direction, options, flow_options = runner( bla: "Ignored" )
+          signal, options, flow_options = runner( bla: "Ignored" )
         end.to_s.must_equal %{Please provide :wrap_runtime}
       end
 
       # specific wrap for A, default for B.
       it do
-        only_for_wrap = ->(direction, options, *args) { options[:upload] ||= []; options[:upload]<<1; [ direction, options, *args ] }
+        only_for_wrap = ->(signal, options, *args) { options[:upload] ||= []; options[:upload]<<1; [ signal, options, *args ] }
         upload_wrap   = [ [ :insert_before!, "task_wrap.call_task", node: [ only_for_wrap, { id: "task_wrap.upload" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ] ]
 
         wrap_static         = Hash.new( Trailblazer::Activity::Wrap.initial_activity )
         wrap_static[Upload] = Trailblazer::Activity.merge( Trailblazer::Activity::Wrap.initial_activity, upload_wrap )
 
-        direction, options, flow_options, *ret = runner(
+        signal, options, flow_options, *ret = runner(
           {
             wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
 
@@ -111,11 +111,11 @@ class StepPipeTest < Minitest::Spec
       wrap_alterations = [
         [ :insert_before!, "task_wrap.call_task", node: [ Activity::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
         [ :insert_before!, "End.default", node: [ Activity::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
-        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Activity::Trace.method(:capture_args), direction: Circuit::Right ) },
-        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Activity::Trace.method(:capture_return), direction: Circuit::Right ) },
+        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Activity::Trace.method(:capture_args), signal: Circuit::Right ) },
+        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Activity::Trace.method(:capture_return), signal: Circuit::Right ) },
       ]
 
-      direction, options, flow_options = activity.(
+      signal, (options, flow_options) = activity.(
         [
           options = {},
           {
@@ -128,12 +128,15 @@ class StepPipeTest < Minitest::Spec
             stack:      Activity::Trace::Stack.new,
           introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
           },
+
+          # wrap_static
           Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
+
         ],
         # runner: Wrap::Runner
       )
 
-      direction.must_equal activity.end_events.first # the actual activity's End signal.
+      signal.must_equal activity.end_events.first # the actual activity's End signal.
       options  .must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
 

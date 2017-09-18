@@ -96,7 +96,7 @@ module Trailblazer
       @circuit.(
         [ user_args, flow_options, *args ],
         # circuit-specific options:
-        flow_options.merge( task:   start_event) , # this passes :runner to the {Circuit}.
+        flow_options.merge( task: start_event) , # this passes :runner to the {Circuit}.
       )
     end
 
