@@ -6,13 +6,13 @@ class WrapTest < Minitest::Spec
   SpecialDirection = Class.new
   Wrap             = Activity::Wrap
 
-  Model     = ->((options), *circuit_options) { options["model"]=String; [ Circuit::Right, options] }
-  Uuid      = ->((options), *circuit_options) { options["uuid"]=999;     [ SpecialDirection, options] }
-  Save      = ->((options), *circuit_options) { options["saved"]=true;   [ Circuit::Right, options] }
-  Upload    = ->((options), *circuit_options) { options["bits"]=64;      [ Circuit::Right, options] }
-  Cleanup   = ->((options), *circuit_options) { options["ok"]=true;      [ Circuit::Right, options] }
+  Model     = ->((options)) { options["model"]=String; [ Circuit::Right, options] }
+  Uuid      = ->((options)) { options["uuid"]=999;     [ SpecialDirection, options] }
+  Save      = ->((options)) { options["saved"]=true;   [ Circuit::Right, options] }
+  Upload    = ->((options)) { options["bits"]=64;      [ Circuit::Right, options] }
+  Cleanup   = ->((options)) { options["ok"]=true;      [ Circuit::Right, options] }
 
-  MyInject  = ->((options), *circuit_options) { [ Circuit::Right, options.merge( current_user: Module ) ] }
+  MyInject  = ->((options)) { [ Circuit::Right, options.merge( current_user: Module ) ] }
 
   #- tracing
 
@@ -51,16 +51,6 @@ class WrapTest < Minitest::Spec
     #---
     #-
     describe "Wrap::Runner#call with invalid input" do
-      def runner(flow_options, static_wraps={}, activity=more_nested)
-        signal  , options, flow_options = activity.(
-          [ options = {} ],
-          static_wraps,
-          {
-            runner: Wrap::Runner,
-          }.merge(flow_options)
-        )
-      end
-
       let(:wrap_alterations) do
         [
           [ :insert_before!, "task_wrap.call_task", node: [ Activity::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
@@ -71,26 +61,37 @@ class WrapTest < Minitest::Spec
       # no :wrap_alterations, default Wrap
       it do
         assert_raises do
-          signal, options, flow_options = runner( bla: "Ignored" )
+          signal, *args = more_nested.( [ options = {}, { runner: Wrap::Runner }, static_wraps={} ] )
         end.to_s.must_equal %{Please provide :wrap_runtime}
       end
 
       # specific wrap for A, default for B.
       it do
-        only_for_wrap = ->(signal, options, *args) { options[:upload] ||= []; options[:upload]<<1; [ signal, options, *args ] }
+        only_for_wrap = ->((options, flow_options, cdfg, original_args)) do
+          _options, _ = original_args
+          _options[:upload] ||= []
+          _options[:upload]<<1
+
+          [ Circuit::Right, [options, flow_options, cdfg, original_args] ]
+        end
         upload_wrap   = [ [ :insert_before!, "task_wrap.call_task", node: [ only_for_wrap, { id: "task_wrap.upload" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ] ]
 
         wrap_static         = Hash.new( Trailblazer::Activity::Wrap.initial_activity )
         wrap_static[Upload] = Trailblazer::Activity.merge( Trailblazer::Activity::Wrap.initial_activity, upload_wrap )
 
-        signal, options, flow_options, *ret = runner(
-          {
-            wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
+        signal, (options, flow_options, *ret) = more_nested.(
+          [
+            options = {},
+            {
+              runner: Wrap::Runner,
+              wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
 
-            stack:         Activity::Trace::Stack.new,
-            introspection: { } # TODO: crashes without :debug.
-          },
-          wrap_static
+              stack:         Activity::Trace::Stack.new,
+              introspection: { } # TODO: crashes without :debug.
+            },
+
+            wrap_static
+          ],
         )
 
         # upload should contain only one 1.
