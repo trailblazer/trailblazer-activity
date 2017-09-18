@@ -30,8 +30,8 @@ class WrapTest < Minitest::Spec
       Trailblazer::Activity.from_hash do |start, _end|
         {
           start => { Circuit::Right    => Save },
-          Save        => { Circuit::Right    => __nested = Activity::Subprocess(more_nested) },
-          __nested    => { more_nested.end_events.first => Cleanup },
+          Save        => { Circuit::Right  => more_nested },
+          more_nested => { more_nested.end_events.first => Cleanup },
           Cleanup     => { Circuit::Right => _end }
         }
       end
@@ -41,8 +41,8 @@ class WrapTest < Minitest::Spec
       Trailblazer::Activity.from_hash do |start, _end|
         {
           start     => { Circuit::Right => Model },
-          Model     => { Circuit::Right => __nested = Activity::Subprocess( nested ) },
-          __nested  => { nested.end_events.first => Uuid },
+          Model     => { Circuit::Right => nested  },
+          nested    => { nested.end_events.first => Uuid },
           Uuid      => { SpecialDirection => _end }
         }
       end
@@ -145,17 +145,17 @@ class WrapTest < Minitest::Spec
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
 |-- outsideg.Model
-|-- #<Trailblazer::Activity::Subprocess:>
+|-- #<Trailblazer::Activity:>
 |   |-- #<Trailblazer::Circuit::Start:>
 |   |-- #<Proc:.rb:11 (lambda)>
-|   |-- #<Trailblazer::Activity::Subprocess:>
+|   |-- #<Trailblazer::Activity:>
 |   |   |-- #<Trailblazer::Circuit::Start:>
 |   |   |-- #<Proc:.rb:12 (lambda)>
 |   |   |-- #<Trailblazer::Circuit::End:>
-|   |   `-- #<Trailblazer::Activity::Subprocess:>
+|   |   `-- #<Trailblazer::Activity:>
 |   |-- #<Proc:.rb:13 (lambda)>
 |   |-- #<Trailblazer::Circuit::End:>
-|   `-- #<Trailblazer::Activity::Subprocess:>
+|   `-- #<Trailblazer::Activity:>
 |-- outsideg.Uuid
 `-- #<Trailblazer::Circuit::End:>}
     end
