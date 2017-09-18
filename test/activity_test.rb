@@ -28,7 +28,7 @@ class ActivityTest < Minitest::Spec
       activity.circuit.to_fields.must_equal(
         [
           {
-            activity.default_start_event => { Circuit::Right => A },
+            activity.send(:default_start_event) => { Circuit::Right => A },
             A => { Circuit::Right => end_for_success }
           },
           [end_for_success],
@@ -49,7 +49,7 @@ class ActivityTest < Minitest::Spec
       activity.circuit.to_fields.must_equal(
         [
           {
-            activity.default_start_event => { Circuit::Right => A },
+            activity.send(:default_start_event) => { Circuit::Right => A },
             A => { Circuit::Right => end_for_success }
           },
           [end_for_success],
@@ -60,7 +60,7 @@ class ActivityTest < Minitest::Spec
       extended.circuit.to_fields.must_equal(
         [
           {
-            extended.default_start_event => { Circuit::Right => A },
+            extended.send(:default_start_event) => { Circuit::Right => A },
             A => { Circuit::Right => B },
             B => { Circuit::Right => end_for_success }
           },
