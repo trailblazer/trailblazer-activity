@@ -36,10 +36,10 @@ class CircuitTest < Minitest::Spec
     flow_options.must_equal( stack: [ Start, A, B, End ] )
   end
 
-  MyRunner = ->(args, circuit_options, task:) do
+  MyRunner = ->(args, task:) do
     MyTrace.( args, task: task )
 
-    task.( args, circuit_options )
+    task.( args )
   end
 
   MyTrace = ->( (options, flow_options, *args), **circuit_options ) { flow_options[:stack] << circuit_options[:task] }
@@ -52,8 +52,9 @@ class CircuitTest < Minitest::Spec
 
     nest = Trailblazer::Circuit.new( nest_map, [ End ], {} ) # FIXME: last arg
 
-    nest_call = ->(args, **circuit_options) {
-      nest.( args, **circuit_options.merge( task: Start ) ) }
+    # fixme: FROM Activity#call
+    nest_call = ->((options, flow_options, *args)) {
+      nest.( [ options, flow_options, *args ],  flow_options.merge( task: Start ) ) }
 
     nest_call
   end
@@ -72,11 +73,11 @@ class CircuitTest < Minitest::Spec
   it "allows nesting circuits by using a nesting callable" do
     ctx = {}
 
-    last_signal, (ctx, i, j, *bla) = outer.( [ ctx, 1, 2 ], task: Start )
+    last_signal, (ctx, i, j, *bla) = outer.( [ ctx, {}, 2 ], task: Start )
 
     ctx.inspect.must_equal %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
     last_signal.must_equal "the end"
-    i.must_equal 1
+    i.must_equal( {})
     j.must_equal 2
     bla.must_equal []
   end
@@ -84,13 +85,13 @@ class CircuitTest < Minitest::Spec
   it "allows using a custom :runner" do
     ctx = {}
 
-    flow_options = { stack: [] }
+    flow_options = { stack: [], runner: MyRunner }
 
     last_signal, (ctx, flow_options, j, *bla) = outer.( [ ctx, flow_options, 2 ], task: Start, runner: MyRunner )
 
     ctx.inspect.must_equal %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
     last_signal.must_equal "the end"
-    flow_options.must_equal( stack: [ Start, A, nestable, Start, C, End, B, End ] )
+    flow_options.must_equal( stack: [ Start, A, nestable, Start, C, End, B, End ], runner: MyRunner )
     j.must_equal 2
     bla.must_equal []
   end

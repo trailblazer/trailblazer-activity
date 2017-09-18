@@ -21,7 +21,7 @@ module Trailblazer
 
     # @param args [Array] all arguments to be passed to the task's `call`
     # @param task [callable] task to call
-    Run = ->(args, circuit_options, task: raise) { task.(args, circuit_options) }
+    Run = ->(args, task: raise) { task.(args) }
 
     # Runs the circuit until we hit a stop event.
     #
@@ -32,12 +32,12 @@ module Trailblazer
     # @param options anything you want to pass to the first task
     # @param flow_options Library-specific flow control data
     # @return [last_signal, options, flow_options, *args]
-    def call(args, task: raise, runner: Run, last_signal: nil, **circuit_options)
+    def call(args, task: raise, runner: Run, last_signal: nil, **)
       loop do
         last_signal, args = runner.(
           args,
-          circuit_options.merge( task: task, last_signal: last_signal, runner: runner ), # original circuit options. i was this was easier in Ruby.
-          task: task # runner options, to be discarded.
+          # circuit_options.merge( task: task, last_signal: last_signal, runner: runner ), # original circuit options. i was this was easier in Ruby.
+          task: task # runner_options, to be discarded.
         )
 
         # Stop execution of the circuit when we hit a stop event (< End). This could be an task's End or Suspend.
