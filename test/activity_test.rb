@@ -20,48 +20,52 @@ class ActivityTest < Minitest::Spec
     )
   end
 
-  it do
-    activity.circuit.to_fields.must_equal(
-      [
-        {
-          activity.instance_variable_get(:@start_event) => { Circuit::Right => A },
-          A => { Circuit::Right => end_for_success }
-        },
-        [end_for_success],
-        {}
-      ]
-    )
+  describe "::from_wirings" do
+    it do
+      activity.circuit.to_fields.must_equal(
+        [
+          {
+            activity.default_start_event => { Circuit::Right => A },
+            A => { Circuit::Right => end_for_success }
+          },
+          [end_for_success],
+          {}
+        ]
+      )
+    end
   end
 
-  it do
-    wirings = [
-      [ :insert_before!, "End.success", node: [ B, id: :B ], outgoing: [ Circuit::Right, type: :railway ], incoming: ->(edge) { edge[:type] == :railway } ]
-    ]
-
-    extended = Trailblazer::Activity.merge(activity, wirings)
-
-    activity.circuit.to_fields.must_equal(
-      [
-        {
-          activity.instance_variable_get(:@start_event) => { Circuit::Right => A },
-          A => { Circuit::Right => end_for_success }
-        },
-        [end_for_success],
-        {}
+  describe "::merge" do
+    it do
+      wirings = [
+        [ :insert_before!, "End.success", node: [ B, id: :B ], outgoing: [ Circuit::Right, type: :railway ], incoming: ->(edge) { edge[:type] == :railway } ]
       ]
-    )
 
-    extended.circuit.to_fields.must_equal(
-      [
-        {
-          extended.instance_variable_get(:@start_event) => { Circuit::Right => A },
-          A => { Circuit::Right => B },
-          B => { Circuit::Right => end_for_success }
-        },
-        [end_for_success],
-        {}
-      ]
-    )
+      extended = Trailblazer::Activity.merge(activity, wirings)
+
+      activity.circuit.to_fields.must_equal(
+        [
+          {
+            activity.default_start_event => { Circuit::Right => A },
+            A => { Circuit::Right => end_for_success }
+          },
+          [end_for_success],
+          {}
+        ]
+      )
+
+      extended.circuit.to_fields.must_equal(
+        [
+          {
+            extended.default_start_event => { Circuit::Right => A },
+            A => { Circuit::Right => B },
+            B => { Circuit::Right => end_for_success }
+          },
+          [end_for_success],
+          {}
+        ]
+      )
+    end
   end
 
   describe "#outputs" do
@@ -69,6 +73,10 @@ class ActivityTest < Minitest::Spec
     let(:extended) { Trailblazer::Activity.merge(activity, [[ :attach!, source: "A", target: [ end_for_failure, role: :failure, id: "End.fail" ], edge: [ Circuit::Right, {} ] ]] ) }
 
     it { extended.outputs.must_equal( end_for_success => { role: :success }, end_for_failure => { role: :failure } ) }
+  end
+
+  describe "#default_start_event" do
+    it { Inspect.(activity.default_start_event).must_equal %{#<Trailblazer::Circuit::Start: @name=:default, @options={}>} }
   end
 end
 

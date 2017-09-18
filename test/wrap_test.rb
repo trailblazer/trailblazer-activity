@@ -6,13 +6,13 @@ class StepPipeTest < Minitest::Spec
   SpecialDirection = Class.new
   Wrap             = Activity::Wrap
 
-  Model = ->(direction, options, flow_options) { options["model"]=String; [direction, options, flow_options] }
-  Uuid  = ->(direction, options, flow_options) { options["uuid"]=999;     [ SpecialDirection, options, flow_options] }
-  Save  = ->(direction, options, flow_options) { options["saved"]=true;   [direction, options, flow_options] }
-  Upload   = ->(direction, options, flow_options) { options["bits"]=64;   [direction, options, flow_options] }
-  Cleanup  = ->(direction, options, flow_options) { options["ok"]=true;   [direction, options, flow_options] }
+  Model     = ->((options), *circuit_options) { options["model"]=String; [ Circuit::Right, options] }
+  Uuid      = ->((options), *circuit_options) { options["uuid"]=999;     [ SpecialDirection, options] }
+  Save      = ->((options), *circuit_options) { options["saved"]=true;   [ Circuit::Right, options] }
+  Upload    = ->((options), *circuit_options) { options["bits"]=64;      [ Circuit::Right, options] }
+  Cleanup   = ->((options), *circuit_options) { options["ok"]=true;      [ Circuit::Right, options] }
 
-  MyInject = ->(direction, options, flow_options) { [direction, options.merge( current_user: Module ), flow_options] }
+  MyInject  = ->((options), *circuit_options) { [ Circuit::Right, options.merge( current_user: Module ) ] }
 
   #- tracing
 
@@ -20,8 +20,8 @@ class StepPipeTest < Minitest::Spec
     let (:more_nested) do
       Trailblazer::Activity.from_hash do |start, _end|
         {
-          start => { Circuit::Right => Upload },
-          Upload        => { Circuit::Right => _end }
+          start  => { Circuit::Right => Upload },
+          Upload => { Circuit::Right => _end }
         }
       end
     end
@@ -40,10 +40,10 @@ class StepPipeTest < Minitest::Spec
     let (:activity) do
       Trailblazer::Activity.from_hash do |start, _end|
         {
-          start => { Circuit::Right => Model },
-          Model       => { Circuit::Right => __nested = Activity::Subprocess( nested ) },
-          __nested    => { nested.end_events.first => Uuid },
-          Uuid        => { SpecialDirection => _end }
+          start     => { Circuit::Right => Model },
+          Model     => { Circuit::Right => __nested = Activity::Subprocess( nested ) },
+          __nested  => { nested.end_events.first => Uuid },
+          Uuid      => { SpecialDirection => _end }
         }
       end
     end
@@ -53,12 +53,11 @@ class StepPipeTest < Minitest::Spec
     describe "Wrap::Runner#call with invalid input" do
       def runner(flow_options, static_wraps={}, activity=more_nested)
         direction, options, flow_options = activity.(
-          nil,
-          {},
+          [ options = {} ],
+          static_wraps,
           {
             runner: Wrap::Runner,
-          }.merge(flow_options),
-          static_wraps
+          }.merge(flow_options)
         )
       end
 
@@ -86,7 +85,7 @@ class StepPipeTest < Minitest::Spec
 
         direction, options, flow_options, *ret = runner(
           {
-            wrap_runtime:  Hash.new(wrap_alterations),
+            wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
 
             stack:         Activity::Trace::Stack.new,
             introspection: { } # TODO: crashes without :debug.
@@ -117,18 +116,21 @@ class StepPipeTest < Minitest::Spec
       ]
 
       direction, options, flow_options = activity.(
-        nil,
-        options = {},
-        {
-          # Wrap::Runner specific:
-          runner:       Wrap::Runner,
-          wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ),
-          wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
+        [
+          options = {},
+          {
+            # Wrap::Runner specific:
+            runner:       Wrap::Runner,
+          # wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
+            wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
 
-          # Trace specific:
-          stack:      Activity::Trace::Stack.new,
+            # Trace specific:
+            stack:      Activity::Trace::Stack.new,
           introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
-        }
+          },
+          Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
+        ],
+        # runner: Wrap::Runner
       )
 
       direction.must_equal activity.end_events.first # the actual activity's End signal.

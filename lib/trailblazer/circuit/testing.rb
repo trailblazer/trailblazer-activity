@@ -42,3 +42,17 @@ class Trailblazer::Circuit
     target
   end
 end
+
+module Trailblazer::Activity::Inspect
+  # The "matcher":
+  # Finds out appropriate serializer and calls it.
+  def self.call(inspected)
+    Instance(inspected)
+  end
+
+  # Serializes an object instance with hex IDs.
+  #   <Trailblazer::Circuit::Start: @name=:default, @options={}>
+  def self.Instance(object)
+    object.inspect.sub(/0x\w+/, "")
+  end
+end

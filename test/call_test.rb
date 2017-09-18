@@ -27,7 +27,7 @@ class CallTest < Minitest::Spec
     end
 
     it "ends before comment, on next_page" do
-      direction, _options = blog.( [ options = { "return" => Circuit::Right } ] )
+      direction, _options = blog.( [ options = { "return" => Circuit::Right }, {} ] )
 
       [direction, _options].must_equal([blog.end_events.first, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}])
 
@@ -35,7 +35,7 @@ class CallTest < Minitest::Spec
     end
 
     it "ends on comment" do
-      direction, _options = blog.(options = { "return" => Circuit::Left })
+      direction, _options = blog.([options = { "return" => Circuit::Left }, {}])
       [direction, _options].must_equal([blog.end_events.first, {"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2}])
 
       options.must_equal({"return"=> Circuit::Left, "Read"=> 1, "NextPage"=>[], "Comment"=>2})
@@ -55,8 +55,8 @@ class CallTest < Minitest::Spec
       }
     end
 
-    it { flow.([ return: Circuit::Right ]).must_equal [flow.end_events.first, [ {:return=>Trailblazer::Circuit::Right} ] ] }
-    it { flow.([ return: Circuit::Left ]).must_equal  [flow.end_events.last,  [ {:return=>Trailblazer::Circuit::Left}  ] ] }
+    it { flow.([ { return: Circuit::Right }, {} ]).must_equal [flow.end_events.first, [ {:return=>Trailblazer::Circuit::Right} ] ] }
+    it { flow.([ { return: Circuit::Left },  {} ]).must_equal  [flow.end_events.last,  [ {:return=>Trailblazer::Circuit::Left}  ] ] }
   end
 
   describe "arbitrary args for Circuit#call are passed and returned" do

@@ -31,7 +31,7 @@ class SubprocessHelper < Minitest::Spec
     let(:user) do
       Trailblazer::Activity.from_hash { |start, _end|
         {
-          start => { Circuit::Right => nested=Activity::Subprocess( blog ) },
+          start => { Circuit::Right => nested=blog  },
           nested     => { blog.end_events.first => User::Relax },
 
           User::Relax => { Circuit::Right => _end }
@@ -63,8 +63,8 @@ class SubprocessHelper < Minitest::Spec
     let(:user) do
       Trailblazer::Activity.from_hash { |start, _end|
         {
-          start => { Circuit::Right => nested=Activity::Subprocess( blog ) },
-          nested     => { blog.end_events.first => User::Relax, blog.end_events[1] => _end },
+          start => { Circuit::Right => blog },
+          blog     => { blog.end_events.first => User::Relax, blog.end_events[1] => _end },
 
           User::Relax => { Circuit::Right => _end }
         }

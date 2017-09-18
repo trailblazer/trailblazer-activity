@@ -1,21 +1,26 @@
 module Trailblazer
   class Activity
-      # Builder for running a nested process from a specific `start_at` position.
+     # A {Subprocess} is an instance of an abstract {Activity} that can be `call`ed.
+     # It is the runtime instance that runs from a specific start event.
     def self.Subprocess(*args, &block)
       Subprocess.new(*args, &block)
     end
 
     # Subprocess allows to have tasks with a different call interface and start event.
-    # @param activity Activity interface
+    # @param activity any object with an {Activity interface}
     class Subprocess
-      def initialize(activity, start_at: nil, call: :call, &block)
-        @activity, @start_at, @call, @block = activity, start_at, call, block
+      def initialize(activity, call: :call, **activity_options, &block)
+        @activity = activity
+        @activity_options = activity_options
+        @call     = call
+        @block    = block
       end
 
-      def call(start_at, *args)
-        return @block.(activity: activity, start_at: @start_at, args: args) if @block
+      def call(last_signal, *args)
+        return @block.(activity: @activity, start_event: @start_event, args: args) if @block
 
-        @activity.public_send(@call, @start_at, *args)
+        # fixme.
+        @activity.public_send(@call, *args, @activity_options)
       end
 
       # @private
@@ -23,3 +28,7 @@ module Trailblazer
     end
   end
 end
+
+# circuit.( args, runner: Runner, start_at: raise, **circuit_flow_options )
+
+# subprocess.( options, flow_options, *args, start_event:<Event>, last_signal: signal )

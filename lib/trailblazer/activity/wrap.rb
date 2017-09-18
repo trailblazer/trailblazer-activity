@@ -7,7 +7,8 @@ class Trailblazer::Activity
     module Runner
       # @api private
       # Runner signature: call( task, direction, options, flow_options, static_wraps )
-      def self.call(task, direction, options, flow_options, static_wraps = Hash.new(Wrap.initial_activity))
+      # def self.call(task, direction, options, flow_options, static_wraps = Hash.new(Wrap.initial_activity))
+      def self.call((options, flow_options, static_wraps, *), task: raise)
         wrap_config   = { task: task }
         runtime_wraps = flow_options[:wrap_runtime] || raise("Please provide :wrap_runtime")
 
@@ -22,7 +23,7 @@ class Trailblazer::Activity
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
 
         # call the wrap for the task.
-        ret = task_wrap_activity.( nil, options, {}, wrap_config, flow_options )
+        ret = task_wrap_activity.( [ {} , {} , wrap_config, [options, flow_options] ] )
 
         [ *ret, static_wraps ] # return everything plus the static_wraps for the next task in the circuit.
       end
