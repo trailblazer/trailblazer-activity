@@ -44,15 +44,18 @@ module Trailblazer
 
         original_flow_options[:stack] << [ wrap_config[:task], :args, nil, options.dup, original_flow_options[:introspection] ]
 
-        [ direction, options, flow_options, wrap_config, original_flow_options ]
+        [ Circuit::Right, [options, flow_options, wrap_config, [ original_options, original_flow_options ]] ]
       end
 
-      def self.capture_return(direction, options, flow_options, wrap_config, original_flow_options)
+      def self.capture_return((options, flow_options, wrap_config, original_args))
+        original_options, original_flow_options = original_args
+
         original_flow_options[:stack] << [ wrap_config[:task], :return, flow_options[:result_direction], options.dup ]
 
         original_flow_options[:stack].unindent!
 
-        [ direction, options, flow_options, wrap_config, original_flow_options ]
+
+        [ Circuit::Right, [options, flow_options, wrap_config, [ original_options, original_flow_options ]] ]
       end
 
       # Mutable/stateful per design. We want a (global) stack!

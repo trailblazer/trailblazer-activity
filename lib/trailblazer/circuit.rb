@@ -83,13 +83,13 @@ module Trailblazer
         @options = options
       end
 
-      def call(args, *)
+      def call(args)
         [ self, args ]
       end
     end
 
     class Start < End
-      def call(args, *)
+      def call(args)
         [ Right, args ]
       end
     end
