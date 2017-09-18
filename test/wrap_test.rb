@@ -52,7 +52,7 @@ class WrapTest < Minitest::Spec
     #-
     describe "Wrap::Runner#call with invalid input" do
       def runner(flow_options, static_wraps={}, activity=more_nested)
-        signal, options, flow_options = activity.(
+        signal  , options, flow_options = activity.(
           [ options = {} ],
           static_wraps,
           {

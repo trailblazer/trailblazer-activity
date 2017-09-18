@@ -7,7 +7,6 @@ class Trailblazer::Activity
     module Runner
       # @api private
       # Runner signature: call( task, direction, options, flow_options, static_wraps )
-      # def self.call(task, direction, options, flow_options, static_wraps = Hash.new(Wrap.initial_activity))
       def self.call((options, flow_options, static_wraps, *), task: raise)
         puts "~~~~wrap.call: #{task}"
         wrap_config   = { task: task }
