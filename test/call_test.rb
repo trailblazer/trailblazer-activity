@@ -7,9 +7,9 @@ class CallTest < Minitest::Spec
   Activity = Trailblazer::Activity
 
   module Blog
-    Read    = ->((options, *args))   { options["Read"] = 1; [ Circuit::Right, [options, *args] ] }
-    Next    = ->((options, *args)) { options["NextPage"] = []; [ options["return"], [options, *args] ] }
-    Comment = ->((options, *args))   { options["Comment"] = 2; [ Circuit::Right, [options, *args] ] }
+    Read    = ->((options, *args), *)   { options["Read"] = 1; [ Circuit::Right, [options, *args] ] }
+    Next    = ->((options, *args), *) { options["NextPage"] = []; [ options["return"], [options, *args] ] }
+    Comment = ->((options, *args), *)   { options["Comment"] = 2; [ Circuit::Right, [options, *args] ] }
   end
 
   describe "plain circuit without any nesting" do
@@ -27,14 +27,15 @@ class CallTest < Minitest::Spec
     it "ends before comment, on next_page" do
       direction, _options = blog.( [ options = { "return" => Circuit::Right }, {} ] )
 
-      [direction, _options].must_equal([ blog.end_events.first, [{"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}, {}] ])
+      [direction, _options].must_equal [ blog.end_events.first, [{"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}, {}] ]
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]})
     end
 
     it "ends on comment" do
-      direction, _options = blog.([options = { "return" => Circuit::Left }, {}])
-      [direction, _options].must_equal([blog.end_events.first, [{"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2}, {}] ])
+      direction, _options = blog.( [ options = { "return" => Circuit::Left } ] )
+
+      [direction, _options].must_equal([blog.end_events.first, [{"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2} ] ])
 
       options.must_equal({"return"=> Circuit::Left, "Read"=> 1, "NextPage"=>[], "Comment"=>2})
     end
@@ -42,7 +43,7 @@ class CallTest < Minitest::Spec
 
   #- Circuit::End()
   describe "two End events" do
-    Blog::Test = ->((options)) { [ options[:return], [options] ] }
+    Blog::Test = ->((options), *) { [ options[:return], [options] ] }
 
     let(:flow) do
       Activity.from_hash { |start, _end|
@@ -58,8 +59,8 @@ class CallTest < Minitest::Spec
   end
 
   describe "arbitrary args for Circuit#call are passed and returned" do
-    Plus    = ->((options, flow_options, a, b))      { [ Circuit::Right, [options, flow_options, a + b, 1] ] }
-    PlusOne = ->((options, flow_options, ab_sum, i)) { [ Circuit::Right, [options, flow_options, ab_sum.to_s, i+1] ] }
+    Plus    = ->((options, flow_options, a, b), *)      { [ Circuit::Right, [options, flow_options, a + b, 1] ] }
+    PlusOne = ->((options, flow_options, ab_sum, i), *) { [ Circuit::Right, [options, flow_options, ab_sum.to_s, i+1] ] }
 
     let(:flow) do
       Activity.from_hash { |start, _end|
@@ -75,7 +76,7 @@ class CallTest < Minitest::Spec
   end
 
   describe "multiple Start events" do
-    let(:alternative_start) { ->(args) { [ "custom signal", args ] } }
+    let(:alternative_start) { ->(args, *) { [ "custom signal", args ] } }
 
     let(:blog) do
       activity = Activity.from_hash { |start, _end|
