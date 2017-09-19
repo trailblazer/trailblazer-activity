@@ -32,6 +32,8 @@ module Trailblazer
     # @param options anything you want to pass to the first task
     # @param flow_options Library-specific flow control data
     # @return [last_signal, options, flow_options, *args]
+    #
+    # DISCUSS: circuit_options are ignored when calling the runner.
     def call(args, task: raise, runner: Run, **circuit_options)
       loop do
         last_signal, args, _ = runner.(
