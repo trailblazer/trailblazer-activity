@@ -8,8 +8,7 @@ class Trailblazer::Activity
       # @api private
       # Runner signature: call( task, direction, options, flow_options, static_wraps )
       # def self.call(task, direction, options, flow_options, static_wraps = Hash.new(Wrap.initial_activity))
-      def self.call((options, flow_options, static_wraps, *), task: raise)
-        puts "~~~~wrap.call: #{task}"
+      def self.call(task, (options, flow_options, static_wraps, *args), **circuit_options)
         wrap_config   = { task: task }
         runtime_wraps = flow_options[:wrap_runtime] || raise("Please provide :wrap_runtime")
 
@@ -24,9 +23,9 @@ class Trailblazer::Activity
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
 
         # call the wrap for the task.
-        wrap_end_signal, (a, b, wrap_config, original_args) = task_wrap_activity.( [ {} , {} , wrap_config, [options, flow_options, static_wraps] ] )
+        wrap_end_signal, (a, b, wrap_config, original_args) = task_wrap_activity.( [ {} , {} , wrap_config, [options, flow_options, static_wraps] ], circuit_options )
 
-        [ wrap_config[:result_direction], [*original_args, static_wraps] ] # return everything plus the static_wraps for the next task in the circuit.
+        [ wrap_config[:result_direction], [*original_args, static_wraps], circuit_options ] # return everything plus the static_wraps for the next task in the circuit.
       end
 
       private
@@ -43,13 +42,14 @@ class Trailblazer::Activity
 
     # The call_task method implements one default step `Call` in the Wrap::Activity circuit.
     # It calls the actual, wrapped task.
-    def self.call_task((options, flow_options, wrap_config, original_args))
+    def self.call_task((options, flow_options, wrap_config, original_args), **circuit_options)
       task  = wrap_config[:task]
 
       # Call the actual task we're wrapping here.
-      wrap_config[:result_direction], options, _ = task.( original_args ) # FIXME: what about _ flow_options?
+      puts "~~~~wrap.call: #{task} #{circuit_options}"
+      wrap_config[:result_direction], options, _ = task.( original_args, **circuit_options ) # FIXME: what about _ flow_options?
 
-      [ Trailblazer::Circuit::Right, [options, flow_options, wrap_config, original_args] ]
+      [ Trailblazer::Circuit::Right, [options, flow_options, wrap_config, original_args], **circuit_options ]
     end
 
     Call = method(:call_task)

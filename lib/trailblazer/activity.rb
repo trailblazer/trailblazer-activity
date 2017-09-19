@@ -92,11 +92,11 @@ module Trailblazer
       ::Hash[ graph.find_all { |node| graph.successors(node).size == 0 }.collect { |node| [ node[:_wrapped], { role: node[:role] } ] } ]
     end
 
-    def call((user_args, flow_options, *args), start_event: default_start_event)
+    def call(args, start_event: default_start_event, **circuit_options)
+      puts "@@@@@ #{args.size} #{circuit_options.inspect}"
       @circuit.(
-        [ user_args, flow_options, *args ],
-        # circuit-specific options:
-        flow_options.merge( task: start_event) , # this passes :runner to the {Circuit}.
+        args,
+        circuit_options.merge( task: start_event) , # this passes :runner to the {Circuit}.
       )
     end
 

@@ -6,11 +6,11 @@ class WrapTest < Minitest::Spec
   SpecialDirection = Class.new
   Wrap             = Activity::Wrap
 
-  Model     = ->((options)) { options["model"]=String; [ Circuit::Right, options] }
-  Uuid      = ->((options)) { options["uuid"]=999;     [ SpecialDirection, options] }
-  Save      = ->((options)) { options["saved"]=true;   [ Circuit::Right, options] }
-  Upload    = ->((options)) { options["bits"]=64;      [ Circuit::Right, options] }
-  Cleanup   = ->((options)) { options["ok"]=true;      [ Circuit::Right, options] }
+  Model     = ->((options), **circuit_options) { options["model"]=String; [ Circuit::Right, [options], **circuit_options] }
+  Uuid      = ->((options), **circuit_options) { options["uuid"]=999;     [ SpecialDirection, [options], **circuit_options] }
+  Save      = ->((options), **circuit_options) { options["saved"]=true;   [ Circuit::Right, [options], **circuit_options] }
+  Upload    = ->((options), **circuit_options) { options["bits"]=64;      [ Circuit::Right, [options], **circuit_options] }
+  Cleanup   = ->((options), **circuit_options) { options["ok"]=true;      [ Circuit::Right, [options], **circuit_options] }
 
   MyInject  = ->((options)) { [ Circuit::Right, options.merge( current_user: Module ) ] }
 
@@ -122,7 +122,7 @@ class WrapTest < Minitest::Spec
           options = {},
           {
             # Wrap::Runner specific:
-            runner:       Wrap::Runner,
+            # runner:       Wrap::Runner,
           # wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
             wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
 
@@ -136,7 +136,7 @@ class WrapTest < Minitest::Spec
 
         ],
 
-        # runner: Wrap::Runner
+        runner: Wrap::Runner
       )
 
       signal.must_equal activity.end_events.first # the actual activity's End signal.
