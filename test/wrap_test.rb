@@ -61,18 +61,18 @@ class WrapTest < Minitest::Spec
       # no :wrap_alterations, default Wrap
       it do
         assert_raises do
-          signal, *args = more_nested.( [ options = {}, { runner: Wrap::Runner }, static_wraps={} ] )
+          signal, *args = more_nested.( [ options = {}, { }, static_wraps={} ], runner: Wrap::Runner )
         end.to_s.must_equal %{Please provide :wrap_runtime}
       end
 
       # specific wrap for A, default for B.
       it do
-        only_for_wrap = ->((options, flow_options, cdfg, original_args)) do
-          _options, _ = original_args
+        only_for_wrap = ->(( cdfg, original_args), **circuit_options) do
+          _options, _ = original_args[0]
           _options[:upload] ||= []
           _options[:upload]<<1
 
-          [ Circuit::Right, [options, flow_options, cdfg, original_args] ]
+          [ Circuit::Right, [ cdfg, original_args], circuit_options ]
         end
         upload_wrap   = [ [ :insert_before!, "task_wrap.call_task", node: [ only_for_wrap, { id: "task_wrap.upload" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ] ]
 
@@ -82,17 +82,17 @@ class WrapTest < Minitest::Spec
         signal, (options, flow_options, *ret) = more_nested.(
           [
             options = {},
-            {
-              runner: Wrap::Runner,
-              wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
 
+            {
               stack:         Activity::Trace::Stack.new,
               introspection: { } # TODO: crashes without :debug.
             },
 
             wrap_static
           ],
-          # runner: Wrap::Runner,
+
+          runner: Wrap::Runner,
+          wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
         )
 
         # upload should contain only one 1.
@@ -116,8 +116,7 @@ class WrapTest < Minitest::Spec
         # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Activity::Trace.method(:capture_args), signal: Circuit::Right ) },
         # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Activity::Trace.method(:capture_return), signal: Circuit::Right ) },
       ]
-h=Hash.new(wrap_alterations)
-puts "xx@@@@@ #{h.object_id.inspect}"
+
       signal, (options, flow_options) = activity.(
         [
           options = {},
@@ -136,7 +135,7 @@ puts "xx@@@@@ #{h.object_id.inspect}"
 
         ],
 
-        wrap_runtime: h, # dynamic additions from the outside (e.g. tracing), also per task.
+        wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
         runner: Wrap::Runner
       )
 

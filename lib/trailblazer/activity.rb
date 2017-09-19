@@ -93,7 +93,6 @@ module Trailblazer
     end
 
     def call(args, start_event: default_start_event, **circuit_options)
-      puts "@@@@@ #{args.size} #{circuit_options.inspect}"
       @circuit.(
         args,
         circuit_options.merge( task: start_event) , # this passes :runner to the {Circuit}.
