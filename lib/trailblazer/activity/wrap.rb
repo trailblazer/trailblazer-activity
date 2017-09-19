@@ -9,8 +9,9 @@ class Trailblazer::Activity
       # Runner signature: call( task, direction, options, flow_options, static_wraps )
       # def self.call(task, direction, options, flow_options, static_wraps = Hash.new(Wrap.initial_activity))
       def self.call(task, (options, flow_options, static_wraps, *args), **circuit_options)
+        puts "Runner called #{task}"
         wrap_config   = { task: task }
-        runtime_wraps = flow_options[:wrap_runtime] || raise("Please provide :wrap_runtime")
+        runtime_wraps = circuit_options[:wrap_runtime] || raise("Please provide :wrap_runtime")
 
         task_wrap_activity = apply_wirings(task, static_wraps, runtime_wraps)
 
@@ -23,9 +24,12 @@ class Trailblazer::Activity
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
 
         # call the wrap for the task.
-        wrap_end_signal, (a, b, wrap_config, original_args) = task_wrap_activity.( [ {} , {} , wrap_config, [options, flow_options, static_wraps] ], circuit_options )
+        wrap_end_signal, (a, b, wrap_config, original_args) =
+          task_wrap_activity.( [ {} , {} , wrap_config,
+            [[options, flow_options, static_wraps, *args], circuit_options] # original args.
+          ] )
 
-        [ wrap_config[:result_direction], [*original_args, static_wraps], circuit_options ] # return everything plus the static_wraps for the next task in the circuit.
+        [ wrap_config[:result_direction], *original_args ] # return everything plus the static_wraps for the next task in the circuit.
       end
 
       private
@@ -47,7 +51,8 @@ class Trailblazer::Activity
 
       # Call the actual task we're wrapping here.
       puts "~~~~wrap.call: #{task} #{circuit_options}"
-      wrap_config[:result_direction], options, _ = task.( original_args, **circuit_options ) # FIXME: what about _ flow_options?
+      puts "    #{original_args.size}"
+      wrap_config[:result_direction], options, _ = task.( *original_args ) # FIXME: what about _ flow_options?
 
       [ Trailblazer::Circuit::Right, [options, flow_options, wrap_config, original_args], **circuit_options ]
     end

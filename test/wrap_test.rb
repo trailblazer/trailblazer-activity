@@ -116,7 +116,8 @@ class WrapTest < Minitest::Spec
         # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Activity::Trace.method(:capture_args), signal: Circuit::Right ) },
         # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Activity::Trace.method(:capture_return), signal: Circuit::Right ) },
       ]
-
+h=Hash.new(wrap_alterations)
+puts "xx@@@@@ #{h.object_id.inspect}"
       signal, (options, flow_options) = activity.(
         [
           options = {},
@@ -124,7 +125,6 @@ class WrapTest < Minitest::Spec
             # Wrap::Runner specific:
             # runner:       Wrap::Runner,
           # wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
-            wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
 
             # Trace specific:
             stack:      Activity::Trace::Stack.new,
@@ -136,6 +136,7 @@ class WrapTest < Minitest::Spec
 
         ],
 
+        wrap_runtime: h, # dynamic additions from the outside (e.g. tracing), also per task.
         runner: Wrap::Runner
       )
 
