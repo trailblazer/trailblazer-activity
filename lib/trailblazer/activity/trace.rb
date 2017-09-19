@@ -38,8 +38,7 @@ module Trailblazer
 
       # def self.capture_args(direction, options, flow_options, wrap_config, original_flow_options)
       def self.capture_args((wrap_config, original_args), **circuit_options)
-        original_positional_args, original_kw_args = original_args
-        original_options, original_flow_options, *more = original_positional_args
+        (original_options, original_flow_options, _) = original_args[0]
 
         original_flow_options[:stack].indent!
 
@@ -49,8 +48,7 @@ module Trailblazer
       end
 
       def self.capture_return((wrap_config, original_args), **circuit_options)
-        original_positional_args, original_kw_args = original_args
-        original_options, original_flow_options, *more = original_positional_args
+        (original_options, original_flow_options, _) = original_args[0]
 
         original_flow_options[:stack] << [ wrap_config[:task], :return, wrap_config[:result_direction], {} ]
 

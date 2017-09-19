@@ -23,13 +23,15 @@ class Trailblazer::Activity
         #   |-- Wrap::End
         # Pass empty flow_options to the task_wrap, so it doesn't infinite-loop.
 
-
+        # We save all original args passed into this Runner.call, because we want to return them later after this wrap
+        # is finished.
+        original_args = [ [options, flow_options, static_wraps, *args], circuit_options.merge( wrap_runtime: wrap_runtime ) ]
 
         # call the wrap for the task.
         wrap_end_signal, (wrap_ctx, original_args) = task_wrap_activity.(
           [
             wrap_ctx,
-            [ [options, flow_options, static_wraps, *args], circuit_options.merge(wrap_runtime: wrap_runtime) ] # original args.
+            original_args,
           ]
         )
 
@@ -55,10 +57,9 @@ class Trailblazer::Activity
 
       # Call the actual task we're wrapping here.
       puts "~~~~wrap.call: #{task} #{circuit_options}"
-
       wrap_ctx[:result_direction], options, _ = task.( *original_args ) # FIXME: what about _ flow_options?
 
-      [ Trailblazer::Circuit::Right, [wrap_ctx, original_args], **circuit_options ]
+      [ Trailblazer::Circuit::Right, [ wrap_ctx, original_args ], **circuit_options ]
     end
 
     Call = method(:call_task)
