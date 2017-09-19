@@ -10,12 +10,10 @@ class Trailblazer::Activity
       # def self.call(task, direction, options, flow_options, static_wraps = Hash.new(Wrap.initial_activity))
       #
       # @interface Runner
-      def self.call(task, (options, flow_options, static_wraps, *args), **circuit_options)
+      def self.call(task, (options, flow_options, static_wraps, *args), wrap_runtime: raise, **circuit_options)
         wrap_config   = { task: task }
 
-        runtime_wraps = circuit_options[:wrap_runtime] || raise("Please provide :wrap_runtime")
-
-        task_wrap_activity = apply_wirings(task, static_wraps, runtime_wraps)
+        task_wrap_activity = apply_wirings(task, static_wraps, wrap_runtime)
 
         # Call the task_wrap circuit:
         #   |-- Start
@@ -28,7 +26,7 @@ class Trailblazer::Activity
         # call the wrap for the task.
         wrap_end_signal, (wrap_config, original_args) =
           task_wrap_activity.( [ wrap_config,
-            [ [options, flow_options, static_wraps, *args], circuit_options ] # original args.
+            [ [options, flow_options, static_wraps, *args], circuit_options.merge(wrap_runtime: wrap_runtime) ] # original args.
           ] )
 
         [ wrap_config[:result_direction], *original_args ] # return everything plus the static_wraps for the next task in the circuit.

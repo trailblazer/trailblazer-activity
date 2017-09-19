@@ -62,7 +62,8 @@ class WrapTest < Minitest::Spec
       it do
         assert_raises do
           signal, *args = more_nested.( [ options = {}, { }, static_wraps={} ], runner: Wrap::Runner )
-        end.to_s.must_equal %{Please provide :wrap_runtime}
+        # end.to_s.must_equal %{Please provide :wrap_runtime}
+        end.to_s.must_equal %{}
       end
 
       # specific wrap for A, default for B.
