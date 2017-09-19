@@ -12,19 +12,19 @@ class DocsActivityTest < Minitest::Spec
 
   #:write
   module Blog
-    Write = ->(direction, options, *flow) do
+    Write = ->((options, *flow), *) do
       options[:content] = options[:content].strip
-      [ Circuit::Right, options, *flow ]
+      [ Circuit::Right, [options, *flow] ]
     end
     #:write end
     #:spell
-    SpellCheck = ->(direction, options, *flow) do
+    SpellCheck = ->((options, *flow), *) do
       direction = SpellChecker.error_count(options[:content]) ? Circuit::Right : Circuit::Left
-      [ direction, options, *flow ]
+      [ Circuit::Right, [options, *flow] ]
     end
     #:spell end
-    Correct    = ->(direction, options, *flow) { options[:content].sub!("d", "t"); [Circuit::Right, options, *flow] }
-    Publish    = ->(direction, options, *flow) { [Circuit::Right, options, *flow] }
+    Correct    = ->((options, *flow), *) { options[:content].sub!("d", "t"); [Circuit::Right, [options, *flow] ] }
+    Publish    = ->((options, *flow), *) { [Circuit::Right, [options, *flow] ] }
   end
   #:impl1 end
 
@@ -46,8 +46,9 @@ class DocsActivityTest < Minitest::Spec
 
     #:call
     direction, options, flow = activity.(
-      nil,
-      { content: "Let's start writing   " } # gets trimmed in Write.
+      [
+        { content: "Let's start writing   " } # gets trimmed in Write.
+      ]
     )
     #:call end
     #:call-ret
@@ -56,7 +57,7 @@ class DocsActivityTest < Minitest::Spec
     #:call-ret end
 
     direction.must_inspect_end_fixme "#<End: default {}>"
-    options.must_equal({:content=>"Let's start writing"})
+    options.must_equal([{:content=>"Let's start writing"}])
 
     # ---
     #- tracing
@@ -75,8 +76,9 @@ class DocsActivityTest < Minitest::Spec
 
     #:trace-call
     stack, _ = Trailblazer::Activity::Trace.( activity,
-      nil,
-      { content: "Let's start writing" }
+      [
+        { content: "Let's start writing" }
+      ]
     )
     #:trace-call end
 
@@ -96,7 +98,7 @@ class DocsActivityTest < Minitest::Spec
   # tolerate
   it do
     #:toll-spell
-    Blog::SpellCheck3 = ->(direction, options, *flow) do
+    Blog::SpellCheck3 = ->((options, *flow), *) do
       error_count = SpellChecker.error_count(options[:content])
       direction =
         if error_count <= 2 && error_count > 0
@@ -107,10 +109,10 @@ class DocsActivityTest < Minitest::Spec
           Circuit::Right
         end
 
-      [ direction, options, *flow ]
+      [ direction, [options, *flow] ]
     end
     #:toll-spell end
-    Blog::Warn = ->(direction, options, *flow) { options[:warning] = "Make less mistakes!"; [Circuit::Right, options, *flow] }
+    Blog::Warn = ->((options, *flow), *) { options[:warning] = "Make less mistakes!"; [Circuit::Right, [options, *flow]] }
 
     #:toll
     activity = Activity.from_hash do |start, _end|
@@ -131,8 +133,7 @@ class DocsActivityTest < Minitest::Spec
 
     #:toll-call
     direction, options, flow = activity.(
-      nil,
-      { content: " Let's start  " }
+      [ { content: " Let's start  " } ]
     )
     #:toll-call end
     #:toll-call-ret
@@ -142,20 +143,18 @@ class DocsActivityTest < Minitest::Spec
 
     # no errors
     direction.must_inspect_end_fixme "#<End: default {}>"
-    options.must_equal({:content=>"Let's start"})
+    options.must_equal( [ {:content=>"Let's start"} ] )
 
     # 1 error
-    direction, options, flow = activity.(
-      nil,
-      { content: " Let's sdart" }
+    direction, (options, flow) = activity.(
+      [ { content: " Let's sdart" } ]
     )
     direction.must_inspect_end_fixme "#<End: default {}>"
     options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})
 
     # 3 error
-    direction, options, flow = activity.(
-      nil,
-      { content: " Led's sdard" }
+    direction, (options, flow) = activity.(
+      [ { content: " Led's sdard" } ]
     )
     direction.must_inspect_end_fixme "#<End: default {}>"
     options.must_equal({:content=>"Let's sdard", :warning=>"Make less mistakes!"})
@@ -188,8 +187,7 @@ class DocsActivityTest < Minitest::Spec
     # 1 error
     #:events-call
     direction, options, flow = activity.(
-      nil,
-      { content: " Let's sdart" }
+      [ { content: " Let's sdart" } ]
     )
 
     direction #=> #<End: warned {}>
@@ -197,17 +195,17 @@ class DocsActivityTest < Minitest::Spec
     #:events-call end
 
     direction.must_inspect_end_fixme "#<End: warned {}>"
-    options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})
+    options.must_equal( [ {:content=>"Let's sdart", :warning=>"Make less mistakes!"} ] )
 
     # ---
     # Subprocess
-    Shop = ->(*args) { args }
+    Shop = ->(*args) { [ Circuit::Right, *args] }
     #:nested
     complete = Activity.from_hash(default) do |start, _end|
       {
         start => { Circuit::Right => Shop },
-        Shop        => { Circuit::Right => _nested = Activity::Subprocess(activity) },
-        _nested     => {
+        Shop        => { Circuit::Right => activity },
+        activity    => {
           default   => _end, # connect published to our End.
           wrong     => error = Circuit::End.new(:error),
           warn      => error
@@ -217,9 +215,8 @@ class DocsActivityTest < Minitest::Spec
     #:nested end
 
     #:nested-call
-    direction, options, flow = complete.(
-      nil,
-      { content: " Let's sdart" }
+    direction, (options, flow) = complete.(
+      [ { content: " Let's sdart" } ]
     )
 
     direction #=> #<End: error {}>
@@ -230,4 +227,3 @@ class DocsActivityTest < Minitest::Spec
     options.must_equal({:content=>"Let's sdart", :warning=>"Make less mistakes!"})
   end
 end
-
