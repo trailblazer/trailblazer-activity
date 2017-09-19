@@ -5,13 +5,13 @@ class SubprocessHelper < Minitest::Spec
   Activity = Trailblazer::Activity
 
   module Blog
-    Read    = ->((options, *))    { options["Read"] = 1; [ Circuit::Right, [options] ] }
-    Next    = ->((options, *arg)) { options["NextPage"] = []; [ options["return"], [options] ] }
-    Comment = ->((options, *))    { options["Comment"] = 2; [ Circuit::Right, [options] ] }
+    Read    = ->((options, *args), *) { options["Read"] = 1; [ Circuit::Right, [options, *args] ] }
+    Next    = ->((options, *args), *) { options["NextPage"] = []; [ options["return"], [options, *args] ] }
+    Comment = ->((options, *args), *) { options["Comment"] = 2; [ Circuit::Right, [options, *args] ] }
   end
 
   module User
-    Relax   = ->((options, *)) { options["Relax"]=true; [ Circuit::Right, [options] ] }
+    Relax   = ->((options, *args), *) { options["Relax"]=true; [ Circuit::Right, [options, *args] ] }
   end
 
   ### Subprocess( )
@@ -40,7 +40,7 @@ class SubprocessHelper < Minitest::Spec
     end
 
     it "ends before comment, on next_page" do
-      user.([options = { "return" => Circuit::Right }, {}]).must_equal([user.end_events.first, {"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}])
+      user.([options = { "return" => Circuit::Right }]).must_equal([user.end_events.first, [{"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}]])
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
@@ -72,13 +72,19 @@ class SubprocessHelper < Minitest::Spec
     end
 
     it "runs from Subprocess->default to Relax" do
-      user.(nil, options = { "return" => Circuit::Right }).must_equal([user.end_events.first, {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}, nil])
+      user.( [ options = { "return" => Circuit::Right } ] ).must_equal [
+        user.end_events.first,
+        [ {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true} ]
+      ]
 
       options.must_equal({"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
 
     it "runs from other Subprocess end" do
-      user.(nil, options = { "return" => Circuit::Left }).must_equal([user.end_events.first, {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]}, nil])
+      user.( [ options = { "return" => Circuit::Left } ] ).must_equal [
+        user.end_events.first,
+        [ {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]} ]
+      ]
 
       options.must_equal({"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]})
     end
@@ -88,7 +94,7 @@ class SubprocessHelper < Minitest::Spec
     let(:with_nested_and_start_at) do
       Trailblazer::Activity.from_hash { |start, _end|
         {
-          start => { Circuit::Right => nested=Activity::Subprocess(  blog, start_at: Blog::Next ) },
+          start => { Circuit::Right => nested=Activity::Subprocess( blog, start_event: Blog::Next ) },
           nested     => { blog.end_events.first => User::Relax },
 
           User::Relax => { Circuit::Right => _end }
@@ -97,8 +103,11 @@ class SubprocessHelper < Minitest::Spec
     end
 
     it "runs Subprocess from alternative start" do
-      with_nested_and_start_at.(nil, options = { "return" => Circuit::Right }).
-        must_equal( [with_nested_and_start_at.end_events.first, {"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true}, nil] )
+      with_nested_and_start_at.( [options = { "return" => Circuit::Right }] ).
+        must_equal [
+          with_nested_and_start_at.end_events.first,
+          [ {"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true} ]
+        ]
 
       options.must_equal({"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true})
     end
@@ -108,10 +117,10 @@ class SubprocessHelper < Minitest::Spec
     describe "Subprocess with :call option" do
       let(:process) do
         class Workout
-          def self.__call__(direction, options, flow_options)
+          def self.__call__((options, *args), *)
             options[:workout]   = 9
 
-            [ direction=Circuit::Right, options, flow_options ]
+            [ direction=Circuit::Right, [options, *args] ]
           end
         end
 
@@ -128,8 +137,11 @@ class SubprocessHelper < Minitest::Spec
       end
 
       it "runs Subprocess process with __call__" do
-        process.(nil, options = { "return" => Circuit::Right }).
-          must_equal( [process.end_events.first, {"return"=>Circuit::Right, :workout=>9, "Relax"=>true}, nil] )
+        process.( [options = { "return" => Circuit::Right }] ).
+          must_equal [
+            process.end_events.first,
+            [{"return"=>Circuit::Right, :workout=>9, "Relax"=>true}]
+          ]
 
         options.must_equal({"return"=>Circuit::Right, :workout=>9, "Relax"=>true})
       end

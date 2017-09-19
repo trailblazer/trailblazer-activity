@@ -16,8 +16,8 @@ module Trailblazer
         @block    = block
       end
 
-      def call(args)
-        @activity.public_send(@call, args, @options)
+      def call(args, **circuit_options)
+        @activity.public_send(@call, args, circuit_options.merge(@options))
       end
 
       # @private
