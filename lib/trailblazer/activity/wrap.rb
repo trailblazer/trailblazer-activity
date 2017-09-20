@@ -5,11 +5,11 @@ class Trailblazer::Activity
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
     module Runner
-      # Runner signature: call( task, direction, options, flow_options, static_wraps )
+      # Runner signature: call( task, direction, options, static_wraps )
       #
       # @api private
       # @interface Runner
-      def self.call(task, (options, flow_options, *args), wrap_runtime: raise, wrap_static: raise, **circuit_options)
+      def self.call(task, (options, *args), wrap_runtime: raise, wrap_static: raise, **circuit_options)
         wrap_ctx = { task: task }
 
         # this activity is "wrapped around" the actual `task`.
@@ -17,7 +17,7 @@ class Trailblazer::Activity
 
         # We save all original args passed into this Runner.call, because we want to return them later after this wrap
         # is finished.
-        original_args = [ [options, flow_options, *args], circuit_options.merge( wrap_runtime: wrap_runtime, wrap_static: wrap_static ) ]
+        original_args = [ [options, *args], circuit_options.merge( wrap_runtime: wrap_runtime, wrap_static: wrap_static ) ]
 
         # call the wrap for the task.
         wrap_end_signal, ( wrap_ctx, _ ) = task_wrap_activity.(
