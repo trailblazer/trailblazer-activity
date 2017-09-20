@@ -6,12 +6,11 @@ class WrapTest < Minitest::Spec
   SpecialDirection = Class.new
   Wrap             = Activity::Wrap
 
-
-  Model     = ->((options), **circuit_options) { options = options.merge("model" => String); [ Circuit::Right, [options], **circuit_options] }
-  Uuid      = ->((options), **circuit_options) { options = options.merge("uuid" => 999);     [ SpecialDirection, [options], **circuit_options] }
-  Save      = ->((options), **circuit_options) { options = options.merge("saved" => true);   [ Circuit::Right, [options], **circuit_options] }
-  Upload    = ->((options), **circuit_options) { options = options.merge("bits" => 64);      [ Circuit::Right, [options], **circuit_options] }
-  Cleanup   = ->((options), **circuit_options) { options = options.merge("ok" => true);      [ Circuit::Right, [options], **circuit_options] }
+  Model     = ->((options, *args), **circuit_options) { options = options.merge("model" => String); [ Circuit::Right, [options, *args], **circuit_options] }
+  Uuid      = ->((options, *args), **circuit_options) { options = options.merge("uuid" => 999);     [ SpecialDirection, [options, *args], **circuit_options] }
+  Save      = ->((options, *args), **circuit_options) { options = options.merge("saved" => true);   [ Circuit::Right, [options, *args], **circuit_options] }
+  Upload    = ->((options, *args), **circuit_options) { options = options.merge("bits" => 64);      [ Circuit::Right, [options, *args], **circuit_options] }
+  Cleanup   = ->((options, *args), **circuit_options) { options = options.merge("ok" => true);      [ Circuit::Right, [options, *args], **circuit_options] }
 
   MyInject  = ->((options)) { [ Circuit::Right, options.merge( current_user: Module ) ] }
 
@@ -71,7 +70,7 @@ class WrapTest < Minitest::Spec
 
     #---
     #-
-    describe "Wrap::Runner#call with invalid input" do
+    describe "Wrap::Runner#call with :wrap_runtime" do
       let(:wrap_alterations) do
         [
           [ :insert_before!, "task_wrap.call_task", node: [ Activity::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
@@ -80,7 +79,7 @@ class WrapTest < Minitest::Spec
       end
 
       # no :wrap_alterations, default Wrap
-      it do
+      it "raises an exception when :wrap_runtime parameter is missing" do
         assert_raises do
           signal, *args = more_nested.( [ options = {}, { }, static_wraps={} ], runner: Wrap::Runner )
         # end.to_s.must_equal %{Please provide :wrap_runtime}
