@@ -54,13 +54,11 @@ class WrapTest < Minitest::Spec
         [
           options = {},
           {},
-
-          # wrap_static
-          Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
         ],
 
         wrap_runtime: Hash.new([]), # dynamic additions from the outside (e.g. tracing), also per task.
-        runner: Wrap::Runner
+        runner: Wrap::Runner,
+        wrap_static: Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
       )
 
       signal.must_equal activity.end_events.first # the actual activity's End signal.
@@ -108,12 +106,11 @@ class WrapTest < Minitest::Spec
               stack:         Activity::Trace::Stack.new,
               introspection: { } # TODO: crashes without :debug.
             },
-
-            wrap_static
           ],
 
           runner: Wrap::Runner,
           wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
+          wrap_static:   wrap_static,
         )
 
         # upload should contain only one 1.
@@ -142,22 +139,15 @@ class WrapTest < Minitest::Spec
         [
           options = {},
           {
-            # Wrap::Runner specific:
-            # runner:       Wrap::Runner,
-          # wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
-
             # Trace specific:
             stack:      Activity::Trace::Stack.new,
-          introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
+            introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
           },
-
-          # wrap_static
-          Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
-
         ],
 
         wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
-        runner: Wrap::Runner
+        runner: Wrap::Runner,
+        wrap_static: Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
       )
 
       signal.must_equal activity.end_events.first # the actual activity's End signal.

@@ -9,18 +9,18 @@ class Trailblazer::Activity
       #
       # @api private
       # @interface Runner
-      def self.call(task, (options, flow_options, static_wraps, *args), wrap_runtime: raise, **circuit_options)
+      def self.call(task, (options, flow_options, *args), wrap_runtime: raise, wrap_static: raise, **circuit_options)
         wrap_ctx = { task: task }
 
         # this activity is "wrapped around" the actual `task`.
-        task_wrap_activity = apply_wirings(task, static_wraps, wrap_runtime)
+        task_wrap_activity = apply_wirings(task, static_wraps=wrap_static, wrap_runtime)
 
         # We save all original args passed into this Runner.call, because we want to return them later after this wrap
         # is finished.
-        original_args = [ [options, flow_options, static_wraps, *args], circuit_options.merge( wrap_runtime: wrap_runtime ) ]
+        original_args = [ [options, flow_options, *args], circuit_options.merge( wrap_runtime: wrap_runtime, wrap_static: wrap_static ) ]
 
         # call the wrap for the task.
-        wrap_end_signal, (wrap_ctx, original_args) = task_wrap_activity.(
+        wrap_end_signal, ( wrap_ctx, _ ) = task_wrap_activity.(
           [ wrap_ctx, original_args ] # we omit circuit_options here on purpose, so the wrapping activity uses the plain Runner.
         )
 
@@ -30,7 +30,7 @@ class Trailblazer::Activity
         # raise if wrap_ctx[:result_args][2] != static_wraps
 
         # TODO: make circuit ignore all returned but the first
-        [ wrap_ctx[:result_direction], [wrap_ctx[:result_args][0], flow_options, static_wraps] ]
+        [ wrap_ctx[:result_direction], wrap_ctx[:result_args] ]
       end
 
       private
