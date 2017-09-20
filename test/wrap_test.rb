@@ -6,11 +6,12 @@ class WrapTest < Minitest::Spec
   SpecialDirection = Class.new
   Wrap             = Activity::Wrap
 
-  Model     = ->((options), **circuit_options) { options["model"]=String; [ Circuit::Right, [options], **circuit_options] }
-  Uuid      = ->((options), **circuit_options) { options["uuid"]=999;     [ SpecialDirection, [options], **circuit_options] }
-  Save      = ->((options), **circuit_options) { options["saved"]=true;   [ Circuit::Right, [options], **circuit_options] }
-  Upload    = ->((options), **circuit_options) { options["bits"]=64;      [ Circuit::Right, [options], **circuit_options] }
-  Cleanup   = ->((options), **circuit_options) { options["ok"]=true;      [ Circuit::Right, [options], **circuit_options] }
+
+  Model     = ->((options), **circuit_options) { options = options.merge("model" => String); [ Circuit::Right, [options], **circuit_options] }
+  Uuid      = ->((options), **circuit_options) { options = options.merge("uuid" => 999);     [ SpecialDirection, [options], **circuit_options] }
+  Save      = ->((options), **circuit_options) { options = options.merge("saved" => true);   [ Circuit::Right, [options], **circuit_options] }
+  Upload    = ->((options), **circuit_options) { options = options.merge("bits" => 64);      [ Circuit::Right, [options], **circuit_options] }
+  Cleanup   = ->((options), **circuit_options) { options = options.merge("ok" => true);      [ Circuit::Right, [options], **circuit_options] }
 
   MyInject  = ->((options)) { [ Circuit::Right, options.merge( current_user: Module ) ] }
 
@@ -45,6 +46,26 @@ class WrapTest < Minitest::Spec
           nested    => { nested.end_events.first => Uuid },
           Uuid      => { SpecialDirection => _end }
         }
+      end
+    end
+
+    describe "plain TaskWrap without additional steps" do
+      it do
+        signal, (options, flow_options) = activity.(
+        [
+          options = {},
+          {},
+
+          # wrap_static
+          Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
+        ],
+
+        wrap_runtime: Hash.new([]), # dynamic additions from the outside (e.g. tracing), also per task.
+        runner: Wrap::Runner
+      )
+
+      signal.must_equal activity.end_events.first # the actual activity's End signal.
+      options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
       end
     end
 
