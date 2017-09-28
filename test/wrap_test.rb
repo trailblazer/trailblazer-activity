@@ -61,7 +61,7 @@ class WrapTest < Minitest::Spec
       # no :wrap_alterations, default Wrap
       it do
         assert_raises do
-          signal, *args = more_nested.( [ options = {}, { }, static_wraps={} ], runner: Wrap::Runner )
+          signal, *args = more_nested.( [ options = {}, { } ], runner: Wrap::Runner, wrap_static: {} )
         # end.to_s.must_equal %{Please provide :wrap_runtime}
         end.to_s.must_equal %{}
       end
@@ -88,12 +88,11 @@ class WrapTest < Minitest::Spec
               stack:         Activity::Trace::Stack.new,
               introspection: { } # TODO: crashes without :debug.
             },
-
-            wrap_static
           ],
 
-          runner: Wrap::Runner,
+          runner:        Wrap::Runner,
           wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
+          wrap_static:   wrap_static,
         )
 
         # upload should contain only one 1.
@@ -131,13 +130,12 @@ class WrapTest < Minitest::Spec
           introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
           },
 
-          # wrap_static
-          Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
-
         ],
 
+        # wrap_static
+        wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
         wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
-        runner: Wrap::Runner
+        runner:       Wrap::Runner
       )
 
       signal.must_equal activity.end_events.first # the actual activity's End signal.

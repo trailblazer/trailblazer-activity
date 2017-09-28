@@ -8,7 +8,7 @@ module Trailblazer
     #
     # Hooks into the TaskWrap.
     module Trace
-      def self.call(activity, (options), &block)
+      def self.call(activity, (options), *args, &block)
         tracing_flow_options = {
           stack:        Trace::Stack.new,
           # Note that we don't pass :wrap_static here, that's handled by Task.__call__.
@@ -18,13 +18,13 @@ module Trailblazer
         tracing_circuit_options = {
           runner:       Wrap::Runner,
           wrap_runtime: ::Hash.new(Trace.wirings),
+          wrap_static:  ::Hash.new(Trailblazer::Activity::Wrap.initial_activity), # FIXME: what about *args ?
         }
 
         last_signal, (options, flow_options) = call_circuit( activity, [
           options,
           # tracing_flow_options.merge(flow_options),
           tracing_flow_options,
-          Hash.new( Trailblazer::Activity::Wrap.initial_activity ) # FIXME
         ], tracing_circuit_options, &block )
 
         return flow_options[:stack].to_a, last_signal, options, flow_options

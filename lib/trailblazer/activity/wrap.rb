@@ -9,14 +9,14 @@ class Trailblazer::Activity
       #
       # @api private
       # @interface Runner
-      def self.call(task, (options, flow_options, static_wraps, *args), wrap_runtime: raise, **circuit_options)
+      def self.call(task, (options, flow_options, *args), wrap_runtime: raise, wrap_static: raise, **circuit_options)
         wrap_ctx = { task: task }
 
-        task_wrap_activity = apply_wirings(task, static_wraps, wrap_runtime)
+        task_wrap_activity = apply_wirings(task, wrap_static, wrap_runtime)
 
         # We save all original args passed into this Runner.call, because we want to return them later after this wrap
         # is finished.
-        original_args = [ [options, flow_options, static_wraps, *args], circuit_options.merge( wrap_runtime: wrap_runtime ) ]
+        original_args = [ [options, flow_options, *args], circuit_options.merge( wrap_runtime: wrap_runtime, wrap_static: wrap_static ) ]
 
         # call the wrap for the task.
         wrap_end_signal, (wrap_ctx, original_args) = task_wrap_activity.(
@@ -46,7 +46,7 @@ class Trailblazer::Activity
       task  = wrap_ctx[:task]
 
       # Call the actual task we're wrapping here.
-      puts "~~~~wrap.call: #{task}"
+      puts "~~~~wrap.call: #{task} "
       wrap_ctx[:result_direction], options, _ = task.( *original_args ) # FIXME: what about _ flow_options?
 
       [ Trailblazer::Circuit::Right, [ wrap_ctx, original_args ], **circuit_options ]
