@@ -7,3 +7,4 @@ gem "minitest-line"
 gem "benchmark-ips"
 
 gem "trailblazer-test", git: "https://github.com/trailblazer/trailblazer-test"
+

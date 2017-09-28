@@ -6,11 +6,11 @@ class WrapTest < Minitest::Spec
   SpecialDirection = Class.new
   Wrap             = Activity::Wrap
 
-  Model     = ->((options), **circuit_options) { options["model"]=String; [ Circuit::Right, [options], **circuit_options] }
-  Uuid      = ->((options), **circuit_options) { options["uuid"]=999;     [ SpecialDirection, [options], **circuit_options] }
-  Save      = ->((options), **circuit_options) { options["saved"]=true;   [ Circuit::Right, [options], **circuit_options] }
-  Upload    = ->((options), **circuit_options) { options["bits"]=64;      [ Circuit::Right, [options], **circuit_options] }
-  Cleanup   = ->((options), **circuit_options) { options["ok"]=true;      [ Circuit::Right, [options], **circuit_options] }
+  Model     = ->((options, *args), **circuit_options) { options = options.merge("model" => String); [ Circuit::Right, [options, *args], **circuit_options] }
+  Uuid      = ->((options, *args), **circuit_options) { options = options.merge("uuid" => 999);     [ SpecialDirection, [options, *args], **circuit_options] }
+  Save      = ->((options, *args), **circuit_options) { options = options.merge("saved" => true);   [ Circuit::Right, [options, *args], **circuit_options] }
+  Upload    = ->((options, *args), **circuit_options) { options = options.merge("bits" => 64);      [ Circuit::Right, [options, *args], **circuit_options] }
+  Cleanup   = ->((options, *args), **circuit_options) { options = options.merge("ok" => true);      [ Circuit::Right, [options, *args], **circuit_options] }
 
   MyInject  = ->((options)) { [ Circuit::Right, options.merge( current_user: Module ) ] }
 
@@ -48,9 +48,27 @@ class WrapTest < Minitest::Spec
       end
     end
 
+    describe "plain TaskWrap without additional steps" do
+      it do
+        signal, (options, flow_options) = activity.(
+        [
+          options = {},
+          {},
+        ],
+
+        wrap_runtime: Hash.new([]), # dynamic additions from the outside (e.g. tracing), also per task.
+        runner: Wrap::Runner,
+        wrap_static: Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
+      )
+
+      signal.must_equal activity.end_events.first # the actual activity's End signal.
+      options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
+      end
+    end
+
     #---
     #-
-    describe "Wrap::Runner#call with invalid input" do
+    describe "Wrap::Runner#call with :wrap_runtime" do
       let(:wrap_alterations) do
         [
           [ :insert_before!, "task_wrap.call_task", node: [ Activity::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
@@ -59,7 +77,7 @@ class WrapTest < Minitest::Spec
       end
 
       # no :wrap_alterations, default Wrap
-      it do
+      it "raises an exception when :wrap_runtime parameter is missing" do
         assert_raises do
           signal, *args = more_nested.( [ options = {}, { } ], runner: Wrap::Runner, wrap_static: {} )
         # end.to_s.must_equal %{Please provide :wrap_runtime}
@@ -121,15 +139,10 @@ class WrapTest < Minitest::Spec
         [
           options = {},
           {
-            # Wrap::Runner specific:
-            # runner:       Wrap::Runner,
-          # wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
-
             # Trace specific:
             stack:      Activity::Trace::Stack.new,
-          introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
-          },
-
+            introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
+          }
         ],
 
         # wrap_static

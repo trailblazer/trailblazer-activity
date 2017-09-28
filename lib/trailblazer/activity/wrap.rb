@@ -5,27 +5,32 @@ class Trailblazer::Activity
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
     module Runner
-      # Runner signature: call( task, direction, options, flow_options, static_wraps )
+      # Runner signature: call( task, direction, options, static_wraps )
       #
       # @api private
       # @interface Runner
-      def self.call(task, (options, flow_options, *args), wrap_runtime: raise, wrap_static: raise, **circuit_options)
+      def self.call(task, (options, *args), wrap_runtime: raise, wrap_static: raise, **circuit_options)
         wrap_ctx = { task: task }
 
-        task_wrap_activity = apply_wirings(task, wrap_static, wrap_runtime)
+        # this activity is "wrapped around" the actual `task`.
+        task_wrap_activity = apply_wirings(task, static_wraps=wrap_static, wrap_runtime)
 
         # We save all original args passed into this Runner.call, because we want to return them later after this wrap
         # is finished.
-        original_args = [ [options, flow_options, *args], circuit_options.merge( wrap_runtime: wrap_runtime, wrap_static: wrap_static ) ]
+        original_args = [ [options, *args], circuit_options.merge( wrap_runtime: wrap_runtime, wrap_static: wrap_static ) ]
 
         # call the wrap for the task.
-        wrap_end_signal, (wrap_ctx, original_args) = task_wrap_activity.(
+        wrap_end_signal, ( wrap_ctx, _ ) = task_wrap_activity.(
           [ wrap_ctx, original_args ] # we omit circuit_options here on purpose, so the wrapping activity uses the plain Runner.
         )
 
         # don't return the wrap's end signal, but the one from call_task.
         # return all original_args for the next "real" task in the circuit (this includes circuit_options).
-        [ wrap_ctx[:result_direction], *original_args ]
+
+        # raise if wrap_ctx[:result_args][2] != static_wraps
+
+        # TODO: make circuit ignore all returned but the first
+        [ wrap_ctx[:result_direction], wrap_ctx[:result_args] ]
       end
 
       private
@@ -46,9 +51,10 @@ class Trailblazer::Activity
       task  = wrap_ctx[:task]
 
       # Call the actual task we're wrapping here.
-      puts "~~~~wrap.call: #{task} "
-      wrap_ctx[:result_direction], options, _ = task.( *original_args ) # FIXME: what about _ flow_options?
+      puts "~~~~wrap.call: #{task}"
+      wrap_ctx[:result_direction], wrap_ctx[:result_args] = task.( *original_args )
 
+      # DISCUSS: do we want original_args here to be passed on, or the "effective" result_args which are different to original_args now?
       [ Trailblazer::Circuit::Right, [ wrap_ctx, original_args ], **circuit_options ]
     end
 
