@@ -1,9 +1,6 @@
 require "test_helper"
 
 class DocsActivityTest < Minitest::Spec
-  Circuit = Trailblazer::Circuit
-  Activity = Trailblazer::Activity
-
   class SpellChecker
     def self.error_count(string)
       string.scan("d").size

@@ -18,7 +18,7 @@ module Trailblazer
         tracing_circuit_options = {
           runner:       Wrap::Runner,
           wrap_runtime: ::Hash.new(Trace.wirings),
-          wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ) # FIXME
+          wrap_static:  ::Hash.new( Trailblazer::Activity::Wrap.initial_activity ) # FIXME
         }
 
         last_signal, (options, flow_options) = call_circuit( activity, [

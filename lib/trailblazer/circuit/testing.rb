@@ -53,6 +53,6 @@ module Trailblazer::Activity::Inspect
   # Serializes an object instance with hex IDs.
   #   <Trailblazer::Circuit::Start: @name=:default, @options={}>
   def self.Instance(object)
-    object.inspect.sub(/0x\w+/, "")
+    object.inspect.gsub(/0x\w+/, "")
   end
 end
