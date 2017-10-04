@@ -42,16 +42,16 @@ class TraceTest < Minitest::Spec
       output = Trailblazer::Activity::Trace::Present.tree(stack)
 
       # output = Trailblazer::Activity::Inspect.(output)
-      # puts output = output.gsub(/0x\w+/, "")
+      puts output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
       output.must_equal %{|-- #<Trailblazer::Circuit::Start:>
-|-- #<Proc:@test/trace_test.rb:4 (lambda)>
+|-- #<Proc:.rb:4 (lambda)>
 |-- #<Trailblazer::Activity:>
 |   |-- #<Trailblazer::Circuit::Start:>
-|   |-- #<Proc:@test/trace_test.rb:5 (lambda)>
-|   |-- #<Proc:@test/trace_test.rb:6 (lambda)>
+|   |-- #<Proc:.rb:5 (lambda)>
+|   |-- #<Proc:.rb:6 (lambda)>
 |   |-- #<Trailblazer::Circuit::End:>
 |   `-- #<Trailblazer::Activity:>
-`-- #<Proc:@test/trace_test.rb:7 (lambda)>}
+`-- #<Proc:.rb:7 (lambda)>}
   end
 end

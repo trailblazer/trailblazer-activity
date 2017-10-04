@@ -9,6 +9,8 @@ class DocsActivityTest < Minitest::Spec
 
   #:write
   module Blog
+    Circuit = Trailblazer::Circuit
+
     Write = ->((options, *flow), *) do
       options[:content] = options[:content].strip
       [ Circuit::Right, [options, *flow] ]
