@@ -1,3 +1,27 @@
+# 0.2.0
+
+* The `Activity#call` API is now
+
+    ```ruby
+    signal, options, _ignored_circuit_options = Activity.( options, **circuit_options )
+    ```
+
+    The third return value, which is typically the `circuit_options`, is _ignored_ and for all task calls in this `Activity`, an identical, unchangeable set of `circuit_options` is passed to. This dramatically reduces unintended behavior with the task_wrap, tracing, etc. and usually simplifies tasks.
+
+    The new API allows using bare `Activity` instances as tasks without any clumsy nesting work, making nesting very simple.
+
+    A typical task will look as follows.
+
+    ```ruby
+    ->( (options, flow_options), **circuit_args ) do
+      [ signal, [options, flow_options], *this_will_be_ignored ]
+    end
+    ```
+
+    A task can only emit a signal and "options" (whatever data structure that may be), and can *not* change the `circuit_options` which usually contain activity-wide "global" configuration.
+
+
+
 # 0.1.6
 
 * `Nested` now is `Subprocess` because it literally does nothing else but calling a _process_ (or activity).
