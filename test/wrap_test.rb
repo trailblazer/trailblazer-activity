@@ -85,7 +85,7 @@ class WrapTest < Minitest::Spec
       end
 
       # specific wrap for A, default for B.
-      it do
+      it "specific wrap for A, default for B" do
         only_for_wrap = ->(( cdfg, original_args), **circuit_options) do
           _options, _ = original_args[0]
           _options[:upload] ||= []

@@ -17,7 +17,7 @@ module Trailblazer
 
         tracing_circuit_options = {
           runner:       Wrap::Runner,
-          wrap_runtime: ::Hash.new(Trace.wirings),
+          wrap_runtime: ::Hash.new(Trace.wirings), # FIXME: this still overrides existing wrap_runtimes.
           wrap_static:  ::Hash.new( Trailblazer::Activity::Wrap.initial_activity ) # FIXME
         }
 

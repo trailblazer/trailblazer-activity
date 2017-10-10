@@ -13,7 +13,7 @@ class Trailblazer::Activity
         wrap_ctx = { task: task }
 
         # this activity is "wrapped around" the actual `task`.
-        task_wrap_activity = apply_wirings(task, static_wraps=wrap_static, wrap_runtime)
+        task_wrap_activity = apply_wirings(task, wrap_static, wrap_runtime)
 
         # We save all original args passed into this Runner.call, because we want to return them later after this wrap
         # is finished.
@@ -36,6 +36,9 @@ class Trailblazer::Activity
       private
 
       # Compute the task's wrap by applying alterations both static and from runtime.
+      #
+      # NOTE: this is for performance reasons: we could have only one hash containing everything but that'd mean
+      # unnecessary computations at `call`-time since steps might not even be executed.
       def self.apply_wirings(task, wrap_static, wrap_runtime)
         wrap_activity = wrap_static[task]   # find static wrap for this specific task, or default wrap activity.
 
