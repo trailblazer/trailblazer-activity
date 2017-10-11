@@ -2,18 +2,17 @@ module Trailblazer
   class Activity
      # A {Subprocess} is an instance of an abstract {Activity} that can be `call`ed.
      # It is the runtime instance that runs from a specific start event.
-    def self.Subprocess(*args, &block)
-      Subprocess.new(*args, &block)
+    def self.Subprocess(*args)
+      Subprocess.new(*args)
     end
 
     # Subprocess allows to have tasks with a different call interface and start event.
     # @param activity any object with an {Activity interface}
     class Subprocess
-      def initialize(activity, call: :call, **options, &block)
+      def initialize(activity, call: :call, **options)
         @activity = activity
         @options = options
         @call     = call
-        @block    = block
       end
 
       def call(args, **circuit_options)
