@@ -21,15 +21,12 @@ class Trailblazer::Activity
 
         # call the wrap {Activity} around the task.
         wrap_end_signal, ( wrap_ctx, _ ) = task_wrap_activity.(
-          [ wrap_ctx, original_args ] # we omit circuit_options here on purpose, so the wrapping activity uses the plain Runner.
+          [ wrap_ctx, original_args ] # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
         )
 
         # don't return the wrap's end signal, but the one from call_task.
         # return all original_args for the next "real" task in the circuit (this includes circuit_options).
 
-        # raise if wrap_ctx[:result_args][2] != static_wraps
-
-        # TODO: make circuit ignore all returned but the first
         [ wrap_ctx[:result_direction], wrap_ctx[:result_args] ]
       end
 
@@ -49,7 +46,8 @@ class Trailblazer::Activity
     end # Runner
 
     # The call_task method implements one default step `Call` in the Wrap::Activity circuit.
-    # It calls the actual, wrapped task.
+    # It calls the actual, wrapped task, and passes the second positional argument to it,
+    # assuming this is the original_args.
     def self.call_task((wrap_ctx, original_args), **circuit_options)
       task  = wrap_ctx[:task]
 
