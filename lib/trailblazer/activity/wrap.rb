@@ -4,6 +4,8 @@ class Trailblazer::Activity
     # Its primary job is to actually `call` the task.
     #
     # Here, we extend this, and wrap the task `call` into its own pipeline, so we can add external behavior per task.
+
+    # (wrap_ctx, original_args), **wrap_circuit_options
     module Runner
       # Runner signature: call( task, direction, options, static_wraps )
       #
@@ -48,6 +50,7 @@ class Trailblazer::Activity
     # The call_task method implements one default step `Call` in the Wrap::Activity circuit.
     # It calls the actual, wrapped task, and passes the second positional argument to it,
     # assuming this is the original_args.
+    # It writes to wrap_ctx[:result_direction], wrap_ctx[:result_args]
     def self.call_task((wrap_ctx, original_args), **circuit_options)
       task  = wrap_ctx[:task]
 
