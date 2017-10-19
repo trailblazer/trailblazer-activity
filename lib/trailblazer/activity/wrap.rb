@@ -55,9 +55,11 @@ class Trailblazer::Activity
 
       # Call the actual task we're wrapping here.
       puts "~~~~wrap.call: #{task}"
-      wrap_ctx[:result_direction], wrap_ctx[:result_args] = task.( *original_args )
+      result_direction, result_args = task.( *original_args ) # we lose :exec_context here.
 
       # DISCUSS: do we want original_args here to be passed on, or the "effective" result_args which are different to original_args now?
+      wrap_ctx = wrap_ctx.merge( result_direction: result_direction, result_args: result_args )
+
       [ Trailblazer::Circuit::Right, [ wrap_ctx, original_args ], **circuit_options ]
     end
 
