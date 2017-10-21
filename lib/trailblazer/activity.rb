@@ -11,14 +11,15 @@ module Trailblazer
   require "trailblazer/activity/version"
   require "trailblazer/activity/graph"
   require "trailblazer/activity/subprocess"
-  require "trailblazer/activity/trace"
-  require "trailblazer/activity/present"
 
   require "trailblazer/activity/wrap"
   require "trailblazer/wrap/variable_mapping"
   require "trailblazer/wrap/call_task"
+  require "trailblazer/wrap/trace"
   require "trailblazer/wrap/runner"
 
+  require "trailblazer/activity/trace"
+  require "trailblazer/activity/present"
 
     # Only way to build an Activity.
     def self.from_wirings(wirings, &block)

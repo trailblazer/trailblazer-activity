@@ -15,7 +15,5 @@ class Trailblazer::Activity
 
       [ Trailblazer::Circuit::Right, [ wrap_ctx, original_args ], **circuit_options ]
     end
-
-    Call = method(:call_task)
   end # Wrap
 end

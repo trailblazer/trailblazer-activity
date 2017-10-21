@@ -36,34 +36,15 @@ module Trailblazer
         block.(activity, *args)
       end
 
-      # Default tracing tasks to be plugged into the wrap circuit.
+      # Graph insertions for the trace tasks that capture the arguments just before calling the task,
+      # and before the TaskWrap is finished.
+      #
+      # Note that the TaskWrap steps are implemented in Activity::Wrap::Trace.
       def self.wirings
         [
-          [ :insert_before!, "task_wrap.call_task", node: [ Trace.method(:capture_args),   id: "task_wrap.capture_args" ], outgoing: [ Circuit::Right, {} ], incoming: ->(*) { true } ],
-          [ :insert_before!, "End.default",      node: [ Trace.method(:capture_return), id: "task_wrap.capture_return" ], outgoing: [ Circuit::Right, {} ], incoming: ->(*) { true } ],
+          [ :insert_before!, "task_wrap.call_task", node: [ Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args" ], outgoing: [ Circuit::Right, {} ], incoming: ->(*) { true } ],
+          [ :insert_before!, "End.default",         node: [ Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return" ], outgoing: [ Circuit::Right, {} ], incoming: ->(*) { true } ],
         ]
-      end
-
-      # def self.capture_args(direction, options, flow_options, wrap_config, original_flow_options)
-      def self.capture_args((wrap_config, original_args), **circuit_options)
-        (original_options, original_flow_options, _) = original_args[0]
-
-        original_flow_options[:stack].indent!
-
-        original_flow_options[:stack] << [ wrap_config[:task], :args, nil, {}, original_flow_options[:introspection] ]
-
-        [ Circuit::Right, [wrap_config, original_args ], **circuit_options ]
-      end
-
-      def self.capture_return((wrap_config, original_args), **circuit_options)
-        (original_options, original_flow_options, _) = original_args[0]
-
-        original_flow_options[:stack] << [ wrap_config[:task], :return, wrap_config[:result_direction], {} ]
-
-        original_flow_options[:stack].unindent!
-
-
-        [ Circuit::Right, [wrap_config, original_args ], **circuit_options ]
       end
 
       # Mutable/stateful per design. We want a (global) stack!
