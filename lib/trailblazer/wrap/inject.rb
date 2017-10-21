@@ -7,7 +7,7 @@ class Trailblazer::Activity
       # @returns Alteration
       def self.Defaults(default_dependencies)
         [
-          [ :insert_before!, "task_wrap.call_task", node: [ ReverseMergeDefaults( default_dependencies ), id: "ReverseMergeDefaults#{default_dependencies}" ], incoming: Proc.new{ true }, outgoing: [ Circuit::Right, {} ] ]
+          [ :insert_before!, "task_wrap.call_task", node: [ ReverseMergeDefaults.new( default_dependencies ), id: "ReverseMergeDefaults#{default_dependencies}" ], incoming: Proc.new{ true }, outgoing: [ Trailblazer::Circuit::Right, {} ] ]
         ]
       end
 

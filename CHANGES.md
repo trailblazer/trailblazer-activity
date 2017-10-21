@@ -1,3 +1,8 @@
+# 0.2.1
+
+* Restructure all `Wrap`-specific tasks.
+* Remove `Hash::Immutable`, we will use the `hamster` gem instead.
+
 # 0.2.0
 
 * The `Activity#call` API is now

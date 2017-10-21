@@ -132,8 +132,5 @@ module Trailblazer
         @graph.find_all { |node| node[:_wrapped] == task  }.first
       end
     end
-
-    module Interface
-    end
   end
 end
