@@ -16,6 +16,7 @@ module Trailblazer
   require "trailblazer/wrap/variable_mapping"
   require "trailblazer/wrap/call_task"
   require "trailblazer/wrap/trace"
+  require "trailblazer/wrap/inject"
   require "trailblazer/wrap/runner"
 
   require "trailblazer/activity/trace"
