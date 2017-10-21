@@ -7,19 +7,15 @@ class Trailblazer::Activity
     #
     # @note Assumption: we always have :input _and_ :output, where :input produces a Context and :output decomposes it.
     class Input
-      def initialize(filter, strategy=nil)
-        @filter   = Trailblazer::Option(filter)
-        @strategy = strategy
+      def initialize(filter)
+        @filter = Trailblazer::Option(filter)
       end
 
       # `original_args` are the actual args passed to the wrapped task: [ [options, ..], circuit_options ]
       #
       def call((wrap_ctx, original_args), **circuit_options)
-        # decompose the original_args since we want to modify them.
-        (original_ctx, original_flow_options), original_circuit_options = original_args
-
         # let user compute new ctx for the wrapped task.
-        input_ctx = @filter.( original_ctx, original_circuit_options )
+        input_ctx = apply_filter(*original_args)
 
         # TODO: make this unnecessary.
         # wrap user's hash in Context if it's not one, already (in case user used options.merge).
@@ -28,16 +24,25 @@ class Trailblazer::Activity
 
         wrap_ctx = wrap_ctx.merge( vm_original_args: original_args )
 
+        # decompose the original_args since we want to modify them.
+        (original_ctx, original_flow_options), original_circuit_options = original_args
+
         # instead of the original Context, pass on the filtered `input_ctx` in the wrap.
         return Trailblazer::Circuit::Right, [ wrap_ctx, [[input_ctx, original_flow_options], original_circuit_options] ]
+      end
+
+      private
+
+      def apply_filter((original_ctx, original_flow_options), original_circuit_options)
+        @filter.( original_ctx, original_circuit_options )
       end
     end
 
     # TaskWrap step to compute the outgoing {Context} from the wrapped task.
     # This allows renaming, filtering, hiding, of the options returned from the wrapped task.
-    class Output < Input
+    class Output
       def initialize(filter, strategy=CopyMutableToOriginal)
-        super(filter)
+        @filter   = Trailblazer::Option(filter)
         @strategy = strategy
       end
 
@@ -53,7 +58,7 @@ class Trailblazer::Activity
         _, mutable_data = returned_ctx.decompose # FIXME: this is a weak assumption. What if the task returns a deeply nested Context?
 
         # let user compute the output.
-        output = @filter.(mutable_data, **original_circuit_options)
+        output = apply_filter(mutable_data, original_flow_options, original_circuit_options)
 
         original_ctx = wrap_ctx[:vm_original_args][0][0]
 
@@ -63,6 +68,13 @@ class Trailblazer::Activity
 
         # and then pass on the "new" context.
         return Trailblazer::Circuit::Right, [ wrap_ctx, original_args ]
+      end
+
+      private
+
+      # @note API not stable
+      def apply_filter(mutable_data, original_flow_options, original_circuit_options)
+        @filter.(mutable_data, **original_circuit_options)
       end
 
       # "merge" Strategy
