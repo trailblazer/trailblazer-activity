@@ -1,9 +1,11 @@
 class Trailblazer::Activity
   module Wrap
-    # Ingoing options when calling a nested task.
-    # @note This will be replaced with an ingoing options mapping in the TaskWrap in TRB 2.2.
+    # TaskWrap step to compute the incoming {Context} for the wrapped task.
+    # This allows renaming, filtering, hiding, of the options passed into the wrapped task.
     #
-    # Assumption: we always have :input _and_ :output, where :input produces a Context and :output decomposes it.
+    # Both Input and Output are typically to be added before and after task_wrap.call_task.
+    #
+    # @note Assumption: we always have :input _and_ :output, where :input produces a Context and :output decomposes it.
     class Input
       def initialize(filter, strategy=nil)
         @filter   = Trailblazer::Option(filter)
@@ -31,6 +33,8 @@ class Trailblazer::Activity
       end
     end
 
+    # TaskWrap step to compute the outgoing {Context} from the wrapped task.
+    # This allows renaming, filtering, hiding, of the options returned from the wrapped task.
     class Output < Input
       def initialize(filter, strategy=CopyMutableToOriginal)
         super(filter)

@@ -16,6 +16,8 @@ module Trailblazer
 
   require "trailblazer/activity/wrap"
   require "trailblazer/wrap/variable_mapping"
+  require "trailblazer/wrap/call_task"
+  require "trailblazer/wrap/runner"
 
 
     # Only way to build an Activity.
