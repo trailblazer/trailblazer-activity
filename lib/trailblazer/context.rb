@@ -60,38 +60,6 @@ module Trailblazer
         end
       end
     end
-
-    # FIXME
-      # TODO: rename Context::Hash::Immutable
-      class Immutable
-        def initialize(hash)
-          @hash = hash
-        end
-
-        def [](key)
-          @hash[key]
-        end
-
-        def to_hash # DISCUSS: where do we call this?
-          @hash.to_hash # FIXME: should we do this?
-        end
-
-        def key?(key)
-          @hash.key?(key)
-        end
-
-        def merge(hash)
-          @hash.merge(hash)
-        end
-
-        def keys
-          @hash.keys
-        end
-
-        # DISCUSS: raise in #[]=
-        # each
-        # TODO: Skill could inherit
-      end
   end
 
   def self.Context(wrapped_options, mutable_options={})

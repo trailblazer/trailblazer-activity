@@ -34,7 +34,7 @@ class Trailblazer::Activity
       private
 
       def apply_filter((original_ctx, original_flow_options), original_circuit_options)
-        @filter.( original_ctx, original_circuit_options )
+        @filter.( original_ctx, **original_circuit_options )
       end
     end
 
