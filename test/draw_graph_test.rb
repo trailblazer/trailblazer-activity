@@ -27,21 +27,9 @@ class DrawGraphTest < Minitest::Spec
   Output = Struct.new(:signal, :role)
   Line   = Struct.new(:source, :output)
 
-  class OpenLines
-    def initialize
-      @arr = []
-    end
+  # Mutable object to track what open lines are waiting to be connected
+  # to a node.
 
-    def pop(signal)
-      lines = @arr.find_all { |line| line.output.role == signal }
-      @arr -= lines
-      lines
-    end
-
-    def <<((node, output))
-      @arr << Line.new(node, output)
-    end
-  end
 
   R = Output.new(Right, :success)
   L = Output.new(Left,  :failure)
@@ -63,37 +51,7 @@ class DrawGraphTest < Minitest::Spec
       [ [:failure], EF, [] ],
     ]
 
-    added_tasks      = {}
-    open_lines = OpenLines.new
-    open_lines << [start_evt, R]
 
-    steps.each do |(magnetic_to, node, outputs)|
-      puts "drawing #{node} which wants #{magnetic_to}"
-      new_node = nil
-
-      magnetic_to.each do |signal|
-        connection_lines = open_lines.pop(signal) || raise("no matching edges found for your incoming #{magnetic_to}")
-
-        # connect this new node to all magnetic, open edges.
-        connection_lines.each do |line|
-          command, existing_node = added_tasks[node] ? [ :connect!, added_tasks[node] ] : [ :attach!, [node, id: node] ]
-
-          new_node, edge = start_evt.send(
-            command, # attach! or connect!
-            source: line.source,
-            target: existing_node,
-            edge:   [ line.output.signal, {} ]
-          )
-
-          added_tasks[node] = new_node #
-        end
-
-        outputs.each do |output|
-          open_lines << [new_node, output]
-        end
-
-      end
-    end
 
     pp start_evt.to_h
   end
