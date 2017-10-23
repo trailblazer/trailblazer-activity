@@ -1,9 +1,9 @@
 require "test_helper"
 
 class DrawGraphTest < Minitest::Spec
-  R = Circuit::Right
-  L = Circuit::Left
-  Z = "bla"
+  Right = Circuit::Right
+  Left  = Circuit::Left
+  # Z = "bla"
 
   S = ->(*) { snippet }
 
@@ -24,48 +24,71 @@ class DrawGraphTest < Minitest::Spec
 
   let(:start_evt)     { Trailblazer::Activity::Graph::Start(S) }
 
+  Output = Struct.new(:signal, :role)
+  Line   = Struct.new(:source, :output)
+
+  class OpenLines
+    def initialize(arr)
+      @arr = arr
+    end
+
+    def pop(signal)
+      lines = @arr.find_all { |line| line.output.role == signal }
+      @arr -= lines
+      lines
+    end
+
+    def <<(line)
+      @arr << line
+    end
+  end
+
+  R = Output.new(Right, :success)
+  L = Output.new(Left,  :failure)
+  Z = Output.new("bla", :my_z)
+
   it do
     steps = [
-      [ [R], A, [R, L] ],
-      [ [L], E, [] ],
-      [ [R], B, [R, L] ],
-      [ [R], C, [R, L] ],
-      [ [L], F, [L, Z] ],
-        [ [Z], S, [] ], # "connect"
+      #  magnetic to
+      #  color | signal|outputs
+      [ [:success], A,  [R, L] ],
+      [ [:failure], E, [] ],
+      [ [:success], B, [R, L] ],
+      [ [:success], C, [R, L] ],
+      [ [:failure], F, [L, Z] ],
+        [ [:my_z], S, [] ], # "connect"
 
 
-      [ [R], ES, [] ],
-      [ [L], EF, [] ],
+      [ [:success], ES, [] ],
+      [ [:failure], EF, [] ],
     ]
 
     added_tasks      = {}
-    open_lines = { R => [ start_evt ] }
+    open_lines = OpenLines.new( [Line.new(start_evt, R)] )
 
-    steps.each do |(magnetic_to, node, outgoing_lines)|
+    steps.each do |(magnetic_to, node, outputs)|
       puts "drawing #{node} which wants #{magnetic_to}"
-      # new_node = start_evt.Node(  )
       new_node = nil
 
       magnetic_to.each do |signal|
-        connect_to = open_lines.delete(signal) || raise("no matching edges found for your incoming #{magnetic_to}")
+        connection_lines = open_lines.pop(signal) || raise("no matching edges found for your incoming #{magnetic_to}")
 
         # connect this new node to all magnetic, open edges.
-        connect_to.each do |source_node|
+        connection_lines.each do |line|
           command, existing_node = added_tasks[node] ? [ :connect!, added_tasks[node] ] : [ :attach!, [node, id: node] ]
 
           new_node, edge = start_evt.send(
             command, # attach! or connect!
-            source: source_node,
+            source: line.source,
             target: existing_node,
-            edge:   [ signal, {} ]
+            edge:   [ line.output.signal, {} ]
           )
 
           added_tasks[node] = new_node #
         end
 
-        outgoing_lines.each do |signal|
-          open_lines[signal] ||= []
-          open_lines[signal] << new_node
+        outputs.each do |output|
+          open_lines << Line.new(new_node, output)
         end
 
       end
