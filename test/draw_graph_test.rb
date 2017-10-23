@@ -28,8 +28,8 @@ class DrawGraphTest < Minitest::Spec
   Line   = Struct.new(:source, :output)
 
   class OpenLines
-    def initialize(arr)
-      @arr = arr
+    def initialize
+      @arr = []
     end
 
     def pop(signal)
@@ -38,8 +38,8 @@ class DrawGraphTest < Minitest::Spec
       lines
     end
 
-    def <<(line)
-      @arr << line
+    def <<((node, output))
+      @arr << Line.new(node, output)
     end
   end
 
@@ -64,7 +64,8 @@ class DrawGraphTest < Minitest::Spec
     ]
 
     added_tasks      = {}
-    open_lines = OpenLines.new( [Line.new(start_evt, R)] )
+    open_lines = OpenLines.new
+    open_lines << [start_evt, R]
 
     steps.each do |(magnetic_to, node, outputs)|
       puts "drawing #{node} which wants #{magnetic_to}"
@@ -88,7 +89,7 @@ class DrawGraphTest < Minitest::Spec
         end
 
         outputs.each do |output|
-          open_lines << Line.new(new_node, output)
+          open_lines << [new_node, output]
         end
 
       end
