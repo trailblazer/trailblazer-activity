@@ -58,7 +58,7 @@ module Trailblazer
         end
       end
 
-      start.to_h
+      start
     end
   end
 
