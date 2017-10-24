@@ -31,7 +31,7 @@ class WrapTest < Minitest::Spec
         {
           start => { Circuit::Right    => Save },
           Save        => { Circuit::Right  => more_nested },
-          more_nested => { more_nested.end_events.first => Cleanup },
+          more_nested => { more_nested.outputs.keys.first => Cleanup },
           Cleanup     => { Circuit::Right => _end }
         }
       end
@@ -42,7 +42,7 @@ class WrapTest < Minitest::Spec
         {
           start     => { Circuit::Right => Model },
           Model     => { Circuit::Right => nested  },
-          nested    => { nested.end_events.first => Uuid },
+          nested    => { nested.outputs.keys.first => Uuid },
           Uuid      => { SpecialDirection => _end }
         }
       end
@@ -61,7 +61,7 @@ class WrapTest < Minitest::Spec
         wrap_static: Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
       )
 
-      signal.must_equal activity.end_events.first # the actual activity's End signal.
+      signal.must_equal activity.outputs.keys.first # the actual activity's End signal.
       options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
       end
     end
@@ -151,7 +151,7 @@ class WrapTest < Minitest::Spec
         runner:       Wrap::Runner
       )
 
-      signal.must_equal activity.end_events.first # the actual activity's End signal.
+      signal.must_equal activity.outputs.keys.first # the actual activity's End signal.
       options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
 

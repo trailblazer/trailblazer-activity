@@ -32,7 +32,7 @@ class SubprocessHelper < Minitest::Spec
       Trailblazer::Activity.from_hash { |start, _end|
         {
           start => { Circuit::Right => nested=blog  },
-          nested     => { blog.end_events.first => User::Relax },
+          nested     => { blog.outputs.keys.first => User::Relax },
 
           User::Relax => { Circuit::Right => _end }
         }
@@ -40,7 +40,7 @@ class SubprocessHelper < Minitest::Spec
     end
 
     it "ends before comment, on next_page" do
-      user.([options = { "return" => Circuit::Right }]).must_equal([user.end_events.first, [{"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}]])
+      user.([options = { "return" => Circuit::Right }]).must_equal([user.outputs.keys.first, [{"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}]])
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
@@ -64,7 +64,7 @@ class SubprocessHelper < Minitest::Spec
       Trailblazer::Activity.from_hash { |start, _end|
         {
           start => { Circuit::Right => blog },
-          blog     => { blog.end_events.first => User::Relax, blog.end_events[1] => _end },
+          blog     => { blog.outputs.keys.first => User::Relax, blog.outputs.keys[1] => _end },
 
           User::Relax => { Circuit::Right => _end }
         }
@@ -73,7 +73,7 @@ class SubprocessHelper < Minitest::Spec
 
     it "runs from Subprocess->default to Relax" do
       user.( [ options = { "return" => Circuit::Right } ] ).must_equal [
-        user.end_events.first,
+        user.outputs.keys.first,
         [ {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true} ]
       ]
 
@@ -82,7 +82,7 @@ class SubprocessHelper < Minitest::Spec
 
     it "runs from other Subprocess end" do
       user.( [ options = { "return" => Circuit::Left } ] ).must_equal [
-        user.end_events.first,
+        user.outputs.keys.first,
         [ {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]} ]
       ]
 
@@ -95,7 +95,7 @@ class SubprocessHelper < Minitest::Spec
       Trailblazer::Activity.from_hash { |start, _end|
         {
           start => { Circuit::Right => nested=Activity::Subprocess( blog, start_event: Blog::Next ) },
-          nested     => { blog.end_events.first => User::Relax },
+          nested     => { blog.outputs.keys.first => User::Relax },
 
           User::Relax => { Circuit::Right => _end }
         }
@@ -105,7 +105,7 @@ class SubprocessHelper < Minitest::Spec
     it "runs Subprocess from alternative start" do
       with_nested_and_start_at.( [options = { "return" => Circuit::Right }] ).
         must_equal [
-          with_nested_and_start_at.end_events.first,
+          with_nested_and_start_at.outputs.keys.first,
           [ {"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true} ]
         ]
 
@@ -139,7 +139,7 @@ class SubprocessHelper < Minitest::Spec
       it "runs Subprocess process with __call__" do
         process.( [options = { "return" => Circuit::Right }] ).
           must_equal [
-            process.end_events.first,
+            process.outputs.keys.first,
             [{"return"=>Circuit::Right, :workout=>9, "Relax"=>true}]
           ]
 

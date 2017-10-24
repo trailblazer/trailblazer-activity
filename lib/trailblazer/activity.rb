@@ -84,19 +84,8 @@ module Trailblazer
     def initialize(graph)
       @graph               = graph
       @default_start_event = graph[:_wrapped]
-      @circuit             = to_circuit( @graph ) # graph is an immutable object.
-    end
-
-    def end_events
-      outputs.keys
-    end
-
-    # Returns a hash mapping the circuit {Event} to its meta data.
-    #
-    #   activity.outputs #=> { #<End ..> => { role: :success }, #<End ..> => { role: :failure } }
-    def outputs
-      # DISCUSS: add more meta data?
-      ::Hash[ graph.find_all { |node| graph.successors(node).size == 0 }.collect { |node| [ node[:_wrapped], { role: node[:role] } ] } ]
+      @outputs             = to_outputs
+      @circuit             = to_circuit # graph is an immutable object.
     end
 
     def call(args, start_event: default_start_event, **circuit_options)
@@ -106,6 +95,8 @@ module Trailblazer
       )
     end
 
+    # @return Hash
+    attr_reader :outputs
     # @private
     attr_reader :circuit
     # @private
@@ -115,8 +106,16 @@ module Trailblazer
 
     attr_reader :default_start_event
 
-    def to_circuit(graph)
-      Circuit.new(graph.to_h( include_leafs: false ), end_events, {})
+    # Returns a hash mapping the circuit {Event} to its meta data.
+    #
+    #   activity.outputs #=> { #<End ..> => { role: :success }, #<End ..> => { role: :failure } }
+    def to_outputs
+      # DISCUSS: add more meta data?
+      ::Hash[ @graph.find_all { |node| @graph.successors(node).size == 0 }.collect { |node| [ node[:_wrapped], { role: node[:role] } ] } ]
+    end
+
+    def to_circuit
+      Circuit.new(@graph.to_h( include_leafs: false ), @outputs.keys, {})
     end
 
     class Introspection

@@ -61,7 +61,7 @@ class VariableMappingTest < Minitest::Spec
       wrap_static: Hash.new( Activity::Wrap.initial_activity ), # per activity?
     )
 
-    signal.must_equal activity.end_events.first # the actual activity's End signal.
+    signal.must_equal activity.outputs.keys.first # the actual activity's End signal.
     options.must_equal({"a"=>1, "model.a"=>4, "uuid.a" => 7 })
     end
   end

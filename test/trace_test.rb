@@ -11,7 +11,7 @@ class TraceTest < Minitest::Spec
       {
         start  => { Circuit::Right => A },
         A      => { Circuit::Right => bc },
-        bc     => { bc.end_events.first => D },
+        bc     => { bc.outputs.keys.first => D },
       }
     end
   end

@@ -27,7 +27,7 @@ class CallTest < Minitest::Spec
     it "ends before comment, on next_page" do
       direction, _options = blog.( [ options = { "return" => Circuit::Right }, {} ] )
 
-      [direction, _options].must_equal [ blog.end_events.first, [{"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}, {}] ]
+      [direction, _options].must_equal [ blog.outputs.keys.first, [{"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]}, {}] ]
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[]})
     end
@@ -35,7 +35,7 @@ class CallTest < Minitest::Spec
     it "ends on comment" do
       direction, _options = blog.( [ options = { "return" => Circuit::Left } ] )
 
-      [direction, _options].must_equal([blog.end_events.first, [{"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2} ] ])
+      [direction, _options].must_equal([blog.outputs.keys.first, [{"return"=>Trailblazer::Circuit::Left, "Read"=>1, "NextPage"=>[], "Comment"=>2} ] ])
 
       options.must_equal({"return"=> Circuit::Left, "Read"=> 1, "NextPage"=>[], "Comment"=>2})
     end
@@ -54,8 +54,8 @@ class CallTest < Minitest::Spec
       }
     end
 
-    it { flow.([ { return: Circuit::Right }, {} ]).must_equal [flow.end_events.first, [ {:return=>Trailblazer::Circuit::Right} ] ] }
-    it { flow.([ { return: Circuit::Left },  {} ]).must_equal  [flow.end_events.last,  [ {:return=>Trailblazer::Circuit::Left}  ] ] }
+    it { flow.([ { return: Circuit::Right }, {} ]).must_equal [flow.outputs.keys.first, [ {:return=>Trailblazer::Circuit::Right} ] ] }
+    it { flow.([ { return: Circuit::Left },  {} ]).must_equal  [flow.outputs.keys.last,  [ {:return=>Trailblazer::Circuit::Left}  ] ] }
   end
 
   describe "arbitrary args for Circuit#call are passed and returned" do
@@ -72,7 +72,7 @@ class CallTest < Minitest::Spec
       }
     end
 
-    it { flow.( [ {}, {a:"B"}, 1, 2 ] ).must_equal [ flow.end_events.first, [ {}, {a:"B"}, "3", 2 ] ] }
+    it { flow.( [ {}, {a:"B"}, 1, 2 ] ).must_equal [ flow.outputs.keys.first, [ {}, {a:"B"}, "3", 2 ] ] }
   end
 
   describe "multiple Start events" do
@@ -92,7 +92,7 @@ class CallTest < Minitest::Spec
       wirings = [
         [ :insert_before!, "Start.default", node: [ alternative_start, id: "alternative_start" ], incoming: ->(edge) { false } ],
         [ :attach!, source: "alternative_start", target: [ Blog::Comment, id: "Blog::Comment" ], edge: [ "custom signal", {} ] ],
-        [ :connect!, source: "Blog::Comment", target: activity.end_events[0], edge: [ Circuit::Right, {} ] ],
+        [ :connect!, source: "Blog::Comment", target: activity.outputs.keys[0], edge: [ Circuit::Right, {} ] ],
       ]
 
       extended = Trailblazer::Activity.merge(activity, wirings)
@@ -101,14 +101,14 @@ class CallTest < Minitest::Spec
     it "runs from default start" do
       signal, ( options, * ) = blog.( [ options={}, {} ] )
 
-      signal.must_equal blog.end_events[0]
+      signal.must_equal blog.outputs.keys[0]
       options.must_equal( {"Read"=>1} )
     end
 
     it "starts from :start_event" do
       signal, ( options, * ) = blog.( [ options={}, {} ], start_event: alternative_start )
 
-      signal.must_equal blog.end_events[0]
+      signal.must_equal blog.outputs.keys[0]
       options.must_equal( {"Comment"=>2} )
     end
   end
