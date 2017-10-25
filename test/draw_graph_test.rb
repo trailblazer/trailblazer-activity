@@ -51,8 +51,9 @@ class DrawGraphTest < Minitest::Spec
       [ [:failure], EF, [] ],
     ]
 
+    bla = Trailblazer::Activity::Schema.bla(steps)
 
 
-    pp start_evt.to_h
+    pp bla.to_h
   end
 end

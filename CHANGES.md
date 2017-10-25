@@ -1,3 +1,7 @@
+# 0.2.2
+
+* Remove `Activity#end_events`.
+
 # 0.2.1
 
 * Restructure all `Wrap`-specific tasks.

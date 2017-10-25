@@ -22,6 +22,10 @@ module Trailblazer
   require "trailblazer/activity/trace"
   require "trailblazer/activity/present"
 
+
+  require "trailblazer/activity/schema"
+  require "trailblazer/activity/schema/sequence"
+
     # Only way to build an Activity.
     def self.from_wirings(wirings, &block)
       start_evt  = Circuit::Start.new(:default)

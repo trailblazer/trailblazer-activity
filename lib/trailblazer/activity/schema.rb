@@ -1,23 +1,26 @@
 module Trailblazer
+  # Schema helps you managing the construction of an {Activity}.
+  # It is used in the Operation and Activity DSL, and also for the TaskWrap.
+  # A Schema always produces an Activity.
   class Activity::Schema
-      Output = Struct.new(:signal, :role)
-      Line   = Struct.new(:source, :output)
+    Output = Struct.new(:signal, :role)
+    Line   = Struct.new(:source, :output)
 
-      class OpenLines
-    def initialize
-      @arr = []
-    end
+    class OpenLines
+      def initialize
+        @arr = []
+      end
 
-    def pop(signal)
-      lines = @arr.find_all { |line| line.output.role == signal }
-      @arr -= lines
-      lines
-    end
+      def pop(signal)
+        lines = @arr.find_all { |line| line.output.role == signal }
+        @arr -= lines
+        lines
+      end
 
-    def <<((node, output))
-      @arr << Line.new(node, output)
+      def <<((node, output))
+        @arr << Line.new(node, output)
+      end
     end
-  end
 
     def self.bla(steps)
       start_evt  = Circuit::Start.new(:default)
