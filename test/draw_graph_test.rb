@@ -56,4 +56,25 @@ class DrawGraphTest < Minitest::Spec
 
     pp bla.to_h
   end
+
+  it do
+    e_to_success = Output.new(Right, :e_to_success)
+
+    steps = [
+      #  magnetic to
+      #  color | signal|outputs
+      [ [:success], A,  [R, L] ],
+      [ [:failure], E, [L, e_to_success] ],
+      [ [:success], B, [R, L] ],
+      [ [:success], C, [R] ],
+
+      [ [:success, :e_to_success], ES, [] ],
+      [ [:failure], EF, [] ],
+    ]
+
+    bla = Trailblazer::Activity::Schema.bla(steps)
+
+
+    pp bla.to_h
+  end
 end
