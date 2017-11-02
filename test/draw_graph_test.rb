@@ -22,14 +22,11 @@ class DrawGraphTest < Minitest::Spec
 ]
 =end
 
-  let(:start_evt)     { Trailblazer::Activity::Graph::Start(S) }
-
-  Output = Struct.new(:signal, :role)
-  Line   = Struct.new(:source, :output)
 
   # Mutable object to track what open lines are waiting to be connected
   # to a node.
 
+  Output = Trailblazer::Activity::Schema::Output
 
   R = Output.new(Right, :success)
   L = Output.new(Left,  :failure)
@@ -58,7 +55,20 @@ class DrawGraphTest < Minitest::Spec
   end
 
   it do
-    e_to_success = Output.new(Right, :e_to_success)
+    ## actual output from E: (Left, :failure), (Right, :failure)
+
+    # Output: {Right, :success} where :success is a hint on the meaning.
+    # Line: {source, output, :magnetic_to} where output is the originally mapped output (for the signal), and magnetic_to is our new polarization,
+    # eg. when you want to map failure to success or whatever
+
+=begin
+    from ::pass
+      Task::Free{ <=magnetic_to, callable_thing, id, =>outputs{ Right=>:success,Left=>:myerrorhandler, original[(Right, :success),(Left, :success)] } }
+=end
+
+    e_to_success = Output.new(Right, :e_to_success) # mapping Output
+    # e_to_success = Output::OpenLine.new(Right, :e_to_success)
+
 
     steps = [
       #  magnetic to
@@ -68,7 +78,7 @@ class DrawGraphTest < Minitest::Spec
       [ [:success], B, [R, L] ],
       [ [:success], C, [R] ],
 
-      [ [:success, :e_to_success], ES, [] ],
+      [ [:success, :e_to_success], ES, [] ], # magnetic_to needs to have the special line, too.
       [ [:failure], EF, [] ],
     ]
 
@@ -78,3 +88,27 @@ class DrawGraphTest < Minitest::Spec
     pp bla.to_h
   end
 end
+
+
+
+# * graph API is too low-level
+
+
+# deleting
+# "groups": insert before bla
+
+
+# FAST_TRACK:
+#  => add Output::Line instance(s) to outgoing                 before insert!ing on the Sequence
+#  => add resp ends (:pass_fast, End::PassFast.new, [])        when do we do this? "override Sequence#to_a ?"
+
+
+=begin
+seq = Seq.new
+ .insert!
+ .insert! right_before: end_fail
+ .insert!
+ .insert!
+ .insert! end_fail
+ .insert! end_success
+=end

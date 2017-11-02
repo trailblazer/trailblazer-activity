@@ -22,10 +22,13 @@ module Trailblazer
       end
     end
 
-    def self.bla(steps)
-      start_evt  = Circuit::Start.new(:default)
-      start_args = [ start_evt, { type: :event, id: "Start.default" } ]
-      start      = Activity::Graph::Start( *start_args )
+    def self.bla(steps, start_events: [Circuit::Start.new(:default)])
+      # FIXME: currently, this only does one start.
+      start      = nil
+      start_events.each do |start_evt|
+        start_args = [ start_evt, { type: :event, id: "Start.default" } ]
+        start = Activity::Graph::Start( *start_args )
+      end
 
 
           added_tasks      = {}
@@ -42,6 +45,7 @@ module Trailblazer
 
           # connect this new node to all magnetic, open edges.
           incoming_lines.each do |line|
+            # if we are pointing back, use connect!.
             command, existing_node = added_tasks[node] ? [ :connect!, added_tasks[node] ] : [ :attach!, [node, id: node] ]
 
             new_node, edge = start.send(

@@ -1,6 +1,9 @@
 module Trailblazer
   class Activity::Schema
     #  the list of what tasks to add to the graph, for the "drawer"
+    # produces immutable list of: (node, magnetic_to (incoming colors), outgoing colors)
+    #  via #to_a
+
     #mutable, for DSL
     #
     # @api private
@@ -16,7 +19,7 @@ module Trailblazer
         return insert(find_index!(before),  element) if before
         return insert(find_index!(after)+1, element) if after
         return self[find_index!(replace)] = element  if replace
-        return delete_at(find_index!(delete))    if delete
+        return delete_at(find_index!(delete))        if delete
 
         self << element
       end
