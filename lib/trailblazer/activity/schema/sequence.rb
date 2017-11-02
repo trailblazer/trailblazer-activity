@@ -24,20 +24,8 @@ module Trailblazer
         self << element
       end
 
-      # return the "schema steps array" that is consumed by Schema.bla
-      #
-      # [ [:success], A,  [R, L] ],
-      # [ [:failure], E, [] ],
-      # [ [:success], B, [R, L] ],
-      # [ [:success], C, [R, L] ],
-      # [ [:failure], F, [L, Z] ],
-      #   [ [:my_z], S, [] ], # "connect"
-
-
-      # [ [:success], ES, [] ],
-      # [ [:failure], EF, [] ],
       def to_a
-        collect { |element| element.instructions }.flatten(1)
+        collect { |element| element.instructions }
       end
 
       private
