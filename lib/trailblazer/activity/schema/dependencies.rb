@@ -1,6 +1,9 @@
 # TODO: delete
 
 class Trailblazer::Activity::Schema
+  # Helps organizing the structure of the circuit and allows to define steps that
+  # might be inserted in a completely different order, but it's experimental.
+  # This class is experimental.
   class Dependencies
     def initialize
       @groups  = {
