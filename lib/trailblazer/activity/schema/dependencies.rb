@@ -3,6 +3,10 @@
 class Trailblazer::Activity::Schema
   # Helps organizing the structure of the circuit and allows to define steps that
   # might be inserted in a completely different order, but it's experimental.
+  #
+  # Translates linear DSL calls that might refer to the same task several times into a linear "drawing instruction"
+  # that can be consumed by Schema.bla.
+  #
   # This class is experimental.
   class Dependencies
     def initialize
@@ -20,6 +24,7 @@ class Trailblazer::Activity::Schema
       group = @groups[group] or raise "unknown group, implement me"
 
       # "upsert"
+      # DISCUSS: move this to Sequence?
       if existing = group.send( :find_index, id) # FIXME
         arr = group[existing].instructions.dup
 
@@ -27,10 +32,10 @@ class Trailblazer::Activity::Schema
 
         arr[0] += seq_options[0] # merge the magnetic_to, only.
 
-        group.insert!(id, arr, replace: id)
+        group.add(id, arr, replace: id)
 
       else
-        group.insert!(id, seq_options, **sequence_options) # handles
+        group.add(id, seq_options, **sequence_options) # handles
       end
     end
 

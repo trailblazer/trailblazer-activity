@@ -81,7 +81,7 @@ class DrawGraphTest < Minitest::Spec
 
     # fail E, success: "End.success"
     dependencies.add( :E,   [ [:failure], E, [L, e_to_success] ], )
-    dependencies.add( :ES,  [ [:e_to_success], ES, [] ], group: :end ) # how do we know this is not an existing?
+    dependencies.add( :ES,  [ [:e_to_success], ES, [] ], group: :end ) # existing target: add a "magnetic_to" to it!
 
     pp steps = dependencies.to_a
 
