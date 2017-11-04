@@ -34,11 +34,8 @@ module Trailblazer
       end
 
       (start_tasks + tasks).each do |(magnetic_to, node, outputs)|
-        puts "~~~~~~~~~ drawing #{node} which wants #{magnetic_to}"
-
         circuit_hash[ node ] ||= {} # DISCUSS: or needed?
 
-        # go through
         magnetic_to.each do |edge_color| # minus poles
           open_plus_poles.pop(edge_color) do |line|
             connect( circuit_hash, line.source, line.output.signal, node )

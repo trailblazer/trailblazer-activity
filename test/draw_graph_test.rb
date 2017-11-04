@@ -70,8 +70,9 @@ class DrawGraphTest < Minitest::Spec
     b_to_a = Output.new("bla", :b_to_a) # mapping Output
     # e_to_success = Output::OpenLine.new(Right, :e_to_success)
 
+    require "trailblazer/activity/schema/magnetic"
     require "trailblazer/activity/schema/dependencies"
-    dependencies = Trailblazer::Activity::Schema::Dependencies.new
+    dependencies = Trailblazer::Activity::Schema::Magnetic::Dependencies.new
 
     # happens in Operation::initialize_sequence
     dependencies.add( :EF,  [ [:failure], EF, [] ], group: :end )
@@ -100,7 +101,7 @@ class DrawGraphTest < Minitest::Spec
     ]
 =end
 
-    bla = Trailblazer::Activity::Schema.bla(steps)
+    bla = Trailblazer::Activity::Schema::Magnetic.(steps)
 
 
     pp bla.to_h
