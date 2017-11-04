@@ -40,23 +40,21 @@ module Trailblazer
 
         # go through
         magnetic_to.each do |edge_color| # minus poles
-          plus_poles = open_plus_poles.pop(edge_color) do |line|
+          open_plus_poles.pop(edge_color) do |line|
             connect( circuit_hash, line.source, line.output.signal, node )
-          end
+          end and next
 
-          unless plus_poles
-            open_minus_poles << [node, Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
-           end
+          # only run when there were no open_minus_poles
+          open_minus_poles << [node, Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
         end
 
         outputs.each do |output|
-          minus_poles= open_minus_poles.pop(output.color) do |line|
+          open_minus_poles.pop(output.color) do |line|
             connect( circuit_hash, node, output.signal, line.source )
-          end
+          end and next
 
-          unless minus_poles
-            open_plus_poles << [node, output]
-          end
+          # only run when there were no open_plus_poles
+          open_plus_poles << [node, output]
         end
       end
 
