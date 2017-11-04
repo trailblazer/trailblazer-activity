@@ -14,9 +14,10 @@ class Trailblazer::Activity::Schema
         start: Sequence.new,
         main:  Sequence.new, # normal steps
         end:   Sequence.new, # ends
+        unresolved:   Sequence.new, # div
       }
 
-      @order = [ :start, :main, :end ]
+      @order = [ :start, :main, :end, :unresolved ]
       @id_to_group = { }
     end
 
@@ -28,9 +29,10 @@ class Trailblazer::Activity::Schema
       if existing = group.send( :find_index, id) # FIXME
         arr = group[existing].instructions.dup
 
-
+# raise seq_options.inspect
 
         arr[0] += seq_options[0] # merge the magnetic_to, only.
+        arr[2] += seq_options[2] # merge the polarization
 
         group.add(id, arr, replace: id)
 
@@ -40,6 +42,8 @@ class Trailblazer::Activity::Schema
     end
 
     # Produces something like
+    #
+    # (one line per node)
     #
     # [
     #   #  magnetic to

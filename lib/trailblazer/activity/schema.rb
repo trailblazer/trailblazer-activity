@@ -22,50 +22,52 @@ module Trailblazer
       end
     end
 
-    def self.bla(steps, start_events: [Circuit::Start.new(:default)])
-      # FIXME: currently, this only does one start.
-      start      = nil
-      start_events.each do |start_evt|
-        start_args = [ start_evt, { type: :event, id: "Start.default" } ]
-        start = Activity::Graph::Start( *start_args )
+    def self.bla(tasks, start_events: [Circuit::Start.new(:default)])
+          added_tasks      = {}
+          open_outgoing_lines = OpenLines.new
+          open_incoming_lines = OpenLines.new
+
+      circuit_hash = {}
+
+      start_events.each do |evt|
+        circuit_hash[evt] = {}
+        open_outgoing_lines << [ evt, Output.new(Circuit::Right, :success) ]
       end
 
+      tasks.each do |(magnetic_to, node, outputs)|
+        puts "~~~~~~~~~ drawing #{node} which wants #{magnetic_to}"
 
-          added_tasks      = {}
-      open_lines = OpenLines.new
-      open_lines << [ start, Output.new(Circuit::Right, :success) ]
+        magnetic_to.each do |edge_color|
+          incoming_lines = open_outgoing_lines.pop(edge_color)
 
-      steps.each do |(magnetic_to, node, outputs)|
-        puts "drawing #{node} which wants #{magnetic_to}"
-        new_node = nil
+          if incoming_lines.empty?
+            puts("no matching edges found for your incoming #{magnetic_to} => #{edge_color}")
+            open_incoming_lines << [node, Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
+          end
 
-        magnetic_to.each do |signal|
-          incoming_lines = open_lines.pop(signal)
-          raise("no matching edges found for your incoming #{magnetic_to}") unless incoming_lines.any?
-
-          # connect this new node to all magnetic, open edges.
+          # connect this new `node` to all magnetic, open edges.
           incoming_lines.each do |line|
-            # if we are pointing back, use connect!.
-            command, existing_node = added_tasks[node] ? [ :connect!, added_tasks[node] ] : [ :attach!, [node, id: node] ]
-
-            new_node, edge = start.send(
-              command, # attach! or connect!
-              source: line.source,
-              target: existing_node,
-              edge:   [ line.output.signal, {} ]
-            )
-
-            added_tasks[node] = new_node #
+            circuit_hash[ line.source ][ line.output.signal ] = node
+            circuit_hash[ node ] ||= {} # DISCUSS: or needed?
           end
 
           outputs.each do |output|
-            open_lines << [new_node, output]
-          end
+            open_outputs= open_incoming_lines.pop(output.role)
+            if open_outputs.any?
 
+              # connect this new `node` to all magnetic, open edges.
+              open_outputs.each do |line|
+                circuit_hash[ node ][ output.signal ] = line.source
+                circuit_hash[ node ] ||= {} # DISCUSS: or needed?
+              end
+            else
+              open_outgoing_lines << [node, output]
+            end
+          end
         end
       end
 
-      start
+      circuit_hash
     end
   end
 

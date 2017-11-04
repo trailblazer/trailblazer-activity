@@ -7,14 +7,14 @@ class DrawGraphTest < Minitest::Spec
 
   S = ->(*) { snippet }
 
-  A = ->(*) { snippet }
-  E = ->(*) { snippet }
-  B = ->(*) { snippet }
-  C = ->(*) { snippet }
-  F = ->(*) { snippet }
+  class A; end
+  class E; end
+  class B; end
+  class C; end
+  class F; end
 
-  ES = ->(*) { snippet }
-  EF = ->(*) { snippet }
+  class ES; end
+  class EF; end
 =begin
 [
   S: -R>
@@ -67,6 +67,7 @@ class DrawGraphTest < Minitest::Spec
 =end
 
     e_to_success = Output.new(Right, :e_to_success) # mapping Output
+    b_to_a = Output.new("bla", :b_to_a) # mapping Output
     # e_to_success = Output::OpenLine.new(Right, :e_to_success)
 
     require "trailblazer/activity/schema/dependencies"
@@ -107,6 +108,12 @@ class DrawGraphTest < Minitest::Spec
 
     dependencies.add( :C, [ [:success], C, [R, L] ] ) # after A
     dependencies.add( :B, [ [:success], B, [R, L] ], after: :A )
+
+    # now, connect B to A //    or FIXME:Start
+    # no idea, how would the DSL call look here?
+    dependencies.add( :B, [ [], B, [b_to_a] ], group: :unresolved )  # "b has additional output"
+    dependencies.add( :A, [ [:b_to_a], A, [] ], group: :unresolved ) # "a has additional input"
+
 
     pp steps = dependencies.to_a
     bla = Trailblazer::Activity::Schema.bla(steps)
