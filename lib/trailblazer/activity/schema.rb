@@ -23,11 +23,9 @@ module Trailblazer
     end
 
     def self.bla(tasks, start_events: [Circuit::Start.new(:default)])
-          added_tasks      = {}
-          open_outgoing_lines = OpenLines.new
-          open_incoming_lines = OpenLines.new
-
-      circuit_hash = {}
+      open_outgoing_lines = OpenLines.new
+      open_minus_poles    = OpenLines.new
+      circuit_hash        = {}
 
       start_events.each do |evt|
         circuit_hash[evt] = {}
@@ -37,30 +35,30 @@ module Trailblazer
       tasks.each do |(magnetic_to, node, outputs)|
         puts "~~~~~~~~~ drawing #{node} which wants #{magnetic_to}"
 
-        magnetic_to.each do |edge_color|
-          incoming_lines = open_outgoing_lines.pop(edge_color)
+        circuit_hash[ node ] ||= {} # DISCUSS: or needed?
 
-          if incoming_lines.empty?
+        magnetic_to.each do |edge_color| # minus poles
+          plus_poles = open_outgoing_lines.pop(edge_color)
+
+          if plus_poles.any?
+            # connect this new `node` to all magnetic, open edges.
+            plus_poles.each do |line|
+              connect( circuit_hash, line.source, line.output.signal, node )
+            end
+          else
             puts("no matching edges found for your incoming #{magnetic_to} => #{edge_color}")
-            open_incoming_lines << [node, Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
-          end
-
-          # connect this new `node` to all magnetic, open edges.
-          incoming_lines.each do |line|
-            circuit_hash[ line.source ][ line.output.signal ] = node
-            circuit_hash[ node ] ||= {} # DISCUSS: or needed?
+            open_minus_poles << [node, Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
           end
 
         end
 
         outputs.each do |output|
-          open_outputs= open_incoming_lines.pop(output.color)
-          if open_outputs.any?
+          minus_poles= open_minus_poles.pop(output.color)
 
+          if minus_poles.any?
             # connect this new `node` to all magnetic, open edges.
-            open_outputs.each do |line|
-              circuit_hash[ node ][ output.signal ] = line.source
-              circuit_hash[ node ] ||= {} # DISCUSS: or needed?
+            minus_poles.each do |line|
+              connect( circuit_hash, node, output.signal, line.source )
             end
           else
             open_outgoing_lines << [node, output]
@@ -70,6 +68,11 @@ module Trailblazer
 
       circuit_hash
     end
-  end
 
+    #                               plus            minus
+    def self.connect(circuit_hash, source, signal, target)
+      circuit_hash[ source ][ signal ] = target
+    end
+
+  end
 end
