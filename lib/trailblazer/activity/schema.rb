@@ -3,7 +3,7 @@ module Trailblazer
   # It is used in the Operation and Activity DSL, and also for the TaskWrap.
   # A Schema always produces an Activity.
   class Activity::Schema
-    Output = Struct.new(:signal, :role)
+    Output = Struct.new(:signal, :color)
     Line   = Struct.new(:source, :output)
 
     class OpenLines
@@ -12,7 +12,7 @@ module Trailblazer
       end
 
       def pop(signal)
-        lines = @arr.find_all { |line| line.output.role == signal }
+        lines = @arr.find_all { |line| line.output.color == signal }
         @arr -= lines
         lines
       end
@@ -54,7 +54,7 @@ module Trailblazer
         end
 
         outputs.each do |output|
-          open_outputs= open_incoming_lines.pop(output.role)
+          open_outputs= open_incoming_lines.pop(output.color)
           if open_outputs.any?
 
             # connect this new `node` to all magnetic, open edges.
