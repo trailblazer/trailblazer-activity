@@ -51,18 +51,19 @@ module Trailblazer
             circuit_hash[ node ] ||= {} # DISCUSS: or needed?
           end
 
-          outputs.each do |output|
-            open_outputs= open_incoming_lines.pop(output.role)
-            if open_outputs.any?
+        end
 
-              # connect this new `node` to all magnetic, open edges.
-              open_outputs.each do |line|
-                circuit_hash[ node ][ output.signal ] = line.source
-                circuit_hash[ node ] ||= {} # DISCUSS: or needed?
-              end
-            else
-              open_outgoing_lines << [node, output]
+        outputs.each do |output|
+          open_outputs= open_incoming_lines.pop(output.role)
+          if open_outputs.any?
+
+            # connect this new `node` to all magnetic, open edges.
+            open_outputs.each do |line|
+              circuit_hash[ node ][ output.signal ] = line.source
+              circuit_hash[ node ] ||= {} # DISCUSS: or needed?
             end
+          else
+            open_outgoing_lines << [node, output]
           end
         end
       end
