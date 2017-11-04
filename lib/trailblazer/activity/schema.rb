@@ -11,10 +11,12 @@ module Trailblazer
         @arr = []
       end
 
-      def pop(signal)
+      def pop(signal, &block)
         lines = @arr.find_all { |line| line.output.color == signal }
         @arr -= lines
-        lines
+
+        lines.each(&block)
+        lines.any?
       end
 
       def <<((node, output))
@@ -31,38 +33,28 @@ module Trailblazer
         [ [], evt, [ Output.new(Circuit::Right, :success) ] ]
       end
 
-      tasks = start_tasks + tasks
-
-      tasks.each do |(magnetic_to, node, outputs)|
+      (start_tasks + tasks).each do |(magnetic_to, node, outputs)|
         puts "~~~~~~~~~ drawing #{node} which wants #{magnetic_to}"
 
         circuit_hash[ node ] ||= {} # DISCUSS: or needed?
 
         # go through
         magnetic_to.each do |edge_color| # minus poles
-          plus_poles = open_plus_poles.pop(edge_color)
-
-          if plus_poles.any?
-            # connect this new `node` to all magnetic, open edges.
-            plus_poles.each do |line|
-              connect( circuit_hash, line.source, line.output.signal, node )
-            end
-          else
-            puts("no matching edges found for your incoming #{magnetic_to} => #{edge_color}")
-            open_minus_poles << [node, Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
+          plus_poles = open_plus_poles.pop(edge_color) do |line|
+            connect( circuit_hash, line.source, line.output.signal, node )
           end
 
+          unless plus_poles
+            open_minus_poles << [node, Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
+           end
         end
 
         outputs.each do |output|
-          minus_poles= open_minus_poles.pop(output.color)
+          minus_poles= open_minus_poles.pop(output.color) do |line|
+            connect( circuit_hash, node, output.signal, line.source )
+          end
 
-          if minus_poles.any?
-            # connect this new `node` to all magnetic, open edges.
-            minus_poles.each do |line|
-              connect( circuit_hash, node, output.signal, line.source )
-            end
-          else
+          unless minus_poles
             open_plus_poles << [node, output]
           end
         end
@@ -75,6 +67,5 @@ module Trailblazer
     def self.connect(circuit_hash, source, signal, target)
       circuit_hash[ source ][ signal ] = target
     end
-
   end
 end
