@@ -23,22 +23,24 @@ module Trailblazer
     end
 
     def self.bla(tasks, start_events: [Circuit::Start.new(:default)])
-      open_outgoing_lines = OpenLines.new
+      open_plus_poles = OpenLines.new
       open_minus_poles    = OpenLines.new
       circuit_hash        = {}
 
-      start_events.each do |evt|
-        circuit_hash[evt] = {}
-        open_outgoing_lines << [ evt, Output.new(Circuit::Right, :success) ]
+      start_tasks = start_events.collect do |evt|
+        [ [], evt, [ Output.new(Circuit::Right, :success) ] ]
       end
+
+      tasks = start_tasks + tasks
 
       tasks.each do |(magnetic_to, node, outputs)|
         puts "~~~~~~~~~ drawing #{node} which wants #{magnetic_to}"
 
         circuit_hash[ node ] ||= {} # DISCUSS: or needed?
 
+        # go through
         magnetic_to.each do |edge_color| # minus poles
-          plus_poles = open_outgoing_lines.pop(edge_color)
+          plus_poles = open_plus_poles.pop(edge_color)
 
           if plus_poles.any?
             # connect this new `node` to all magnetic, open edges.
@@ -61,7 +63,7 @@ module Trailblazer
               connect( circuit_hash, node, output.signal, line.source )
             end
           else
-            open_outgoing_lines << [node, output]
+            open_plus_poles << [node, output]
           end
         end
       end
