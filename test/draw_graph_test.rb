@@ -1,5 +1,8 @@
 require "test_helper"
 
+require "trailblazer/activity/schema/magnetic"
+require "trailblazer/activity/schema/dependencies"
+
 class DrawGraphTest < Minitest::Spec
   Right = Circuit::Right
   Left  = Circuit::Left
@@ -70,8 +73,7 @@ class DrawGraphTest < Minitest::Spec
     b_to_a = Output.new("bla", :b_to_a) # mapping Output
     # e_to_success = Output::OpenLine.new(Right, :e_to_success)
 
-    require "trailblazer/activity/schema/magnetic"
-    require "trailblazer/activity/schema/dependencies"
+
     dependencies = Trailblazer::Activity::Schema::Magnetic::Dependencies.new
 
     # happens in Operation::initialize_sequence
@@ -119,6 +121,19 @@ class DrawGraphTest < Minitest::Spec
     pp steps = dependencies.to_a
     bla = Trailblazer::Activity::Schema.bla(steps)
     pp bla.to_h
+  end
+
+  it do
+    dependencies = Trailblazer::Activity::Schema::Magnetic::Dependencies.new
+
+    # happens in Operation::initialize_sequence
+    dependencies.add( :EF,  [ [:failure], EF, [] ], group: :end )
+    dependencies.add( :ES,  [ [:success], ES, [] ], group: :end )
+
+    dependencies.add( :A,   [ [:success], A,  [R, L] ] )
+
+    dependencies.add( :ES,  [ [:another_success], ES, [] ] ) # extend existing input.
+
   end
 end
 
