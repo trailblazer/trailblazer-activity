@@ -134,6 +134,10 @@ class DrawGraphTest < Minitest::Spec
 
     dependencies.add( :ES,  [ [:another_success], ES, [] ] ) # extend existing input.
 
+
+    sequence = dependencies.to_a
+
+    sequence.inspect.must_equal %{[[[:success], DrawGraphTest::A, [#<struct Trailblazer::Activity::Schema::Output signal=Trailblazer::Circuit::Right, color=:success>, #<struct Trailblazer::Activity::Schema::Output signal=Trailblazer::Circuit::Left, color=:failure>]], [[:failure], DrawGraphTest::EF, []], [[:success, :another_success], DrawGraphTest::ES, []]]}
   end
 end
 

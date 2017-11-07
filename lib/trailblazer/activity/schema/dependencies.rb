@@ -20,25 +20,24 @@ module Trailblazer
           }
 
           @order = [ :start, :main, :end, :unresolved ]
-          @id_to_group = { }
         end
 
         def add(id, seq_options, group: :main, **sequence_options)
-          group = @groups[group] or raise "unknown group, implement me"
+          group = @groups[group] or raise "unknown group #{group}, implement me"
 
           # "upsert"
-          # DISCUSS: move this to Sequence?
-          if existing = group.send( :find_index, id) # FIXME
-            arr = group[existing].instructions.dup
+          if ( cfg = find(id) )
+            group, index = cfg
+            arr = group[index].instructions.dup
 
             arr[0] += seq_options[0] # merge the magnetic_to, only.
             arr[2] += seq_options[2] # merge the polarization
 
             group.add(id, arr, replace: id)
-
           else
             group.add(id, seq_options, **sequence_options) # handles
           end
+
         end
 
         # Produces something like
@@ -58,6 +57,14 @@ module Trailblazer
         # ]
         def to_a
           @order.collect{ |name| @groups[name].to_a }.flatten(1)
+        end
+
+        private
+        def find(id)
+          @groups.find do |name, group|
+            index = group.send( :find_index, id )
+            return group, index if index
+          end
         end
       end
     end # Magnetic
