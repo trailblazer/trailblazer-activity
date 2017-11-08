@@ -58,6 +58,28 @@ class DrawGraphTest < Minitest::Spec
   end
 
   it do
+    alterations = Trailblazer::Activity::Magnetic::Alterations.new
+
+    # happens in Operation::initialize_sequence
+    alterations.add( :EF,  [ [:failure], EF, {}, {} ], group: :end )
+    alterations.add( :ES,  [ [:success], ES, {}, {} ], group: :end )
+
+    # step A
+    alterations.add( :A,   [ [:success], A,  { success: :success, failure: :failure }, { Right: :success, Left: :failure }.freeze ] )
+
+    # fail E, success: "End.success"
+    alterations.add( :E,   [ [:failure], E, { success: :failure, failure: :failure },  { Right: :success, Left: :failure }.freeze ], )
+    alterations.connect_to( :E, { success: "e_to_success" } )
+
+
+    alterations.magnetic_to( :ES, ["e_to_success"] ) # existing target: add a "magnetic_to" to it!
+    pp alterations.to_a
+
+    pp Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations.to_a )
+
+  end
+
+  it do
     ## actual output from E: (Left, :failure), (Right, :failure)
 
     # Output: {Right, :success} where :success is a hint on the meaning.

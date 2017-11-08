@@ -8,7 +8,7 @@ module Trailblazer
     #
     # @api private
     class Sequence < ::Array
-      Element = Struct.new(:id, :instructions)
+      Element = Struct.new(:id, :configuration)
 
       # Insert the task into {Sequence} array by respecting options such as `:before`.
       # This mutates the object per design.
@@ -26,7 +26,7 @@ module Trailblazer
       end
 
       def to_a
-        collect { |element| element.instructions }
+        collect { |element| element.configuration }
       end
 
       private

@@ -1,6 +1,69 @@
 # TODO: delete
 
 module Trailblazer
+  module Activity::Magnetic
+    class Alterations # used directly in Magnetic::DSL
+      def initialize
+        @groups = Activity::Schema::Magnetic::Dependencies.new
+      end
+
+      def add(id, options, **sequence_options)
+        @groups.add(id, options, **sequence_options)
+      end
+
+      def connect_to(id, connect_to)
+        group, index = @groups.find(id)
+
+        arr = group[index].configuration.dup
+        arr[2] = arr[2].merge(connect_to)
+        group.add(id, arr, replace: id)
+      end
+
+      def magnetic_to(id, magnetic_to)
+        group, index = @groups.find(id)
+
+        arr = group[index].configuration.dup
+
+        arr[0] = arr[0] + magnetic_to
+        group.add(id, arr, replace: id)
+      end
+
+      # [[[:success],
+      #   DrawGraphTest::A,
+      #   {:success=>:success, :failure=>:failure},
+      #   {:Right=>:success, :Left=>:failure}],
+      #  [[:failure],
+      #   DrawGraphTest::E,
+      #   {:success=>"e_to_success", :failure=>:failure},
+      #   {:Right=>:success, :Left=>:failure}],
+      #  [[:failure], DrawGraphTest::EF, {}, {}],
+      #  [[:success, "e_to_success"], DrawGraphTest::ES, {}, {}]]
+      def to_a
+        @groups.to_a
+      end
+    end # Alterations
+
+    class ConnectionFinalizer
+      def self.call(elements) # receives Alterations.to_a
+        elements.collect do |(task, magnetic_to, connect_to, outputs)|
+          outputs = role_to_plus_pole( outputs, connect_to )
+
+          [ magnetic_to, task, outputs ] # instruction for GraphHash().
+        end
+      end
+
+      # Connect all outputs of the task: find the appropriate color for the signal semantic by
+      # using connect_to, which comes from the DSL.
+      def self.role_to_plus_pole(outputs, connect_to)
+        outputs.collect do |signal, role|
+          color = connect_to[ role ] or raise "Couldn't map output role #{role.inspect} for #{connect_to.inspect}"
+
+          Activity::Schema::Output.new(signal, color)
+        end
+      end
+    end
+  end
+
   class Activity::Schema
     module Magnetic
       # Helps organizing the structure of the circuit and allows to define steps that
@@ -25,20 +88,10 @@ module Trailblazer
         def add(id, seq_options, group: :main, **sequence_options)
           group = @groups[group] or raise "unknown group #{group}, implement me"
 
-          # "upsert"
-          if ( cfg = find(id) )
-            group, index = cfg
-            arr = group[index].instructions.dup
-
-            arr[0] += seq_options[0] # merge the magnetic_to, only.
-            arr[2] += seq_options[2] # merge the polarization
-
-            group.add(id, arr, replace: id)
-          else
-            group.add(id, seq_options, **sequence_options) # handles
-          end
-
+          group.add(id, seq_options, **sequence_options) # handles
         end
+
+
 
         # Produces something like
         #
@@ -59,7 +112,7 @@ module Trailblazer
           @order.collect{ |name| @groups[name].to_a }.flatten(1)
         end
 
-        private
+        # private
         def find(id)
           @groups.find do |name, group|
             index = group.send( :find_index, id )
