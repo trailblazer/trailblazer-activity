@@ -45,7 +45,7 @@ module Trailblazer
 
     class ConnectionFinalizer
       def self.call(elements) # receives Alterations.to_a
-        elements.collect do |(task, magnetic_to, connect_to, outputs)|
+        elements.collect do |(magnetic_to, task, connect_to, outputs)|
           outputs = role_to_plus_pole( outputs, connect_to )
 
           [ magnetic_to, task, outputs ] # instruction for GraphHash().

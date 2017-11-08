@@ -75,8 +75,9 @@ class DrawGraphTest < Minitest::Spec
     alterations.magnetic_to( :ES, ["e_to_success"] ) # existing target: add a "magnetic_to" to it!
     pp alterations.to_a
 
-    pp Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations.to_a )
+    pp tripletts = Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations.to_a )
 
+    pp Trailblazer::Activity::Schema::Magnetic.( tripletts )
   end
 
   it do
