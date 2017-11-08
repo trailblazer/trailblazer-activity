@@ -91,23 +91,6 @@ module Trailblazer
           group.add(id, seq_options, **sequence_options) # handles
         end
 
-
-
-        # Produces something like
-        #
-        # (one line per node)
-        #
-        # [
-        #   #  magnetic to
-        #   #  color | signal|outputs
-        #   [ [:success], A,  [R, L] ],
-        #   [ [:failure], E, [L, e_to_success] ],
-        #   [ [:success], B, [R, L] ],
-        #   [ [:success], C, [R] ],
-
-        #   [ [:success, :e_to_success], ES, [] ], # magnetic_to needs to have the special line, too.
-        #   [ [:failure], EF, [] ],
-        # ]
         def to_a
           @order.collect{ |name| @groups[name].to_a }.flatten(1)
         end
