@@ -5,10 +5,16 @@ module Trailblazer
     class Alterations # used directly in Magnetic::DSL
       def initialize
         @groups = Activity::Schema::Magnetic::Dependencies.new
+        @future_magnetic_to = {} # DISCUSS: future - should it be here?
       end
 
       def add(id, options, **sequence_options)
         @groups.add(id, options, **sequence_options)
+
+        # DISCUSS: future - should it be here?
+        if magnetic_to = @future_magnetic_to.delete(id)
+          magnetic_to( id, magnetic_to )
+        end
       end
 
       def connect_to(id, connect_to)
@@ -21,6 +27,11 @@ module Trailblazer
 
       def magnetic_to(id, magnetic_to)
         group, index = @groups.find(id) # this can be a future task!
+
+        unless group # DISCUSS: future - should it be here?
+          @future_magnetic_to[id] = magnetic_to
+          return
+        end
 
         arr = group[index].configuration.dup
 
