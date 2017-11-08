@@ -20,7 +20,7 @@ module Trailblazer
       end
 
       def magnetic_to(id, magnetic_to)
-        group, index = @groups.find(id)
+        group, index = @groups.find(id) # this can be a future task!
 
         arr = group[index].configuration.dup
 
@@ -58,7 +58,7 @@ module Trailblazer
         outputs.collect do |signal, role|
           color = connect_to[ role ] or raise "Couldn't map output role #{role.inspect} for #{connect_to.inspect}"
 
-          Activity::Schema::Output.new(signal, color)
+          Activity::Schema::Magnetic::Output.new(signal, color)
         end
       end
     end
@@ -106,3 +106,9 @@ module Trailblazer
     end # Magnetic
   end
 end
+
+
+# Activity.build do
+#   step :extract,  failure: End("End.validate.extract_failed")
+#   step :validate
+# end

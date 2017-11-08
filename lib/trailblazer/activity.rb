@@ -23,7 +23,6 @@ module Trailblazer
   require "trailblazer/activity/present"
 
 
-  require "trailblazer/activity/schema"
   require "trailblazer/activity/schema/sequence"
 
     # Only way to build an Activity.

@@ -29,7 +29,7 @@ class DrawGraphTest < Minitest::Spec
   # Mutable object to track what open lines are waiting to be connected
   # to a node.
 
-  Output = Trailblazer::Activity::Schema::Output
+  Output = Trailblazer::Activity::Schema::Magnetic::Output
 
   R = Output.new(Right, :success)
   L = Output.new(Left,  :failure)
