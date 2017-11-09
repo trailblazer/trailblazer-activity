@@ -4,7 +4,7 @@ module Trailblazer
   # A Schema always produces an Activity.
   class Activity::Schema
     module Magnetic
-      Output = Struct.new(:signal, :color)
+
       Line   = Struct.new(:source, :output)
 
       class OpenLines
@@ -31,7 +31,7 @@ module Trailblazer
         circuit_hash        = {}
 
         start_tasks = start_events.collect do |evt|
-          [ [], evt, [ Output.new(Circuit::Right, :success) ] ]
+          [ [], evt, [ Activity::Magnetic::Output.new(Circuit::Right, :success) ] ]
         end
 
         (start_tasks + tasks).each do |(magnetic_to, node, outputs)|
@@ -43,7 +43,7 @@ module Trailblazer
             end and next
 
             # only run when there were no open_minus_poles
-            open_minus_poles << [node, Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
+            open_minus_poles << [node, Activity::Magnetic::Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
           end
 
           outputs.each do |output|

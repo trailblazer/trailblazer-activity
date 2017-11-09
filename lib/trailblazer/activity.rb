@@ -84,6 +84,65 @@ module Trailblazer
       end
     end
 
+    require "trailblazer/activity/schema/dependencies"
+    require "trailblazer/activity/schema/magnetic"
+    class DSL
+      def initialize
+        # @sequence = Schema::Sequence.new
+        @sequence = Magnetic::Alterations.new
+        @outputs  = {}
+      end
+
+      def task(task, options={})
+        id = options[:id] || task.to_s
+
+        @sequence.add( id, [ [:success], task, [ Schema::Magnetic::Output.new( Circuit::Right, :success ) ] ],  )
+
+        process_dsl_options(id, options, @sequence)
+      end
+
+      def process_dsl_options(id, options, alterations)
+        options.collect do |key, task|
+          if task.kind_of?(Circuit::End)
+            new_edge = "#{id}-#{key}"
+
+            alterations.connect_to( id, { key => new_edge } )
+            alterations.add( task.instance_variable_get(:@name), [ [key], task, {}, {} ], group: :end  )
+          elsif task.is_a?(String) # let's say this means an existing step
+            new_edge = "#{key}-#{task}"
+
+            alterations.connect_to(  id, { key => new_edge } )
+            alterations.magnetic_to( task, [new_edge] )
+          else # only an additional plus polarization going to the right (outgoing)
+            # alterations.connect_to(  id, { key => key } )
+          end
+        end
+      end
+
+      def End(name, semantic)
+        @outputs[ evt = Circuit::End.new(name) ] = semantic
+        evt
+      end
+
+      def to_a
+        @sequence.to_a
+      end
+    end
+
+    def self.build(&block)
+      dsl = DSL.new
+      dsl.instance_exec(&block)
+      # pp dsl
+      dsl.instance_variable_get(:@sequence).
+        add( "End.success", [ [:success], Circuit::End.new(:success), {}, {} ], group: :end )
+
+      tripletts = dsl.to_a
+      # pp tripletts
+
+      # tripletts = Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations )
+      pp circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+    end
+
     def initialize(circuit_hash, outputs)
       @default_start_event = circuit_hash.keys.first
       @outputs             = outputs

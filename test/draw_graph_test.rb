@@ -29,7 +29,8 @@ class DrawGraphTest < Minitest::Spec
   # Mutable object to track what open lines are waiting to be connected
   # to a node.
 
-  Output = Trailblazer::Activity::Schema::Magnetic::Output
+  Output = Trailblazer::Activity::Magnetic::Output
+  Magnetic = Trailblazer::Activity::Magnetic
 
   R = Output.new(Right, :success)
   L = Output.new(Left,  :failure)
@@ -95,20 +96,18 @@ class DrawGraphTest < Minitest::Spec
       alterations = Trailblazer::Activity::Magnetic::Alterations.new
 
       # happens in Operation::initialize_sequence
-      alterations.add( :EF,  [ [:failure], EF, {}, {} ], group: :end )
-      alterations.add( :ES,  [ [:success], ES, {}, {} ], group: :end )
+      alterations.add( :EF,  [ [:failure], EF, {} ], group: :end )
+      alterations.add( :ES,  [ [:success], ES, {} ], group: :end )
 
       # step A
-      alterations.add( :A,   [ [:success], A,  { success: :success, failure: :failure }, { Right: :success, Left: :failure }.freeze ] )
+      alterations.add( :A,   [ [:success], A, [ Magnetic.Output(Right, :success), Magnetic.Output(Left, :failure) ] ] )
 
       # fail E, success: "End.success"
-      alterations.add( :E,   [ [:failure], E, { success: :failure, failure: :failure },  { Right: :success, Left: :failure }.freeze ], )
+      alterations.add( :E,   [ [:failure], E, [ Magnetic.Output(Right, :failure), Magnetic.Output(Left, :failure) ] ], )
       alterations.connect_to( :E, { success: "e_to_success" } )
       alterations.magnetic_to( :ES, ["e_to_success"] ) # existing target: add a "magnetic_to" to it!
 
-
-      tripletts = Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations.to_a )
-      graph     = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+      graph     = Trailblazer::Activity::Schema::Magnetic.( alterations.to_a )
 
       Inspect(graph.inspect).must_equal %{"{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>DrawGraphTest::A}, DrawGraphTest::A=>{:Left=>DrawGraphTest::E, :Right=>DrawGraphTest::ES}, DrawGraphTest::E=>{:Left=>DrawGraphTest::EF, :Right=>DrawGraphTest::ES}, DrawGraphTest::EF=>{}, DrawGraphTest::ES=>{}}"}
     end

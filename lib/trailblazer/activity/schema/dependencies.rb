@@ -2,12 +2,19 @@
 
 module Trailblazer
   module Activity::Magnetic
+    Output = Struct.new(:signal, :color)
+
+    def self.Output(signal, color)
+      Output.new(signal, color)
+    end
+
     class Alterations # used directly in Magnetic::DSL
       def initialize
         @groups = Activity::Schema::Magnetic::Dependencies.new
         @future_magnetic_to = {} # DISCUSS: future - should it be here?
       end
 
+      # @param options Array [ [:success], task, { Right: :success } ]
       def add(id, options, **sequence_options)
         @groups.add(id, options, **sequence_options)
 
@@ -21,6 +28,9 @@ module Trailblazer
         group, index = @groups.find(id)
 
         arr = group[index].configuration.dup
+
+        raise arr[2].inspect
+        raise connect_to.inspect
         arr[2] = arr[2].merge(connect_to)
         group.add(id, arr, replace: id)
       end

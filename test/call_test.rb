@@ -52,6 +52,10 @@ class CallTest < Minitest::Spec
           Blog::Test => { Circuit::Right => _end, Circuit::Left => Circuit::End(:retry) }
         }
       }
+
+      Activity.build do
+        task Blog::Test, Left => Circuit::End(:retry)
+      end
     end
 
     it { flow.([ { return: Circuit::Right }, {} ]).must_equal [flow.outputs.keys.first, [ {:return=>Trailblazer::Circuit::Right} ] ] }
