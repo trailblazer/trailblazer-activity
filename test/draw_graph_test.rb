@@ -36,7 +36,7 @@ class DrawGraphTest < Minitest::Spec
   Z = Output.new("bla", :my_z)
 
   it do
-    steps = [
+    tripletts = [
       #  magnetic to
       #  color | signal|outputs
       [ [:success], A,  [R, L] ],
@@ -51,10 +51,36 @@ class DrawGraphTest < Minitest::Spec
       [ [:failure], EF, [] ],
     ]
 
-    bla = Trailblazer::Activity::Schema.bla(steps)
+    pp Trailblazer::Activity::Schema::Magnetic.( tripletts )
 
+  end
 
-    pp bla.to_h
+  it do
+    tripletts = [
+      #  magnetic to
+      #  color | signal|outputs
+      [ [:success], A,  [ Z, L ] ],
+      [ [:success], B, [R, L] ],
+      [ [:success, :my_z], C, [R, L] ],
+
+      [ [:success], ES, [] ],
+      [ [:failure], EF, [] ],
+    ]
+
+    pp Trailblazer::Activity::Schema::Magnetic.( tripletts )
+  end
+
+  # circular
+  it do
+    tripletts = [
+      [ [:success, :to_a], A, [ R, Output.new("SIG", :to_a) ] ],
+      [ [:success], B, [ R ] ],
+
+      [ [:success], ES, [] ],
+      [ [:failure], EF, [] ],
+    ]
+
+    pp Trailblazer::Activity::Schema::Magnetic.( tripletts )
   end
 
   it do
