@@ -11,3 +11,9 @@ Inspect = Trailblazer::Activity::Inspect
 
 Minitest::Spec::Circuit  = Trailblazer::Circuit
 Minitest::Spec::Activity = Trailblazer::Activity
+
+Minitest::Spec.class_eval do
+  def Inspect(*args)
+    Trailblazer::Activity::Inspect::Instance(*args)
+  end
+end

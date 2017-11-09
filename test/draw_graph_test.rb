@@ -51,23 +51,28 @@ class DrawGraphTest < Minitest::Spec
       [ [:failure], EF, [] ],
     ]
 
-    pp Trailblazer::Activity::Schema::Magnetic.( tripletts )
+    graph = Trailblazer::Activity::Schema::Magnetic.( tripletts )
 
+    puts graph.inspect
+    Inspect(graph.inspect).must_equal %{"{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>DrawGraphTest::A}, DrawGraphTest::A=>{Trailblazer::Circuit::Left=>DrawGraphTest::E, Trailblazer::Circuit::Right=>DrawGraphTest::B}, DrawGraphTest::E=>{}, DrawGraphTest::B=>{Trailblazer::Circuit::Right=>DrawGraphTest::C, Trailblazer::Circuit::Left=>DrawGraphTest::F}, DrawGraphTest::C=>{Trailblazer::Circuit::Left=>DrawGraphTest::F, Trailblazer::Circuit::Right=>DrawGraphTest::ES}, DrawGraphTest::F=>{\\\"bla\\\"=>#<Proc:@test/draw_graph_test.rb:11 (lambda)>, Trailblazer::Circuit::Left=>DrawGraphTest::EF}, #<Proc:@test/draw_graph_test.rb:11 (lambda)>=>{}, DrawGraphTest::ES=>{}, DrawGraphTest::EF=>{}}"}
   end
 
+  # A points to C
   it do
     tripletts = [
       #  magnetic to
       #  color | signal|outputs
       [ [:success], A,  [ Z, L ] ],
-      [ [:success], B, [R, L] ],
+      [ [], B, [R, L] ],
       [ [:success, :my_z], C, [R, L] ],
 
       [ [:success], ES, [] ],
       [ [:failure], EF, [] ],
     ]
 
-    pp Trailblazer::Activity::Schema::Magnetic.( tripletts )
+    graph = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+
+    Inspect(graph.inspect).must_equal %{"{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>DrawGraphTest::A}, DrawGraphTest::A=>{\\\"bla\\\"=>DrawGraphTest::C, Trailblazer::Circuit::Left=>DrawGraphTest::EF}, DrawGraphTest::B=>{Trailblazer::Circuit::Right=>DrawGraphTest::C, Trailblazer::Circuit::Left=>DrawGraphTest::EF}, DrawGraphTest::C=>{Trailblazer::Circuit::Right=>DrawGraphTest::ES, Trailblazer::Circuit::Left=>DrawGraphTest::EF}, DrawGraphTest::ES=>{}, DrawGraphTest::EF=>{}}"}
   end
 
   # circular
@@ -80,30 +85,33 @@ class DrawGraphTest < Minitest::Spec
       [ [:failure], EF, [] ],
     ]
 
-    pp Trailblazer::Activity::Schema::Magnetic.( tripletts )
+    graph = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+
+    Inspect(graph.inspect).must_equal %{"{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>DrawGraphTest::A}, DrawGraphTest::A=>{\\\"SIG\\\"=>DrawGraphTest::A, Trailblazer::Circuit::Right=>DrawGraphTest::B}, DrawGraphTest::B=>{Trailblazer::Circuit::Right=>DrawGraphTest::ES}, DrawGraphTest::ES=>{}, DrawGraphTest::EF=>{}}"}
   end
 
-  it do
-    alterations = Trailblazer::Activity::Magnetic::Alterations.new
+  describe "Alterations" do
+    it do
+      alterations = Trailblazer::Activity::Magnetic::Alterations.new
 
-    # happens in Operation::initialize_sequence
-    alterations.add( :EF,  [ [:failure], EF, {}, {} ], group: :end )
-    alterations.add( :ES,  [ [:success], ES, {}, {} ], group: :end )
+      # happens in Operation::initialize_sequence
+      alterations.add( :EF,  [ [:failure], EF, {}, {} ], group: :end )
+      alterations.add( :ES,  [ [:success], ES, {}, {} ], group: :end )
 
-    # step A
-    alterations.add( :A,   [ [:success], A,  { success: :success, failure: :failure }, { Right: :success, Left: :failure }.freeze ] )
+      # step A
+      alterations.add( :A,   [ [:success], A,  { success: :success, failure: :failure }, { Right: :success, Left: :failure }.freeze ] )
 
-    # fail E, success: "End.success"
-    alterations.add( :E,   [ [:failure], E, { success: :failure, failure: :failure },  { Right: :success, Left: :failure }.freeze ], )
-    alterations.connect_to( :E, { success: "e_to_success" } )
+      # fail E, success: "End.success"
+      alterations.add( :E,   [ [:failure], E, { success: :failure, failure: :failure },  { Right: :success, Left: :failure }.freeze ], )
+      alterations.connect_to( :E, { success: "e_to_success" } )
+      alterations.magnetic_to( :ES, ["e_to_success"] ) # existing target: add a "magnetic_to" to it!
 
 
-    alterations.magnetic_to( :ES, ["e_to_success"] ) # existing target: add a "magnetic_to" to it!
-    pp alterations.to_a
+      tripletts = Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations.to_a )
+      graph     = Trailblazer::Activity::Schema::Magnetic.( tripletts )
 
-    pp tripletts = Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations.to_a )
-
-    pp Trailblazer::Activity::Schema::Magnetic.( tripletts )
+      Inspect(graph.inspect).must_equal %{"{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>DrawGraphTest::A}, DrawGraphTest::A=>{:Left=>DrawGraphTest::E, :Right=>DrawGraphTest::ES}, DrawGraphTest::E=>{:Left=>DrawGraphTest::EF, :Right=>DrawGraphTest::ES}, DrawGraphTest::EF=>{}, DrawGraphTest::ES=>{}}"}
+    end
   end
 
   it do
@@ -168,7 +176,7 @@ class DrawGraphTest < Minitest::Spec
 
 
     pp steps = dependencies.to_a
-    bla = Trailblazer::Activity::Schema.bla(steps)
+    bla = Trailblazer::Activity::Schema::Magnetic.(steps)
     pp bla.to_h
   end
 
@@ -186,7 +194,7 @@ class DrawGraphTest < Minitest::Spec
 
     sequence = dependencies.to_a
 
-    sequence.inspect.must_equal %{[[[:success], DrawGraphTest::A, [#<struct Trailblazer::Activity::Schema::Output signal=Trailblazer::Circuit::Right, color=:success>, #<struct Trailblazer::Activity::Schema::Output signal=Trailblazer::Circuit::Left, color=:failure>]], [[:failure], DrawGraphTest::EF, []], [[:success, :another_success], DrawGraphTest::ES, []]]}
+    sequence.inspect.must_equal %{[[[:success], DrawGraphTest::A, [#<struct Trailblazer::Activity::Schema::Magnetic::Output signal=Trailblazer::Circuit::Right, color=:success>, #<struct Trailblazer::Activity::Schema::Magnetic::Output signal=Trailblazer::Circuit::Left, color=:failure>]], [[:another_success], DrawGraphTest::ES, []], [[:failure], DrawGraphTest::EF, []], [[:success], DrawGraphTest::ES, []]]}
   end
 end
 
