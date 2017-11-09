@@ -2,10 +2,14 @@
 
 module Trailblazer
   module Activity::Magnetic
-    Output = Struct.new(:signal, :color)
+    # signal:   actual signal emitted by the task
+    # color:    the mapping, where this signal will travel to. This can be e.g. Left=>:success. The polarization when building the graph.
+    #             "i am traveling towards :success because ::step said so!"
+    # semantic: the original "semantic" or role of the signal, such as :success. This usually comes from the activity hosting this output.
+    Output = Struct.new(:signal, :color, :semantic)
 
-    def self.Output(signal, color)
-      Output.new(signal, color)
+    def self.Output(signal, color, semantic=color)
+      Output.new(signal, color, semantic)
     end
 
     class Alterations # used directly in Magnetic::DSL
@@ -29,9 +33,13 @@ module Trailblazer
 
         arr = group[index].configuration.dup
 
-        raise arr[2].inspect
-        raise connect_to.inspect
-        arr[2] = arr[2].merge(connect_to)
+        connect_to.each do |semantic, color|
+          i = arr[2].find_index { |out| out.semantic == semantic }
+          output = arr[2][i]
+
+          arr[2][i] = Activity::Magnetic.Output(output.signal, color, output.semantic)
+        end
+
         group.add(id, arr, replace: id)
       end
 
