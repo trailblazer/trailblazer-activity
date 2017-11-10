@@ -8,6 +8,8 @@ class ActivityBuildTest < Minitest::Spec
   class G; end
   class I; end
   class J; end
+  class K; end
+  class L; end
 
 
   it do
@@ -27,13 +29,16 @@ class ActivityBuildTest < Minitest::Spec
       task G, id: :receive_process_id, Output(Right, :success) => :success
       # task Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(Right, :success) => :success, Output(Left, :failure) => "report_invalid_result"# do
+      task I, id: :process_result, Output(Right, :success) => :success, Output(Left, :failure) => ->(color) do
 
                                                   # means: :success => "report_invalid_result"-End.invalid_result"
-        task J, id: "report_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result), magnetic_to: "process_result-Trailblazer::Circuit::Right"
-      #end
+        task J, id: "report_invalid_result", Output(Right, :success) => color
+        # task K, id: "log_invalid_result", Output(Right, :success) => color
+        task K, id: "log_invalid_result", Output(Right, :success) =>
+          End("End.invalid_result", :invalid_result)
+      end
 
-      # task Task(), id: :notify_clerk
+      task L, id: :notify_clerk, Output(Right, :success) => :success
     end
   end
 end

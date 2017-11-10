@@ -87,14 +87,15 @@ module Trailblazer
     require "trailblazer/activity/schema/dependencies"
     require "trailblazer/activity/schema/magnetic"
     class DSL
-      def initialize
+      def initialize(sequence=Magnetic::Alterations.new, track_color=:success)
         # @sequence = Schema::Sequence.new
-        @sequence = Magnetic::Alterations.new
-        @outputs  = {}
+        @sequence     = sequence
+        @track_color  = track_color
+        @outputs      = {}
       end
 
-      def task(task, options={})
-        track_color = :success # an actual track gets created by making tasks magnetic_to track_color and give them one output with track_color.
+      def task(task, options={}, &block)
+        track_color = @track_color # an actual track gets created by making tasks magnetic_to track_color and give them one output with track_color.
 
         id          = options[:id] || task.to_s
         magnetic_to = options[:magnetic_to] || track_color
@@ -105,15 +106,19 @@ module Trailblazer
 
         plus_poles = arr.collect { |cfg| cfg[0] }.compact
         adds       = arr.collect { |cfg| cfg[1] }.compact
+        proc, _    = arr.collect { |cfg| cfg[2] }.compact
 
 
         default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, track_color), :success )]
 
+        puts "@@@add: #{id} #{plus_poles}"
         @sequence.add( id, [ [magnetic_to], task, plus_poles ],  )
 
         adds.each do |method, cfg|
           @sequence.send( method, *cfg )
         end
+
+        proc.() if proc
 
         pp @sequence
       end
@@ -135,7 +140,15 @@ module Trailblazer
             [
               Magnetic::PlusPole.new(key, new_edge),
 
-              [ :magnetic_to, [ task, [new_edge] ] ]
+              [ :magnetic_to, [ task, [new_edge] ] ],
+            ]
+          elsif task.is_a?(Proc)
+            dsl = DSL.new(@sequence, color = :"track_#{rand}")
+
+            [
+              Magnetic::PlusPole.new(key, color),
+              nil,
+              ->(*) { dsl.instance_exec(color, &task) }
             ]
           else # An additional plus polarization. Example: Output => :success
             [
