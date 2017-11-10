@@ -27,10 +27,11 @@ class ActivityBuildTest < Minitest::Spec
       task G, id: :receive_process_id, Output(Right, :success) => :success
       # task Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(Left, :failure) => "report_invalid_result", Output(Right, :success) => :success
+      task I, id: :process_result, Output(Right, :success) => :success, Output(Left, :failure) => "report_invalid_result"# do
 
                                                   # means: :success => "report_invalid_result"-End.invalid_result"
-        task J, id: "report_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
+        task J, id: "report_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result), magnetic_to: "process_result-Trailblazer::Circuit::Right"
+      #end
 
       # task Task(), id: :notify_clerk
     end

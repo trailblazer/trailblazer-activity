@@ -95,7 +95,7 @@ module Trailblazer
 
       def task(task, options={})
         id      = options[:id] || task.to_s
-        options = options.reject{ |key,v| key==:id }
+        options = options.reject{ |key,v| [:id, :magnetic_to].include?(key) }
 
 
         arr = process_dsl_options(id, options, @sequence)
@@ -128,7 +128,7 @@ module Trailblazer
               [ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]
             ]
           elsif task.is_a?(String) # let's say this means an existing step
-            new_edge = "#{key}-#{task}"
+            new_edge = "#{key.signal}-#{task}"
 
             # alterations.connect_to(  id, { key => new_edge } )
             # alterations.magnetic_to( task, [new_edge] )
