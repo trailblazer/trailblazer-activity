@@ -94,11 +94,12 @@ module Trailblazer
       end
 
       def task(task, options={})
-        id      = options[:id] || task.to_s
-        options = options.reject{ |key,v| [:id, :magnetic_to].include?(key) }
+        id          = options[:id] || task.to_s
+        magnetic_to = options[:magnetic_to] || :success
+        options     = options.reject{ |key,v| [:id, :magnetic_to].include?(key) }
 
 
-        arr = process_dsl_options(id, options, @sequence)
+        arr = process_dsl_options(id, options)
 
         plus_poles = arr.collect { |cfg| cfg[0] }.compact
         adds       = arr.collect { |cfg| cfg[1] }.compact
@@ -106,7 +107,7 @@ module Trailblazer
 
         default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :success), :success )]
 
-        @sequence.add( id, [ [:success], task, plus_poles ],  )
+        @sequence.add( id, [ [magnetic_to], task, plus_poles ],  )
 
         adds.each do |method, cfg|
           @sequence.send( method, *cfg )
@@ -115,7 +116,7 @@ module Trailblazer
         pp @sequence
       end
 
-      def process_dsl_options(id, options, alterations)
+      def process_dsl_options(id, options)
         # key: Output
         options.collect do |key, task|
           if task.kind_of?(Circuit::End)
@@ -129,9 +130,6 @@ module Trailblazer
             ]
           elsif task.is_a?(String) # let's say this means an existing step
             new_edge = "#{key.signal}-#{task}"
-
-            # alterations.connect_to(  id, { key => new_edge } )
-            # alterations.magnetic_to( task, [new_edge] )
             [
               Magnetic::PlusPole.new(key, new_edge),
 
