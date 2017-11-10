@@ -94,8 +94,10 @@ module Trailblazer
       end
 
       def task(task, options={})
+        track_color = :success # an actual track gets created by making tasks magnetic_to track_color and give them one output with track_color.
+
         id          = options[:id] || task.to_s
-        magnetic_to = options[:magnetic_to] || :success
+        magnetic_to = options[:magnetic_to] || track_color
         options     = options.reject{ |key,v| [:id, :magnetic_to].include?(key) }
 
 
@@ -105,7 +107,7 @@ module Trailblazer
         adds       = arr.collect { |cfg| cfg[1] }.compact
 
 
-        default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :success), :success )]
+        default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, track_color), :success )]
 
         @sequence.add( id, [ [magnetic_to], task, plus_poles ],  )
 
