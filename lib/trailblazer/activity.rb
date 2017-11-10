@@ -87,34 +87,73 @@ module Trailblazer
     require "trailblazer/activity/schema/dependencies"
     require "trailblazer/activity/schema/magnetic"
     class DSL
-      def initialize
+      def initialize(sequence=Magnetic::Alterations.new, track_color=:success)
         # @sequence = Schema::Sequence.new
-        @sequence = Magnetic::Alterations.new
-        @outputs  = {}
+        @sequence     = sequence
+        @track_color  = track_color
+        @outputs      = {}
       end
 
-      def task(task, options={})
-        id = options[:id] || task.to_s
+      def task(task, options={}, &block)
+        track_color = @track_color # an actual track gets created by making tasks magnetic_to track_color and give them one output with track_color.
 
-        @sequence.add( id, [ [:success], task, [ Schema::Magnetic::Output.new( Circuit::Right, :success ) ] ],  )
+        id          = options[:id] || task.to_s
+        magnetic_to = options[:magnetic_to] || track_color
+        options     = options.reject{ |key,v| [:id, :magnetic_to].include?(key) }
 
-        process_dsl_options(id, options, @sequence)
+
+        arr = process_dsl_options(id, options)
+
+        plus_poles = arr.collect { |cfg| cfg[0] }.compact
+        adds       = arr.collect { |cfg| cfg[1] }.compact
+        proc, _    = arr.collect { |cfg| cfg[2] }.compact
+
+
+        default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, track_color), :success )]
+
+        puts "@@@add: #{id} #{plus_poles}"
+        @sequence.add( id, [ [magnetic_to], task, plus_poles ],  )
+
+        adds.each do |method, cfg|
+          @sequence.send( method, *cfg )
+        end
+
+        proc.() if proc
+
+        pp @sequence
       end
 
-      def process_dsl_options(id, options, alterations)
+      def process_dsl_options(id, options)
+        # key: Output
         options.collect do |key, task|
           if task.kind_of?(Circuit::End)
-            new_edge = "#{id}-#{key}"
+            new_edge = "#{id}-#{key.signal}"
 
-            alterations.connect_to( id, { key => new_edge } )
-            alterations.add( task.instance_variable_get(:@name), [ [key], task, {}, {} ], group: :end  )
+            [
+              # assuming key is an Output
+              Magnetic::PlusPole.new(key, new_edge),
+
+              [ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]
+            ]
           elsif task.is_a?(String) # let's say this means an existing step
-            new_edge = "#{key}-#{task}"
+            new_edge = "#{key.signal}-#{task}"
+            [
+              Magnetic::PlusPole.new(key, new_edge),
 
-            alterations.connect_to(  id, { key => new_edge } )
-            alterations.magnetic_to( task, [new_edge] )
-          else # only an additional plus polarization going to the right (outgoing)
-            # alterations.connect_to(  id, { key => key } )
+              [ :magnetic_to, [ task, [new_edge] ] ],
+            ]
+          elsif task.is_a?(Proc)
+            dsl = DSL.new(@sequence, color = :"track_#{rand}")
+
+            [
+              Magnetic::PlusPole.new(key, color),
+              nil,
+              ->(*) { dsl.instance_exec(color, &task) }
+            ]
+          else # An additional plus polarization. Example: Output => :success
+            [
+              Magnetic::PlusPole.new(key, task)
+            ]
           end
         end
       end
@@ -122,6 +161,10 @@ module Trailblazer
       def End(name, semantic)
         @outputs[ evt = Circuit::End.new(name) ] = semantic
         evt
+      end
+
+      def Output(signal, semantic)
+        Magnetic.Output(signal, semantic)
       end
 
       def to_a
@@ -140,7 +183,8 @@ module Trailblazer
       # pp tripletts
 
       # tripletts = Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations )
-      pp circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+      circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+
     end
 
     def initialize(circuit_hash, outputs)
