@@ -10,25 +10,36 @@ class ActivityBuildTest < Minitest::Spec
 
   it do
     activity = Activity.build do
-      def Task
-        ->(*) { snippet }
-      end
+      A = ->(*) { snippet }
+      B = ->(*) { snippet }
+      C = ->(*) { snippet }
+      D = ->(*) { snippet }
+      E = ->(*) { snippet }
+      F = ->(*) { snippet }
+      G = ->(*) { snippet }
+      H = ->(*) { snippet }
+      I = ->(*) { snippet }
+      J = ->(*) { snippet }
+      K = ->(*) { snippet }
 
-      task Task(), id: :inquiry_create, Left => :suspend_for_correct
-        task Task(), id: :suspend_for_correct, Right => :inquiry_create
-      task Task(), id: :notify_pickup
-      task Task(), id: :suspend_for_pickup
+      # task A, id: :inquiry_create, Left => :suspend_for_correct
+      #   task B, id: :suspend_for_correct, Right => :inquiry_create
+      # task C, id: :notify_pickup
+      # task D, id: :suspend_for_pickup
 
-      task Task(), id: :pickup
-      task Task(), id: :suspend_for_process_id
+      # task E, id: :pickup
+      # task F, id: :suspend_for_process_id
 
-      task Task(), id: :receive_process_id
-      task Task(), id: :suspend_wait_for_result
+      # task G, id: :receive_process_id
+      # task H, id: :suspend_wait_for_result
 
-      task Task(), id: :process_result, Left => :report_invalid_result
-        task Task(), id: :report_invalid_result, Right => End("End.invalid_result", :invalid_result)
+      # task I, id: :process_result, Left => :report_invalid_result
 
-      task Task(), id: :notify_clerk
+
+        #task J, id: :report_invalid_result, Right => End("End.invalid_result", :invalid_result)
+        task J, id: :report_invalid_result, Output(Left, :failure) => End("End.invalid_result", :invalid_result)
+
+      task K, id: :notify_clerk
     end
   end
 end
