@@ -5,6 +5,8 @@ class ActivityBuildTest < Minitest::Spec
   Right = Trailblazer::Circuit::Right
 
 
+  class G; end
+  class I; end
   class J; end
 
 
@@ -22,13 +24,13 @@ class ActivityBuildTest < Minitest::Spec
       # task Task(), id: :pickup
       # task Task(), id: :suspend_for_process_id
 
-      # task Task(), id: :receive_process_id
+      task G, id: :receive_process_id, Output(Right, :success) => :success
       # task Task(), id: :suspend_wait_for_result
 
-      # task Task(), id: :process_result, Output(Left, :failure) => :report_invalid_result
+      task I, id: :process_result, Output(Left, :failure) => "report_invalid_result", Output(Right, :success) => :success
 
-                                                  # means: :success => "report_invalid_result-End.invalid_result"
-        task J, id: :report_invalid_result, Output(Right, :success) => End("End.invalid_result", :invalid_result)
+                                                  # means: :success => "report_invalid_result"-End.invalid_result"
+        task J, id: "report_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
 
       # task Task(), id: :notify_clerk
     end

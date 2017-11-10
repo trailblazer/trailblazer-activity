@@ -36,20 +36,20 @@ module Trailblazer
         end
       end
 
-      def connect_to(id, connect_to)
-        group, index = @groups.find(id)
+      # def connect_to(id, connect_to)
+      #   group, index = @groups.find(id)
 
-        arr = group[index].configuration.dup
+      #   arr = group[index].configuration.dup
 
-        connect_to.each do |semantic, color|
-          i = arr[2].find_index { |out| out.semantic == semantic }
-          output = arr[2][i]
+      #   connect_to.each do |semantic, color|
+      #     i = arr[2].find_index { |out| out.semantic == semantic }
+      #     output = arr[2][i]
 
-          arr[2][i] = Activity::Magnetic.Output(output.signal, color, output.semantic)
-        end
+      #     arr[2][i] = Activity::Magnetic.Output(output.signal, color, output.semantic)
+      #   end
 
-        group.add(id, arr, replace: id)
-      end
+      #   group.add(id, arr, replace: id)
+      # end
 
       def magnetic_to(id, magnetic_to)
         group, index = @groups.find(id) # this can be a future task!
@@ -79,26 +79,6 @@ module Trailblazer
         @groups.to_a
       end
     end # Alterations
-
-    class ConnectionFinalizer
-      def self.call(elements) # receives Alterations.to_a
-        elements.collect do |(magnetic_to, task, connect_to, outputs)|
-          outputs = role_to_plus_pole( outputs, connect_to )
-
-          [ magnetic_to, task, outputs ] # instruction for GraphHash().
-        end
-      end
-
-      # Connect all outputs of the task: find the appropriate color for the signal semantic by
-      # using connect_to, which comes from the DSL.
-      def self.role_to_plus_pole(outputs, connect_to)
-        outputs.collect do |signal, role|
-          color = connect_to[ role ] or raise "Couldn't map output role #{role.inspect} for #{connect_to.inspect}"
-
-          Activity::Schema::Magnetic::Output.new(signal, color)
-        end
-      end
-    end
   end
 
   class Activity::Schema

@@ -15,9 +15,7 @@ module Trailblazer
         end
 
         def pop(signal, &block)
-          lines = @arr.find_all { |line|
-pp line
-            line.output.color == signal }
+          lines = @arr.find_all { |line| line.output.color == signal }
           @arr -= lines
 
           lines.each(&block)
@@ -47,7 +45,7 @@ pp line
             end and next
 
             # only run when there were no open_minus_poles
-            open_minus_poles << [node, Activity::Magnetic::Output.new(nil, edge_color)] # fixme: THIS IS AN INPUT
+            open_minus_poles << [node, Activity::Magnetic::PlusPole.new(nil, edge_color)] # fixme: THIS IS AN INPUT
           end
 
           outputs.each do |output|

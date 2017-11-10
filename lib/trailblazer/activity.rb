@@ -94,7 +94,9 @@ module Trailblazer
       end
 
       def task(task, options={})
-        id = options[:id] || task.to_s
+        id      = options[:id] || task.to_s
+        options = options.reject{ |key,v| key==:id }
+
 
         arr = process_dsl_options(id, options, @sequence)
 
@@ -102,20 +104,19 @@ module Trailblazer
         adds       = arr.collect { |cfg| cfg[1] }.compact
 
 
-        # pp plus_poles
-
         default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :success), :success )]
 
         @sequence.add( id, [ [:success], task, plus_poles ],  )
 
-        adds.each do |cfg|
-          @sequence.add( *cfg )
+        adds.each do |method, cfg|
+          @sequence.send( method, *cfg )
         end
 
         pp @sequence
       end
 
       def process_dsl_options(id, options, alterations)
+        # key: Output
         options.collect do |key, task|
           if task.kind_of?(Circuit::End)
             new_edge = "#{id}-#{key.signal}"
@@ -124,21 +125,22 @@ module Trailblazer
               # assuming key is an Output
               Magnetic::PlusPole.new(key, new_edge),
 
-              [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end]
+              [ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]
             ]
-
-            # raise key.inspect
-
-            # alterations.connect_to( id, { key => new_edge } )
-            # alterations.add(   )
           elsif task.is_a?(String) # let's say this means an existing step
             new_edge = "#{key}-#{task}"
 
-            alterations.connect_to(  id, { key => new_edge } )
-            alterations.magnetic_to( task, [new_edge] )
-          else # only an additional plus polarization going to the right (outgoing)
-            # alterations.connect_to(  id, { key => key } )
-            []
+            # alterations.connect_to(  id, { key => new_edge } )
+            # alterations.magnetic_to( task, [new_edge] )
+            [
+              Magnetic::PlusPole.new(key, new_edge),
+
+              [ :magnetic_to, [ task, [new_edge] ] ]
+            ]
+          else # An additional plus polarization. Example: Output => :success
+            [
+              Magnetic::PlusPole.new(key, task)
+            ]
           end
         end
       end
