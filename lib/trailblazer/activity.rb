@@ -183,7 +183,8 @@ module Trailblazer
       # pp tripletts
 
       # tripletts = Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations )
-      pp circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+      circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+
     end
 
     def initialize(circuit_hash, outputs)
