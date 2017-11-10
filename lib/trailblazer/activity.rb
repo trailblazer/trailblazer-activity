@@ -96,18 +96,41 @@ module Trailblazer
       def task(task, options={})
         id = options[:id] || task.to_s
 
-        @sequence.add( id, [ [:success], task, [ Schema::Magnetic::Output.new( Circuit::Right, :success ) ] ],  )
+        arr = process_dsl_options(id, options, @sequence)
 
-        process_dsl_options(id, options, @sequence)
+        plus_poles = arr.collect { |cfg| cfg[0] }.compact
+        adds       = arr.collect { |cfg| cfg[1] }.compact
+
+
+        # pp plus_poles
+
+        default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :success), :success )]
+
+        @sequence.add( id, [ [:success], task, plus_poles ],  )
+
+        adds.each do |cfg|
+          @sequence.add( *cfg )
+        end
+
+        pp @sequence
       end
 
       def process_dsl_options(id, options, alterations)
         options.collect do |key, task|
           if task.kind_of?(Circuit::End)
-            new_edge = "#{id}-#{key}"
+            new_edge = "#{id}-#{key.signal}"
 
-            alterations.connect_to( id, { key => new_edge } )
-            alterations.add( task.instance_variable_get(:@name), [ [key], task, {}, {} ], group: :end  )
+            [
+              # assuming key is an Output
+              Magnetic::PlusPole.new(key, new_edge),
+
+              [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end]
+            ]
+
+            # raise key.inspect
+
+            # alterations.connect_to( id, { key => new_edge } )
+            # alterations.add(   )
           elsif task.is_a?(String) # let's say this means an existing step
             new_edge = "#{key}-#{task}"
 
@@ -115,6 +138,7 @@ module Trailblazer
             alterations.magnetic_to( task, [new_edge] )
           else # only an additional plus polarization going to the right (outgoing)
             # alterations.connect_to(  id, { key => key } )
+            []
           end
         end
       end
@@ -122,6 +146,10 @@ module Trailblazer
       def End(name, semantic)
         @outputs[ evt = Circuit::End.new(name) ] = semantic
         evt
+      end
+
+      def Output(signal, semantic)
+        Magnetic.Output(signal, semantic)
       end
 
       def to_a

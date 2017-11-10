@@ -2,6 +2,8 @@ module Trailblazer
   # Schema helps you managing the construction of an {Activity}.
   # It is used in the Operation and Activity DSL, and also for the TaskWrap.
   # A Schema always produces an Activity.
+  #
+  # only knows about PlusPole
   class Activity::Schema
     module Magnetic
 
@@ -13,7 +15,9 @@ module Trailblazer
         end
 
         def pop(signal, &block)
-          lines = @arr.find_all { |line| line.output.color == signal }
+          lines = @arr.find_all { |line|
+pp line
+            line.output.color == signal }
           @arr -= lines
 
           lines.each(&block)
@@ -31,7 +35,7 @@ module Trailblazer
         circuit_hash        = {}
 
         start_tasks = start_events.collect do |evt|
-          [ [], evt, [ Activity::Magnetic::Output.new(Circuit::Right, :success) ] ]
+          [ [], evt, [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), :success) ] ]
         end
 
         (start_tasks + tasks).each do |(magnetic_to, node, outputs)|
