@@ -12,14 +12,14 @@ class RailwayTest < Minitest::Spec
     magnetic_to, plus_poles = Activity::DSL::PoleGenerator::Railway.step( A, plus_poles: initial_plus_poles )
 
     magnetic_to.must_equal [:success]
-    plus_poles.inspect.must_equal %{}
+    Inspect(plus_poles.to_a).must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:success>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:failure>, color=:failure>]}
   end
 
   it do
     magnetic_to, plus_poles = Activity::DSL::PoleGenerator::Railway.fail( A, plus_poles: initial_plus_poles )
 
     magnetic_to.must_equal [:failure]
-    plus_poles.inspect.must_equal %{}
+    Inspect(plus_poles.to_a).must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:failure>, color=:failure>]}
   end
 
   it do
