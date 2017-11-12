@@ -39,8 +39,8 @@ module Trailblazer
         merge( Hash[ary] )
       end
 
-      def to_h
-        @plus_poles
+      def to_a
+        @plus_poles.values.collect { |output, color| Activity::Magnetic::PlusPole.new(output, color) }
       end
     end
 
