@@ -86,6 +86,8 @@ module Trailblazer
 
     require "trailblazer/activity/schema/dependencies"
     require "trailblazer/activity/schema/magnetic"
+    # DSL is only supposed to know about magnetism and the generic DSL, *not* about specific edge colors
+    # or Railway-oriented features such as two outgoing edges, etc.
     class DSL
       def initialize(sequence=Magnetic::Alterations.new, track_color=:success)
         # @sequence = Schema::Sequence.new
@@ -109,7 +111,11 @@ module Trailblazer
         proc, _    = arr.collect { |cfg| cfg[2] }.compact
 
 
-        default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, track_color), :success )]
+        default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :success), track_color )]
+        # railway_step_plus_poles = [
+        #   Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :success), track_color ),
+        #   Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :failure), failure_track_color )
+        # ]
 
         puts "@@@add: #{id} #{plus_poles}"
         @sequence.add( id, [ [magnetic_to], task, plus_poles ],  )
@@ -123,6 +129,9 @@ module Trailblazer
         pp @sequence
       end
 
+      # Output => target (End/"id"/:color)
+      # @return [PlusPole]
+      # @return additional alterations
       def process_dsl_options(id, options)
         # key: Output
         options.collect do |key, task|

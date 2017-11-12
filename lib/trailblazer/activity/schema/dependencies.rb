@@ -16,6 +16,30 @@ module Trailblazer
       end
     end
 
+
+    # Output(:signal, :semantic) => :color
+      # add / merge
+      #   change existing, => color
+    class PlusPoles
+      def initialize(plus_poles={})
+        @plus_poles = plus_poles.freeze
+      end
+
+      def merge(map)
+        overrides = Hash[ map.collect { |output, color| [ output.semantic, [output, color] ] } ]
+        PlusPoles.new(@plus_poles.merge(overrides))
+      end
+
+      def reconnect(semantic, color)
+        existing_output, _color = @plus_poles[semantic]
+        merge( Activity::Magnetic.Output(existing_output.signal, existing_output.semantic) => color )
+      end
+
+      def to_h
+        @plus_poles
+      end
+    end
+
     def self.Output(signal, color)
       Output.new(signal, color).freeze
     end
