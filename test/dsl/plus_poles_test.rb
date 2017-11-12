@@ -29,8 +29,13 @@ class PlusPolesTest < Minitest::Spec
     new_poles = poles.merge( Activity::Magnetic.Output(Right, :success) => :success, Activity::Magnetic.Output(Left, :failure) => :failure )
 
     # reconnect
-    new_poles = new_poles.reconnect(:success, :red)
+    new_poles = new_poles.reconnect(:success => :red)
 
     new_poles.to_h.inspect.must_equal %{{:success=>[#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, :red], :failure=>[#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, :failure]}}
+
+    # reconnect with multiple keys
+    new_poles = new_poles.reconnect(:success => :green, :failure => :greenish)
+
+    new_poles.to_h.inspect.must_equal %{{:success=>[#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, :green], :failure=>[#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, :greenish]}}
   end
 end

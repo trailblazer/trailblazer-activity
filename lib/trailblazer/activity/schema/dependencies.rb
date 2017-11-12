@@ -30,9 +30,13 @@ module Trailblazer
         PlusPoles.new(@plus_poles.merge(overrides))
       end
 
-      def reconnect(semantic, color)
-        existing_output, _color = @plus_poles[semantic]
-        merge( Activity::Magnetic.Output(existing_output.signal, existing_output.semantic) => color )
+      def reconnect(semantic_to_color)
+        ary = semantic_to_color.collect do |semantic, color|
+          existing_output, _ = @plus_poles[semantic]
+          [ Activity::Magnetic.Output(existing_output.signal, existing_output.semantic), color ]
+        end
+
+        merge( Hash[ary] )
       end
 
       def to_h
