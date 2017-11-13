@@ -89,14 +89,18 @@ module Trailblazer
     # DSL is only supposed to know about magnetism and the generic DSL, *not* about specific edge colors
     # or Railway-oriented features such as two outgoing edges, etc.
     class DSL
-      def self.alter_sequence(sequence, task, options={}, id:raise, strategy:raise, plus_poles:raise, &block)
+      # add new task with Polarizations
+      # add new connections
+      # add new ends
+      def self.alter_sequence(sequence, task, options={}, id:raise, strategy:raise, &block)
         # 1. sort generic options
         id          = options[:id] || task.to_s
         # magnetic_to = options[:magnetic_to] || track_color
         options     = options.reject{ |key,v| [:id, :magnetic_to].include?(key) }
 
         # 2. compute default Polarizations by running the strategy
-        magnetic_to, plus_poles = strategy.(task, plus_poles: plus_poles )
+        strategy, args = strategy
+        magnetic_to, plus_poles = strategy.(task, args )
 
         # 3. process user options
         arr = process_dsl_options(id, options)
@@ -124,11 +128,16 @@ module Trailblazer
         # @sequence = Schema::Sequence.new
         @sequence     = sequence
         @track_color  = track_color
-        @outputs      = {}
+        # @outputs      = {}
+        @initial_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
+          Activity::Magnetic.Output(Circuit::Right, :success) => track_color
+        ).freeze
       end
 
       def task(task, options={}, &block)
-
+        @sequence = DSL.alter_sequence( @sequence, task, options, id: options[:id],
+          strategy: [ PoleGenerator::Path.method(:task), plus_poles: @initial_plus_poles, track_color: @track_color],
+          &block )
       end
 
       # Output => target (End/"id"/:color)
