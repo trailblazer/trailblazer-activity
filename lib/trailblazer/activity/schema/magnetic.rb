@@ -27,16 +27,12 @@ module Trailblazer
         end
       end
 
-      def self.call(tasks, start_events: [Circuit::Start.new(:default)])
+      def self.call(tasks)
         open_plus_poles = OpenLines.new
         open_minus_poles    = OpenLines.new
         circuit_hash        = {}
 
-        start_tasks = start_events.collect do |evt|
-          [ [], evt, [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), :success) ] ]
-        end
-
-        (start_tasks + tasks).each do |(magnetic_to, node, outputs)|
+        tasks.each do |(magnetic_to, node, outputs)|
           circuit_hash[ node ] ||= {} # DISCUSS: or needed?
 
           magnetic_to.each do |edge_color| # minus poles

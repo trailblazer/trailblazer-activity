@@ -124,25 +124,6 @@ module Trailblazer
         sequence
       end
 
-      def initialize(sequence=Magnetic::Alterations.new, track_color=:success)
-        # @sequence = Schema::Sequence.new
-        @sequence     = sequence
-        @track_color  = track_color
-        # @outputs      = {}
-
-        # these are initial pole(s) for a path.
-        @initial_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
-          Activity::Magnetic.Output(Circuit::Right, :success) => track_color
-        ).freeze
-      end
-
-      def task(task, options={}, &block)
-        # puts "!!!!task #{@sequence}"
-        @sequence = DSL.alter_sequence( @sequence, task, options, id: options[:id],
-          strategy: [ PoleGenerator::Path.method(:task), plus_poles: @initial_plus_poles, track_color: @track_color],
-          &block )
-      end
-
       # Output => target (End/"id"/:color)
       # @return [PlusPole]
       # @return additional alterations
@@ -198,14 +179,37 @@ module Trailblazer
       def to_a
         @sequence.to_a
       end
+
+      def initialize(sequence=Magnetic::Alterations.new, track_color=:success)
+        # @sequence = Schema::Sequence.new
+        @sequence     = sequence
+        @track_color  = track_color
+        # @outputs      = {}
+
+        # these are initial pole(s) for a path.
+        @initial_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
+          Activity::Magnetic.Output(Circuit::Right, :success) => track_color
+        ).freeze
+      end
+
+      def task(task, options={}, &block)
+        # puts "!!!!task #{@sequence}"
+        @sequence = DSL.alter_sequence( @sequence, task, options, id: options[:id],
+          strategy: [ PoleGenerator::Path.method(:task), plus_poles: @initial_plus_poles, track_color: @track_color],
+          &block )
+      end
     end
 
     def self.build(&block)
       dsl = DSL.new
+
+      dsl.instance_variable_get(:@sequence).
+        add( "Start.default", [ [], Circuit::Start.new(:default), [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), :success) ] ], group: :start )
+
       dsl.instance_exec(&block)
       # pp dsl
       dsl.instance_variable_get(:@sequence).
-        add( "End.success", [ [:success], Circuit::End.new(:success), {}, {} ], group: :end )
+        add( "End.success", [ [:success], Circuit::End.new(:success), [] ], group: :end )
 
       tripletts = dsl.to_a
       # pp tripletts
