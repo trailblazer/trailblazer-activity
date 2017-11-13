@@ -28,4 +28,12 @@ class RailwayTest < Minitest::Spec
     magnetic_to.must_equal [:success]
     Inspect(plus_poles.to_a).must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:success>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:failure>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Activity::DSL::PoleGenerator::FastTrack::FailFast, semantic=:fail_fast>, color=:fail_fast>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Activity::DSL::PoleGenerator::FastTrack::PassFast, semantic=:pass_fast>, color=:pass_fast>]}
   end
+
+  # with different colors, we get different paths.
+  it do
+    magnetic_to, plus_poles = Activity::DSL::PoleGenerator::FastTrack.step( A, plus_poles: initial_plus_poles, fast_track: true, track_color: ":success-again", failure_color: "failure-0" )
+
+    magnetic_to.must_equal [":success-again"]
+    Inspect(plus_poles.to_a).must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=":success-again">, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:failure>, color="failure-0">, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Activity::DSL::PoleGenerator::FastTrack::FailFast, semantic=:fail_fast>, color=:fail_fast>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Activity::DSL::PoleGenerator::FastTrack::PassFast, semantic=:pass_fast>, color=:pass_fast>]}
+  end
 end
