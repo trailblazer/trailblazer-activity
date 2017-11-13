@@ -200,16 +200,22 @@ module Trailblazer
       end
     end
 
-    def self.build(&block)
-      dsl = DSL.new
+    def self.plan(&block)
+      sequence = Magnetic::Alterations.new
 
-      dsl.instance_variable_get(:@sequence).
+      # add Start
+      sequence.
         add( "Start.default", [ [], Circuit::Start.new(:default), [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), :success) ] ], group: :start )
+      # add Path End (only one)
+      sequence.
+        add( "End.success", [ [:success], Circuit::End.new(:success), [] ], group: :end )
+
+      dsl = DSL.new(sequence)
+
 
       dsl.instance_exec(&block)
+
       # pp dsl
-      dsl.instance_variable_get(:@sequence).
-        add( "End.success", [ [:success], Circuit::End.new(:success), [] ], group: :end )
 
       tripletts = dsl.to_a
       # pp tripletts
