@@ -89,7 +89,7 @@ module Trailblazer
     # DSL is only supposed to know about magnetism and the generic DSL, *not* about specific edge colors
     # or Railway-oriented features such as two outgoing edges, etc.
     class DSL
-      def self.alter_sequence(task, options={}, id:raise, strategy:raise, plus_poles:raise, sequence:raise, &block)
+      def self.alter_sequence(sequence, task, options={}, id:raise, strategy:raise, plus_poles:raise, &block)
         # 1. sort generic options
         id          = options[:id] || task.to_s
         # magnetic_to = options[:magnetic_to] || track_color
