@@ -137,6 +137,7 @@ module Trailblazer
       end
 
       def task(task, options={}, &block)
+        # puts "!!!!task #{@sequence}"
         @sequence = DSL.alter_sequence( @sequence, task, options, id: options[:id],
           strategy: [ PoleGenerator::Path.method(:task), plus_poles: @initial_plus_poles, track_color: @track_color],
           &block )
