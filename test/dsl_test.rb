@@ -77,14 +77,18 @@ class ActivityBuildTest < Minitest::Spec
     seq = Activity::DSL.alter_sequence(
       G,
         id: :receive_process_id,
-        strategy: ->(*args) { Activity::DSL::PoleGenerator::FastTrack.step(*args) },
+        strategy: Activity::DSL::PoleGenerator::FastTrack.method(:step),
         plus_poles: initial_plus_poles,
         sequence: Activity::Magnetic::Alterations.new,
 
-        Activity::Magnetic.Output(Right, :success) => Circuit::End.new("End.invalid_result")#("End.invalid_result", :invalid_result)
+        # existing success to new end
+        Activity::Magnetic.Output(Right, :success) => Circuit::End.new("End.invalid_result"),
+
+        Activity::Magnetic.Output("Signal A", :exception) => Circuit::End.new("End.signal_a_reached"),
      )
 
     pp seq
+    Inspect(seq).must_equal %{#<Trailblazer::Activity::Magnetic::Alterations: @groups=#<Trailblazer::Activity::Schema::Magnetic::Dependencies: @groups={:start=>[], :main=>[#<struct Trailblazer::Activity::Schema::Sequence::Element id=\"ActivityBuildTest::G\", configuration=[[:success], ActivityBuildTest::G, [#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=\"ActivityBuildTest::G-Trailblazer::Circuit::Right\">, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:failure>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"Signal A\", semantic=:exception>, color=\"ActivityBuildTest::G-Signal A\">]]>], :end=>[#<struct Trailblazer::Activity::Schema::Sequence::Element id=\"End.invalid_result\", configuration=[[\"ActivityBuildTest::G-Trailblazer::Circuit::Right\"], #<Trailblazer::Circuit::End: @name=\"End.invalid_result\", @options={}>, []]>, #<struct Trailblazer::Activity::Schema::Sequence::Element id=\"End.signal_a_reached\", configuration=[[\"ActivityBuildTest::G-Signal A\"], #<Trailblazer::Circuit::End: @name=\"End.signal_a_reached\", @options={}>, []]>], :unresolved=>[]}, @order=[:start, :main, :end, :unresolved]>, @future_magnetic_to={}>}
   end
 
 end
