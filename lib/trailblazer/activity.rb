@@ -128,33 +128,7 @@ module Trailblazer
       end
 
       def task(task, options={}, &block)
-        return
 
-
-        track_color = @track_color # an actual track gets created by making tasks magnetic_to track_color and give them one output with track_color.
-
-        id          = options[:id] || task.to_s
-        magnetic_to = options[:magnetic_to] || track_color
-        options     = options.reject{ |key,v| [:id, :magnetic_to].include?(key) }
-
-
-        arr = process_dsl_options(id, options)
-
-        plus_poles = arr.collect { |cfg| cfg[0] }.compact
-        adds       = arr.collect { |cfg| cfg[1] }.compact
-        proc, _    = arr.collect { |cfg| cfg[2] }.compact
-
-
-        puts "@@@add: #{id} #{plus_poles}"
-        @sequence.add( id, [ [magnetic_to], task, plus_poles ],  )
-
-        adds.each do |method, cfg|
-          @sequence.send( method, *cfg )
-        end
-
-        proc.() if proc
-
-        pp @sequence
       end
 
       # Output => target (End/"id"/:color)
