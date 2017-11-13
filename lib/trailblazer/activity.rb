@@ -89,6 +89,37 @@ module Trailblazer
     # DSL is only supposed to know about magnetism and the generic DSL, *not* about specific edge colors
     # or Railway-oriented features such as two outgoing edges, etc.
     class DSL
+      def self.alter_sequence(task, options={}, id:raise, strategy:raise, plus_poles:raise, sequence:raise, &block)
+        # 1. sort generic options
+        id          = options[:id] || task.to_s
+        # magnetic_to = options[:magnetic_to] || track_color
+        options     = options.reject{ |key,v| [:id, :magnetic_to].include?(key) }
+
+        # 2. compute default Polarizations by running the strategy
+        magnetic_to, plus_poles = strategy.(task, plus_poles: plus_poles )
+
+        # 3. process user options
+        arr = process_dsl_options(id, options)
+
+        _plus_poles = arr.collect { |cfg| cfg[0] }.compact
+        adds       = arr.collect { |cfg| cfg[1] }.compact
+        proc, _    = arr.collect { |cfg| cfg[2] }.compact
+
+        # 4. merge them with the default Polarizations
+        # raise _plus_poles.inspect
+        plus_poles = plus_poles.merge( Hash[_plus_poles] )
+
+        # pp plus_poles
+
+        # 5. seq.add step, polarizations
+        sequence.add( id, [ magnetic_to, task, plus_poles.to_a ],  )
+        # 6. add additional steps
+        # 7. execute blocks
+
+
+        sequence
+      end
+
       def initialize(sequence=Magnetic::Alterations.new, track_color=:success)
         # @sequence = Schema::Sequence.new
         @sequence     = sequence
@@ -97,6 +128,9 @@ module Trailblazer
       end
 
       def task(task, options={}, &block)
+        return
+
+
         track_color = @track_color # an actual track gets created by making tasks magnetic_to track_color and give them one output with track_color.
 
         id          = options[:id] || task.to_s
@@ -110,12 +144,6 @@ module Trailblazer
         adds       = arr.collect { |cfg| cfg[1] }.compact
         proc, _    = arr.collect { |cfg| cfg[2] }.compact
 
-
-        default_plus_poles = [Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :success), track_color )]
-        # railway_step_plus_poles = [
-        #   Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :success), track_color ),
-        #   Magnetic::PlusPole.new( Magnetic::Output(Circuit::Right, :failure), failure_track_color )
-        # ]
 
         puts "@@@add: #{id} #{plus_poles}"
         @sequence.add( id, [ [magnetic_to], task, plus_poles ],  )
@@ -132,15 +160,18 @@ module Trailblazer
       # Output => target (End/"id"/:color)
       # @return [PlusPole]
       # @return additional alterations
-      def process_dsl_options(id, options)
+      def self.process_dsl_options(id, options)
         # key: Output
         options.collect do |key, task|
+          output = key
+
           if task.kind_of?(Circuit::End)
             new_edge = "#{id}-#{key.signal}"
 
             [
               # assuming key is an Output
-              Magnetic::PlusPole.new(key, new_edge),
+              # Magnetic::PlusPole.new(key, new_edge),
+              [ output, new_edge ],
 
               [ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]
             ]

@@ -70,6 +70,23 @@ class ActivityBuildTest < Minitest::Spec
     puts Inspect(activity).must_equal %{{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>ActivityBuildTest::G}, ActivityBuildTest::G=>{Trailblazer::Circuit::Right=>ActivityBuildTest::I}, ActivityBuildTest::I=>{Trailblazer::Circuit::Left=>ActivityBuildTest::J, Trailblazer::Circuit::Right=>ActivityBuildTest::L}, ActivityBuildTest::J=>{Trailblazer::Circuit::Right=>ActivityBuildTest::K}, ActivityBuildTest::K=>{Trailblazer::Circuit::Right=>#<Trailblazer::Circuit::End: @name="End.invalid_result", @options={}>}, ActivityBuildTest::L=>{Trailblazer::Circuit::Right=>#<Trailblazer::Circuit::End: @name=:success, @options={}>}, #<Trailblazer::Circuit::End: @name="End.invalid_result", @options={}>=>{}, #<Trailblazer::Circuit::End: @name=:success, @options={}>=>{}}}
   end
 
+  require "trailblazer/activity/dsl/railway"
+  it "what" do
+    initial_plus_poles = Activity::Magnetic::PlusPoles.new.merge( Activity::Magnetic.Output(Circuit::Right, :success) => :success, Activity::Magnetic.Output(Circuit::Right, :failure) => :failure )
+
+    seq = Activity::DSL.alter_sequence(
+      G,
+        id: :receive_process_id,
+        strategy: ->(*args) { Activity::DSL::PoleGenerator::FastTrack.step(*args) },
+        plus_poles: initial_plus_poles,
+        sequence: Activity::Magnetic::Alterations.new,
+
+        Activity::Magnetic.Output(Right, :success) => Circuit::End.new("End.invalid_result")#("End.invalid_result", :invalid_result)
+     )
+
+    pp seq
+  end
+
 end
 
 
