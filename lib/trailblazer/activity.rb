@@ -103,7 +103,7 @@ module Trailblazer
         magnetic_to, plus_poles = strategy.(task, args )
 
         # 3. process user options
-        arr = process_dsl_options(id, options)
+        arr = process_dsl_options(sequence, id, options)
 
         _plus_poles = arr.collect { |cfg| cfg[0] }.compact
         adds       = arr.collect { |cfg| cfg[1] }.compact
@@ -112,7 +112,7 @@ module Trailblazer
         # 4. merge them with the default Polarizations
         plus_poles = plus_poles.merge( Hash[_plus_poles] )
 
-        # pp plus_poles
+         # pp plus_poles
 
         # 5. seq.add step, polarizations
         sequence.add( id, [ magnetic_to, task, plus_poles.to_a ],  )
@@ -129,12 +129,15 @@ module Trailblazer
         @sequence     = sequence
         @track_color  = track_color
         # @outputs      = {}
+
+        # these are initial pole(s) for a path.
         @initial_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
           Activity::Magnetic.Output(Circuit::Right, :success) => track_color
         ).freeze
       end
 
       def task(task, options={}, &block)
+        # puts "!!!!task #{@sequence}"
         @sequence = DSL.alter_sequence( @sequence, task, options, id: options[:id],
           strategy: [ PoleGenerator::Path.method(:task), plus_poles: @initial_plus_poles, track_color: @track_color],
           &block )
@@ -143,7 +146,7 @@ module Trailblazer
       # Output => target (End/"id"/:color)
       # @return [PlusPole]
       # @return additional alterations
-      def self.process_dsl_options(id, options)
+      def self.process_dsl_options(sequence, id, options)
         # key: Output
         options.collect do |key, task|
           output = key
@@ -166,23 +169,25 @@ module Trailblazer
               [ :magnetic_to, [ task, [new_edge] ] ],
             ]
           elsif task.is_a?(Proc)
-            dsl = DSL.new(@sequence, color = :"track_#{rand}")
+            dsl = DSL.new(sequence, color = :"track_#{rand}")
 
             [
-              Magnetic::PlusPole.new(key, color),
+              [ output, color ],
+              # Magnetic::PlusPole.new(key, color),
               nil,
               ->(*) { dsl.instance_exec(color, &task) }
             ]
           else # An additional plus polarization. Example: Output => :success
             [
-              Magnetic::PlusPole.new(key, task)
+              [ output, task ]
+              #Magnetic::PlusPole.new(key, task)
             ]
           end
         end
       end
 
       def End(name, semantic)
-        @outputs[ evt = Circuit::End.new(name) ] = semantic
+         evt = Circuit::End.new(name)
         evt
       end
 
