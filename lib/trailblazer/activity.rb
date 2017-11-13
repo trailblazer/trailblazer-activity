@@ -106,7 +106,6 @@ module Trailblazer
         proc, _    = arr.collect { |cfg| cfg[2] }.compact
 
         # 4. merge them with the default Polarizations
-        # raise _plus_poles.inspect
         plus_poles = plus_poles.merge( Hash[_plus_poles] )
 
         # pp plus_poles
@@ -114,8 +113,9 @@ module Trailblazer
         # 5. seq.add step, polarizations
         sequence.add( id, [ magnetic_to, task, plus_poles.to_a ],  )
         # 6. add additional steps
+        adds.each do |method, cfg| sequence.send( method, *cfg ) end
         # 7. execute blocks
-
+        proc.() if proc # this is for nested, do we need this here?
 
         sequence
       end
