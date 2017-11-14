@@ -23,7 +23,7 @@ Minitest::Spec.class_eval do
         pluses = plus_poles.collect { |plus_pole| Seq.PlusPole(plus_pole) }
 
 %{#{magnetic_to.inspect} ==> #{Seq.Task(task)}
- #{pluses.empty? ? "[]" : pluses.join("\n")}}
+#{pluses.empty? ? " []" : pluses.join("\n")}}
       end.join("\n")
 
     "\n#{content}\n"
@@ -33,7 +33,7 @@ Minitest::Spec.class_eval do
     def self.PlusPole(plus_pole)
       signal = plus_pole.signal.to_s.sub("Trailblazer::Circuit::", "")
       semantic = plus_pole.send(:output).semantic
-      "(#{semantic})/#{signal} ==> #{plus_pole.color.inspect}"
+      " (#{semantic})/#{signal} ==> #{plus_pole.color.inspect}"
     end
 
     def self.Task(task)

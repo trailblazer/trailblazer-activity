@@ -213,11 +213,16 @@ module Trailblazer
 
     # wir wollen einmal dsl.task von_railway op und einmal DSL.new(andere_sq).instance_exec()
 
+
+
+
     module FastTrack
 
     end
     class FastTrack::Builder
-      KEYWORDS = [:id, :plus_poles, :fail_fast, :pass_fast, :fast_track]
+      def keywords
+        [:id, :plus_poles, :fail_fast, :pass_fast, :fast_track]
+      end
 
       def initialize(strategy_options={})
         @strategy_options = strategy_options
@@ -254,7 +259,7 @@ module Trailblazer
       # merge @strategy_options (for the track colors)
       # normalize options
       private def add(strategy, task, options, &block)
-        local_options, options = normalize(options, KEYWORDS)
+        local_options, options = normalize(options, keywords)
 
         @sequence = DSL.alter_sequence( @sequence, task, options, id: local_options[:id],
           strategy: [ strategy, @strategy_options.merge( local_options ) ],
@@ -288,6 +293,27 @@ module Trailblazer
         sequence = Path.initialize_sequence(sequence)
 
 
+      end
+    end
+
+    class Path
+      class Builder < FastTrack::Builder
+        def keywords
+          [:id, :plus_poles]
+        end
+
+        def initialize(strategy_options={})
+          @strategy_options = strategy_options
+
+          sequence = Magnetic::Alterations.new
+          sequence = DSL::PoleGenerator::Path.initialize_sequence(sequence, strategy_options)
+
+          @sequence = sequence
+        end
+
+        def task(*args, &block)
+          add( DSL::PoleGenerator::Path.method(:task), *args, &block )
+        end
       end
     end
 

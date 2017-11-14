@@ -148,16 +148,16 @@ class ActivityBuildTest < Minitest::Spec
  (success)/Right ==> :pink
 [:pink] ==> ActivityBuildTest::G
  (success)/Right ==> :pink
-(failure)/Left ==> :fail_fast
+ (failure)/Left ==> :fail_fast
 [:pink] ==> ActivityBuildTest::I
  (success)/Right ==> :pink
-(failure)/Left ==> :black
+ (failure)/Left ==> :black
 [:black] ==> ActivityBuildTest::J
  (success)/Right ==> :black
-(failure)/Left ==> :black
+ (failure)/Left ==> :black
 [:pink] ==> ActivityBuildTest::K
  (success)/Right ==> :pink
-(failure)/Left ==> :pink
+ (failure)/Left ==> :pink
 [:pink] ==> #<End:success>
  []
 [:black] ==> #<End:failure>
@@ -190,17 +190,17 @@ class ActivityBuildTest < Minitest::Spec
  (success)/Right ==> :pink
 [:pink] ==> ActivityBuildTest::G
  (success)/Right ==> :pink
-(failure)/Left ==> :fail_fast
-(exception)/Exception ==> "ActivityBuildTest::G-Exception"
+ (failure)/Left ==> :fail_fast
+ (exception)/Exception ==> "ActivityBuildTest::G-Exception"
 [:pink] ==> ActivityBuildTest::I
  (success)/Right ==> :pink
-(failure)/Left ==> :black
+ (failure)/Left ==> :black
 [:black] ==> ActivityBuildTest::J
  (success)/Right ==> :black
-(failure)/Left ==> :black
+ (failure)/Left ==> :black
 [:pink] ==> ActivityBuildTest::K
  (success)/Right ==> :pink
-(failure)/Left ==> :pink
+ (failure)/Left ==> :pink
 [:pink] ==> #<End:success>
  []
 [:black] ==> #<End:failure>
@@ -224,7 +224,26 @@ class ActivityBuildTest < Minitest::Spec
     it do
       incremental = Activity::Path::Builder.new( track_color: :pink )
       incremental.task G, id: G, plus_poles: initial_plus_poles, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
-      incremental.task H, id: H, plus_poles: initial_plus_poles, Activity::Magnetic.Output(Circuit::Left, :failure) => Circuit::End(:failure)
+      incremental.task I, id: I, plus_poles: initial_plus_poles, Activity::Magnetic.Output(Circuit::Left, :failure) => Circuit::End(:failure)
+
+      sequence = incremental.draft
+      puts Seq(sequence)
+      Seq(sequence).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :pink
+[:pink] ==> ActivityBuildTest::G
+ (success)/Right ==> :pink
+ (exception)/Exception ==> "ActivityBuildTest::G-Exception"
+[:pink] ==> ActivityBuildTest::I
+ (success)/Right ==> :pink
+ (failure)/Left ==> "ActivityBuildTest::I-Trailblazer::Circuit::Left"
+[:pink] ==> #<End:success>
+ []
+["ActivityBuildTest::G-Exception"] ==> #<End:exception>
+ []
+["ActivityBuildTest::I-Trailblazer::Circuit::Left"] ==> #<End:failure>
+ []
+}
     end
   end
 end

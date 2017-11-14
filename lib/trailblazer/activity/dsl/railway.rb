@@ -104,7 +104,7 @@ module Trailblazer
 
 
 
-        def self.task(task, track_color: :success, plus_poles: raise, **options, &block)
+        def self.task(task, track_color: :success, plus_poles: raise, **, &block)
           [
             # magnetic_to:
             [track_color],
