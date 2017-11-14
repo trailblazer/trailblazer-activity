@@ -97,7 +97,7 @@ module Trailblazer
           # add Start
           sequence.add( "Start.default", [ [], Circuit::Start.new(:default), [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), track_color) ] ], group: :start )
           # add Path End (only one)
-          sequence.add( "End.#{track_color}", [ [track_color], Circuit::End.new(:success), [] ], group: :end )
+          sequence.add( "End.#{track_color}", [ [track_color], Circuit::End.new(track_color), [] ], group: :end )
         end
 
 

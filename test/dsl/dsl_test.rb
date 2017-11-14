@@ -27,9 +27,36 @@ class ActivityBuildTest < Minitest::Spec
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> "ActivityBuildTest::K-Trailblazer::Circuit::Right"
-[:track_9] ==> #<End:success>
+[:track_9] ==> #<End:track_9>
  []
 ["ActivityBuildTest::K-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
+ []
+}
+  end
+  it "unit test" do
+    block = -> do
+      task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
+      task K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
+      # TODO: task ==> End.track_9
+    end
+
+    seq = Activity.plan(track_color: :"track_9", &block)
+
+# puts Seq(seq)
+    Seq(seq).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::J
+ (success)/Right ==> :track_9
+ (failure)/Left ==> "ActivityBuildTest::J-Trailblazer::Circuit::Left"
+[:track_9] ==> ActivityBuildTest::K
+ (success)/Right ==> :track_9
+ (failure)/Left ==> "ActivityBuildTest::K-Trailblazer::Circuit::Left"
+[:track_9] ==> #<End:track_9>
+ []
+["ActivityBuildTest::J-Trailblazer::Circuit::Left"] ==> #<End:End.extract.key_not_found>
+ []
+["ActivityBuildTest::K-Trailblazer::Circuit::Left"] ==> #<End:End.invalid>
  []
 }
   end
@@ -85,7 +112,7 @@ circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
 pp circuit_hash
 
 puts Cct(circuit_hash)
-    Cct(circuit_hash).must_equal %{
+    Cct(circuit_hash).sub(/\d\d+/, "").must_equal %{
 #<Start:default>
  {Trailblazer::Circuit::Right} => ActivityBuildTest::G
 ActivityBuildTest::G
@@ -97,7 +124,7 @@ ActivityBuildTest::J
  {Trailblazer::Circuit::Right} => ActivityBuildTest::K
 ActivityBuildTest::K
  {Trailblazer::Circuit::Right} => #<End:End.invalid_result>
-#<End:success>
+#<End:track_0.>
 
 #<End:End.invalid_result>
 
@@ -199,7 +226,7 @@ ActivityBuildTest::L
 [:pink] ==> ActivityBuildTest::K
  (success)/Right ==> :pink
  (failure)/Left ==> :pink
-[:pink] ==> #<End:success>
+[:pink] ==> #<End:pink>
  []
 [:black] ==> #<End:failure>
  []
@@ -242,7 +269,7 @@ ActivityBuildTest::L
 [:pink] ==> ActivityBuildTest::K
  (success)/Right ==> :pink
  (failure)/Left ==> :pink
-[:pink] ==> #<End:success>
+[:pink] ==> #<End:pink>
  []
 [:black] ==> #<End:failure>
  []
@@ -279,7 +306,7 @@ ActivityBuildTest::L
 [:pink] ==> ActivityBuildTest::I
  (success)/Right ==> :pink
  (failure)/Left ==> "ActivityBuildTest::I-Trailblazer::Circuit::Left"
-[:pink] ==> #<End:success>
+[:pink] ==> #<End:pink>
  []
 ["ActivityBuildTest::G-Exception"] ==> #<End:exception>
  []
