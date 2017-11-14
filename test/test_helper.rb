@@ -48,4 +48,19 @@ Minitest::Spec.class_eval do
       string.to_s.sub("Trailblazer::Circuit::", "")
     end
   end
+
+  def Cct(hash)
+    content =
+      hash.collect do |task, connections|
+        conns = connections.collect do |signal, target|
+          " {#{signal}} => #{Seq.Task(target)}"
+        end
+
+        [ Seq.Task(task), conns.join("\n") ]
+      end
+
+      content = content.join("\n")
+
+      "\n#{content}"
+  end
 end

@@ -1,5 +1,5 @@
 module Trailblazer
-  class Activity::DSL
+  module Activity::DSL
     # strategy.( task, track_color:, plus_poles:, pass_fast:, )
     module PoleGenerator
       # ONLY JOB: magnetic_to and Outputs ("Polarization")

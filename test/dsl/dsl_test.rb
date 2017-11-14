@@ -11,26 +11,32 @@ class ActivityBuildTest < Minitest::Spec
   class K; end
   class L; end
 
+  # Activity.plan( track_color: :pink )
   it "unit test" do
-    sequence=Activity::Magnetic::Alterations.new
-
-    block = ->(color) do
-      task J, id: "report_invalid_result", Output(Right, :success) => color
-      # task K, id: "log_invalid_result", Output(Right, :success) => color
-      task K, id: "log_invalid_result", Output(Right, :success) =>
-        End("End.invalid_result", :invalid_result)
+    block = -> do
+      task J, id: "report_invalid_result"
+      task K, id: "log_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
     end
 
-    dsl = Activity::DSL.new(sequence, color = :"track_#{rand}")
+    seq = Activity.plan(track_color: :"track_9", &block)
 
-    seq = dsl.instance_exec(color, &block)
-
-    pp seq
+    Seq(seq).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::J
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::K
+ (success)/Right ==> "ActivityBuildTest::K-Trailblazer::Circuit::Right"
+[:track_9] ==> #<End:success>
+ []
+["ActivityBuildTest::K-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
+ []
+}
   end
 
 
   it do
-    activity = Activity.plan do
+    tripletts = Activity.plan do
       # task Task(), id: :inquiry_create, Left => :suspend_for_correct
       #   task Task(), id: :suspend_for_correct, Right => :inquiry_create
       # task Task(), id: :notify_pickup
@@ -39,34 +45,69 @@ class ActivityBuildTest < Minitest::Spec
       # task Task(), id: :pickup
       # task Task(), id: :suspend_for_process_id
 
-      task G, id: :receive_process_id, Output(Right, :success) => :success
+      task G, id: :receive_process_id#, Output(Right, :success) => :success
       # task Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(Right, :success) => :success, Output(Left, :failure) => ->(color) do
-
-                                                  # means: :success => "report_invalid_result"-End.invalid_result"
-        task J, id: "report_invalid_result", Output(Right, :success) => color
+      task I, id: :process_result, Output(Right, :success) => :success, Output(Left, :failure) => -> do
+        task J, id: "report_invalid_result"
         # task K, id: "log_invalid_result", Output(Right, :success) => color
-        task K, id: "log_invalid_result", Output(Right, :success) =>
-          End("End.invalid_result", :invalid_result)
+        task K, id: "log_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
       end
 
-      task L, id: :notify_clerk, Output(Right, :success) => :success
+      task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    pp activity
+    # puts Seq(activity)
+#     Seq(activity).must_equal %{
+# [] ==> #<Start:default>
+#  (success)/Right ==> :success
+# [:success] ==> ActivityBuildTest::G
+#  (success)/Right ==> :success
+# [:success] ==> ActivityBuildTest::I
+#  (success)/Right ==> :success
+#  (failure)/Left ==> "track_0.7043767456808654"
+# ["track_0.7043767456808654"] ==> ActivityBuildTest::J
+#  (success)/Right ==> "track_0.7043767456808654"
+# ["track_0.7043767456808654"] ==> ActivityBuildTest::K
+#  (success)/Right ==> "ActivityBuildTest::K-Trailblazer::Circuit::Right"
+# ["track_0.7043767456808654"] ==> #<End:success>
+#  []
+# ["ActivityBuildTest::K-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
+#  []
+# [:success] ==> ActivityBuildTest::L
+#  (success)/Right ==> :success
+# [:success] ==> #<End:success>
+#  []
+# }
 
-    Inspect(activity).must_equal %{{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>ActivityBuildTest::G}, ActivityBuildTest::G=>{Trailblazer::Circuit::Right=>ActivityBuildTest::I}, ActivityBuildTest::I=>{Trailblazer::Circuit::Left=>ActivityBuildTest::J, Trailblazer::Circuit::Right=>ActivityBuildTest::L}, ActivityBuildTest::J=>{Trailblazer::Circuit::Right=>ActivityBuildTest::K}, ActivityBuildTest::K=>{Trailblazer::Circuit::Right=>#<Trailblazer::Circuit::End: @name=\"End.invalid_result\", @options={}>}, ActivityBuildTest::L=>{Trailblazer::Circuit::Right=>#<Trailblazer::Circuit::End: @name=:success, @options={}>}, #<Trailblazer::Circuit::End: @name=:success, @options={}>=>{}, #<Trailblazer::Circuit::End: @name=\"End.invalid_result\", @options={}>=>{}}}
+circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+
+pp circuit_hash
+
+puts Cct(circuit_hash)
+    Cct(circuit_hash).must_equal %{
+#<Start:default>
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::G
+ActivityBuildTest::G
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::I
+ActivityBuildTest::I
+ {Trailblazer::Circuit::Left} => ActivityBuildTest::J
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::L
+ActivityBuildTest::J
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::K
+ActivityBuildTest::K
+ {Trailblazer::Circuit::Right} => #<End:End.invalid_result>
+#<End:success>
+
+#<End:End.invalid_result>
+
+ActivityBuildTest::L
+ {Trailblazer::Circuit::Right} => #<End:success>
+#<End:success>
+}
 
     activity.outputs.must_equal()
   end
-
-  # task I, Left do
-  #   task J
-  #   task K
-  #   task End("End.invalid_result")
-  # end
-
 
   # defaults
   it do

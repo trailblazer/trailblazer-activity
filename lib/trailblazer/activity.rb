@@ -106,20 +106,17 @@ module Trailblazer
         arr = process_dsl_options(sequence, id, options)
 
         _plus_poles = arr.collect { |cfg| cfg[0] }.compact
-        adds       = arr.collect { |cfg| cfg[1] }.compact
+        adds       = arr.collect { |cfg| cfg[1] }.compact.flatten(1)
         proc, _    = arr.collect { |cfg| cfg[2] }.compact
 
         # 4. merge them with the default Polarizations
         plus_poles = plus_poles.merge( Hash[_plus_poles] )
 
-         # pp plus_poles
-
         # 5. seq.add step, polarizations
         sequence.add( id, [ magnetic_to, task, plus_poles.to_a ],  )
+
         # 6. add additional steps
         adds.each do |method, cfg| sequence.send( method, *cfg ) end
-        # 7. execute blocks
-        proc.() if proc # this is for nested, do we need this here?
 
         sequence
       end
@@ -140,23 +137,26 @@ module Trailblazer
               # Magnetic::PlusPole.new(key, new_edge),
               [ output, new_edge ],
 
-              [ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]
+              [[ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]]
             ]
           elsif task.is_a?(String) # let's say this means an existing step
             new_edge = "#{key.signal}-#{task}"
             [
               Magnetic::PlusPole.new(key, new_edge),
 
-              [ :magnetic_to, [ task, [new_edge] ] ],
+              [[ :magnetic_to, [ task, [new_edge] ] ]],
             ]
           elsif task.is_a?(Proc)
-            dsl = Path::Builder.new(sequence, color = :"track_#{rand}")
+            seq = Activity.plan(track_color: color="track_#{rand}", &task)
+
+            # TODO: this is a pseudo-"merge" and should be public API at some point.
+            adds = seq[1..-1].collect do |arr|
+              [ :add, [ "options[:id]#{rand}_fixme", arr ] ]
+            end
 
             [
               [ output, color ],
-              # Magnetic::PlusPole.new(key, color),
-              nil,
-              ->(*) { dsl.instance_exec(color, &task) }
+              adds
             ]
           else # An additional plus polarization. Example: Output => :success
             [
@@ -167,9 +167,6 @@ module Trailblazer
         end
       end
     end
-
-    # wir wollen einmal dsl.task von_railway op und einmal DSL.new(andere_sq).instance_exec()
-
 
     class Builder
       def initialize(strategy_options={})
@@ -280,18 +277,24 @@ module Trailblazer
       end
     end
 
-    def self.plan(&block)
-      builder = Path::Builder.new( plus_poles: Activity::Magnetic::PlusPoles.new.merge(
-          Activity::Magnetic.Output(Circuit::Right, :success) => :success
-        ).freeze
+    def self.plan(options={}, &block)
+      builder = Path::Builder.new(
+        {
+          plus_poles: Activity::Magnetic::PlusPoles.new.merge(
+            Activity::Magnetic.Output(Circuit::Right, :success) => :success
+          ).freeze,
+
+
+        }.merge(options)
       )
 
-      builder.instance_exec(&block)
+      # TODO: pass new edge color in block?
+      builder.instance_exec( &block)
 
       tripletts = builder.draft
       # pp tripletts
 
-      circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+      # circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
     end
 
     def initialize(circuit_hash, outputs)
