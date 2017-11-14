@@ -227,19 +227,30 @@ module Trailblazer
 
         @sequence = sequence
       end
-      def task
-      #   here, we keep state about e.g. track_color
 
-      #   =>PoleGenerator::Railway.task
-
-
+      def step(*args, &block)
+        add(DSL::PoleGenerator::FastTrack.method(:step), *args, &block)
+      end
+      def fail(*args, &block)
+        add(DSL::PoleGenerator::FastTrack.method(:fail), *args, &block)
+      end
+      def pass(*args, &block)
+        add(DSL::PoleGenerator::FastTrack.method(:pass), *args, &block)
       end
 
-      def step(task, plus_poles:raise, id:raise, **options, &block)
+      def finalize()
+        tripletts = @sequence.to_a
+        # pp tripletts
 
+        circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+      end
+
+      # merge @strategy_options (for the track colors)
+      private def add(strategy, task, plus_poles:raise, id:raise, **options, &block)
         @sequence = DSL.alter_sequence( @sequence, task, options, id: id,
-          strategy: [ DSL::PoleGenerator::FastTrack.method(:step), @strategy_options.merge(plus_poles: plus_poles)],
-          &block )
+          strategy: [ strategy, @strategy_options.merge(plus_poles: plus_poles) ],
+          &block
+        )
       end
 
       def to_activity

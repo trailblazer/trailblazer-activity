@@ -132,7 +132,7 @@ class ActivityBuildTest < Minitest::Spec
     )
 
     # this is what happens in Operation.
-    incremental = Activity::FastTrack::Builder.new( track_color: :pink )
+    incremental = Activity::FastTrack::Builder.new( track_color: :success )
     incremental.step G, id: :G, plus_poles: initial_plus_poles # these options we WANT built by Operation (task, id, plus_poles)
     incremental.step I, id: :I, plus_poles: initial_plus_poles
     incremental.fail J, id: :J, plus_poles: initial_plus_poles
