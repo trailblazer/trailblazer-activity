@@ -62,6 +62,8 @@ module Trailblazer
         if magnetic_to = @future_magnetic_to.delete(id)
           magnetic_to( id, magnetic_to )
         end
+
+        self
       end
 
       # def connect_to(id, connect_to)

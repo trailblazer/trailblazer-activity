@@ -200,6 +200,69 @@ module Trailblazer
       end
     end
 
+    class Path
+      def initialize
+        # start, end
+
+      end
+
+      def finalize
+
+      end
+    end
+
+    # wir wollen einmal dsl.task von_railway op und einmal DSL.new(andere_sq).instance_exec()
+
+    module FastTrack
+
+    end
+    class FastTrack::Builder
+      def initialize(strategy_options={})
+        @strategy_options = strategy_options
+
+        sequence = Magnetic::Alterations.new
+        sequence = DSL::PoleGenerator::Path.initialize_sequence(sequence)
+        sequence = DSL::PoleGenerator::Railway.initialize_sequence(sequence)
+        sequence = DSL::PoleGenerator::FastTrack.initialize_sequence(sequence)
+
+        @sequence = sequence
+      end
+      def task
+      #   here, we keep state about e.g. track_color
+
+      #   =>PoleGenerator::Railway.task
+
+
+      end
+
+      def step(task, plus_poles:raise, id:raise, **options, &block)
+
+        @sequence = DSL.alter_sequence( @sequence, task, options, id: id,
+          strategy: [ DSL::PoleGenerator::FastTrack.method(:step), @strategy_options.merge(plus_poles: plus_poles)],
+          &block )
+      end
+
+      def to_activity
+        tripletts = dsl.to_a
+        # pp tripletts
+
+        circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+      end
+      def self.build
+        new
+        instance_exec
+        to_activity
+      end
+
+
+
+      def self.initialize_sequence(sequence)
+        sequence = Path.initialize_sequence(sequence)
+
+
+      end
+    end
+
     def self.plan(&block)
       sequence = Magnetic::Alterations.new
 
@@ -211,18 +274,12 @@ module Trailblazer
         add( "End.success", [ [:success], Circuit::End.new(:success), [] ], group: :end )
 
       dsl = DSL.new(sequence)
-
-
       dsl.instance_exec(&block)
-
-      # pp dsl
 
       tripletts = dsl.to_a
       # pp tripletts
 
-      # tripletts = Trailblazer::Activity::Magnetic::ConnectionFinalizer.( alterations )
       circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
-
     end
 
     def initialize(circuit_hash, outputs)

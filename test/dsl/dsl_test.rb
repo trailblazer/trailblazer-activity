@@ -61,6 +61,12 @@ class ActivityBuildTest < Minitest::Spec
     activity.outputs.must_equal()
   end
 
+  # task I, Left do
+  #   task J
+  #   task K
+  #   task End("End.invalid_result")
+  # end
+
 
   # defaults
   it do
@@ -117,6 +123,24 @@ class ActivityBuildTest < Minitest::Spec
     Inspect(seq).must_equal %{#<Trailblazer::Activity::Magnetic::Alterations: @groups=#<Trailblazer::Activity::Schema::Magnetic::Dependencies: @groups={:start=>[], :main=>[#<struct Trailblazer::Activity::Schema::Sequence::Element id=\"ActivityBuildTest::G\", configuration=[[:success], ActivityBuildTest::G, [#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=\"ActivityBuildTest::G-Trailblazer::Circuit::Right\">, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"Signal A\", semantic=:exception>, color=\"ActivityBuildTest::G-Signal A\">, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]]>], :end=>[#<struct Trailblazer::Activity::Schema::Sequence::Element id=\"End.invalid_result\", configuration=[[\"ActivityBuildTest::G-Trailblazer::Circuit::Right\"], #<Trailblazer::Circuit::End: @name=\"End.invalid_result\", @options={}>, []]>, #<struct Trailblazer::Activity::Schema::Sequence::Element id=\"End.signal_a_reached\", configuration=[[\"ActivityBuildTest::G-Signal A\"], #<Trailblazer::Circuit::End: @name=\"End.signal_a_reached\", @options={}>, []]>], :unresolved=>[]}, @order=[:start, :main, :end, :unresolved]>, @future_magnetic_to={}>}
   end
 
+
+  it "builder API, what we use in Operation" do
+    initial_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
+      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
+      # Activity::Magnetic.Output("Signal A", :exception)  => :exception,
+      Activity::Magnetic.Output(Circuit::Left, :failure) => :failure
+    )
+
+    # this is what happens in Operation.
+    incremental = Activity::FastTrack::Builder.new( track_color: :pink )
+    incremental.step G, id: :G, plus_poles: initial_plus_poles # these options we WANT built by Operation (task, id, plus_poles)
+    incremental.step I, id: :I, plus_poles: initial_plus_poles
+    incremental.fail J, id: :J, plus_poles: initial_plus_poles
+    incremental.pass K, id: :K, plus_poles: initial_plus_poles
+    activity = incremental.finalize
+
+    pp activity
+  end
 end
 
 

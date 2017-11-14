@@ -4,6 +4,14 @@ module Trailblazer
       # ONLY JOB: magnetic_to and Outputs ("Polarization")
       # Decorates #task
       class Railway
+        def self.initialize_sequence(sequence, track_color=:success, failure_color=:failure)
+          # add Path End (only one)
+          sequence.add( "End.#{failure_color}", [ [failure_color], Circuit::End.new(:failure), [] ], group: :end )
+        end
+
+
+
+
         def self.step(task, track_color: :success, failure_color: :failure, plus_poles: raise, **options, &block)
           magnetic_to, plus_poles = Path.task(task, track_color: track_color, plus_poles: plus_poles)
 
@@ -33,6 +41,14 @@ module Trailblazer
       end
 
       module FastTrack
+        def self.initialize_sequence(sequence, *)
+          sequence.add( "End.fail_fast", [ [:fail_fast], Circuit::End.new(:fail_fast), [] ], group: :end )
+          sequence.add( "End.pass_fast", [ [:pass_fast], Circuit::End.new(:pass_fast), [] ], group: :end )
+        end
+
+
+
+
         # todo: remove the signals in Operation.
         FailFast = Class.new
         PassFast = Class.new
@@ -52,6 +68,17 @@ module Trailblazer
       end
 
       module Path
+        def self.initialize_sequence(sequence, track_color=:success)
+          # add Start
+          sequence.add( "Start.default", [ [], Circuit::Start.new(:default), [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), track_color) ] ], group: :start )
+          # add Path End (only one)
+          sequence.add( "End.#{track_color}", [ [track_color], Circuit::End.new(:success), [] ], group: :end )
+        end
+
+
+
+
+
         def self.task(task, track_color: :success, plus_poles: raise, **options, &block)
           [
             # magnetic_to:
