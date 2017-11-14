@@ -132,14 +132,43 @@ class ActivityBuildTest < Minitest::Spec
     )
 
     # this is what happens in Operation.
-    incremental = Activity::FastTrack::Builder.new( track_color: :success )
+    incremental = Activity::FastTrack::Builder.new( track_color: :pink, failure_color: :black )
     incremental.step G, id: :G, plus_poles: initial_plus_poles # these options we WANT built by Operation (task, id, plus_poles)
     incremental.step I, id: :I, plus_poles: initial_plus_poles
     incremental.fail J, id: :J, plus_poles: initial_plus_poles
     incremental.pass K, id: :K, plus_poles: initial_plus_poles
+
+    sequence = incremental.draft
+    pp sequence
+
+    Seq(sequence).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :pink
+[:pink] ==> ActivityBuildTest::G
+ (success)/Right ==> :pink
+(failure)/Left ==> :black
+[:pink] ==> ActivityBuildTest::I
+ (success)/Right ==> :pink
+(failure)/Left ==> :black
+[:black] ==> ActivityBuildTest::J
+ (success)/Right ==> :black
+(failure)/Left ==> :black
+[:pink] ==> ActivityBuildTest::K
+ (success)/Right ==> :pink
+(failure)/Left ==> :pink
+[:pink] ==> #<End:success>
+ []
+[:black] ==> #<End:failure>
+ []
+[:fail_fast] ==> #<End:fail_fast>
+ []
+[:pass_fast] ==> #<End:pass_fast>
+ []
+}
+
     activity = incremental.finalize
 
-    pp activity
+    # pp activity
   end
 end
 

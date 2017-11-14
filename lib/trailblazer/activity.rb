@@ -221,9 +221,9 @@ module Trailblazer
         @strategy_options = strategy_options
 
         sequence = Magnetic::Alterations.new
-        sequence = DSL::PoleGenerator::Path.initialize_sequence(sequence)
-        sequence = DSL::PoleGenerator::Railway.initialize_sequence(sequence)
-        sequence = DSL::PoleGenerator::FastTrack.initialize_sequence(sequence)
+        sequence = DSL::PoleGenerator::Path.initialize_sequence(sequence, strategy_options)
+        sequence = DSL::PoleGenerator::Railway.initialize_sequence(sequence, strategy_options)
+        sequence = DSL::PoleGenerator::FastTrack.initialize_sequence(sequence, strategy_options)
 
         @sequence = sequence
       end
@@ -238,8 +238,12 @@ module Trailblazer
         add(DSL::PoleGenerator::FastTrack.method(:pass), *args, &block)
       end
 
+      def draft
+        @sequence.to_a
+      end
+
       def finalize()
-        tripletts = @sequence.to_a
+        tripletts = draft
         # pp tripletts
 
         circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )

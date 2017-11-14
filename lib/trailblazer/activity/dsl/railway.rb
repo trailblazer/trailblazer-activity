@@ -4,7 +4,7 @@ module Trailblazer
       # ONLY JOB: magnetic_to and Outputs ("Polarization")
       # Decorates #task
       class Railway
-        def self.initialize_sequence(sequence, track_color=:success, failure_color=:failure)
+        def self.initialize_sequence(sequence, track_color: :success, failure_color: :failure, **)
           # add Path End (only one)
           sequence.add( "End.#{failure_color}", [ [failure_color], Circuit::End.new(:failure), [] ], group: :end )
         end
@@ -92,7 +92,7 @@ module Trailblazer
       end
 
       module Path
-        def self.initialize_sequence(sequence, track_color=:success)
+        def self.initialize_sequence(sequence, track_color: :success, **)
           # add Start
           sequence.add( "Start.default", [ [], Circuit::Start.new(:default), [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), track_color) ] ], group: :start )
           # add Path End (only one)
