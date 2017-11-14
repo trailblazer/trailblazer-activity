@@ -88,7 +88,7 @@ module Trailblazer
     require "trailblazer/activity/schema/magnetic"
     # DSL is only supposed to know about magnetism and the generic DSL, *not* about specific edge colors
     # or Railway-oriented features such as two outgoing edges, etc.
-    class DSL
+    module DSL
       # add new task with Polarizations
       # add new connections
       # add new ends
@@ -150,7 +150,7 @@ module Trailblazer
               [ :magnetic_to, [ task, [new_edge] ] ],
             ]
           elsif task.is_a?(Proc)
-            dsl = DSL.new(sequence, color = :"track_#{rand}")
+            dsl = Path::Builder.new(sequence, color = :"track_#{rand}")
 
             [
               [ output, color ],
@@ -166,38 +166,6 @@ module Trailblazer
           end
         end
       end
-
-      def End(name, semantic)
-         evt = Circuit::End.new(name)
-        evt
-      end
-
-      def Output(signal, semantic)
-        Magnetic.Output(signal, semantic)
-      end
-
-      def to_a
-        @sequence.to_a
-      end
-
-      def initialize(sequence=Magnetic::Alterations.new, track_color=:success)
-        # @sequence = Schema::Sequence.new
-        @sequence     = sequence
-        @track_color  = track_color
-        # @outputs      = {}
-
-        # these are initial pole(s) for a path.
-        @initial_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
-          Activity::Magnetic.Output(Circuit::Right, :success) => track_color
-        ).freeze
-      end
-
-      def task(task, options={}, &block)
-        # puts "!!!!task #{@sequence}"
-        @sequence = DSL.alter_sequence( @sequence, task, options, id: options[:id],
-          strategy: [ PoleGenerator::Path.method(:task), plus_poles: @initial_plus_poles, track_color: @track_color],
-          &block )
-      end
     end
 
     # wir wollen einmal dsl.task von_railway op und einmal DSL.new(andere_sq).instance_exec()
@@ -212,6 +180,16 @@ module Trailblazer
 
       def draft
         @sequence.to_a
+      end
+
+      # DSL shit:
+      def End(name, semantic)
+         evt = Circuit::End.new(name)
+        evt
+      end
+
+      def Output(signal, semantic)
+        Magnetic.Output(signal, semantic)
       end
 
       private
@@ -303,19 +281,14 @@ module Trailblazer
     end
 
     def self.plan(&block)
-      sequence = Magnetic::Alterations.new
+      builder = Path::Builder.new( plus_poles: Activity::Magnetic::PlusPoles.new.merge(
+          Activity::Magnetic.Output(Circuit::Right, :success) => :success
+        ).freeze
+      )
 
-      # add Start
-      sequence.
-        add( "Start.default", [ [], Circuit::Start.new(:default), [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), :success) ] ], group: :start )
-      # add Path End (only one)
-      sequence.
-        add( "End.success", [ [:success], Circuit::End.new(:success), [] ], group: :end )
+      builder.instance_exec(&block)
 
-      dsl = DSL.new(sequence)
-      dsl.instance_exec(&block)
-
-      tripletts = dsl.to_a
+      tripletts = builder.draft
       # pp tripletts
 
       circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
