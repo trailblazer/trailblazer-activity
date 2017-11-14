@@ -221,13 +221,14 @@ class ActivityBuildTest < Minitest::Spec
       )
     end
 
+    # with all options.
     it do
       incremental = Activity::Path::Builder.new( track_color: :pink )
       incremental.task G, id: G, plus_poles: initial_plus_poles, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
       incremental.task I, id: I, plus_poles: initial_plus_poles, Activity::Magnetic.Output(Circuit::Left, :failure) => Circuit::End(:failure)
 
       sequence = incremental.draft
-      puts Seq(sequence)
+
       Seq(sequence).must_equal %{
 [] ==> #<Start:default>
  (success)/Right ==> :pink
@@ -238,6 +239,32 @@ class ActivityBuildTest < Minitest::Spec
  (success)/Right ==> :pink
  (failure)/Left ==> "ActivityBuildTest::I-Trailblazer::Circuit::Left"
 [:pink] ==> #<End:success>
+ []
+["ActivityBuildTest::G-Exception"] ==> #<End:exception>
+ []
+["ActivityBuildTest::I-Trailblazer::Circuit::Left"] ==> #<End:failure>
+ []
+}
+    end
+
+    # with plus_poles.
+    it do
+      incremental = Activity::Path::Builder.new( plus_poles: initial_plus_poles )
+      incremental.task G, id: G, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
+      incremental.task I, id: I, Activity::Magnetic.Output(Circuit::Left, :failure) => Circuit::End(:failure)
+
+      sequence = incremental.draft
+
+      Seq(sequence).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :success
+[:success] ==> ActivityBuildTest::G
+ (success)/Right ==> :success
+ (exception)/Exception ==> "ActivityBuildTest::G-Exception"
+[:success] ==> ActivityBuildTest::I
+ (success)/Right ==> :success
+ (failure)/Left ==> "ActivityBuildTest::I-Trailblazer::Circuit::Left"
+[:success] ==> #<End:success>
  []
 ["ActivityBuildTest::G-Exception"] ==> #<End:exception>
  []

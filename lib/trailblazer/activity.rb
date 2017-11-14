@@ -269,7 +269,6 @@ module Trailblazer
 
       private def normalize(options, local_keys)
         local, foreign = {}, {}
-
         options.each { |k,v| local_keys.include?(k) ? local[k] = v : foreign[k] = v }
 
         return local, foreign
@@ -285,14 +284,6 @@ module Trailblazer
         new
         instance_exec
         to_activity
-      end
-
-
-
-      def self.initialize_sequence(sequence)
-        sequence = Path.initialize_sequence(sequence)
-
-
       end
     end
 
