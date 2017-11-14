@@ -1,5 +1,6 @@
 module Trailblazer
   class Activity::DSL
+    # strategy.( task, track_color:, plus_poles:, pass_fast:, )
     module PoleGenerator
       # ONLY JOB: magnetic_to and Outputs ("Polarization")
       # Decorates #task
@@ -12,7 +13,7 @@ module Trailblazer
 
 
 
-        def self.step(task, track_color: :success, failure_color: :failure, plus_poles: raise, **options, &block)
+        def self.step(task, track_color: :success, failure_color: :failure, plus_poles: raise, **, &block)
           magnetic_to, plus_poles = Path.task(task, track_color: track_color, plus_poles: plus_poles)
 
           [

@@ -124,13 +124,15 @@ class ActivityBuildTest < Minitest::Spec
   end
 
 
-  it "builder API, what we use in Operation" do
-    initial_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
+  let(:initial_plus_poles) do
+    Activity::Magnetic::PlusPoles.new.merge(
       Activity::Magnetic.Output(Circuit::Right, :success) => :success,
       # Activity::Magnetic.Output("Signal A", :exception)  => :exception,
       Activity::Magnetic.Output(Circuit::Left, :failure) => :failure
     )
+  end
 
+  it "builder API, what we use in Operation" do
     # this is what happens in Operation.
     incremental = Activity::FastTrack::Builder.new( track_color: :pink, failure_color: :black )
     incremental.step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true # these options we WANT built by Operation (task, id, plus_poles)
@@ -146,7 +148,7 @@ class ActivityBuildTest < Minitest::Spec
  (success)/Right ==> :pink
 [:pink] ==> ActivityBuildTest::G
  (success)/Right ==> :pink
-(failure)/Left ==> :black
+(failure)/Left ==> :fail_fast
 [:pink] ==> ActivityBuildTest::I
  (success)/Right ==> :pink
 (failure)/Left ==> :black
@@ -169,6 +171,61 @@ class ActivityBuildTest < Minitest::Spec
     activity = incremental.finalize
 
     # pp activity
+  end
+
+  # hand additional DSL options
+  it do
+    # this is what happens in Operation.
+    incremental = Activity::FastTrack::Builder.new( track_color: :pink, failure_color: :black )
+    incremental.step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
+    incremental.step I, id: :I, plus_poles: initial_plus_poles
+    incremental.fail J, id: :J, plus_poles: initial_plus_poles
+    incremental.pass K, id: :K, plus_poles: initial_plus_poles
+
+    sequence = incremental.draft
+    # pp sequence
+# puts Seq(sequence)
+    Seq(sequence).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :pink
+[:pink] ==> ActivityBuildTest::G
+ (success)/Right ==> :pink
+(failure)/Left ==> :fail_fast
+(exception)/Exception ==> "ActivityBuildTest::G-Exception"
+[:pink] ==> ActivityBuildTest::I
+ (success)/Right ==> :pink
+(failure)/Left ==> :black
+[:black] ==> ActivityBuildTest::J
+ (success)/Right ==> :black
+(failure)/Left ==> :black
+[:pink] ==> ActivityBuildTest::K
+ (success)/Right ==> :pink
+(failure)/Left ==> :pink
+[:pink] ==> #<End:success>
+ []
+[:black] ==> #<End:failure>
+ []
+[:fail_fast] ==> #<End:fail_fast>
+ []
+[:pass_fast] ==> #<End:pass_fast>
+ []
+["ActivityBuildTest::G-Exception"] ==> #<End:exception>
+ []
+}
+  end
+
+  describe "Path::Builder" do
+    let(:initial_plus_poles) do
+      Activity::Magnetic::PlusPoles.new.merge(
+        Activity::Magnetic.Output(Circuit::Right, :success) => :success,
+      )
+    end
+
+    it do
+      incremental = Activity::Path::Builder.new( track_color: :pink )
+      incremental.task G, id: G, plus_poles: initial_plus_poles, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
+      incremental.task H, id: H, plus_poles: initial_plus_poles, Activity::Magnetic.Output(Circuit::Left, :failure) => Circuit::End(:failure)
+    end
   end
 end
 

@@ -217,6 +217,8 @@ module Trailblazer
 
     end
     class FastTrack::Builder
+      KEYWORDS = [:id, :plus_poles, :fail_fast, :pass_fast, :fast_track]
+
       def initialize(strategy_options={})
         @strategy_options = strategy_options
 
@@ -250,11 +252,22 @@ module Trailblazer
       end
 
       # merge @strategy_options (for the track colors)
-      private def add(strategy, task, plus_poles:raise, id:raise, **options, &block)
-        @sequence = DSL.alter_sequence( @sequence, task, options, id: id,
-          strategy: [ strategy, @strategy_options.merge(plus_poles: plus_poles) ],
+      # normalize options
+      private def add(strategy, task, options, &block)
+        local_options, options = normalize(options, KEYWORDS)
+
+        @sequence = DSL.alter_sequence( @sequence, task, options, id: local_options[:id],
+          strategy: [ strategy, @strategy_options.merge( local_options ) ],
           &block
         )
+      end
+
+      private def normalize(options, local_keys)
+        local, foreign = {}, {}
+
+        options.each { |k,v| local_keys.include?(k) ? local[k] = v : foreign[k] = v }
+
+        return local, foreign
       end
 
       def to_activity
