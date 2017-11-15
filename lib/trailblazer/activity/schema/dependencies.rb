@@ -2,51 +2,6 @@
 
 module Trailblazer
   module Activity::Magnetic
-    # signal:   actual signal emitted by the task
-    # color:    the mapping, where this signal will travel to. This can be e.g. Left=>:success. The polarization when building the graph.
-    #             "i am traveling towards :success because ::step said so!"
-    # semantic: the original "semantic" or role of the signal, such as :success. This usually comes from the activity hosting this output.
-    Output = Struct.new(:signal, :semantic)
-
-    # PlusPole "radiates" a color that MinusPoles are attracted to.
-    PlusPole = Struct.new(:output, :color) do
-      private :output
-      def signal
-        output.signal
-      end
-    end
-
-
-    # Output(:signal, :semantic) => :color
-      # add / merge
-      #   change existing, => color
-    class PlusPoles
-      def initialize(plus_poles={})
-        @plus_poles = plus_poles.freeze
-      end
-
-      def merge(map)
-        overrides = Hash[ map.collect { |output, color| [ output.semantic, [output, color] ] } ]
-        PlusPoles.new(@plus_poles.merge(overrides))
-      end
-
-      def reconnect(semantic_to_color)
-        ary = semantic_to_color.collect do |semantic, color|
-          existing_output, _ = @plus_poles[semantic]
-          [ Activity::Magnetic.Output(existing_output.signal, existing_output.semantic), color ]
-        end
-
-        merge( Hash[ary] )
-      end
-
-      def to_a
-        @plus_poles.values.collect { |output, color| Activity::Magnetic::PlusPole.new(output, color) }
-      end
-    end
-
-    def self.Output(signal, color)
-      Output.new(signal, color).freeze
-    end
 
     class Alterations # used directly in Magnetic::DSL
       def initialize

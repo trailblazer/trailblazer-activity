@@ -130,7 +130,7 @@ class ActivityBuildTest < Minitest::Spec
       task J, id: "confused",
         Output(Left, :trigger) => End("End.trigger", :triggered),
         # this comes from the Operation DSL since it knows {Activity}J
-        plus_poles: Activity::Magnetic::PlusPoles.new.merge(
+        plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
           Activity::Magnetic.Output(Circuit::Left,  :trigger) => nil,
           Activity::Magnetic.Output(Circuit::Right, :success) => nil,
         ).freeze
@@ -159,7 +159,7 @@ class ActivityBuildTest < Minitest::Spec
       task J, id: "confused",
         Output(:trigger) => End("End.trigger", :triggered),
         # this comes from the Operation DSL since it knows {Activity}J
-        plus_poles: Activity::Magnetic::PlusPoles.new.merge(
+        plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
           Activity::Magnetic.Output(Circuit::Left,  :trigger) => nil,
           Activity::Magnetic.Output(Circuit::Right, :success) => nil,
         ).freeze
@@ -300,7 +300,7 @@ ActivityBuildTest::L
 
   require "trailblazer/activity/dsl/railway"
   it "what" do
-    initial_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
+    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
       Activity::Magnetic.Output(Circuit::Right, :success) => :success,
       Activity::Magnetic.Output("Signal A", :exception)  => :exception,
       Activity::Magnetic.Output(Circuit::Left, :failure) => :failure )
@@ -326,7 +326,7 @@ ActivityBuildTest::L
 
 
   let(:initial_plus_poles) do
-    Activity::Magnetic::PlusPoles.new.merge(
+    Activity::Magnetic::DSL::PlusPoles.new.merge(
       Activity::Magnetic.Output(Circuit::Right, :success) => :success,
       # Activity::Magnetic.Output("Signal A", :exception)  => :exception,
       Activity::Magnetic.Output(Circuit::Left, :failure) => :failure
@@ -417,7 +417,7 @@ ActivityBuildTest::L
 
   describe "Path::Builder" do
     let(:initial_plus_poles) do
-      Activity::Magnetic::PlusPoles.new.merge(
+      Activity::Magnetic::DSL::PlusPoles.new.merge(
         Activity::Magnetic.Output(Circuit::Right, :success) => :success,
       )
     end

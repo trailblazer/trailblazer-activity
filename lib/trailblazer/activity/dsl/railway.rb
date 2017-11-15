@@ -116,26 +116,3 @@ module Trailblazer
     end # PoleGenerator
   end
 end
-
-# initial_plus_poles = Right => :success, Left => :failure
-
-=begin
-
-Path
-  (Right, :success) => :success
-Railway
-  (Right, :success) => :success
-  (Left,  :failure) => :failure
-          (Right, :success) => :success
-          (Left,  :failure) => :success
-PassFast
-          (Right, :success) => :pass_fast
-          (Left,  :failure) => :pass_fast
-
-FastTrack
-  (Right,    :success)   => :success
-  (Left,     :failure)   => :failure
-  (PassFast, :pass_fast) => :pass_fast
-  (FailFast, :fail_fast) => :fail_fast
-
-=end
