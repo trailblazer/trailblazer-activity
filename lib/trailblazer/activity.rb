@@ -9,7 +9,6 @@ module Trailblazer
   class Activity
 
     require "trailblazer/activity/version"
-    require "trailblazer/activity/graph"
     require "trailblazer/activity/subprocess"
 
     require "trailblazer/activity/wrap"

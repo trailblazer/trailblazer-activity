@@ -242,7 +242,7 @@ class ActivityBuildTest < Minitest::Spec
 #  []
 # }
 
-circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
 
 pp circuit_hash
 
@@ -307,12 +307,12 @@ ActivityBuildTest::L
       Activity::Magnetic.Output("Signal A", :exception)  => :exception,
       Activity::Magnetic.Output(Circuit::Left, :failure) => :failure )
 
-    seq = Activity::DSL.alter_sequence(
-      Activity::Magnetic::Alterations.new,
+    seq = Activity::Magnetic::DSL::ProcessElement.(
+      Activity::Magnetic::DSL::Alterations.new,
       G,
         id: :receive_process_id,
         strategy: [
-          Activity::DSL::PoleGenerator::FastTrack.method(:step),
+          Activity::Magnetic::DSL::FastTrack.method(:step),
           plus_poles: initial_plus_poles,
         ],
 
@@ -322,8 +322,16 @@ ActivityBuildTest::L
         Activity::Magnetic.Output("Signal A", :exception) => Circuit::End.new("End.signal_a_reached"),
      )
 
-    pp seq
-    Inspect(seq).must_equal %{#<Trailblazer::Activity::Magnetic::Alterations: @groups=#<Trailblazer::Activity::Schema::Magnetic::Dependencies: @groups={:start=>[], :main=>[#<struct Trailblazer::Activity::Schema::Sequence::Element id=\"ActivityBuildTest::G\", configuration=[[:success], ActivityBuildTest::G, [#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=\"ActivityBuildTest::G-Trailblazer::Circuit::Right\">, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"Signal A\", semantic=:exception>, color=\"ActivityBuildTest::G-Signal A\">, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]]>], :end=>[#<struct Trailblazer::Activity::Schema::Sequence::Element id=\"End.invalid_result\", configuration=[[\"ActivityBuildTest::G-Trailblazer::Circuit::Right\"], #<Trailblazer::Circuit::End: @name=\"End.invalid_result\", @options={}>, []]>, #<struct Trailblazer::Activity::Schema::Sequence::Element id=\"End.signal_a_reached\", configuration=[[\"ActivityBuildTest::G-Signal A\"], #<Trailblazer::Circuit::End: @name=\"End.signal_a_reached\", @options={}>, []]>], :unresolved=>[]}, @order=[:start, :main, :end, :unresolved]>, @future_magnetic_to={}>}
+    Seq(seq.to_a).must_equal %{
+[:success] ==> ActivityBuildTest::G
+ (success)/Right ==> "ActivityBuildTest::G-Trailblazer::Circuit::Right"
+ (exception)/Signal A ==> "ActivityBuildTest::G-Signal A"
+ (failure)/Left ==> :failure
+["ActivityBuildTest::G-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
+ []
+["ActivityBuildTest::G-Signal A"] ==> #<End:End.signal_a_reached>
+ []
+}
   end
 
 
