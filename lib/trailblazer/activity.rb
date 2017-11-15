@@ -180,9 +180,17 @@ module Trailblazer
 
         Magnetic.Output(signal, semantic)
       end
+
+      def self.End(name, semantic)
+         evt = Circuit::End.new(name)
+        evt
+      end
     end
 
     class Builder
+      extend Forwardable
+      def_delegators DSL, :Output, :End
+
       def initialize(strategy_options={})
         @strategy_options = strategy_options
 
@@ -191,18 +199,6 @@ module Trailblazer
 
       def draft
         @sequence.to_a
-      end
-
-      # DSL shit:
-      def End(name, semantic)
-         evt = Circuit::End.new(name)
-        evt
-      end
-
-      #   Output( Left, :failure )
-      #   Output( :failure ) #=> Output::Semantic
-      def Output(signal, semantic=nil)
-        DSL::Output(signal, semantic)
       end
 
       private
