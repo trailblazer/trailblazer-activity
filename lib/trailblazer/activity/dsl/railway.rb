@@ -2,7 +2,7 @@ module Trailblazer
   module Activity::DSL
     # strategy.( task, track_color:, plus_poles:, pass_fast:, )
     module PoleGenerator
-      # ONLY JOB: magnetic_to and Outputs ("Polarization")
+      # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
       # Decorates #task
       class Railway
         def self.initialize_sequence(sequence, track_color: :success, failure_color: :failure, **)

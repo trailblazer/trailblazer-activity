@@ -103,7 +103,7 @@ module Trailblazer
         magnetic_to, plus_poles = strategy.(task, args )
 
         # 3. process user options
-        arr = process_dsl_options(sequence, id, options)
+        arr = process_dsl_options(id, options)
 
         _plus_poles = arr.collect { |cfg| cfg[0] }.compact
         adds       = arr.collect { |cfg| cfg[1] }.compact.flatten(1)
@@ -124,7 +124,7 @@ module Trailblazer
       # Output => target (End/"id"/:color)
       # @return [PlusPole]
       # @return additional alterations
-      def self.process_dsl_options(sequence, id, options)
+      def self.process_dsl_options(id, options)
         # key: Output
         options.collect do |key, task|
           output = key
@@ -140,9 +140,9 @@ module Trailblazer
               [[ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]]
             ]
           elsif task.is_a?(String) # let's say this means an existing step
-            new_edge = "#{key.signal}-#{task}"
+            new_edge = "#{output.signal}-#{task}"
             [
-              Magnetic::PlusPole.new(key, new_edge),
+              Magnetic::PlusPole.new(output, new_edge),
 
               [[ :magnetic_to, [ task, [new_edge] ] ]],
             ]

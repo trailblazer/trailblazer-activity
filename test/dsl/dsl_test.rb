@@ -102,7 +102,7 @@ class ActivityBuildTest < Minitest::Spec
 }
   end
 
-  # some new Output, connected to existing track_9 edge
+  # activity with 1 output, AND 1 new Output, connected to existing track_9 edge
   it do
     seq = Activity.plan(track_color: :"track_9") do
       task J, id: "confused", Output(Left, :failure) => :"track_9"
@@ -123,6 +123,64 @@ class ActivityBuildTest < Minitest::Spec
  []
 }
   end
+
+  # Activity with 2 predefined outputs, direct 2nd one to new end
+  it do
+    seq = Activity.plan(track_color: :"track_9") do
+      task J, id: "confused",
+        Output(Left, :trigger) => End("End.trigger", :triggered),
+        # this comes from the Operation DSL since it knows {Activity}J
+        plus_poles: Activity::Magnetic::PlusPoles.new.merge(
+          Activity::Magnetic.Output(Circuit::Left,  :trigger) => nil,
+          Activity::Magnetic.Output(Circuit::Right, :success) => nil,
+        ).freeze
+      task K, id: "normal"
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::J
+ (trigger)/Left ==> "ActivityBuildTest::J-Trailblazer::Circuit::Left"
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::K
+ (success)/Right ==> :track_9
+[:track_9] ==> #<End:track_9>
+ []
+["ActivityBuildTest::J-Trailblazer::Circuit::Left"] ==> #<End:End.trigger>
+ []
+}
+  end
+  # Activity with 2 predefined outputs, direct 2nd one to new end without Output
+  it do
+    seq = Activity.plan(track_color: :"track_9") do
+      task J, id: "confused",
+        Output(:trigger) => End("End.trigger", :triggered),
+        # this comes from the Operation DSL since it knows {Activity}J
+        plus_poles: Activity::Magnetic::PlusPoles.new.merge(
+          Activity::Magnetic.Output(Circuit::Left,  :trigger) => nil,
+          Activity::Magnetic.Output(Circuit::Right, :success) => nil,
+        ).freeze
+      task K, id: "normal"
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::J
+ (trigger)/Left ==> "ActivityBuildTest::J-Trailblazer::Circuit::Left"
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::K
+ (success)/Right ==> :track_9
+[:track_9] ==> #<End:track_9>
+ []
+["ActivityBuildTest::J-Trailblazer::Circuit::Left"] ==> #<End:End.trigger>
+ []
+}
+  end
+
+  # Activity with 2 predefined outputs, direct 2nd one to same end
+
 
   it do
     tripletts = Activity.plan do
