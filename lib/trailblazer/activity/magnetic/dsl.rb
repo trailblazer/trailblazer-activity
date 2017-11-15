@@ -97,21 +97,6 @@ module Trailblazer
       module Output
         Semantic = Struct.new(:value)
       end
-
-      # helpers used in the DSL
-
-      #   Output( Left, :failure )
-      #   Output( :failure ) #=> Output::Semantic
-      def self.Output(signal, semantic=nil)
-        return Output::Semantic.new(signal) if semantic.nil?
-
-        Activity::Magnetic.Output(signal, semantic)
-      end
-
-      def self.End(name, semantic)
-         evt = Circuit::End.new(name)
-        evt
-      end
     end # DSL
   end
 end

@@ -268,33 +268,55 @@ ActivityBuildTest::L
     activity.outputs.must_equal()
   end
 
-  # defaults
-  it do
-    activity = Activity.plan do
-      # task Task(), id: :inquiry_create, Left => :suspend_for_correct
-      #   task Task(), id: :suspend_for_correct, Right => :inquiry_create
-      # task Task(), id: :notify_pickup
-      # task Task(), id: :suspend_for_pickup
+  it "::build" do
+    binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity::Magnetic.Output(Circuit::Right, :success) => nil,
+      Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
 
-      # task Task(), id: :pickup
-      # task Task(), id: :suspend_for_process_id
+    activity = Activity.build do
+      task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct"
+        task B, id: "suspend_for_correct", Output(:failure) => "inquiry_create", plus_poles: binary_plus_poles
 
       task G, id: :receive_process_id
       # task Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(Left, :failure) => ->(color) do
-
-                                                  # means: :success => "report_invalid_result"-End.invalid_result"
-        task J, id: "report_invalid_result", Output(Right, :success) => color
-        # task K, id: "log_invalid_result", Output(Right, :success) => color
-        task K, id: "log_invalid_result", Output(Right, :success) =>
-          End("End.invalid_result", :invalid_result)
+      task I, id: :process_result, Output(Left, :failure) => -> do
+        task J, id: "report_invalid_result"
+        # task K, id: "log_invalid_result", Output(:success) => color
+        task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
       end
 
-      task L, id: :notify_clerk
+      task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    puts Inspect(activity).must_equal %{{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>ActivityBuildTest::G}, ActivityBuildTest::G=>{Trailblazer::Circuit::Right=>ActivityBuildTest::I}, ActivityBuildTest::I=>{Trailblazer::Circuit::Left=>ActivityBuildTest::J, Trailblazer::Circuit::Right=>ActivityBuildTest::L}, ActivityBuildTest::J=>{Trailblazer::Circuit::Right=>ActivityBuildTest::K}, ActivityBuildTest::K=>{Trailblazer::Circuit::Right=>#<Trailblazer::Circuit::End: @name=\"End.invalid_result\", @options={}>}, ActivityBuildTest::L=>{Trailblazer::Circuit::Right=>#<Trailblazer::Circuit::End: @name=:success, @options={}>}, #<Trailblazer::Circuit::End: @name=:success, @options={}>=>{}, #<Trailblazer::Circuit::End: @name=\"End.invalid_result\", @options={}>=>{}}}
+    Cct(activity.circuit.to_fields.first).must_equal %{
+#<Start:default>
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::A
+ActivityBuildTest::A
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::B
+ {Trailblazer::Circuit::Left} => ActivityBuildTest::B
+ActivityBuildTest::B
+ {Trailblazer::Circuit::Left} => ActivityBuildTest::A
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::G
+ActivityBuildTest::G
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::I
+ActivityBuildTest::I
+ {Trailblazer::Circuit::Left} => ActivityBuildTest::J
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::L
+ActivityBuildTest::J
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::K
+ActivityBuildTest::K
+ {Trailblazer::Circuit::Right} => #<End:End.invalid_result>
+#<End:track_0.>
+
+#<End:End.invalid_result>
+
+ActivityBuildTest::L
+ {Trailblazer::Circuit::Right} => #<End:success>
+#<End:success>
+}
+
+    activity.outputs.must_equal({ 1 => 2})
   end
 
 

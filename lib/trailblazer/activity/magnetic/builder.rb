@@ -1,8 +1,13 @@
 module Trailblazer
   module Activity::Magnetic
     class Builder
-      extend Forwardable
-      def_delegators DSL, :Output, :End # DISCUSS: Builder could be the DSL namespace?
+      def self.build(options={}, &block)
+        tripletts = plan( options, &block )
+
+        circuit_hash = Generate.( tripletts )
+
+        Activity.new( circuit_hash, {} )
+      end
 
       def initialize(strategy_options={})
         @strategy_options = strategy_options
@@ -12,6 +17,33 @@ module Trailblazer
 
       def draft
         @sequence.to_a
+      end
+
+      def finalize
+        tripletts = draft
+        # pp tripletts
+
+        circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
+      end
+
+      def to_activity
+        tripletts = dsl.to_a
+        # pp tripletts
+
+        circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
+      end
+
+      #   Output( Left, :failure )
+      #   Output( :failure ) #=> Output::Semantic
+      def Output(signal, semantic=nil)
+        return DSL::Output::Semantic.new(signal) if semantic.nil?
+
+        Activity::Magnetic.Output(signal, semantic)
+      end
+
+      def End(name, semantic)
+         evt = Circuit::End.new(name)
+        evt
       end
 
       private
@@ -62,29 +94,29 @@ module Trailblazer
       def pass(*args, &block)
         add(DSL::FastTrack.method(:pass), *args, &block)
       end
-
-      def finalize()
-        tripletts = draft
-        # pp tripletts
-
-        circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
-      end
-
-      def to_activity
-        tripletts = dsl.to_a
-        # pp tripletts
-
-        circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
-      end
-      def self.build
-        new
-        instance_exec
-        to_activity
-      end
     end
 
     class Path
       class Builder < Builder
+        # @return [Triplett]
+        def self.plan(options={}, &block)
+          builder = new(
+            {
+              plus_poles: DSL::PlusPoles.new.merge(
+                # Magnetic.Output(Circuit::Right, :success) => :success
+                Activity::Magnetic.Output(Circuit::Right, :success) => nil
+              ).freeze,
+
+
+            }.merge(options)
+          )
+
+          # TODO: pass new edge color in block?
+          builder.instance_exec(&block)
+
+          tripletts = builder.draft
+        end
+
         def keywords
           [:id, :plus_poles]
         end
