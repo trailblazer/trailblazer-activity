@@ -104,8 +104,7 @@ class ActivityBuildTest < Minitest::Spec
 }
   end
 
-  # activity with 1 output, AND 1 new Output, connected to existing track_9 edge
-  it do
+  it "Output(Left, :failure) allows to skip the additional :plus_poles definition" do
     seq = Activity.plan(track_color: :"track_9") do
       task J, id: "confused", Output(Left, :failure) => :"track_9"
       task K, id: "normal"
@@ -221,13 +220,13 @@ class ActivityBuildTest < Minitest::Spec
       Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
 
     tripletts = Activity.plan do
-      task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", plus_poles: binary_plus_poles
+      task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct"
         task B, id: "suspend_for_correct", Output(:failure) => "inquiry_create", plus_poles: binary_plus_poles
 
-      task G, id: :receive_process_id#, Output(Right, :success) => :success
+      task G, id: :receive_process_id
       # task Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(:success) => :success, Output(Left, :failure) => -> do
+      task I, id: :process_result, Output(Left, :failure) => -> do
         task J, id: "report_invalid_result"
         # task K, id: "log_invalid_result", Output(:success) => color
         task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
@@ -238,8 +237,8 @@ class ActivityBuildTest < Minitest::Spec
 
   circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
 
-    puts Cct(circuit_hash)
-    Cct(circuit_hash).sub(/\d\d+/, "").must_equal %{
+    # puts Cct(circuit_hash)
+    Cct(circuit_hash).must_equal %{
 #<Start:default>
  {Trailblazer::Circuit::Right} => ActivityBuildTest::A
 ActivityBuildTest::A

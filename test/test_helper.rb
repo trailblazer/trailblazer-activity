@@ -61,6 +61,6 @@ Minitest::Spec.class_eval do
 
       content = content.join("\n")
 
-      "\n#{content}"
+      "\n#{content}".sub(/\d\d+/, "")
   end
 end
