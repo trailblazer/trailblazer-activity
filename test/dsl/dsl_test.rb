@@ -7,6 +7,8 @@ class ActivityBuildTest < Minitest::Spec
   Right = Trailblazer::Circuit::Right
 
 
+  class A; end
+  class B; end
   class G; end
   class I; end
   class J; end
@@ -28,10 +30,10 @@ class ActivityBuildTest < Minitest::Spec
 [:track_9] ==> ActivityBuildTest::J
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
- (success)/Right ==> "ActivityBuildTest::K-Trailblazer::Circuit::Right"
+ (success)/Right ==> "log_invalid_result-Trailblazer::Circuit::Right"
 [:track_9] ==> #<End:track_9>
  []
-["ActivityBuildTest::K-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
+["log_invalid_result-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
  []
 }
   end
@@ -49,15 +51,15 @@ class ActivityBuildTest < Minitest::Spec
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
  (success)/Right ==> :track_9
- (failure)/Left ==> "ActivityBuildTest::J-Trailblazer::Circuit::Left"
+ (failure)/Left ==> "extract-Trailblazer::Circuit::Left"
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
- (failure)/Left ==> "ActivityBuildTest::K-Trailblazer::Circuit::Left"
+ (failure)/Left ==> "validate-Trailblazer::Circuit::Left"
 [:track_9] ==> #<End:track_9>
  []
-["ActivityBuildTest::J-Trailblazer::Circuit::Left"] ==> #<End:End.extract.key_not_found>
+["extract-Trailblazer::Circuit::Left"] ==> #<End:End.extract.key_not_found>
  []
-["ActivityBuildTest::K-Trailblazer::Circuit::Left"] ==> #<End:End.invalid>
+["validate-Trailblazer::Circuit::Left"] ==> #<End:End.invalid>
  []
 }
   end
@@ -140,13 +142,13 @@ class ActivityBuildTest < Minitest::Spec
 [] ==> #<Start:default>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
- (trigger)/Left ==> "ActivityBuildTest::J-Trailblazer::Circuit::Left"
+ (trigger)/Left ==> "confused-Trailblazer::Circuit::Left"
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
 [:track_9] ==> #<End:track_9>
  []
-["ActivityBuildTest::J-Trailblazer::Circuit::Left"] ==> #<End:End.trigger>
+["confused-Trailblazer::Circuit::Left"] ==> #<End:End.trigger>
  []
 }
   end
@@ -169,13 +171,13 @@ class ActivityBuildTest < Minitest::Spec
 [] ==> #<Start:default>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
- (trigger)/Left ==> "ActivityBuildTest::J-Trailblazer::Circuit::Left"
+ (trigger)/Left ==> "confused-Trailblazer::Circuit::Left"
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
 [:track_9] ==> #<End:track_9>
  []
-["ActivityBuildTest::J-Trailblazer::Circuit::Left"] ==> #<End:End.trigger>
+["confused-Trailblazer::Circuit::Left"] ==> #<End:End.trigger>
  []
 }
   end
@@ -211,39 +213,40 @@ class ActivityBuildTest < Minitest::Spec
 }
   end
 
-  # Activity with 2 predefined outputs, direct 2nd one to same end
 
-
+  # circulars, etc.
   it do
-    tripletts = Activity.plan do
-      # task Task(), id: :inquiry_create, Left => :suspend_for_correct
-      #   task Task(), id: :suspend_for_correct, Right => :inquiry_create
-      # task Task(), id: :notify_pickup
-      # task Task(), id: :suspend_for_pickup
+    binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity::Magnetic.Output(Circuit::Right, :success) => nil,
+      Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
 
-      # task Task(), id: :pickup
-      # task Task(), id: :suspend_for_process_id
+    tripletts = Activity.plan do
+      task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", plus_poles: binary_plus_poles
+        task B, id: "suspend_for_correct", Output(:failure) => "inquiry_create", plus_poles: binary_plus_poles
 
       task G, id: :receive_process_id#, Output(Right, :success) => :success
       # task Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(Right, :success) => :success, Output(Left, :failure) => -> do
+      task I, id: :process_result, Output(:success) => :success, Output(Left, :failure) => -> do
         task J, id: "report_invalid_result"
-        # task K, id: "log_invalid_result", Output(Right, :success) => color
-        task K, id: "log_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
+        # task K, id: "log_invalid_result", Output(:success) => color
+        task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
       end
 
       task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
+  circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
 
-circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
-
-pp circuit_hash
-
-puts Cct(circuit_hash)
+    puts Cct(circuit_hash)
     Cct(circuit_hash).sub(/\d\d+/, "").must_equal %{
 #<Start:default>
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::A
+ActivityBuildTest::A
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::B
+ {Trailblazer::Circuit::Left} => ActivityBuildTest::B
+ActivityBuildTest::B
+ {Trailblazer::Circuit::Left} => ActivityBuildTest::A
  {Trailblazer::Circuit::Right} => ActivityBuildTest::G
 ActivityBuildTest::G
  {Trailblazer::Circuit::Right} => ActivityBuildTest::I
@@ -319,12 +322,12 @@ ActivityBuildTest::L
 
     Seq(seq.to_a).must_equal %{
 [:success] ==> ActivityBuildTest::G
- (success)/Right ==> "ActivityBuildTest::G-Trailblazer::Circuit::Right"
- (exception)/Signal A ==> "ActivityBuildTest::G-Signal A"
+ (success)/Right ==> "receive_process_id-Trailblazer::Circuit::Right"
+ (exception)/Signal A ==> "receive_process_id-Signal A"
  (failure)/Left ==> :failure
-["ActivityBuildTest::G-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
+["receive_process_id-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
  []
-["ActivityBuildTest::G-Signal A"] ==> #<End:End.signal_a_reached>
+["receive_process_id-Signal A"] ==> #<End:End.signal_a_reached>
  []
 }
   end
@@ -397,7 +400,7 @@ ActivityBuildTest::L
 [:pink] ==> ActivityBuildTest::G
  (success)/Right ==> :pink
  (failure)/Left ==> :fail_fast
- (exception)/Exception ==> "ActivityBuildTest::G-Exception"
+ (exception)/Exception ==> "G-Exception"
 [:pink] ==> ActivityBuildTest::I
  (success)/Right ==> :pink
  (failure)/Left ==> :black
@@ -415,7 +418,7 @@ ActivityBuildTest::L
  []
 [:pass_fast] ==> #<End:pass_fast>
  []
-["ActivityBuildTest::G-Exception"] ==> #<End:exception>
+["G-Exception"] ==> #<End:exception>
  []
 }
   end

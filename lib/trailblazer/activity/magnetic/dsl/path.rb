@@ -2,7 +2,7 @@ module Trailblazer
   module Activity::Magnetic
     module DSL
       # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
-      # Decorates #task
+      # Implements #task
       module Path
         def self.initialize_sequence(sequence, track_color: :success, **)
           # add Start

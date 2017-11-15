@@ -19,6 +19,7 @@ module Trailblazer
           self
         end
 
+        # make `id` magnetic_to
         def magnetic_to(id, magnetic_to)
           group, index = @groups.find(id) # this can be a future task!
 

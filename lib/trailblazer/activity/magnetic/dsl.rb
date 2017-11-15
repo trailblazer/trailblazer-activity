@@ -8,11 +8,6 @@ module Trailblazer
         # add new connections
         # add new ends
         def call(sequence, task, options={}, id:raise, strategy:raise, &block)
-          # 1. sort generic options
-          id          = options[:id] || task.to_s
-          # magnetic_to = options[:magnetic_to] || track_color
-          options     = options.reject{ |key,v| [:id, :magnetic_to].include?(key) }
-
           # 2. compute default Polarizations by running the strategy
           strategy, args = strategy
           magnetic_to, plus_poles = strategy.(task, args )
