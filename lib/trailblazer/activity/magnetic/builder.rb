@@ -7,7 +7,7 @@ module Trailblazer
       def initialize(strategy_options={})
         @strategy_options = strategy_options
 
-        @sequence = Alterations.new
+        @sequence = DSL::Alterations.new
       end
 
       def draft

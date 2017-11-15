@@ -1,5 +1,5 @@
 module Trailblazer
-  class Activity::Schema
+  module Activity::Schema
     #  the list of what tasks to add to the graph, for the "drawer"
     # produces immutable list of: (node, magnetic_to (incoming colors), outgoing colors)
     #  via #to_a
