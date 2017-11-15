@@ -32,7 +32,6 @@ require "trailblazer/activity/magnetic/dsl/plus_poles"
 require "trailblazer/activity/magnetic/structures"
 
     require "trailblazer/activity/schema/dependencies"
-    require "trailblazer/activity/schema/magnetic"
 
     require "trailblazer/activity/magnetic"
     require "trailblazer/activity/magnetic/builder"
@@ -41,3 +40,4 @@ require "trailblazer/activity/magnetic/structures"
     require "trailblazer/activity/magnetic/dsl/railway"
     require "trailblazer/activity/magnetic/dsl/fast_track" # TODO: move to Operation gem.
 
+require "trailblazer/activity/magnetic/generate"

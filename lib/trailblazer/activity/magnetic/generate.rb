@@ -4,9 +4,8 @@ module Trailblazer
   # A Schema always produces an Activity.
   #
   # only knows about PlusPole
-  class Activity::Schema
-    module Magnetic
-
+  module Activity::Magnetic
+    module Generate
       Line   = Struct.new(:source, :output)
 
       class OpenLines

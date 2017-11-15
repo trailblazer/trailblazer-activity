@@ -67,14 +67,14 @@ module Trailblazer
         tripletts = draft
         # pp tripletts
 
-        circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+        circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
       end
 
       def to_activity
         tripletts = dsl.to_a
         # pp tripletts
 
-        circuit_hash = Trailblazer::Activity::Schema::Magnetic.( tripletts )
+        circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
       end
       def self.build
         new
