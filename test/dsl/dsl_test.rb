@@ -1,7 +1,5 @@
 require "test_helper"
 
-require "trailblazer/activity/magnetic"
-
 class ActivityBuildTest < Minitest::Spec
   Left = Trailblazer::Circuit::Left
   Right = Trailblazer::Circuit::Right
