@@ -8,22 +8,22 @@ require "trailblazer/container_chain"
 module Trailblazer
   class Activity
 
-  require "trailblazer/activity/version"
-  require "trailblazer/activity/graph"
-  require "trailblazer/activity/subprocess"
+    require "trailblazer/activity/version"
+    require "trailblazer/activity/graph"
+    require "trailblazer/activity/subprocess"
 
-  require "trailblazer/activity/wrap"
-  require "trailblazer/wrap/variable_mapping"
-  require "trailblazer/wrap/call_task"
-  require "trailblazer/wrap/trace"
-  require "trailblazer/wrap/inject"
-  require "trailblazer/wrap/runner"
+    require "trailblazer/activity/wrap"
+    require "trailblazer/wrap/variable_mapping"
+    require "trailblazer/wrap/call_task"
+    require "trailblazer/wrap/trace"
+    require "trailblazer/wrap/inject"
+    require "trailblazer/wrap/runner"
 
-  require "trailblazer/activity/trace"
-  require "trailblazer/activity/present"
+    require "trailblazer/activity/trace"
+    require "trailblazer/activity/present"
 
 
-  require "trailblazer/activity/schema/sequence"
+    require "trailblazer/activity/schema/sequence"
 
     # Only way to build an Activity.
     def self.from_wirings(wirings, &block)
@@ -103,7 +103,7 @@ module Trailblazer
         magnetic_to, plus_poles = strategy.(task, args )
 
         # 3. process user options
-        arr = process_dsl_options(id, options)
+        arr = process_dsl_options(id, options, args[:plus_poles])
 
         _plus_poles = arr.collect { |cfg| cfg[0] }.compact
         adds       = arr.collect { |cfg| cfg[1] }.compact.flatten(1)
@@ -124,7 +124,7 @@ module Trailblazer
       # Output => target (End/"id"/:color)
       # @return [PlusPole]
       # @return additional alterations
-      def self.process_dsl_options(id, options)
+      def self.process_dsl_options(id, options, outputs)
         # key: Output
         options.collect do |key, task|
           output = key
@@ -168,6 +168,20 @@ module Trailblazer
       end
     end
 
+    module DSL
+      module Output
+        Semantic = Struct.new(:value)
+      end
+
+      #   Output( Left, :failure )
+      #   Output( :failure ) #=> Output::Semantic
+      def self.Output(signal, semantic=nil)
+        return Output::Semantic.new(signal) if semantic.nil?
+
+        Magnetic.Output(signal, semantic)
+      end
+    end
+
     class Builder
       def initialize(strategy_options={})
         @strategy_options = strategy_options
@@ -185,8 +199,10 @@ module Trailblazer
         evt
       end
 
-      def Output(signal, semantic)
-        Magnetic.Output(signal, semantic)
+      #   Output( Left, :failure )
+      #   Output( :failure ) #=> Output::Semantic
+      def Output(signal, semantic=nil)
+        DSL::Output(signal, semantic)
       end
 
       private
