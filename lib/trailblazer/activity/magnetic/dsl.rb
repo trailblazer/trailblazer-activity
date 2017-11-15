@@ -67,7 +67,7 @@ module Trailblazer
           elsif task.is_a?(String) # let's say this means an existing step
             new_edge = "#{output.signal}-#{task}"
             [
-              Magnetic::PlusPole.new(output, new_edge),
+              [ output, new_edge ],
 
               [[ :magnetic_to, [ task, [new_edge] ] ]],
             ]

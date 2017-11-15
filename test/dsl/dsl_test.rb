@@ -41,7 +41,6 @@ class ActivityBuildTest < Minitest::Spec
     seq = Activity.plan(track_color: :"track_9") do
       task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
       task K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
-      # TODO: task ==> End.track_9
     end
 
 # puts Seq(seq)
@@ -87,7 +86,6 @@ class ActivityBuildTest < Minitest::Spec
     seq = Activity.plan(track_color: :"track_9") do
       task J, id: "confused", Output(Left, :failure) => :success__
       task K, id: "normal"
-      # TODO: task ==> End.track_9
     end
 
 # puts Seq(seq)
@@ -109,7 +107,6 @@ class ActivityBuildTest < Minitest::Spec
     seq = Activity.plan(track_color: :"track_9") do
       task J, id: "confused", Output(Left, :failure) => :"track_9"
       task K, id: "normal"
-      # TODO: task ==> End.track_9
     end
 
 # puts Seq(seq)
@@ -194,6 +191,26 @@ class ActivityBuildTest < Minitest::Spec
     exception.message.must_equal "Couldn't find existing output for `:does_absolutely_not_exist`."
   end
 
+  # only PlusPole goes straight to IDed end.
+  it do
+    seq = Activity.plan(track_color: :"track_9") do
+      task J, id: "confused", Output(Right, :success) => "End.track_9"
+      task K, id: "normal"
+    end
+
+# puts Seq(seq)
+    Seq(seq).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::J
+ (success)/Right ==> "Trailblazer::Circuit::Right-End.track_9"
+[:track_9] ==> ActivityBuildTest::K
+ (success)/Right ==> :track_9
+[:track_9, "Trailblazer::Circuit::Right-End.track_9"] ==> #<End:track_9>
+ []
+}
+  end
+
   # Activity with 2 predefined outputs, direct 2nd one to same end
 
 
@@ -219,28 +236,6 @@ class ActivityBuildTest < Minitest::Spec
       task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    # puts Seq(activity)
-#     Seq(activity).must_equal %{
-# [] ==> #<Start:default>
-#  (success)/Right ==> :success
-# [:success] ==> ActivityBuildTest::G
-#  (success)/Right ==> :success
-# [:success] ==> ActivityBuildTest::I
-#  (success)/Right ==> :success
-#  (failure)/Left ==> "track_0.7043767456808654"
-# ["track_0.7043767456808654"] ==> ActivityBuildTest::J
-#  (success)/Right ==> "track_0.7043767456808654"
-# ["track_0.7043767456808654"] ==> ActivityBuildTest::K
-#  (success)/Right ==> "ActivityBuildTest::K-Trailblazer::Circuit::Right"
-# ["track_0.7043767456808654"] ==> #<End:success>
-#  []
-# ["ActivityBuildTest::K-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
-#  []
-# [:success] ==> ActivityBuildTest::L
-#  (success)/Right ==> :success
-# [:success] ==> #<End:success>
-#  []
-# }
 
 circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
 
