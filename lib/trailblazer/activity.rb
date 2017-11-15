@@ -24,49 +24,6 @@ module Trailblazer
 
     require "trailblazer/activity/schema/sequence"
 
-    # Only way to build an Activity.
-    def self.from_wirings(wirings, &block)
-      start_evt  = Circuit::Start.new(:default)
-      start_args = [ start_evt, { type: :event, id: "Start.default" } ]
-
-      start      = block ? Graph::Start( *start_args, &block ) : Graph::Start(*start_args)
-
-      wirings.each do |wiring|
-        start.send(*wiring)
-      end
-
-      new(start)
-    end
-
-    # Build an activity from a hash.
-    #
-    #   activity = Trailblazer::Activity.from_hash do |start, _end|
-    #     {
-    #       start            => { Circuit::Right => Blog::Write },
-    #       Blog::Write      => { Circuit::Right => Blog::SpellCheck },
-    #       Blog::SpellCheck => { Circuit::Right => Blog::Publish, Circuit::Left => Blog::Correct },
-    #       Blog::Correct    => { Circuit::Right => Blog::SpellCheck },
-    #       Blog::Publish    => { Circuit::Right => _end }
-    #     }
-    #   end
-    def self.from_hash(end_evt=Circuit::End.new(:default), start_evt=Circuit::Start.new(:default), &block)
-      hash  = yield(start_evt, end_evt)
-      graph = Graph::Start( start_evt, id: "Start.default" )
-
-      hash.each do |source_task, connections|
-        source = graph.find_all { |node| node[:_wrapped] == source_task }.first or raise "#{source_task} unknown"
-
-        connections.each do |signal, task| # FIXME: id sucks
-          if existing = graph.find_all { |node| node[:_wrapped] == task }.first
-            graph.connect!( source: source[:id], target: existing, edge: [signal, {}] )
-          else
-            graph.attach!( source: source[:id], target: [task, id: task], edge: [signal, {}] )
-          end
-        end
-      end
-
-      new(graph)
-    end
 
     def self.merge(activity, wirings)
       graph = activity.graph
