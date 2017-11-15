@@ -124,47 +124,62 @@ module Trailblazer
       # Output => target (End/"id"/:color)
       # @return [PlusPole]
       # @return additional alterations
+      #
+      # options:
+      #   { DSL::Output[::Semantic] => target }
+      #
       def self.process_dsl_options(id, options, outputs)
         # key: Output
         options.collect do |key, task|
-          output = key
-
-          if task.kind_of?(Circuit::End)
-            new_edge = "#{id}-#{key.signal}"
-
-            [
-              # assuming key is an Output
-              # Magnetic::PlusPole.new(key, new_edge),
-              [ output, new_edge ],
-
-              [[ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]]
-            ]
-          elsif task.is_a?(String) # let's say this means an existing step
-            new_edge = "#{output.signal}-#{task}"
-            [
-              Magnetic::PlusPole.new(output, new_edge),
-
-              [[ :magnetic_to, [ task, [new_edge] ] ]],
-            ]
-          elsif task.is_a?(Proc)
-            seq = Activity.plan(track_color: color="track_#{rand}", &task)
-
-            # TODO: this is a pseudo-"merge" and should be public API at some point.
-            adds = seq[1..-1].collect do |arr|
-              [ :add, [ "options[:id]#{rand}_fixme", arr ] ]
-            end
-
-            [
-              [ output, color ],
-              adds
-            ]
-          else # An additional plus polarization. Example: Output => :success
-            [
-              [ output, task ]
-              #Magnetic::PlusPole.new(key, task)
-            ]
-          end
+          process_tuple(id, key, task, outputs)
         end
+      end
+
+      def self.process_tuple(id, output, task, outputs)
+        output = output_for(output, outputs) if output.kind_of?(DSL::Output::Semantic)
+
+        if task.kind_of?(Circuit::End)
+          new_edge = "#{id}-#{output.signal}"
+
+          [
+            # assuming key is an Output
+            # Magnetic::PlusPole.new(key, new_edge),
+            [ output, new_edge ],
+
+            [[ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]]
+          ]
+        elsif task.is_a?(String) # let's say this means an existing step
+          new_edge = "#{output.signal}-#{task}"
+          [
+            Magnetic::PlusPole.new(output, new_edge),
+
+            [[ :magnetic_to, [ task, [new_edge] ] ]],
+          ]
+        elsif task.is_a?(Proc)
+          seq = Activity.plan(track_color: color="track_#{rand}", &task)
+
+          # TODO: this is a pseudo-"merge" and should be public API at some point.
+          adds = seq[1..-1].collect do |arr|
+            [ :add, [ "options[:id]#{rand}_fixme", arr ] ]
+          end
+
+          [
+            [ output, color ],
+            adds
+          ]
+        else # An additional plus polarization. Example: Output => :success
+          [
+            [ output, task ]
+            #Magnetic::PlusPole.new(key, task)
+          ]
+        end
+      end
+
+      # @param semantic DSL::Output::Semantic
+      def self.output_for(semantic, outputs)
+        # DISCUSS: review PlusPoles#[]
+        output, _ = outputs.instance_variable_get(:@plus_poles)[semantic.value]
+        output or raise("Couldn't find existing output for `#{semantic.value.inspect}`.")
       end
     end
 

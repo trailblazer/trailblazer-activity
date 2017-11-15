@@ -151,6 +151,8 @@ class ActivityBuildTest < Minitest::Spec
  []
 }
   end
+
+  # test Output(:semantic)
   # Activity with 2 predefined outputs, direct 2nd one to new end without Output
   it do
     seq = Activity.plan(track_color: :"track_9") do
@@ -177,6 +179,17 @@ class ActivityBuildTest < Minitest::Spec
 ["ActivityBuildTest::J-Trailblazer::Circuit::Left"] ==> #<End:End.trigger>
  []
 }
+  end
+
+  it "raises exception when referencing non-existant semantic" do
+    exception = assert_raises do
+      Activity.plan do
+        task J,
+          Output(:does_absolutely_not_exist) => End("End.trigger", :triggered)
+      end
+    end
+
+    exception.message.must_equal "Couldn't find existing output for `:does_absolutely_not_exist`."
   end
 
   # Activity with 2 predefined outputs, direct 2nd one to same end
