@@ -5,7 +5,7 @@ class PlusPolesTest < Minitest::Spec
   Right = Trailblazer::Circuit::Right
 
   it do
-    poles = Trailblazer::Activity::Magnetic::PlusPoles.new
+    poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
 
     new_poles = poles.merge( Activity::Magnetic.Output(Right, :success) => :success, Activity::Magnetic.Output(Left, :failure) => :failure )
 
@@ -24,7 +24,7 @@ class PlusPolesTest < Minitest::Spec
 
   # overwrite existing
   it do
-    poles = Trailblazer::Activity::Magnetic::PlusPoles.new
+    poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
 
     new_poles = poles.merge( Activity::Magnetic.Output(Right, :success) => :success, Activity::Magnetic.Output(Left, :failure) => :failure )
 
