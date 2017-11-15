@@ -1,5 +1,7 @@
 require "test_helper"
 
+require "trailblazer/activity/magnetic"
+
 class ActivityBuildTest < Minitest::Spec
   Left = Trailblazer::Circuit::Left
   Right = Trailblazer::Circuit::Right
@@ -298,7 +300,7 @@ ActivityBuildTest::L
     puts Inspect(activity).must_equal %{{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>ActivityBuildTest::G}, ActivityBuildTest::G=>{Trailblazer::Circuit::Right=>ActivityBuildTest::I}, ActivityBuildTest::I=>{Trailblazer::Circuit::Left=>ActivityBuildTest::J, Trailblazer::Circuit::Right=>ActivityBuildTest::L}, ActivityBuildTest::J=>{Trailblazer::Circuit::Right=>ActivityBuildTest::K}, ActivityBuildTest::K=>{Trailblazer::Circuit::Right=>#<Trailblazer::Circuit::End: @name=\"End.invalid_result\", @options={}>}, ActivityBuildTest::L=>{Trailblazer::Circuit::Right=>#<Trailblazer::Circuit::End: @name=:success, @options={}>}, #<Trailblazer::Circuit::End: @name=:success, @options={}>=>{}, #<Trailblazer::Circuit::End: @name=\"End.invalid_result\", @options={}>=>{}}}
   end
 
-  require "trailblazer/activity/dsl/railway"
+
   it "what" do
     initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
       Activity::Magnetic.Output(Circuit::Right, :success) => :success,
@@ -335,7 +337,7 @@ ActivityBuildTest::L
 
   it "builder API, what we use in Operation" do
     # this is what happens in Operation.
-    incremental = Activity::FastTrack::Builder.new( track_color: :pink, failure_color: :black )
+    incremental = Activity::Magnetic::FastTrack::Builder.new( track_color: :pink, failure_color: :black )
     incremental.step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true # these options we WANT built by Operation (task, id, plus_poles)
     incremental.step I, id: :I, plus_poles: initial_plus_poles
     incremental.fail J, id: :J, plus_poles: initial_plus_poles
@@ -377,7 +379,7 @@ ActivityBuildTest::L
   # hand additional DSL options
   it do
     # this is what happens in Operation.
-    incremental = Activity::FastTrack::Builder.new( track_color: :pink, failure_color: :black )
+    incremental = Activity::Magnetic::FastTrack::Builder.new( track_color: :pink, failure_color: :black )
     incremental.step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
     incremental.step I, id: :I, plus_poles: initial_plus_poles
     incremental.fail J, id: :J, plus_poles: initial_plus_poles
@@ -424,7 +426,7 @@ ActivityBuildTest::L
 
     # with all options.
     it do
-      incremental = Activity::Path::Builder.new( track_color: :pink )
+      incremental = Activity::Magnetic::Path::Builder.new( track_color: :pink )
       incremental.task G, id: G, plus_poles: initial_plus_poles, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
       incremental.task I, id: I, plus_poles: initial_plus_poles, Activity::Magnetic.Output(Circuit::Left, :failure) => Circuit::End(:failure)
 
@@ -450,7 +452,7 @@ ActivityBuildTest::L
 
     # with plus_poles.
     it do
-      incremental = Activity::Path::Builder.new( plus_poles: initial_plus_poles )
+      incremental = Activity::Magnetic::Path::Builder.new( plus_poles: initial_plus_poles )
       incremental.task G, id: G, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
       incremental.task I, id: I, Activity::Magnetic.Output(Circuit::Left, :failure) => Circuit::End(:failure)
 
