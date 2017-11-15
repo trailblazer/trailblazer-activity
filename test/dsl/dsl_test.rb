@@ -33,14 +33,14 @@ class ActivityBuildTest < Minitest::Spec
  []
 }
   end
-  it "unit test" do
-    block = -> do
+
+  # 3 ends, 1 of 'em default.
+  it do
+    seq = Activity.plan(track_color: :"track_9") do
       task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
       task K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
       # TODO: task ==> End.track_9
     end
-
-    seq = Activity.plan(track_color: :"track_9", &block)
 
 # puts Seq(seq)
     Seq(seq).must_equal %{
@@ -61,6 +61,68 @@ class ActivityBuildTest < Minitest::Spec
 }
   end
 
+  # straight path with different name for :success.
+  it do
+    seq = Activity.plan(track_color: :"track_9") do
+      task J, id: "first"
+      task K, id: "last"
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::J
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::K
+ (success)/Right ==> :track_9
+[:track_9] ==> #<End:track_9>
+ []
+}
+  end
+
+  # some new Output
+  it do
+    seq = Activity.plan(track_color: :"track_9") do
+      task J, id: "confused", Output(Left, :failure) => :success__
+      task K, id: "normal"
+      # TODO: task ==> End.track_9
+    end
+
+# puts Seq(seq)
+    Seq(seq).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::J
+ (success)/Right ==> :track_9
+ (failure)/Left ==> :success__
+[:track_9] ==> ActivityBuildTest::K
+ (success)/Right ==> :track_9
+[:track_9] ==> #<End:track_9>
+ []
+}
+  end
+
+  # some new Output, connected to existing track_9 edge
+  it do
+    seq = Activity.plan(track_color: :"track_9") do
+      task J, id: "confused", Output(Left, :failure) => :"track_9"
+      task K, id: "normal"
+      # TODO: task ==> End.track_9
+    end
+
+# puts Seq(seq)
+    Seq(seq).must_equal %{
+[] ==> #<Start:default>
+ (success)/Right ==> :track_9
+[:track_9] ==> ActivityBuildTest::J
+ (success)/Right ==> :track_9
+ (failure)/Left ==> :track_9
+[:track_9] ==> ActivityBuildTest::K
+ (success)/Right ==> :track_9
+[:track_9] ==> #<End:track_9>
+ []
+}
+  end
 
   it do
     tripletts = Activity.plan do

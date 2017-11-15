@@ -281,7 +281,8 @@ module Trailblazer
       builder = Path::Builder.new(
         {
           plus_poles: Activity::Magnetic::PlusPoles.new.merge(
-            Activity::Magnetic.Output(Circuit::Right, :success) => :success
+            # Activity::Magnetic.Output(Circuit::Right, :success) => :success
+            Activity::Magnetic.Output(Circuit::Right, :success) => nil
           ).freeze,
 
 

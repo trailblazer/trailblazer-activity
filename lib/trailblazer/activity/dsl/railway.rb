@@ -82,7 +82,7 @@ module Trailblazer
         def self.pass(task, **options)
           magnetic_to, plus_poles = Railway.pass(task, options)
 
-          plus_poles = plus_poles.reconnect( :success => :pass_fast, :success => :pass_fast ) if options[:pass_fast]
+          plus_poles = plus_poles.reconnect( :success => :pass_fast, :failure => :pass_fast ) if options[:pass_fast]
           plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
 
           [
