@@ -17,5 +17,9 @@ module Trailblazer
     def self.Output(signal, color)
       Output.new(signal, color).freeze
     end
+
+    def self.End(name, semantic=name)
+      Circuit::End.new(name, semantic: semantic)
+    end
   end
 end

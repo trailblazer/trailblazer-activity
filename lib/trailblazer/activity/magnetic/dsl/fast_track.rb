@@ -3,8 +3,8 @@ module Trailblazer
     module DSL
       module FastTrack
         def self.initialize_sequence(sequence, *)
-          sequence.add( "End.fail_fast", [ [:fail_fast], Circuit::End.new(:fail_fast), [] ], group: :end )
-          sequence.add( "End.pass_fast", [ [:pass_fast], Circuit::End.new(:pass_fast), [] ], group: :end )
+          sequence.add( "End.fail_fast", [ [:fail_fast], Activity::Magnetic.End(:fail_fast), [] ], group: :end )
+          sequence.add( "End.pass_fast", [ [:pass_fast], Activity::Magnetic.End(:pass_fast), [] ], group: :end )
         end
 
 

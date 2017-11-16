@@ -278,7 +278,7 @@ ActivityBuildTest::L
       task G, id: :receive_process_id
       # task Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(Left, :failure) => -> do
+      task I, id: :process_result, Output(Left, :failure) => Path(end: :invalido) do
         task J, id: "report_invalid_result"
         # task K, id: "log_invalid_result", Output(:success) => color
         task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
@@ -388,7 +388,7 @@ ActivityBuildTest::L
  (failure)/Left ==> :pink
 [:pink] ==> #<End:pink>
  []
-[:black] ==> #<End:failure>
+[:black] ==> #<End:black>
  []
 [:fail_fast] ==> #<End:fail_fast>
  []
@@ -431,7 +431,7 @@ ActivityBuildTest::L
  (failure)/Left ==> :pink
 [:pink] ==> #<End:pink>
  []
-[:black] ==> #<End:failure>
+[:black] ==> #<End:black>
  []
 [:fail_fast] ==> #<End:fail_fast>
  []

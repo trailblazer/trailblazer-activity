@@ -6,7 +6,15 @@ module Trailblazer
 
         circuit_hash = Generate.( tripletts )
 
-        Activity.new( circuit_hash, {} )
+        Activity.new( circuit_hash, end_events_for(circuit_hash) )
+      end
+
+      def self.end_events_for(circuit_hash)
+        ary = circuit_hash.collect do |task, connections|
+          task.kind_of?(Circuit::End) && connections.empty? ? [task, task.instance_variable_get(:@options)[:semantic]] : nil
+        end
+
+        Hash[ ary.compact ]
       end
 
       def initialize(strategy_options={})
@@ -15,38 +23,37 @@ module Trailblazer
         @sequence = DSL::Alterations.new
       end
 
-      def draft
+      def draft # FIXME: discuss
         @sequence.to_a
       end
 
-      def finalize
+      def finalize # FIXME: discuss
         tripletts = draft
-        # pp tripletts
-
         circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
       end
 
-      def to_activity
-        tripletts = dsl.to_a
-        # pp tripletts
+      module DSLMethods
+        #   Output( Left, :failure )
+        #   Output( :failure ) #=> Output::Semantic
+        def Output(signal, semantic=nil)
+          return DSL::Output::Semantic.new(signal) if semantic.nil?
 
-        circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
+          Activity::Magnetic.Output(signal, semantic)
+        end
+
+        def End(name, semantic)
+          Activity::Magnetic.End(name, semantic)
+        end
+
+        def Path(options={}, &block)
+          raise block.inspect
+        end
       end
 
-      #   Output( Left, :failure )
-      #   Output( :failure ) #=> Output::Semantic
-      def Output(signal, semantic=nil)
-        return DSL::Output::Semantic.new(signal) if semantic.nil?
-
-        Activity::Magnetic.Output(signal, semantic)
-      end
-
-      def End(name, semantic)
-         evt = Circuit::End.new(name)
-        evt
-      end
+      include DSLMethods
 
       private
+
 
       # merge @strategy_options (for the track colors)
       # normalize options
