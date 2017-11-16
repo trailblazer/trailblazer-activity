@@ -2,9 +2,11 @@ module Trailblazer
   module Activity::Magnetic
     module DSL
       module Railway
-        def self.initialize_sequence(sequence, track_color: :success, failure_color: :failure, **)
+        def self.initialize_sequence(track_color: :success, failure_color: :failure, **)
           # add Path End (only one)
-          sequence.add( "End.#{failure_color}", [ [failure_color], Activity::Magnetic.End(failure_color, :failure), [] ], group: :end )
+          [
+            [ :add, [ "End.#{failure_color}", [ [failure_color], Activity::Magnetic.End(failure_color, :failure), [] ], group: :end ] ],
+          ]
         end
 
 

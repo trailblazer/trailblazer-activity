@@ -105,12 +105,10 @@ module Trailblazer
       end
 
       def initialize(strategy_options={})
-        sequence = super
-        sequence = DSL::Path.initialize_sequence(sequence, strategy_options)
-        sequence = DSL::Railway.initialize_sequence(sequence, strategy_options)
-        sequence = DSL::FastTrack.initialize_sequence(sequence, strategy_options)
-
-        @sequence = sequence
+        super
+        @adds += DSL::Path.initialize_sequence(strategy_options)
+        @adds += DSL::Railway.initialize_sequence(strategy_options)
+        @adds += DSL::FastTrack.initialize_sequence(strategy_options)
       end
 
       def step(*args, &block)
