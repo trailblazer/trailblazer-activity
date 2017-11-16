@@ -21,11 +21,10 @@ module Trailblazer
       end
 
       def self.adds_to_tripletts(adds)
-        pp adds
         alterations = DSL::Alterations.new
-        adds.each do |method, cfg|
-          # puts "@@@@@ #{cfg.inspect}"
-          alterations.send( method, *cfg ) end
+
+        adds.each { |method, cfg| alterations.send( method, *cfg ) }
+
         alterations.to_a
       end
 
