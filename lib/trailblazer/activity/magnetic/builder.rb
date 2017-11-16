@@ -21,10 +21,8 @@ module Trailblazer
         @strategy_options = strategy_options
 
         @sequence = DSL::Alterations.new
-      end
 
-      def draft # FIXME: discuss
-        @sequence.to_a
+        @adds = []
       end
 
       def finalize # FIXME: discuss
@@ -48,7 +46,7 @@ module Trailblazer
         def Path(track_color: "track_#{rand}", end_semantic: :success, **options)
           options = options.merge(track_color: track_color, end_semantic: end_semantic)
 
-          ->(block) { [ track_color, Path::Builder.plan( options, &block ) ] }
+          ->(block) { [ track_color, Path::Builder.draft( options, &block ) ] }
         end
       end
 
@@ -62,7 +60,7 @@ module Trailblazer
       def add(strategy, task, options, &block)
         local_options, options = normalize(options, keywords)
 
-        @sequence = DSL::ProcessElement.( @sequence, task, options, id: local_options[:id],
+        @adds += DSL::ProcessElement.( @sequence, task, options, id: local_options[:id],
           # the strategy (Path.task) has nothing to do with (Output=>target) tuples
           strategy: [ strategy, @strategy_options.merge( local_options ) ],
           &block
@@ -110,22 +108,33 @@ module Trailblazer
       class Builder < Builder
         # @return [Triplett]
         def self.plan(options={}, &block)
+          adds = draft(options, &block)
+
+          alterations = DSL::Alterations.new
+          adds.each do |method, cfg| alterations.send( method, *cfg ) end
+
+          alterations.to_a
+        end
+
+
+
+        def self.draft(options={}, &block)
           builder = new(
             {
               plus_poles: DSL::PlusPoles.new.merge(
                 # Magnetic.Output(Circuit::Right, :success) => :success
                 Activity::Magnetic.Output(Circuit::Right, :success) => nil
               ).freeze,
-
-
             }.merge(options)
           )
 
           # TODO: pass new edge color in block?
           builder.instance_exec(&block)
-
-          tripletts = builder.draft
         end
+
+
+
+
 
         def keywords
           [:id, :plus_poles]
@@ -136,7 +145,7 @@ module Trailblazer
         #   :end_semantic
         def initialize(strategy_options={})
           sequence = super
-          sequence = DSL::Path.initialize_sequence(sequence, strategy_options)
+          @adds += DSL::Path.initialize_sequence(sequence, strategy_options)
 
           @sequence = sequence
         end

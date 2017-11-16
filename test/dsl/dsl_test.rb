@@ -14,6 +14,53 @@ class ActivityBuildTest < Minitest::Spec
   class L; end
 
 
+  #---
+  #- draft
+  it do
+    adds = Activity.draft(track_color: :"track_9") do
+      task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
+      task K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
+    end
+
+pp adds
+  end
+
+  it "with nesting" do
+    seq = Activity.plan do
+      task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
+      task K, id: "validate", Output(Left, :failure) => Path() do
+        task A, id: "A"
+        task B, id: "B", Output(:success) => "extract" # go back to J{extract}.
+      end
+      task L, id: "L"
+    end
+
+    # puts Seq(seq)
+
+    circuit_hash = Trailblazer::Activity::Magnetic::Generate.( seq )
+
+    Cct(circuit_hash).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::J
+ActivityBuildTest::J
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::K
+ {Trailblazer::Circuit::Left} => #<End:End.extract.key_not_found/:key_not_found>
+ActivityBuildTest::K
+ {Trailblazer::Circuit::Left} => ActivityBuildTest::A
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::L
+ActivityBuildTest::A
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::B
+ActivityBuildTest::B
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::J
+ActivityBuildTest::L
+ {Trailblazer::Circuit::Right} => #<End:success/:success>
+#<End:success/:success>
+
+#<End:End.extract.key_not_found/:key_not_found>
+
+#<End:track_0./:success>
+}
+  end
 
   # 3 ends, 1 of 'em default.
   it do
@@ -198,9 +245,11 @@ class ActivityBuildTest < Minitest::Spec
 
     tripletts = Activity.plan do
       # circular
-      task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", Output(:success) => "receive_process_id"
+      task A, id: "inquiry_create", Output(Left, :failure) => Path() do
+        task B, id: "suspend_for_correct", Output(:success) => "inquiry_create"#, plus_poles: binary_plus_poles
+
+      end
         # ^v
-      task B, id: "suspend_for_correct", Output(:success) => "inquiry_create"#, plus_poles: binary_plus_poles
 
       task G, id: "receive_process_id"
       # task Task(), id: :suspend_wait_for_result
@@ -218,7 +267,7 @@ puts Seq(tripletts)
 
   circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
 
-     puts Cct(circuit_hash)
+     # puts Cct(circuit_hash)
     Cct(circuit_hash).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Circuit::Right} => ActivityBuildTest::A

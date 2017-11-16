@@ -21,15 +21,12 @@ module Trailblazer
           # 4. merge them with the default Polarizations
           plus_poles = plus_poles.merge( Hash[_plus_poles] )
 
-          # 5. seq.add step, polarizations
-          sequence.add( id, [ magnetic_to, task, plus_poles.to_a ],  )
 
-          # 6. add additional steps
-            # Alterations.add
-            # Alterations.magnetic_to
-          adds.each do |method, cfg| sequence.send( method, *cfg ) end
-
-          sequence
+          # 5. add the instruction for the actual task: {seq.add(step, polarizations)}
+          adds = [
+            [ :add, [id, [ magnetic_to, task, plus_poles.to_a ]] ], # sequence.add( id, [ magnetic_to, task, plus_poles.to_a ] )
+            *adds
+          ]
         end
       end
 
@@ -68,16 +65,12 @@ module Trailblazer
               [[ :magnetic_to, [ task, [new_edge] ] ]],
             ]
           elsif task.is_a?(Proc)
-            start_color, seq = task.(block)
-
-            # TODO: this is a pseudo-"merge" and should be public API at some point.
-            adds = seq[1..-1].collect do |arr|
-              [ :add, [ "options[:id]#{rand}_fixme", arr ] ]
-            end
+            start_color, adds = task.(block)
 
             [
               [ output, start_color ],
-              adds
+              # TODO: this is a pseudo-"merge" and should be public API at some point.
+              adds[1..-1] # drop start
             ]
           else # An additional plus polarization. Example: Output => :success
             [

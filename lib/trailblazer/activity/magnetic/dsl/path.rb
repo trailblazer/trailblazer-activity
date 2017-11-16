@@ -5,10 +5,14 @@ module Trailblazer
       # Implements #task
       module Path
         def self.initialize_sequence(sequence, track_color: :success, end_semantic: :success, **)
-          # add Start
-          sequence.add( "Start.default", [ [], Circuit::Start.new(:default), [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), track_color) ] ], group: :start )
-          # add Path End (only one)
-          sequence.add( "End.#{track_color}", [ [track_color], Activity::Magnetic.End(track_color, end_semantic), [] ], group: :end )
+          [
+            # add Start
+            [:add, ["Start.default", [ [], Circuit::Start.new(:default),
+              [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), track_color) ] ], group: :start ]],
+
+            # add Path End (only one)
+            [:add, ["End.#{track_color}", [ [track_color], Activity::Magnetic.End(track_color, end_semantic), [] ], group: :end]],
+          ]
         end
 
 

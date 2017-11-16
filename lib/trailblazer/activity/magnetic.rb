@@ -11,6 +11,10 @@ module Trailblazer
     def self.build(options={}, &block)
       Magnetic::Path::Builder.build(options, &block)
     end
+
+    def self.draft(options={}, &block)
+      Magnetic::Path::Builder.draft(options, &block)
+    end
   end
 end
 
