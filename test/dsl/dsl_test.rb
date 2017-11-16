@@ -278,7 +278,7 @@ ActivityBuildTest::L
       task G, id: :receive_process_id
       # task Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(Left, :failure) => Path(end: :invalido) do
+      task I, id: :process_result, Output(Left, :failure) => Path(end_semantic: :invalid_resulto) do
         task J, id: "report_invalid_result"
         # task K, id: "log_invalid_result", Output(:success) => color
         task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
@@ -314,7 +314,7 @@ ActivityBuildTest::L
 #<End:success>
 }
 
-    activity.outputs.must_equal({ 1 => 2})
+    activity.outputs.values.must_equal [:invalid_resulto, :invalid_result, :success]
   end
 
 

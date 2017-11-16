@@ -4,11 +4,11 @@ module Trailblazer
       # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
       # Implements #task
       module Path
-        def self.initialize_sequence(sequence, track_color: :success, **)
+        def self.initialize_sequence(sequence, track_color: :success, end_semantic: :success, **)
           # add Start
           sequence.add( "Start.default", [ [], Circuit::Start.new(:default), [ Activity::Magnetic::PlusPole.new(Activity::Magnetic::Output(Circuit::Right, :success), track_color) ] ], group: :start )
           # add Path End (only one)
-          sequence.add( "End.#{track_color}", [ [track_color], Activity::Magnetic.End(track_color, :success), [] ], group: :end )
+          sequence.add( "End.#{track_color}", [ [track_color], Activity::Magnetic.End(track_color, end_semantic), [] ], group: :end )
         end
 
 

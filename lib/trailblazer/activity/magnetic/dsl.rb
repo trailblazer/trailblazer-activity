@@ -13,7 +13,7 @@ module Trailblazer
           magnetic_to, plus_poles = strategy.(task, args )
 
           # 3. process user options
-          arr = ProcessOptions.(id, options, args[:plus_poles])
+          arr = ProcessOptions.(id, options, args[:plus_poles], &block)
 
           _plus_poles = arr.collect { |cfg| cfg[0] }.compact
           adds       = arr.collect { |cfg| cfg[1] }.compact.flatten(1)
@@ -44,11 +44,11 @@ module Trailblazer
         # options:
         #   { DSL::Output[::Semantic] => target }
         #
-        def call(id, options, outputs)
-          options.collect { |key, task| process_tuple(id, key, task, outputs) }
+        def call(id, options, outputs, &block)
+          options.collect { |key, task| process_tuple(id, key, task, outputs, &block) }
         end
 
-        def process_tuple(id, output, task, outputs)
+        def process_tuple(id, output, task, outputs, &block)
           output = output_for(output, outputs) if output.kind_of?(DSL::Output::Semantic)
 
           if task.kind_of?(Circuit::End)
@@ -67,7 +67,7 @@ module Trailblazer
               [[ :magnetic_to, [ task, [new_edge] ] ]],
             ]
           elsif task.is_a?(Proc)
-            seq = Activity.plan(track_color: color="track_#{rand}", &task)
+            start_color, seq = task.(block)
 
             # TODO: this is a pseudo-"merge" and should be public API at some point.
             adds = seq[1..-1].collect do |arr|
@@ -75,7 +75,7 @@ module Trailblazer
             end
 
             [
-              [ output, color ],
+              [ output, start_color ],
               adds
             ]
           else # An additional plus polarization. Example: Output => :success

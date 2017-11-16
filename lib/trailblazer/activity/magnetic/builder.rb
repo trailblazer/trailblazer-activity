@@ -45,8 +45,10 @@ module Trailblazer
           Activity::Magnetic.End(name, semantic)
         end
 
-        def Path(options={}, &block)
-          raise block.inspect
+        def Path(track_color: "track_#{rand}", end_semantic: :success, **options)
+          options = options.merge(track_color: track_color, end_semantic: end_semantic)
+
+          ->(block) { [ track_color, Path::Builder.plan( options, &block ) ] }
         end
       end
 
@@ -61,6 +63,7 @@ module Trailblazer
         local_options, options = normalize(options, keywords)
 
         @sequence = DSL::ProcessElement.( @sequence, task, options, id: local_options[:id],
+          # the strategy (Path.task) has nothing to do with (Output=>target) tuples
           strategy: [ strategy, @strategy_options.merge( local_options ) ],
           &block
         )
@@ -128,6 +131,9 @@ module Trailblazer
           [:id, :plus_poles]
         end
 
+        # strategy_options:
+        #   :track_color
+        #   :end_semantic
         def initialize(strategy_options={})
           sequence = super
           sequence = DSL::Path.initialize_sequence(sequence, strategy_options)
