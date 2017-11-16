@@ -17,7 +17,6 @@ module Trailblazer
 
           _plus_poles = arr.collect { |cfg| cfg[0] }.compact
           adds       = arr.collect { |cfg| cfg[1] }.compact.flatten(1)
-          proc, _    = arr.collect { |cfg| cfg[2] }.compact
 
           # 4. merge them with the default Polarizations
           plus_poles = plus_poles.merge( Hash[_plus_poles] )
@@ -26,6 +25,8 @@ module Trailblazer
           sequence.add( id, [ magnetic_to, task, plus_poles.to_a ],  )
 
           # 6. add additional steps
+            # Alterations.add
+            # Alterations.magnetic_to
           adds.each do |method, cfg| sequence.send( method, *cfg ) end
 
           sequence
