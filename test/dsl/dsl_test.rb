@@ -197,33 +197,36 @@ class ActivityBuildTest < Minitest::Spec
       Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
 
     tripletts = Activity.plan do
-      task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct"
-        task B, id: "suspend_for_correct", Output(:failure) => "inquiry_create", plus_poles: binary_plus_poles
+      # circular
+      task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", Output(:success) => "receive_process_id"
+        # ^v
+      task B, id: "suspend_for_correct", Output(:success) => "inquiry_create"#, plus_poles: binary_plus_poles
 
-      task G, id: :receive_process_id
+      task G, id: "receive_process_id"
       # task Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(Left, :failure) => -> do
+      task I, id: :process_result, Output(Left, :failure) => Path(end_semantic: :invalid_result) do
         task J, id: "report_invalid_result"
         # task K, id: "log_invalid_result", Output(:success) => color
-        task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
+        task K, id: "log_invalid_result"#, Output(:success) => End("End.invalid_result", :invalid_result)
       end
 
       task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
+puts Seq(tripletts)
+
   circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
 
-    # puts Cct(circuit_hash)
+     puts Cct(circuit_hash)
     Cct(circuit_hash).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Circuit::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
- {Trailblazer::Circuit::Right} => ActivityBuildTest::B
  {Trailblazer::Circuit::Left} => ActivityBuildTest::B
-ActivityBuildTest::B
- {Trailblazer::Circuit::Left} => ActivityBuildTest::A
  {Trailblazer::Circuit::Right} => ActivityBuildTest::G
+ActivityBuildTest::B
+ {Trailblazer::Circuit::Right} => ActivityBuildTest::A
 ActivityBuildTest::G
  {Trailblazer::Circuit::Right} => ActivityBuildTest::I
 ActivityBuildTest::I
@@ -232,14 +235,12 @@ ActivityBuildTest::I
 ActivityBuildTest::J
  {Trailblazer::Circuit::Right} => ActivityBuildTest::K
 ActivityBuildTest::K
- {Trailblazer::Circuit::Right} => #<End:End.invalid_result/:invalid_result>
-#<End:track_0.>
-
-#<End:End.invalid_result/:invalid_result>
+ {Trailblazer::Circuit::Right} => #<End:track_0./:invalid_result>
+#<End:track_0./:invalid_result>
 
 ActivityBuildTest::L
- {Trailblazer::Circuit::Right} => #<End:success>
-#<End:success>
+ {Trailblazer::Circuit::Right} => #<End:success/:success>
+#<End:success/:success>
 }
 
     activity.outputs.must_equal()
