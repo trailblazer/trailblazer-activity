@@ -4,7 +4,7 @@ module Trailblazer
       # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
       # Implements #task
       module Path
-        def self.initialize_sequence(sequence, track_color: :success, end_semantic: :success, **)
+        def self.initialize_sequence(track_color: :success, end_semantic: :success, **)
           [
             # add Start
             [:add, ["Start.default", [ [], Circuit::Start.new(:default),

@@ -2,12 +2,41 @@ module Trailblazer
   module Activity::Magnetic
     class Builder
       def self.build(options={}, &block)
-        tripletts = plan( options, &block )
+        tripletts = draft( options, &block )
 
-        circuit_hash = Generate.( tripletts )
+        circuit_hash = tripletts_to_circuit_hash( tripletts )
 
+        circuit_hash_to_activity( circuit_hash )
+      end
+
+      # TODO: remove, only for testing.
+      # @return Tripletts
+      def self.draft(options={}, &block)
+        adds = plan( options, &block )
+
+        adds_to_tripletts(adds)
+      end
+      def draft
+        Builder.adds_to_tripletts(@adds) # remove me.
+      end
+
+      def self.adds_to_tripletts(adds)
+        pp adds
+        alterations = DSL::Alterations.new
+        adds.each do |method, cfg|
+          # puts "@@@@@ #{cfg.inspect}"
+          alterations.send( method, *cfg ) end
+        alterations.to_a
+      end
+
+      def self.tripletts_to_circuit_hash(tripletts)
+        Trailblazer::Activity::Magnetic::Generate.( tripletts )
+      end
+
+      def self.circuit_hash_to_activity(circuit_hash)
         Activity.new( circuit_hash, end_events_for(circuit_hash) )
       end
+
 
       def self.end_events_for(circuit_hash)
         ary = circuit_hash.collect do |task, connections|
@@ -19,15 +48,7 @@ module Trailblazer
 
       def initialize(strategy_options={})
         @strategy_options = strategy_options
-
-        @sequence = DSL::Alterations.new
-
         @adds = []
-      end
-
-      def finalize # FIXME: discuss
-        tripletts = draft
-        circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
       end
 
       module DSLMethods
@@ -46,7 +67,7 @@ module Trailblazer
         def Path(track_color: "track_#{rand}", end_semantic: :success, **options)
           options = options.merge(track_color: track_color, end_semantic: end_semantic)
 
-          ->(block) { [ track_color, Path::Builder.draft( options, &block ) ] }
+          ->(block) { [ track_color, Path::Builder.plan( options, &block ) ] }
         end
       end
 
@@ -106,19 +127,8 @@ module Trailblazer
 
     class Path
       class Builder < Builder
-        # @return [Triplett]
+        # @return ADDS
         def self.plan(options={}, &block)
-          adds = draft(options, &block)
-
-          alterations = DSL::Alterations.new
-          adds.each do |method, cfg| alterations.send( method, *cfg ) end
-
-          alterations.to_a
-        end
-
-
-
-        def self.draft(options={}, &block)
           builder = new(
             {
               plus_poles: DSL::PlusPoles.new.merge(
@@ -129,12 +139,8 @@ module Trailblazer
           )
 
           # TODO: pass new edge color in block?
-          builder.instance_exec(&block)
+          builder.instance_exec(&block) #=> ADDS
         end
-
-
-
-
 
         def keywords
           [:id, :plus_poles]
@@ -144,10 +150,8 @@ module Trailblazer
         #   :track_color
         #   :end_semantic
         def initialize(strategy_options={})
-          sequence = super
-          @adds += DSL::Path.initialize_sequence(sequence, strategy_options)
-
-          @sequence = sequence
+          super
+          @adds += DSL::Path.initialize_sequence(strategy_options)
         end
 
         def task(*args, &block)

@@ -17,7 +17,7 @@ class DSLPathTest < Minitest::Spec
   Builder = Activity::Magnetic::Path::Builder
 
   it "standard path ends in End.success/:success" do
-    seq = Builder.plan do
+    seq = Builder.draft do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result"
     end
@@ -35,7 +35,7 @@ class DSLPathTest < Minitest::Spec
   end
 
   it "Output(:success) finds the correct Output" do
-    seq = Builder.plan( track_color: :"track_9" ) do
+    seq = Builder.draft( track_color: :"track_9" ) do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
     end
@@ -56,7 +56,7 @@ class DSLPathTest < Minitest::Spec
 
   # Activity.plan( track_color: :pink )
   it "Output(Right, :success) => End adds new End.invalid_result" do
-    seq = Builder.plan( track_color: :"track_9" ) do
+    seq = Builder.draft( track_color: :"track_9" ) do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
     end
@@ -83,7 +83,7 @@ class DSLPathTest < Minitest::Spec
     #   Activity::Magnetic.Output(Circuit::Right, :success) => nil,
     #   Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
 
-    activity = Activity.build do
+    activity = Builder.build do
       task A, id: "A"
       task B, id: "B", Output(Left, :failure) => Path(end_semantic: :invalid) do
         task C, id: "C"
@@ -106,14 +106,14 @@ DSLPathTest::C
  {Trailblazer::Circuit::Right} => DSLPathTest::K
 DSLPathTest::K
  {Trailblazer::Circuit::Right} => #<End:track_0./:invalid>
-#<End:track_0./:invalid>
-
 DSLPathTest::D
  {Trailblazer::Circuit::Right} => #<End:success/:success>
 #<End:success/:success>
+
+#<End:track_0./:invalid>
 }
 
-    activity.outputs.values.must_equal [:invalid, :success]
+    activity.outputs.values.must_equal [:success, :invalid]
   end
 
 
