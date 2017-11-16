@@ -13,28 +13,7 @@ class ActivityBuildTest < Minitest::Spec
   class K; end
   class L; end
 
-  # Activity.plan( track_color: :pink )
-  it "unit test" do
-    block = -> do
-      task J, id: "report_invalid_result"
-      task K, id: "log_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
-    end
 
-    seq = Activity.plan(track_color: :"track_9", &block)
-
-    Seq(seq).must_equal %{
-[] ==> #<Start:default>
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::J
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::K
- (success)/Right ==> "log_invalid_result-Trailblazer::Circuit::Right"
-[:track_9] ==> #<End:track_9>
- []
-["log_invalid_result-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
- []
-}
-  end
 
   # 3 ends, 1 of 'em default.
   it do
@@ -45,7 +24,7 @@ class ActivityBuildTest < Minitest::Spec
 
 # puts Seq(seq)
     Seq(seq).must_equal %{
-[] ==> #<Start:default>
+[] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
  (success)/Right ==> :track_9
@@ -53,11 +32,11 @@ class ActivityBuildTest < Minitest::Spec
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
  (failure)/Left ==> "validate-Trailblazer::Circuit::Left"
-[:track_9] ==> #<End:track_9>
+[:track_9] ==> #<End:track_9/:success>
  []
-["extract-Trailblazer::Circuit::Left"] ==> #<End:End.extract.key_not_found>
+["extract-Trailblazer::Circuit::Left"] ==> #<End:End.extract.key_not_found/:key_not_found>
  []
-["validate-Trailblazer::Circuit::Left"] ==> #<End:End.invalid>
+["validate-Trailblazer::Circuit::Left"] ==> #<End:End.invalid/:invalid>
  []
 }
   end
@@ -70,13 +49,13 @@ class ActivityBuildTest < Minitest::Spec
     end
 
     Seq(seq).must_equal %{
-[] ==> #<Start:default>
+[] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9>
+[:track_9] ==> #<End:track_9/:success>
  []
 }
   end
@@ -90,14 +69,14 @@ class ActivityBuildTest < Minitest::Spec
 
 # puts Seq(seq)
     Seq(seq).must_equal %{
-[] ==> #<Start:default>
+[] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
  (success)/Right ==> :track_9
  (failure)/Left ==> :success__
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9>
+[:track_9] ==> #<End:track_9/:success>
  []
 }
   end
@@ -110,14 +89,14 @@ class ActivityBuildTest < Minitest::Spec
 
 # puts Seq(seq)
     Seq(seq).must_equal %{
-[] ==> #<Start:default>
+[] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
  (success)/Right ==> :track_9
  (failure)/Left ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9>
+[:track_9] ==> #<End:track_9/:success>
  []
 }
   end
@@ -136,16 +115,16 @@ class ActivityBuildTest < Minitest::Spec
     end
 
     Seq(seq).must_equal %{
-[] ==> #<Start:default>
+[] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
  (trigger)/Left ==> "confused-Trailblazer::Circuit::Left"
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9>
+[:track_9] ==> #<End:track_9/:success>
  []
-["confused-Trailblazer::Circuit::Left"] ==> #<End:End.trigger>
+["confused-Trailblazer::Circuit::Left"] ==> #<End:End.trigger/:triggered>
  []
 }
   end
@@ -165,16 +144,16 @@ class ActivityBuildTest < Minitest::Spec
     end
 
     Seq(seq).must_equal %{
-[] ==> #<Start:default>
+[] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
  (trigger)/Left ==> "confused-Trailblazer::Circuit::Left"
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9>
+[:track_9] ==> #<End:track_9/:success>
  []
-["confused-Trailblazer::Circuit::Left"] ==> #<End:End.trigger>
+["confused-Trailblazer::Circuit::Left"] ==> #<End:End.trigger/:triggered>
  []
 }
   end
@@ -199,13 +178,13 @@ class ActivityBuildTest < Minitest::Spec
 
 # puts Seq(seq)
     Seq(seq).must_equal %{
-[] ==> #<Start:default>
+[] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
  (success)/Right ==> "Trailblazer::Circuit::Right-End.track_9"
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
-[:track_9, "Trailblazer::Circuit::Right-End.track_9"] ==> #<End:track_9>
+[:track_9, "Trailblazer::Circuit::Right-End.track_9"] ==> #<End:track_9/:success>
  []
 }
   end
@@ -237,7 +216,7 @@ class ActivityBuildTest < Minitest::Spec
 
     # puts Cct(circuit_hash)
     Cct(circuit_hash).must_equal %{
-#<Start:default>
+#<Start:default/nil>
  {Trailblazer::Circuit::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
  {Trailblazer::Circuit::Right} => ActivityBuildTest::B
@@ -253,10 +232,10 @@ ActivityBuildTest::I
 ActivityBuildTest::J
  {Trailblazer::Circuit::Right} => ActivityBuildTest::K
 ActivityBuildTest::K
- {Trailblazer::Circuit::Right} => #<End:End.invalid_result>
+ {Trailblazer::Circuit::Right} => #<End:End.invalid_result/:invalid_result>
 #<End:track_0.>
 
-#<End:End.invalid_result>
+#<End:End.invalid_result/:invalid_result>
 
 ActivityBuildTest::L
  {Trailblazer::Circuit::Right} => #<End:success>
@@ -288,7 +267,7 @@ ActivityBuildTest::L
     end
 
     Cct(activity.circuit.to_fields.first).must_equal %{
-#<Start:default>
+#<Start:default/nil>
  {Trailblazer::Circuit::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
  {Trailblazer::Circuit::Right} => ActivityBuildTest::B
@@ -304,14 +283,14 @@ ActivityBuildTest::I
 ActivityBuildTest::J
  {Trailblazer::Circuit::Right} => ActivityBuildTest::K
 ActivityBuildTest::K
- {Trailblazer::Circuit::Right} => #<End:End.invalid_result>
-#<End:track_0.>
+ {Trailblazer::Circuit::Right} => #<End:End.invalid_result/:invalid_result>
+#<End:track_0./:invalid_resulto>
 
-#<End:End.invalid_result>
+#<End:End.invalid_result/:invalid_result>
 
 ActivityBuildTest::L
- {Trailblazer::Circuit::Right} => #<End:success>
-#<End:success>
+ {Trailblazer::Circuit::Right} => #<End:success/:success>
+#<End:success/:success>
 }
 
     activity.outputs.values.must_equal [:invalid_resulto, :invalid_result, :success]
@@ -334,9 +313,9 @@ ActivityBuildTest::L
         ],
 
         # existing success to new end
-        Activity::Magnetic.Output(Right, :success) => Circuit::End.new("End.invalid_result"),
+        Activity::Magnetic.Output(Right, :success) => Activity::Magnetic.End(:invalid_result),
 
-        Activity::Magnetic.Output("Signal A", :exception) => Circuit::End.new("End.signal_a_reached"),
+        Activity::Magnetic.Output("Signal A", :exception) => Activity::Magnetic.End(:signal_a_reached),
      )
 
     Seq(seq.to_a).must_equal %{
@@ -344,163 +323,15 @@ ActivityBuildTest::L
  (success)/Right ==> "receive_process_id-Trailblazer::Circuit::Right"
  (exception)/Signal A ==> "receive_process_id-Signal A"
  (failure)/Left ==> :failure
-["receive_process_id-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result>
+["receive_process_id-Trailblazer::Circuit::Right"] ==> #<End:invalid_result/:invalid_result>
  []
-["receive_process_id-Signal A"] ==> #<End:End.signal_a_reached>
- []
-}
-  end
-
-
-  let(:initial_plus_poles) do
-    Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
-      # Activity::Magnetic.Output("Signal A", :exception)  => :exception,
-      Activity::Magnetic.Output(Circuit::Left, :failure) => :failure
-    )
-  end
-
-  it "builder API, what we use in Operation" do
-    # this is what happens in Operation.
-    incremental = Activity::Magnetic::FastTrack::Builder.new( track_color: :pink, failure_color: :black )
-    incremental.step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true # these options we WANT built by Operation (task, id, plus_poles)
-    incremental.step I, id: :I, plus_poles: initial_plus_poles
-    incremental.fail J, id: :J, plus_poles: initial_plus_poles
-    incremental.pass K, id: :K, plus_poles: initial_plus_poles
-
-    sequence = incremental.draft
-    pp sequence
-
-    Seq(sequence).must_equal %{
-[] ==> #<Start:default>
- (success)/Right ==> :pink
-[:pink] ==> ActivityBuildTest::G
- (success)/Right ==> :pink
- (failure)/Left ==> :fail_fast
-[:pink] ==> ActivityBuildTest::I
- (success)/Right ==> :pink
- (failure)/Left ==> :black
-[:black] ==> ActivityBuildTest::J
- (success)/Right ==> :black
- (failure)/Left ==> :black
-[:pink] ==> ActivityBuildTest::K
- (success)/Right ==> :pink
- (failure)/Left ==> :pink
-[:pink] ==> #<End:pink>
- []
-[:black] ==> #<End:black>
- []
-[:fail_fast] ==> #<End:fail_fast>
- []
-[:pass_fast] ==> #<End:pass_fast>
- []
-}
-
-    activity = incremental.finalize
-
-    # pp activity
-  end
-
-  # hand additional DSL options
-  it do
-    # this is what happens in Operation.
-    incremental = Activity::Magnetic::FastTrack::Builder.new( track_color: :pink, failure_color: :black )
-    incremental.step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
-    incremental.step I, id: :I, plus_poles: initial_plus_poles
-    incremental.fail J, id: :J, plus_poles: initial_plus_poles
-    incremental.pass K, id: :K, plus_poles: initial_plus_poles
-
-    sequence = incremental.draft
-    # pp sequence
-# puts Seq(sequence)
-    Seq(sequence).must_equal %{
-[] ==> #<Start:default>
- (success)/Right ==> :pink
-[:pink] ==> ActivityBuildTest::G
- (success)/Right ==> :pink
- (failure)/Left ==> :fail_fast
- (exception)/Exception ==> "G-Exception"
-[:pink] ==> ActivityBuildTest::I
- (success)/Right ==> :pink
- (failure)/Left ==> :black
-[:black] ==> ActivityBuildTest::J
- (success)/Right ==> :black
- (failure)/Left ==> :black
-[:pink] ==> ActivityBuildTest::K
- (success)/Right ==> :pink
- (failure)/Left ==> :pink
-[:pink] ==> #<End:pink>
- []
-[:black] ==> #<End:black>
- []
-[:fail_fast] ==> #<End:fail_fast>
- []
-[:pass_fast] ==> #<End:pass_fast>
- []
-["G-Exception"] ==> #<End:exception>
+["receive_process_id-Signal A"] ==> #<End:signal_a_reached/:signal_a_reached>
  []
 }
   end
 
-  describe "Path::Builder" do
-    let(:initial_plus_poles) do
-      Activity::Magnetic::DSL::PlusPoles.new.merge(
-        Activity::Magnetic.Output(Circuit::Right, :success) => :success,
-      )
-    end
 
-    # with all options.
-    it do
-      incremental = Activity::Magnetic::Path::Builder.new( track_color: :pink )
-      incremental.task G, id: G, plus_poles: initial_plus_poles, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
-      incremental.task I, id: I, plus_poles: initial_plus_poles, Activity::Magnetic.Output(Circuit::Left, :failure) => Circuit::End(:failure)
 
-      sequence = incremental.draft
-
-      Seq(sequence).must_equal %{
-[] ==> #<Start:default>
- (success)/Right ==> :pink
-[:pink] ==> ActivityBuildTest::G
- (success)/Right ==> :pink
- (exception)/Exception ==> "ActivityBuildTest::G-Exception"
-[:pink] ==> ActivityBuildTest::I
- (success)/Right ==> :pink
- (failure)/Left ==> "ActivityBuildTest::I-Trailblazer::Circuit::Left"
-[:pink] ==> #<End:pink>
- []
-["ActivityBuildTest::G-Exception"] ==> #<End:exception>
- []
-["ActivityBuildTest::I-Trailblazer::Circuit::Left"] ==> #<End:failure>
- []
-}
-    end
-
-    # with plus_poles.
-    it do
-      incremental = Activity::Magnetic::Path::Builder.new( plus_poles: initial_plus_poles )
-      incremental.task G, id: G, Activity::Magnetic.Output("Exception", :exception) => Circuit::End(:exception)
-      incremental.task I, id: I, Activity::Magnetic.Output(Circuit::Left, :failure) => Circuit::End(:failure)
-
-      sequence = incremental.draft
-
-      Seq(sequence).must_equal %{
-[] ==> #<Start:default>
- (success)/Right ==> :success
-[:success] ==> ActivityBuildTest::G
- (success)/Right ==> :success
- (exception)/Exception ==> "ActivityBuildTest::G-Exception"
-[:success] ==> ActivityBuildTest::I
- (success)/Right ==> :success
- (failure)/Left ==> "ActivityBuildTest::I-Trailblazer::Circuit::Left"
-[:success] ==> #<End:success>
- []
-["ActivityBuildTest::G-Exception"] ==> #<End:exception>
- []
-["ActivityBuildTest::I-Trailblazer::Circuit::Left"] ==> #<End:failure>
- []
-}
-    end
-  end
 end
 
 

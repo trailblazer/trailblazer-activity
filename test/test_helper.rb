@@ -40,8 +40,9 @@ Minitest::Spec.class_eval do
       return task.inspect unless task.kind_of?(Trailblazer::Circuit::End)
 
       class_name = strip(task.class)
-      name = task.instance_variable_get(:@name)
-      "#<#{class_name}:#{name}>"
+      name     = task.instance_variable_get(:@name)
+      semantic = task.instance_variable_get(:@options)[:semantic]
+      "#<#{class_name}:#{name}/#{semantic.inspect}>"
     end
 
     def self.strip(string)
@@ -61,6 +62,6 @@ Minitest::Spec.class_eval do
 
       content = content.join("\n")
 
-      "\n#{content}".sub(/\d\d+/, "")
+      "\n#{content}".gsub(/\d\d+/, "")
   end
 end
