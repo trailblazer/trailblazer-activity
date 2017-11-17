@@ -32,7 +32,7 @@ class DSLFastTrackTest < Minitest::Spec
     incremental.fail J, id: :J, plus_poles: initial_plus_poles
     incremental.pass K, id: :K, plus_poles: initial_plus_poles
 
-    sequence = incremental.draft
+    sequence, adds = incremental.draft
     pp sequence
 
     Seq(sequence).must_equal %{
@@ -60,7 +60,7 @@ class DSLFastTrackTest < Minitest::Spec
  []
 }
 
-    activity = incremental.finalize
+    activity = Builder.finalize(adds)
 
     # pp activity
   end
@@ -74,7 +74,7 @@ class DSLFastTrackTest < Minitest::Spec
     incremental.fail J, id: :J, plus_poles: initial_plus_poles
     incremental.pass K, id: :K, plus_poles: initial_plus_poles
 
-    sequence = incremental.draft
+    sequence, adds = incremental.draft
     # pp sequence
 # puts Seq(sequence)
     Seq(sequence).must_equal %{
