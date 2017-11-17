@@ -27,6 +27,17 @@ module Trailblazer
 
     require "trailblazer/activity/process"
 
+    def self.build(&block)
+      Class.new(Activity, &block)
+    end
+
+    # DSL part
+    # delegate as much as possible to Builder
+    # let us process options and e.g. do :id
+    def self.Output
+
+    end
+
     class Introspection
       # @param activity Activity
       def initialize(activity)
