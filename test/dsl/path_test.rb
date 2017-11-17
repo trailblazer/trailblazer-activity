@@ -202,6 +202,8 @@ DSLPathTest::D
 ["DSLPathTest::I-Trailblazer::Circuit::Left"] ==> #<End:failure/:failure>
  []
 }
+      process = Builder.finalize(adds)
+      Ends(process).must_equal %{[#<End:success/:success>,#<End:exception/:exception>,#<End:failure/:failure>]}
     end
   end
 end
