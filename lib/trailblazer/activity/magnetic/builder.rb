@@ -43,10 +43,14 @@ module Trailblazer
         Activity::Process.new( circuit_hash, end_events_for(circuit_hash) )
       end
 
-
+      # Filters out unconnected ends, e.g. the standard end in nested tracks that weren't used.
       def self.end_events_for(circuit_hash)
+        tasks_with_incoming_edge = circuit_hash.values.collect { |connections| connections.values }.flatten(1)
+
         ary = circuit_hash.collect do |task, connections|
-          task.kind_of?(Circuit::End) && connections.empty? ? [task, task.instance_variable_get(:@options)[:semantic]] : nil
+          task.kind_of?(Circuit::End) &&
+            connections.empty? &&
+            tasks_with_incoming_edge.include?(task) ? [task, task.instance_variable_get(:@options)[:semantic]] : nil
         end
 
         Hash[ ary.compact ]

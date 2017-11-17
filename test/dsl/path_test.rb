@@ -99,7 +99,7 @@ DSLPathTest::L
 
 #<End:track_0./:success>
 }
-    Ends(process).must_equal %{[#<End:success/:success>,#<End:End.extract.key_not_found/:key_not_found>,#<End:track_0./:success>]}
+    Ends(process).must_equal %{[#<End:success/:success>,#<End:End.extract.key_not_found/:key_not_found>]}
   end
 
   it "Output(:success) finds the correct Output" do
@@ -142,7 +142,7 @@ DSLPathTest::L
  []
 }
     process = Builder.finalize( adds )
-    Ends(process).must_equal %{[#<End:track_9/:success>,#<End:End.invalid_result/:invalid_result>]}
+    Ends(process).must_equal %{[#<End:End.invalid_result/:invalid_result>]}
   end
 
 
