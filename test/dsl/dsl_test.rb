@@ -13,12 +13,9 @@ class ActivityBuildTest < Minitest::Spec
   class K; end
   class L; end
 
-
-
-
   # 3 ends, 1 of 'em default.
   it do
-    seq = Activity::Process.draft(track_color: :"track_9") do
+    seq, adds = Activity::Process.draft(track_color: :"track_9") do
       task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
       task K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
     end
@@ -44,7 +41,7 @@ class ActivityBuildTest < Minitest::Spec
 
   # straight path with different name for :success.
   it do
-    seq = Activity::Process.draft(track_color: :"track_9") do
+    seq, adds = Activity::Process.draft(track_color: :"track_9") do
       task J, id: "first"
       task K, id: "last"
     end
@@ -63,7 +60,7 @@ class ActivityBuildTest < Minitest::Spec
 
   # some new Output
   it do
-    seq = Activity::Process.draft(track_color: :"track_9") do
+    seq, adds = Activity::Process.draft(track_color: :"track_9") do
       task J, id: "confused", Output(Left, :failure) => :success__
       task K, id: "normal"
     end
@@ -83,7 +80,7 @@ class ActivityBuildTest < Minitest::Spec
   end
 
   it "Output(Left, :failure) allows to skip the additional :plus_poles definition" do
-    seq = Activity::Process.draft(track_color: :"track_9") do
+    seq, adds = Activity::Process.draft(track_color: :"track_9") do
       task J, id: "confused", Output(Left, :failure) => :"track_9"
       task K, id: "normal"
     end
@@ -104,7 +101,7 @@ class ActivityBuildTest < Minitest::Spec
 
   # Activity with 2 predefined outputs, direct 2nd one to new end
   it do
-    seq = Activity::Process.draft(track_color: :"track_9") do
+    seq, adds = Activity::Process.draft(track_color: :"track_9") do
       task J, id: "confused",
         Output(Left, :trigger) => End("End.trigger", :triggered),
         # this comes from the Operation DSL since it knows {Activity}J
@@ -133,7 +130,7 @@ class ActivityBuildTest < Minitest::Spec
   # test Output(:semantic)
   # Activity with 2 predefined outputs, direct 2nd one to new end without Output
   it do
-    seq = Activity::Process.draft(track_color: :"track_9") do
+    seq, adds = Activity::Process.draft(track_color: :"track_9") do
       task J, id: "confused",
         Output(:trigger) => End("End.trigger", :triggered),
         # this comes from the Operation DSL since it knows {Activity}J
@@ -172,7 +169,7 @@ class ActivityBuildTest < Minitest::Spec
 
   # only PlusPole goes straight to IDed end.
   it do
-    seq = Activity::Process.draft(track_color: :"track_9") do
+    seq, adds = Activity::Process.draft(track_color: :"track_9") do
       task J, id: "confused", Output(Right, :success) => "End.track_9"
       task K, id: "normal"
     end
@@ -197,11 +194,10 @@ class ActivityBuildTest < Minitest::Spec
       Activity::Magnetic.Output(Circuit::Right, :success) => nil,
       Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
 
-    tripletts = Activity::Process.draft do
+    tripletts, adds = Activity::Process.draft do
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
         task B, id: "suspend_for_correct", Output(:success) => "inquiry_create"#, plus_poles: binary_plus_poles
-
       end
 
       task G, id: "receive_process_id"
@@ -216,12 +212,9 @@ class ActivityBuildTest < Minitest::Spec
       task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-puts Seq(tripletts)
+    process = Activity::Magnetic::Path::Builder.finalize( adds )
 
-  circuit_hash = Trailblazer::Activity::Magnetic::Generate.( tripletts )
-
-     # puts Cct(circuit_hash)
-    Cct(circuit_hash).must_equal %{
+    Cct(process).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Circuit::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
@@ -246,6 +239,8 @@ ActivityBuildTest::L
 
 #<End:track_0./:invalid_result>
 }
+
+    Ends(process).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid_result>]}
   end
 
   it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do
@@ -253,7 +248,7 @@ ActivityBuildTest::L
       Activity::Magnetic.Output(Circuit::Right, :success) => nil,
       Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
 
-    process = Activity::Process.build do
+    seq, adds = Activity::Process.draft do
       task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", Output(:success) => "receive_process_id"
       task B, id: "suspend_for_correct", Output(:failure) => "inquiry_create", plus_poles: binary_plus_poles
 
@@ -269,10 +264,9 @@ ActivityBuildTest::L
       task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    circuit_hash = process.instance_variable_get(:@circuit).to_fields.first
+    process = Activity::Magnetic::Path::Builder.finalize( adds )
 
-puts Cct(circuit_hash)
-    Cct(circuit_hash).must_equal %{
+    Cct(process).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Circuit::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
