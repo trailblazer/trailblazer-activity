@@ -24,7 +24,7 @@ module Trailblazer
 
         circuit_hash = tripletts_to_circuit_hash( tripletts )
 
-        circuit_hash_to_activity( circuit_hash )
+        circuit_hash_to_process( circuit_hash )
       end
 
       def self.adds_to_tripletts(adds)
@@ -39,7 +39,7 @@ module Trailblazer
         Trailblazer::Activity::Magnetic::Generate.( tripletts )
       end
 
-      def self.circuit_hash_to_activity(circuit_hash)
+      def self.circuit_hash_to_process(circuit_hash)
         Activity::Process.new( circuit_hash, end_events_for(circuit_hash) )
       end
 

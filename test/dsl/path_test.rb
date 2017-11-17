@@ -37,6 +37,71 @@ class DSLPathTest < Minitest::Spec
     Ends(process).must_equal %{[#<End:success/:success>]}
   end
 
+  it "fake Railway with Output(Left)s" do
+    seq, adds = Builder.draft(track_color: :"track_9") do
+      task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
+      task K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :track_9
+[:track_9] ==> DSLPathTest::J
+ (success)/Right ==> :track_9
+ (failure)/Left ==> "extract-Trailblazer::Circuit::Left"
+[:track_9] ==> DSLPathTest::K
+ (success)/Right ==> :track_9
+ (failure)/Left ==> "validate-Trailblazer::Circuit::Left"
+[:track_9] ==> #<End:track_9/:success>
+ []
+["extract-Trailblazer::Circuit::Left"] ==> #<End:End.extract.key_not_found/:key_not_found>
+ []
+["validate-Trailblazer::Circuit::Left"] ==> #<End:End.invalid/:invalid>
+ []
+}
+
+    process = Builder.finalize( adds )
+    Ends(process).must_equal %{[#<End:track_9/:success>,#<End:End.extract.key_not_found/:key_not_found>,#<End:End.invalid/:invalid>]}
+  end
+
+  it "with nesting and circular" do
+    seq, adds = Activity::Process.draft do
+      task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
+      task K, id: "validate", Output(Left, :failure) => Path() do
+        task A, id: "A"
+        task B, id: "B", Output(:success) => "extract" # go back to J{extract}.
+      end
+      task L, id: "L"
+    end
+
+    # puts Seq(seq)
+
+    process = Builder.finalize( adds )
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => DSLPathTest::J
+DSLPathTest::J
+ {Trailblazer::Circuit::Right} => DSLPathTest::K
+ {Trailblazer::Circuit::Left} => #<End:End.extract.key_not_found/:key_not_found>
+DSLPathTest::K
+ {Trailblazer::Circuit::Left} => DSLPathTest::A
+ {Trailblazer::Circuit::Right} => DSLPathTest::L
+DSLPathTest::A
+ {Trailblazer::Circuit::Right} => DSLPathTest::B
+DSLPathTest::B
+ {Trailblazer::Circuit::Right} => DSLPathTest::J
+DSLPathTest::L
+ {Trailblazer::Circuit::Right} => #<End:success/:success>
+#<End:success/:success>
+
+#<End:End.extract.key_not_found/:key_not_found>
+
+#<End:track_0./:success>
+}
+    Ends(process).must_equal %{[#<End:success/:success>,#<End:End.extract.key_not_found/:key_not_found>,#<End:track_0./:success>]}
+  end
+
   it "Output(:success) finds the correct Output" do
     seq, adds = Builder.draft( track_color: :"track_9" ) do
       task J, id: "report_invalid_result"
