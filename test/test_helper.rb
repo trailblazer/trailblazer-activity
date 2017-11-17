@@ -26,7 +26,7 @@ Minitest::Spec.class_eval do
 #{pluses.empty? ? " []" : pluses.join("\n")}}
       end.join("\n")
 
-    "\n#{content}\n"
+    "\n#{content}\n".gsub(/\d\d+/, "")
   end
 
   module Seq
@@ -50,7 +50,9 @@ Minitest::Spec.class_eval do
     end
   end
 
-  def Cct(hash)
+  def Cct(process)
+    hash = process.instance_variable_get(:@circuit).to_fields[0]
+
     content =
       hash.collect do |task, connections|
         conns = connections.collect do |signal, target|
@@ -64,4 +66,11 @@ Minitest::Spec.class_eval do
 
       "\n#{content}".gsub(/\d\d+/, "")
   end
+
+  def Ends(process)
+    end_events = process.instance_variable_get(:@circuit).to_fields[1]
+    ends = end_events.collect { |evt| Seq.Task(evt) }.join(",")
+    "[#{ends}]".gsub(/\d\d+/, "")
+  end
+
 end

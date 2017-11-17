@@ -2,11 +2,9 @@ module Trailblazer
   module Activity::Magnetic
     class Builder
       def self.build(options={}, &block)
-        tripletts = draft( options, &block )
+        adds = plan( options, &block )
 
-        circuit_hash = tripletts_to_circuit_hash( tripletts )
-
-        circuit_hash_to_activity( circuit_hash )
+        finalize(adds)
       end
 
       # TODO: remove, only for testing.
@@ -14,10 +12,19 @@ module Trailblazer
       def self.draft(options={}, &block)
         adds = plan( options, &block )
 
-        adds_to_tripletts(adds)
+        return adds_to_tripletts(adds), adds
       end
       def draft
-        Builder.adds_to_tripletts(@adds) # remove me.
+        return Builder.adds_to_tripletts(@adds), @adds # remove me.
+      end
+
+      # @private
+      def self.finalize(adds)
+        tripletts = adds_to_tripletts(adds)
+
+        circuit_hash = tripletts_to_circuit_hash( tripletts )
+
+        circuit_hash_to_activity( circuit_hash )
       end
 
       def self.adds_to_tripletts(adds)
@@ -33,7 +40,7 @@ module Trailblazer
       end
 
       def self.circuit_hash_to_activity(circuit_hash)
-        Activity.new( circuit_hash, end_events_for(circuit_hash) )
+        Activity::Process.new( circuit_hash, end_events_for(circuit_hash) )
       end
 
 

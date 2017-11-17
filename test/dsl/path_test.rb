@@ -17,7 +17,7 @@ class DSLPathTest < Minitest::Spec
   Builder = Activity::Magnetic::Path::Builder
 
   it "standard path ends in End.success/:success" do
-    seq = Builder.draft do
+    seq, adds = Builder.draft do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result"
     end
@@ -32,10 +32,13 @@ class DSLPathTest < Minitest::Spec
 [:success] ==> #<End:success/:success>
  []
 }
+
+    process = Builder.finalize( adds )
+    Ends(process).must_equal %{[#<End:success/:success>]}
   end
 
   it "Output(:success) finds the correct Output" do
-    seq = Builder.draft( track_color: :"track_9" ) do
+    seq, adds = Builder.draft( track_color: :"track_9" ) do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
     end
@@ -56,7 +59,7 @@ class DSLPathTest < Minitest::Spec
 
   # Activity.plan( track_color: :pink )
   it "Output(Right, :success) => End adds new End.invalid_result" do
-    seq = Builder.draft( track_color: :"track_9" ) do
+    seq, adds = Builder.draft( track_color: :"track_9" ) do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
     end
@@ -73,6 +76,8 @@ class DSLPathTest < Minitest::Spec
 ["log_invalid_result-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result/:invalid_result>
  []
 }
+    process = Builder.finalize( adds )
+    Ends(process).must_equal %{[#<End:track_9/:success>,#<End:End.invalid_result/:invalid_result>]}
   end
 
 
@@ -83,7 +88,7 @@ class DSLPathTest < Minitest::Spec
     #   Activity::Magnetic.Output(Circuit::Right, :success) => nil,
     #   Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
 
-    activity = Builder.build do
+    seq, adds = Builder.draft do
       task A, id: "A"
       task B, id: "B", Output(Left, :failure) => Path(end_semantic: :invalid) do
         task C, id: "C"
@@ -92,9 +97,31 @@ class DSLPathTest < Minitest::Spec
       task D, id: "D"
     end
 
-# puts Cct(activity.circuit.to_fields.first)
+Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> DSLPathTest::A
+ (success)/Right ==> :success
+[:success] ==> DSLPathTest::B
+ (success)/Right ==> :success
+ (failure)/Left ==> "track_0."
+["track_0."] ==> DSLPathTest::C
+ (success)/Right ==> "track_0."
+["track_0."] ==> DSLPathTest::K
+ (success)/Right ==> "track_0."
+[:success] ==> DSLPathTest::D
+ (success)/Right ==> :success
+[:success] ==> #<End:success/:success>
+ []
+["track_0."] ==> #<End:track_0./:invalid>
+ []
+}
 
-    Cct(activity.circuit.to_fields.first).must_equal %{
+
+    process = Builder.finalize( adds )
+    Ends(process).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid>]}
+
+    Cct(process).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Circuit::Right} => DSLPathTest::A
 DSLPathTest::A
@@ -112,8 +139,6 @@ DSLPathTest::D
 
 #<End:track_0./:invalid>
 }
-
-    activity.outputs.values.must_equal [:success, :invalid]
   end
 
 
@@ -130,7 +155,7 @@ DSLPathTest::D
       incremental.task G, id: G, plus_poles: initial_plus_poles, Activity::Magnetic.Output("Exception", :exception) => Activity::Magnetic.End(:exception)
       incremental.task I, id: I, plus_poles: initial_plus_poles, Activity::Magnetic.Output(Circuit::Left, :failure) => Activity::Magnetic.End(:failure)
 
-      sequence = incremental.draft
+      sequence, adds = incremental.draft
 
       Seq(sequence).must_equal %{
 [] ==> #<Start:default/nil>
@@ -148,6 +173,9 @@ DSLPathTest::D
 ["DSLPathTest::I-Trailblazer::Circuit::Left"] ==> #<End:failure/:failure>
  []
 }
+
+      process = Builder.finalize(adds)
+      Ends(process).must_equal %{[#<End:pink/:success>,#<End:exception/:exception>,#<End:failure/:failure>]}
     end
 
     # with plus_poles.
@@ -156,7 +184,7 @@ DSLPathTest::D
       incremental.task G, id: G, Activity::Magnetic.Output("Exception", :exception) => Activity::Magnetic.End(:exception)
       incremental.task I, id: I, Activity::Magnetic.Output(Circuit::Left, :failure) => Activity::Magnetic.End(:failure)
 
-      sequence = incremental.draft
+      sequence, adds = incremental.draft
 
       Seq(sequence).must_equal %{
 [] ==> #<Start:default/nil>

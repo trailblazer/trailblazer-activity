@@ -4,16 +4,18 @@ module Trailblazer
       # all code related to the magnetic building of a circuit hash lives in this namespace.
     end
 
-    def self.plan(options={}, &block)
-      Magnetic::Path::Builder.plan(options, &block)
-    end
+    class Process
+      def self.plan(options={}, &block)
+        Magnetic::Path::Builder.plan(options, &block)
+      end
 
-    def self.build(options={}, &block)
-      Magnetic::Path::Builder.build(options, &block)
-    end
+      def self.build(options={}, &block)
+        Magnetic::Path::Builder.build(options, &block)
+      end
 
-    def self.draft(options={}, &block)
-      Magnetic::Path::Builder.draft(options, &block)
+      def self.draft(options={}, &block)
+        Magnetic::Path::Builder.draft(options, &block)
+      end
     end
   end
 end
