@@ -64,6 +64,7 @@ module Trailblazer
 
               [[ :magnetic_to, [ task, [new_edge] ] ]],
             ]
+          # procs come from DSL calls such as `Path() do ... end`.
           elsif task.is_a?(Proc)
             start_color, adds = task.(block)
 

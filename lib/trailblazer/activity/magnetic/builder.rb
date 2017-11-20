@@ -9,8 +9,8 @@ module Trailblazer
 
       # TODO: remove, only for testing.
       # @return Tripletts
-      def self.draft(options={}, &block)
-        adds = plan( options, &block )
+      def self.draft(*args, &block)
+        adds = plan( *args, &block )
 
         return adds_to_tripletts(adds), adds
       end
@@ -40,7 +40,9 @@ module Trailblazer
       end
 
       def self.circuit_hash_to_process(circuit_hash)
-        Activity::Process.new( circuit_hash, end_events_for(circuit_hash) )
+        end_events = end_events_for(circuit_hash)
+
+        return Activity::Process.new( circuit_hash, end_events ), end_events
       end
 
       # Filters out unconnected ends, e.g. the standard end in nested tracks that weren't used.
@@ -56,9 +58,10 @@ module Trailblazer
         Hash[ ary.compact ]
       end
 
-      def initialize(strategy_options={})
+      def initialize(strategy_options={}, normalizer)
         @strategy_options = strategy_options
-        @adds = []
+        @normalizer       = normalizer
+        @adds             = []
       end
 
       module DSLMethods
@@ -77,7 +80,8 @@ module Trailblazer
         def Path(track_color: "track_#{rand}", end_semantic: :success, **options)
           options = options.merge(track_color: track_color, end_semantic: end_semantic)
 
-          ->(block) { [ track_color, Path::Builder.plan( options, &block ) ] }
+          # this block is called in DSL::ProcessTuples.
+          ->(block) { [ track_color, Path::Builder.plan( options, @normalizer, &block ) ] }
         end
       end
 
@@ -88,8 +92,10 @@ module Trailblazer
 
       # merge @strategy_options (for the track colors)
       # normalize options
-      def add(strategy, task, options, &block)
+      def add(strategy, task, options={}, &block)
         local_options, options = normalize(options, keywords)
+
+        task, local_options = @normalizer.(task, local_options)
 
         @adds += DSL::ProcessElement.( @sequence, task, options, id: local_options[:id],
           # the strategy (Path.task) has nothing to do with (Output=>target) tuples
@@ -98,6 +104,8 @@ module Trailblazer
         )
       end
 
+      # Produce two hashes, one "local" options with DSL-specific options such as `:fast_track`,
+      # one with generic DSL options, for example tuples like `Right=>Output(:failure)`.
       def normalize(options, local_keys)
         local, foreign = {}, {}
         options.each { |k,v| local_keys.include?(k) ? local[k] = v : foreign[k] = v }
@@ -136,15 +144,8 @@ module Trailblazer
     class Path
       class Builder < Builder
         # @return ADDS
-        def self.plan(options={}, &block)
-          builder = new(
-            {
-              plus_poles: DSL::PlusPoles.new.merge(
-                # Magnetic.Output(Circuit::Right, :success) => :success
-                Activity::Magnetic.Output(Circuit::Right, :success) => nil
-              ).freeze,
-            }.merge(options)
-          )
+        def self.plan(options={}, normalizer=DefaultNormalizer, &block)
+          builder = new(options, normalizer)
 
           # TODO: pass new edge color in block?
           builder.instance_exec(&block) #=> ADDS
@@ -157,7 +158,7 @@ module Trailblazer
         # strategy_options:
         #   :track_color
         #   :end_semantic
-        def initialize(strategy_options={})
+        def initialize(strategy_options={}, normalizer)
           super
           @adds += DSL::Path.initialize_sequence(strategy_options)
         end
@@ -165,6 +166,15 @@ module Trailblazer
         def task(*args, &block)
           add( DSL::Path.method(:task), *args, &block )
         end
+
+        DefaultNormalizer = ->(task, local_options) do
+          local_options = { plus_poles: DefaultPlusPoles }.merge(local_options)
+          [ task, local_options ]
+        end
+
+        DefaultPlusPoles = DSL::PlusPoles.new.merge(
+          Activity::Magnetic.Output(Circuit::Right, :success) => nil
+        ).freeze
       end
     end # Builder
   end

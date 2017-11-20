@@ -14,6 +14,27 @@ class ActivityTest < Minitest::Spec
   Left = Trailblazer::Circuit::Left
   Right = Trailblazer::Circuit::Right
 
+  it "empty Activity" do
+    activity = Activity.build do
+    end
+
+    # puts Cct(activity.instance_variable_get(:@process))
+    Cct(activity.instance_variable_get(:@process)).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+
+    Outputs(activity.outputs).must_equal %{{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>=>:success}}
+
+    options = { id: 1 }
+
+    signal, args, circuit_options = activity.( [options, {}], {} )
+
+    Outputs(signal).must_equal %{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>}
+    args.inspect.must_equal %{[{:id=>1}, {}]}
+    circuit_options.must_equal nil
+  end
 
   it do
     activity = Activity.build do
@@ -25,17 +46,28 @@ class ActivityTest < Minitest::Spec
       task G, id: "receive_process_id"
       task I, id: :process_result, Output(Left, :failure) => Path(end_semantic: :invalid_result) do
         task J, id: "report_invalid_result"
-        task K, id: "log_invalid_result"
+        task K
       end
 
       task L, id: :notify_clerk
     end
 
-    activity.outputs.must_equal( {} )
+    Outputs(activity.outputs).must_equal %{{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>=>:success}}
+
+
+    puts Cct(activity.instance_variable_get(:@process))
+    activity.instance_variable_get(:@process).must_equal ""
+
+
+    Ends(activity.instance_variable_get(:@process)).must_equal %{}
 
     activity.()
 
     # activity.draft #=> mergeable, inheritance.
+  end
+
+  def Outputs(outputs)
+    outputs.inspect.gsub(/0x\w+/, "")
   end
 end
 

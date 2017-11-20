@@ -206,6 +206,49 @@ DSLPathTest::D
 }
   end
 
+  it "with :normalizer" do
+    binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity::Magnetic.Output(Circuit::Right, :success) => nil,
+      Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
+
+    normalizer = ->(task, options) { [ task, options.merge(plus_poles: binary_plus_poles) ] }
+
+    seq, adds = Builder.draft( {}, normalizer ) do
+      task A, id: "A"
+      task B, id: "B", Output(:failure) => Path(end_semantic: :invalid) do
+        task C, Output(:failure) => End(:left, :left)
+        task K, id: "K"#, Output(:success) => End("End.invalid_result", :invalid_result)
+      end
+      task D # no :id.
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> DSLPathTest::A
+ (success)/Right ==> :success
+ (failure)/Left ==> nil
+[:success] ==> DSLPathTest::B
+ (success)/Right ==> :success
+ (failure)/Left ==> "track_0."
+["track_0."] ==> DSLPathTest::C
+ (success)/Right ==> "track_0."
+ (failure)/Left ==> "-Trailblazer::Circuit::Left"
+["track_0."] ==> DSLPathTest::K
+ (success)/Right ==> "track_0."
+ (failure)/Left ==> nil
+[:success] ==> DSLPathTest::D
+ (success)/Right ==> :success
+ (failure)/Left ==> nil
+[:success] ==> #<End:success/:success>
+ []
+["track_0."] ==> #<End:track_0./:invalid>
+ []
+["-Trailblazer::Circuit::Left"] ==> #<End:left/:left>
+ []
+}
+end
+
 
   describe "Procedural interface" do
     let(:initial_plus_poles) do
@@ -216,7 +259,7 @@ DSLPathTest::D
 
     # with all options.
     it do
-      incremental = Activity::Magnetic::Path::Builder.new( track_color: :pink )
+      incremental = Activity::Magnetic::Path::Builder.new( {track_color: :pink}, Activity::Magnetic::Path::Builder::DefaultNormalizer )
       incremental.task G, id: G, plus_poles: initial_plus_poles, Activity::Magnetic.Output("Exception", :exception) => Activity::Magnetic.End(:exception)
       incremental.task I, id: I, plus_poles: initial_plus_poles, Activity::Magnetic.Output(Circuit::Left, :failure) => Activity::Magnetic.End(:failure)
 
@@ -245,7 +288,7 @@ DSLPathTest::D
 
     # with plus_poles.
     it do
-      incremental = Activity::Magnetic::Path::Builder.new( plus_poles: initial_plus_poles )
+      incremental = Activity::Magnetic::Path::Builder.new( {plus_poles: initial_plus_poles}, Activity::Magnetic::Path::Builder::DefaultNormalizer )
       incremental.task G, id: G, Activity::Magnetic.Output("Exception", :exception) => Activity::Magnetic.End(:exception)
       incremental.task I, id: I, Activity::Magnetic.Output(Circuit::Left, :failure) => Activity::Magnetic.End(:failure)
 
