@@ -1,15 +1,51 @@
 require "test_helper"
 
 class ActivityTest < Minitest::Spec
-  class A; end
-  class B; end
-  class C; end
-  class D; end
-  class G; end
-  class I; end
-  class J; end
-  class K; end
-  class L; end
+  class A
+    def self.call((options, flow_options), *)
+      [ options, flow_options ]
+    end
+  end
+  class B
+    def self.call((options, flow_options), *)
+      [ options, flow_options ]
+    end
+  end
+  class C
+    def self.call((options, flow_options), *)
+      [ options, flow_options ]
+    end
+  end
+  class D
+    def self.call((options, flow_options), *)
+      [ options, flow_options ]
+    end
+  end
+  class G
+    def self.call((options, flow_options), *)
+      [ options, flow_options ]
+    end
+  end
+  class I
+    def self.call((options, flow_options), *)
+      [ options, flow_options ]
+    end
+  end
+  class J
+    def self.call((options, flow_options), *)
+      [ options, flow_options ]
+    end
+  end
+  class K
+    def self.call((options, flow_options), *)
+      [ options, flow_options ]
+    end
+  end
+  class L
+    def self.call((options, flow_options), *)
+      [ options, flow_options ]
+    end
+  end
 
   Left = Trailblazer::Circuit::Left
   Right = Trailblazer::Circuit::Right
@@ -33,7 +69,7 @@ class ActivityTest < Minitest::Spec
 
     Outputs(signal).must_equal %{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>}
     args.inspect.must_equal %{[{:id=>1}, {}]}
-    circuit_options.must_equal nil
+    circuit_options.must_be_nil
   end
 
   it do
@@ -52,22 +88,45 @@ class ActivityTest < Minitest::Spec
       task L, id: :notify_clerk
     end
 
-    Outputs(activity.outputs).must_equal %{{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>=>:success}}
+    Cct(activity.instance_variable_get(:@process)).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => ActivityTest::A
+ActivityTest::A
+ {Trailblazer::Circuit::Left} => ActivityTest::B
+ {Trailblazer::Circuit::Right} => ActivityTest::G
+ActivityTest::B
+ {Trailblazer::Circuit::Right} => ActivityTest::A
+ActivityTest::G
+ {Trailblazer::Circuit::Right} => ActivityTest::I
+ActivityTest::I
+ {Trailblazer::Circuit::Left} => ActivityTest::J
+ {Trailblazer::Circuit::Right} => ActivityTest::L
+ActivityTest::J
+ {Trailblazer::Circuit::Right} => ActivityTest::K
+ActivityTest::K
+ {Trailblazer::Circuit::Right} => #<End:track_0./:invalid_result>
+ActivityTest::L
+ {Trailblazer::Circuit::Right} => #<End:success/:success>
+#<End:success/:success>
 
+#<End:track_0./:success>
 
-    puts Cct(activity.instance_variable_get(:@process))
-    activity.instance_variable_get(:@process).must_equal ""
+#<End:track_0./:invalid_result>
+}
 
+    Outputs(activity.outputs).must_equal %{{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>=>:success, #<Trailblazer::Circuit::End: @name=\"track_0.\", @options={:semantic=>:invalid_result}>=>:invalid_result}}
 
-    Ends(activity.instance_variable_get(:@process)).must_equal %{}
+    Ends(activity.instance_variable_get(:@process)).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid_result>]}
 
-    activity.()
+    options, flow_options, circuit_options = {id: 1}, {}, {}
+    # ::call
+    signal, args = activity.( [options, flow_options], circuit_options )
 
     # activity.draft #=> mergeable, inheritance.
   end
 
   def Outputs(outputs)
-    outputs.inspect.gsub(/0x\w+/, "")
+    outputs.inspect.gsub(/0x\w+/, "").gsub(/\d\d+/, "")
   end
 end
 

@@ -60,7 +60,13 @@ module Trailblazer
     # let us process options and e.g. do :id
     class << self
       extend Forwardable
-      def_delegators :@builder, :Output, :Path, :task
+      def_delegators :@builder, :Output, :Path#, :task
+
+      def task(*args, &block)
+        cfg = @builder.task(*args, &block)
+        recompile_process!
+        cfg
+      end
     end
 
     class Normalizer
