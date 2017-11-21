@@ -3,12 +3,12 @@ require "test_helper"
 class ActivityTest < Minitest::Spec
   class A
     def self.call((options, flow_options), *)
-      [ options, flow_options ]
+      [ options[:a_return], options, flow_options ]
     end
   end
-  class B
+  class B < Circuit::End
     def self.call((options, flow_options), *)
-      [ options, flow_options ]
+      [ options[:b_return], options, flow_options ]
     end
   end
   class C
@@ -43,7 +43,9 @@ class ActivityTest < Minitest::Spec
   end
   class L
     def self.call((options, flow_options), *)
-      [ options, flow_options ]
+      options[:L] = 1
+
+      [ Trailblazer::Circuit::Right, options, flow_options ]
     end
   end
 
@@ -72,7 +74,7 @@ class ActivityTest < Minitest::Spec
     circuit_options.must_be_nil
   end
 
-  it do
+  let(:activity) do
     activity = Activity.build do
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
@@ -87,6 +89,9 @@ class ActivityTest < Minitest::Spec
 
       task L, id: :notify_clerk
     end
+  end
+
+  it do
 
     Cct(activity.instance_variable_get(:@process)).must_equal %{
 #<Start:default/nil>
@@ -118,11 +123,19 @@ ActivityTest::L
 
     Ends(activity.instance_variable_get(:@process)).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid_result>]}
 
-    options, flow_options, circuit_options = {id: 1}, {}, {}
+    # A -> B -> End.suspend
+    options, flow_options, circuit_options = {id: 1, a_return: Circuit::Left, b_return: Circuit::Right }, {}, {}
     # ::call
     signal, args = activity.( [options, flow_options], circuit_options )
 
     # activity.draft #=> mergeable, inheritance.
+  end
+
+  it "can start with any task" do
+    signal, (options, _) = activity.( [{}], task: L )
+
+    Outputs(signal).must_equal %{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>}
+    options.inspect.must_equal %{{:L=>1}}
   end
 
   def Outputs(outputs)

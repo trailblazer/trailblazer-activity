@@ -6,10 +6,10 @@ module Trailblazer
       @circuit             = Circuit.new(circuit_hash, outputs.keys, {})
     end
 
-    def call(args, start_event: @default_start_event, **circuit_options)
+    def call(args, task: @default_start_event, **circuit_options)
       @circuit.(
         args,
-        circuit_options.merge( task: start_event) , # this passes :runner to the {Circuit}.
+        circuit_options.merge( task: task ) , # this passes :runner to the {Circuit}.
       )
     end
   end
