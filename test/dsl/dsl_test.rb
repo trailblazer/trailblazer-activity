@@ -318,7 +318,7 @@ ActivityBuildTest::L
         Activity::Magnetic.Output("Signal A", :exception) => Activity::Magnetic.End(:signal_a_reached),
      )
 
-    seq = Activity::Magnetic::Builder.adds_to_tripletts(adds)
+    seq = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
 
     Seq(seq).must_equal %{
 [:success] ==> ActivityBuildTest::G
