@@ -331,8 +331,47 @@ ActivityBuildTest::L
 }
   end
 
+  it "processes :group" do
+    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
+    )
 
+    adds = Activity::Magnetic::DSL::ProcessElement.(
+      G,
+        id: :g,
+        strategy: [
+          Activity::Magnetic::DSL::Path.method(:task),
+          plus_poles: initial_plus_poles,
+        ],
 
+        group: :start
+     )
+
+    seq = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
+
+    Seq(seq).must_equal %{}
+  end
+
+  it "processes :before" do
+    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
+    )
+
+    adds = Activity::Magnetic::DSL::ProcessElement.(
+      G,
+        id: :g,
+        strategy: [
+          Activity::Magnetic::DSL::Path.method(:task),
+          plus_poles: initial_plus_poles,
+        ],
+
+        before: "some-id"
+     )
+
+    seq = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
+
+    Seq(seq).must_equal %{}
+  end
 end
 
 
