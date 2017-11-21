@@ -13,7 +13,7 @@ module Trailblazer
         Magnetic::Path::Builder.build(options, &block)
       end
 
-      def self.draft(options={}, &block)
+      def self.draft(options={}, &block) # TODO: remove me!
         Magnetic::Path::Builder.draft(options, &block)
       end
     end
