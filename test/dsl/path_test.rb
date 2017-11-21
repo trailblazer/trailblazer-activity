@@ -33,7 +33,7 @@ class DSLPathTest < Minitest::Spec
  []
 }
 
-    process = Builder.finalize( adds )
+    process, _ = Builder.finalize( adds )
     Ends(process).must_equal %{[#<End:success/:success>]}
   end
 
@@ -60,7 +60,7 @@ class DSLPathTest < Minitest::Spec
  []
 }
 
-    process = Builder.finalize( adds )
+    process, _ = Builder.finalize( adds )
     Ends(process).must_equal %{[#<End:track_9/:success>,#<End:End.extract.key_not_found/:key_not_found>,#<End:End.invalid/:invalid>]}
   end
 
@@ -76,7 +76,7 @@ class DSLPathTest < Minitest::Spec
 
     # puts Seq(seq)
 
-    process = Builder.finalize( adds )
+    process, _ = Builder.finalize( adds )
 
     Cct(process).must_equal %{
 #<Start:default/nil>
@@ -141,7 +141,7 @@ DSLPathTest::L
 ["log_invalid_result-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result/:invalid_result>
  []
 }
-    process = Builder.finalize( adds )
+    process, _ = Builder.finalize( adds )
     Ends(process).must_equal %{[#<End:End.invalid_result/:invalid_result>]}
   end
 
@@ -183,7 +183,7 @@ Seq(seq).must_equal %{
 }
 
 
-    process = Builder.finalize( adds )
+    process, _ = Builder.finalize( adds )
     Ends(process).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid>]}
 
     Cct(process).must_equal %{
@@ -282,7 +282,7 @@ end
  []
 }
 
-      process = Builder.finalize(adds)
+      process, _ = Builder.finalize(adds)
       Ends(process).must_equal %{[#<End:pink/:success>,#<End:exception/:exception>,#<End:failure/:failure>]}
     end
 
@@ -310,7 +310,7 @@ end
 ["DSLPathTest::I-Trailblazer::Circuit::Left"] ==> #<End:failure/:failure>
  []
 }
-      process = Builder.finalize(adds)
+      process, _ = Builder.finalize(adds)
       Ends(process).must_equal %{[#<End:success/:success>,#<End:exception/:exception>,#<End:failure/:failure>]}
     end
   end
