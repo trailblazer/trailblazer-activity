@@ -152,7 +152,7 @@ module Trailblazer
         end
 
         def keywords
-          [:id, :plus_poles]
+          [:id, :plus_poles, :type]
         end
 
         # strategy_options:

@@ -92,7 +92,6 @@ class ActivityTest < Minitest::Spec
   end
 
   it do
-
     Cct(activity.instance_variable_get(:@process)).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Circuit::Right} => ActivityTest::A

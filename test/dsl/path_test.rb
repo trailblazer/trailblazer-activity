@@ -247,7 +247,32 @@ DSLPathTest::D
 ["-Trailblazer::Circuit::Left"] ==> #<End:left/:left>
  []
 }
-end
+  end
+
+  describe ":type" do
+    it ":type => :end" do
+      seq, adds = Builder.draft do
+        task A, id: "A"
+        task B, id: "B", type: :End #, Output(:failure) => Path(end_semantic: :invalid) do
+         # task C, Output(:failure) => End(:left, :left)
+         # task K, id: "K"#, Output(:success) => End("End.invalid_result", :invalid_result)
+        #end
+        task D, id: "D"
+      end
+
+      Cct( Builder.finalize(adds).first ).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => DSLPathTest::A
+DSLPathTest::A
+ {Trailblazer::Circuit::Right} => DSLPathTest::B
+DSLPathTest::B
+
+DSLPathTest::D
+ {Trailblazer::Circuit::Right} => DSLPathTest::D
+#<End:success/:success>
+}
+    end
+  end
 
 
   describe "Procedural interface" do

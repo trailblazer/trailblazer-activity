@@ -32,7 +32,7 @@ module Trailblazer
       inheriter.initialize_activity_dsl!
       inheriter.recompile_process!
     end
-    # called in subclasses
+
     def self.initialize_activity_dsl!
       @builder = Magnetic::Path::Builder.new({}, Normalizer)
     end

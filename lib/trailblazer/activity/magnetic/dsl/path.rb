@@ -19,12 +19,20 @@ module Trailblazer
 
 
 
-        def self.task(task, track_color: :success, plus_poles: raise, **, &block)
+        def self.task(task, track_color: :success, plus_poles: raise, type: :task, **, &block)
+          return End(task, track_color: track_color) if type == :End # DISCUSS: should this dispatch be here?
+
           [
             # magnetic_to:
             [track_color],
             # outputs:
             plus_poles.reconnect( :success => track_color )
+          ]
+        end
+
+        def self.End(task, track_color: :success)
+          [
+            [track_color], {}
           ]
         end
       end
