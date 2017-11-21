@@ -7,7 +7,7 @@ module Trailblazer
         # add new task with Polarizations
         # add new connections
         # add new ends
-        def call(sequence, task, options={}, id:raise, strategy:raise, &block)
+        def call(task, options={}, id:raise, strategy:raise, &block)
           # 2. compute default Polarizations by running the strategy
           strategy, args = strategy
           magnetic_to, plus_poles = strategy.(task, args )

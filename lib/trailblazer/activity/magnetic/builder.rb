@@ -1,3 +1,5 @@
+require "trailblazer/activity/magnetic/finalizer"
+
 module Trailblazer
   module Activity::Magnetic
     class Builder
@@ -7,61 +9,26 @@ module Trailblazer
         finalize(adds)
       end
 
+      def initialize(strategy_options={}, normalizer)
+        @strategy_options = strategy_options
+        @normalizer       = normalizer
+        @adds             = []
+      end
+
+      # @private
+      def self.finalize(adds)
+        Finalizer.(adds)
+      end
+
       # TODO: remove, only for testing.
       # @return Tripletts
       def self.draft(*args, &block)
         adds = plan( *args, &block )
 
-        return adds_to_tripletts(adds), adds
+        return Finalizer.adds_to_tripletts(adds), adds
       end
       def draft
-        return Builder.adds_to_tripletts(@adds), @adds # remove me.
-      end
-
-      # @private
-      def self.finalize(adds)
-        tripletts = adds_to_tripletts(adds)
-
-        circuit_hash = tripletts_to_circuit_hash( tripletts )
-
-        circuit_hash_to_process( circuit_hash )
-      end
-
-      def self.adds_to_tripletts(adds)
-        alterations = DSL::Alterations.new
-
-        adds.each { |method, cfg| alterations.send( method, *cfg ) }
-
-        alterations.to_a
-      end
-
-      def self.tripletts_to_circuit_hash(tripletts)
-        Trailblazer::Activity::Magnetic::Generate.( tripletts )
-      end
-
-      def self.circuit_hash_to_process(circuit_hash)
-        end_events = end_events_for(circuit_hash)
-
-        return Activity::Process.new( circuit_hash, end_events ), end_events
-      end
-
-      # Filters out unconnected ends, e.g. the standard end in nested tracks that weren't used.
-      def self.end_events_for(circuit_hash)
-        tasks_with_incoming_edge = circuit_hash.values.collect { |connections| connections.values }.flatten(1)
-
-        ary = circuit_hash.collect do |task, connections|
-          task.kind_of?(Circuit::End) &&
-            connections.empty? &&
-            tasks_with_incoming_edge.include?(task) ? [task, task.instance_variable_get(:@options)[:semantic]] : nil
-        end
-
-        Hash[ ary.compact ]
-      end
-
-      def initialize(strategy_options={}, normalizer)
-        @strategy_options = strategy_options
-        @normalizer       = normalizer
-        @adds             = []
+        return Finalizer.adds_to_tripletts(@adds), @adds # remove me.
       end
 
       module DSLMethods
@@ -89,15 +56,14 @@ module Trailblazer
 
       private
 
-
       # merge @strategy_options (for the track colors)
       # normalize options
-      def add(strategy, task, options={}, &block)
+      def add!(strategy, task, options={}, &block)
         local_options, options = normalize(options, keywords)
 
         task, local_options = @normalizer.(task, local_options)
 
-        @adds += DSL::ProcessElement.( @sequence, task, options, id: local_options[:id],
+        @adds += DSL::ProcessElement.( task, options, id: local_options[:id],
           # the strategy (Path.task) has nothing to do with (Output=>target) tuples
           strategy: [ strategy, @strategy_options.merge( local_options ) ],
           &block
@@ -111,33 +77,6 @@ module Trailblazer
         options.each { |k,v| local_keys.include?(k) ? local[k] = v : foreign[k] = v }
 
         return local, foreign
-      end
-    end
-
-
-    module FastTrack
-
-    end
-    class FastTrack::Builder < Builder
-      def keywords
-        [:id, :plus_poles, :fail_fast, :pass_fast, :fast_track]
-      end
-
-      def initialize(strategy_options={})
-        super
-        @adds += DSL::Path.initialize_sequence(strategy_options)
-        @adds += DSL::Railway.initialize_sequence(strategy_options)
-        @adds += DSL::FastTrack.initialize_sequence(strategy_options)
-      end
-
-      def step(*args, &block)
-        add(DSL::FastTrack.method(:step), *args, &block)
-      end
-      def fail(*args, &block)
-        add(DSL::FastTrack.method(:fail), *args, &block)
-      end
-      def pass(*args, &block)
-        add(DSL::FastTrack.method(:pass), *args, &block)
       end
     end
 
@@ -160,11 +99,12 @@ module Trailblazer
         #   :end_semantic
         def initialize(strategy_options={}, normalizer)
           super
-          @adds += DSL::Path.initialize_sequence(strategy_options)
+ @adds += DSL::Path.initial_sequence(strategy_options)
+          # add!( DSL::Path.method(:initial_sequence), strategy_options )
         end
 
         def task(*args, &block)
-          add( DSL::Path.method(:task), *args, &block )
+          add!( DSL::Path.method(:task), *args, &block )
         end
 
         DefaultNormalizer = ->(task, local_options) do
@@ -175,6 +115,33 @@ module Trailblazer
         DefaultPlusPoles = DSL::PlusPoles.new.merge(
           Activity::Magnetic.Output(Circuit::Right, :success) => nil
         ).freeze
+      end
+    end
+
+
+    module FastTrack
+
+    end
+    class FastTrack::Builder < Builder
+      def keywords
+        [:id, :plus_poles, :fail_fast, :pass_fast, :fast_track]
+      end
+
+      def initialize(strategy_options={})
+        super
+        @adds += DSL::Path.initialize_sequence(strategy_options)
+        @adds += DSL::Railway.initialize_sequence(strategy_options)
+        @adds += DSL::FastTrack.initialize_sequence(strategy_options)
+      end
+
+      def step(*args, &block)
+        add!(DSL::FastTrack.method(:step), *args, &block)
+      end
+      def fail(*args, &block)
+        add!(DSL::FastTrack.method(:fail), *args, &block)
+      end
+      def pass(*args, &block)
+        add!(DSL::FastTrack.method(:pass), *args, &block)
       end
     end # Builder
   end

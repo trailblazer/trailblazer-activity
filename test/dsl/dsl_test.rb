@@ -304,7 +304,6 @@ ActivityBuildTest::L
       Activity::Magnetic.Output(Circuit::Left, :failure) => :failure )
 
     adds = Activity::Magnetic::DSL::ProcessElement.(
-      Activity::Magnetic::DSL::Alterations.new,
       G,
         id: :receive_process_id,
         strategy: [

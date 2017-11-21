@@ -171,7 +171,6 @@ ActivityTest::L
     Outputs(signal).must_equal %{#<Trailblazer::Circuit::End: @name=\"track_0.\", @options={:semantic=>:invalid_result}>}
     options.inspect.must_equal %{{:c_return=>Trailblazer::Circuit::Right, :a_return=>Trailblazer::Circuit::Right, :g_return=>Trailblazer::Circuit::Right, :i_return=>Trailblazer::Circuit::Left, :C=>1, :A=>1, :G=>1, :I=>1, :J=>1, :K=>1}}
 
-
     # activity.draft #=> mergeable, inheritance.
   end
 
