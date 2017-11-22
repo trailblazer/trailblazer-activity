@@ -58,8 +58,8 @@ module Trailblazer
 
       # merge @strategy_options (for the track colors)
       # normalize options
-      def add!(strategy_cfg, normalizer, task, options={}, &block)
-        @adds += self.class.add(strategy_cfg, normalizer, task, options, &block)
+      def add!(adds)
+        @adds += adds
       end
 
       # Options valid for all DSL calls with this Builder framework.
@@ -80,7 +80,8 @@ module Trailblazer
         return foreign, local
       end
 
-      def self.add(strategy_cfg, normalizer, task, options, &block)
+      # @return Adds
+      def self.Adds(strategy_cfg, normalizer, task, options, &block)
         strategy, strategy_options = strategy_cfg
 
         options, local_options    = normalize( options, generic_keywords+keywords )

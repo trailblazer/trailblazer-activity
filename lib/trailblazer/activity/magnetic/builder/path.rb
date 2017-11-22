@@ -19,26 +19,21 @@ module Trailblazer
         #   :end_semantic
         def initialize(strategy_options={}, normalizer)
           strategy_options = { track_color: :success, end_semantic: :success }.merge(strategy_options)
-          track_color = strategy_options[:track_color]
-          end_semantic = strategy_options[:end_semantic]
           # FIXME: fixme.
 
           super
 
-          start_evt = Circuit::Start.new(:default)
-
           # TODO: use Start strategy that has only one plus_pole?
-          add!( [Path.method(:task), strategy_options], normalizer, start_evt, id: "Start.default", magnetic_to: [], group: :start )
-
-
-
-          end_evt = Activity::Magnetic.End(track_color, end_semantic)
-
-          add!( [Path.method(:End), strategy_options], normalizer, end_evt, id: "End.#{track_color}", group: :end )
+          # add start and default end.
+          add!(
+            self.class.InitialAdds( normalizer, strategy_options )
+          )
         end
 
-        def task(*args, &block)
-          add!( [Path.method(:task), @strategy_options], @normalizer, *args, &block )
+        def task(task, options={}, &block)
+          adds = self.class.Task( @strategy_options, @normalizer, task, options, &block )
+
+          add!(adds)
         end
 
         DefaultNormalizer = ->(task, local_options) do
@@ -50,9 +45,20 @@ module Trailblazer
           Activity::Magnetic.Output(Circuit::Right, :success) => nil
         ).freeze
 
+        def self.InitialAdds(normalizer, track_color:, end_semantic:, **strategy_options)
+          strategy_options = strategy_options.merge( track_color: track_color, end_semantic: end_semantic )
+
+          Task(strategy_options, normalizer, Circuit::Start.new(:default),                      id: "Start.default", magnetic_to: [], group: :start ) +
+          Task(strategy_options, normalizer, Activity::Magnetic.End(track_color, end_semantic), id: "End.#{track_color}", type: :End, group: :end )
+        end
+
+        def self.Task(strategy_options, normalizer, *args, &block)
+          Adds( [Path.method(:_Task), strategy_options], normalizer, *args, &block )
+        end
+
       # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
       # Implements #task
-        def self.task(task, track_color:raise, plus_poles:raise, type: :task, magnetic_to: nil, **, &block)
+        def self._Task(task, track_color:raise, plus_poles:raise, type: :task, magnetic_to: nil, **, &block)
           return End(task, track_color: track_color) if type == :End # DISCUSS: should this dispatch be here?
 
           [

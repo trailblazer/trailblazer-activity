@@ -339,14 +339,14 @@ ActivityBuildTest::L
     adds += Activity::Magnetic::DSL::ProcessElement.(
       I,
         id:                :i,
-        strategy:          [ Activity::Magnetic::Builder::Path.method(:task), plus_poles: initial_plus_poles ],
+        strategy:          [ Activity::Magnetic::Builder::Path.method(:Task), plus_poles: initial_plus_poles ],
      )
 
     # adding group: :start here.
     adds += Activity::Magnetic::DSL::ProcessElement.(
       G,
         id:                :g,
-        strategy:          [ Activity::Magnetic::Builder::Path.method(:task), plus_poles: initial_plus_poles ],
+        strategy:          [ Activity::Magnetic::Builder::Path.method(:Task), plus_poles: initial_plus_poles ],
 
         sequence_options: { group: :start }
      )
@@ -369,14 +369,14 @@ ActivityBuildTest::L
     adds += Activity::Magnetic::DSL::ProcessElement.(
       I,
         id:                "some-id",
-        strategy:          [ Activity::Magnetic::Builder::Path.method(:task), plus_poles: initial_plus_poles ],
+        strategy:          [ Activity::Magnetic::Builder::Path.method(:Task), plus_poles: initial_plus_poles ],
      )
 
     adds += Activity::Magnetic::DSL::ProcessElement.(
       G,
         id: :g,
         strategy: [
-          Activity::Magnetic::Builder::Path.method(:task),
+          Activity::Magnetic::Builder::Path.method(:Task),
           plus_poles: initial_plus_poles,
         ],
 
