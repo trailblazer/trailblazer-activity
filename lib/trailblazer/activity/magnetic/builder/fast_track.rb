@@ -1,7 +1,13 @@
+# TODO: move me to Operation.
 module Trailblazer
   module Activity::Magnetic
-    module DSL
-      module FastTrack
+    class Builder
+      class FastTrack < Builder
+        def self.keywords
+          [:fail_fast, :pass_fast, :fast_track, :type]
+        end
+
+
         def self.initialize_sequence(*)
           [
             [ :add, [ "End.fail_fast", [ [:fail_fast], Activity::Magnetic.End(:fail_fast), [] ], group: :end] ],
