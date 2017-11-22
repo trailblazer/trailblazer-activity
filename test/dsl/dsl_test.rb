@@ -212,7 +212,7 @@ class ActivityBuildTest < Minitest::Spec
       task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    process = Activity::Magnetic::Path::Builder.finalize( adds )
+    process = Activity::Magnetic::Builder::Path.finalize( adds )
 
     Cct(process).must_equal %{
 #<Start:default/nil>
@@ -339,14 +339,14 @@ ActivityBuildTest::L
     adds += Activity::Magnetic::DSL::ProcessElement.(
       I,
         id:                :i,
-        strategy:          [ Activity::Magnetic::DSL::Path.method(:task), plus_poles: initial_plus_poles ],
+        strategy:          [ Activity::Magnetic::Builder::Path.method(:task), plus_poles: initial_plus_poles ],
      )
 
     # adding group: :start here.
     adds += Activity::Magnetic::DSL::ProcessElement.(
       G,
         id:                :g,
-        strategy:          [ Activity::Magnetic::DSL::Path.method(:task), plus_poles: initial_plus_poles ],
+        strategy:          [ Activity::Magnetic::Builder::Path.method(:task), plus_poles: initial_plus_poles ],
 
         sequence_options: { group: :start }
      )
@@ -369,14 +369,14 @@ ActivityBuildTest::L
     adds += Activity::Magnetic::DSL::ProcessElement.(
       I,
         id:                "some-id",
-        strategy:          [ Activity::Magnetic::DSL::Path.method(:task), plus_poles: initial_plus_poles ],
+        strategy:          [ Activity::Magnetic::Builder::Path.method(:task), plus_poles: initial_plus_poles ],
      )
 
     adds += Activity::Magnetic::DSL::ProcessElement.(
       G,
         id: :g,
         strategy: [
-          Activity::Magnetic::DSL::Path.method(:task),
+          Activity::Magnetic::Builder::Path.method(:task),
           plus_poles: initial_plus_poles,
         ],
 

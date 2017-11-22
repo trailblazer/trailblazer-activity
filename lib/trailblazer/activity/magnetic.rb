@@ -6,15 +6,15 @@ module Trailblazer
 
     class Process
       def self.plan(options={}, &block)
-        Magnetic::Path::Builder.plan(options, &block)
+        Magnetic::Builder::Path.plan(options, &block)
       end
 
       def self.build(options={}, &block)
-        Magnetic::Path::Builder.build(options, &block)
+        Magnetic::Builder::Path.build(options, &block)
       end
 
       def self.draft(options={}, &block) # TODO: remove me!
-        Magnetic::Path::Builder.draft(options, &block)
+        Magnetic::Builder::Path.draft(options, &block)
       end
     end
   end
@@ -31,7 +31,7 @@ require "trailblazer/activity/schema/dependencies"
 require "trailblazer/activity/magnetic"
 require "trailblazer/activity/magnetic/builder"
 
-require "trailblazer/activity/magnetic/dsl/path"
+require "trailblazer/activity/magnetic/builder/path"
 require "trailblazer/activity/magnetic/dsl/railway"
 require "trailblazer/activity/magnetic/dsl/fast_track" # TODO: move to Operation gem.
 

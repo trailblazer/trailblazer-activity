@@ -48,7 +48,7 @@ module Trailblazer
           options = options.merge(track_color: track_color, end_semantic: end_semantic)
 
           # this block is called in DSL::ProcessTuples.
-          ->(block) { [ track_color, Path::Builder.plan( options, @normalizer, &block ) ] }
+          ->(block) { [ track_color, Builder::Path.plan( options, @normalizer, &block ) ] }
         end
       end
 
@@ -58,7 +58,7 @@ module Trailblazer
 
       # Options valid for all DSL calls with this Builder framework.
       def generic_keywords
-        [ :id, :plus_poles ]
+        [ :id, :plus_poles, :magnetic_to ]
       end
 
       def sequence_keywords
@@ -92,45 +92,6 @@ module Trailblazer
         return foreign, local
       end
     end
-
-    class Path
-      class Builder < Builder
-        # @return ADDS
-        def self.plan(options={}, normalizer=DefaultNormalizer, &block)
-          builder = new(options, normalizer)
-
-          # TODO: pass new edge color in block?
-          builder.instance_exec(&block) #=> ADDS
-        end
-
-        def keywords
-          [:type]
-        end
-
-        # strategy_options:
-        #   :track_color
-        #   :end_semantic
-        def initialize(strategy_options={}, normalizer)
-          super
- @adds += DSL::Path.initial_sequence(strategy_options)
-          # add!( DSL::Path.method(:initial_sequence), strategy_options )
-        end
-
-        def task(*args, &block)
-          add!( DSL::Path.method(:task), *args, &block )
-        end
-
-        DefaultNormalizer = ->(task, local_options) do
-          local_options = { plus_poles: DefaultPlusPoles }.merge(local_options)
-          [ task, local_options ]
-        end
-
-        DefaultPlusPoles = DSL::PlusPoles.new.merge(
-          Activity::Magnetic.Output(Circuit::Right, :success) => nil
-        ).freeze
-      end
-    end
-
 
     module FastTrack
 

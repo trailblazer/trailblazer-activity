@@ -14,7 +14,7 @@ class DSLPathTest < Minitest::Spec
   class K; end
   class L; end
 
-  Builder = Activity::Magnetic::Path::Builder
+  Builder = Activity::Magnetic::Builder::Path
 
   it "standard path ends in End.success/:success" do
     seq, adds = Builder.draft do
@@ -246,6 +246,7 @@ DSLPathTest::D
     Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
  (success)/Right ==> :success
+ (failure)/Left ==> nil
 [:success] ==> DSLPathTest::A
  (success)/Right ==> :success
  (failure)/Left ==> nil
@@ -305,7 +306,7 @@ DSLPathTest::D
 
     # with all options.
     it do
-      incremental = Activity::Magnetic::Path::Builder.new( {track_color: :pink}, Activity::Magnetic::Path::Builder::DefaultNormalizer )
+      incremental = Activity::Magnetic::Builder::Path.new( {track_color: :pink}, Activity::Magnetic::Builder::Path::DefaultNormalizer )
       incremental.task G, id: G, plus_poles: initial_plus_poles, Activity::Magnetic.Output("Exception", :exception) => Activity::Magnetic.End(:exception)
       incremental.task I, id: I, plus_poles: initial_plus_poles, Activity::Magnetic.Output(Circuit::Left, :failure) => Activity::Magnetic.End(:failure)
 
@@ -334,7 +335,7 @@ DSLPathTest::D
 
     # with plus_poles.
     it do
-      incremental = Activity::Magnetic::Path::Builder.new( {plus_poles: initial_plus_poles}, Activity::Magnetic::Path::Builder::DefaultNormalizer )
+      incremental = Activity::Magnetic::Builder::Path.new( {plus_poles: initial_plus_poles}, Activity::Magnetic::Builder::Path::DefaultNormalizer )
       incremental.task G, id: G, Activity::Magnetic.Output("Exception", :exception) => Activity::Magnetic.End(:exception)
       incremental.task I, id: I, Activity::Magnetic.Output(Circuit::Left, :failure) => Activity::Magnetic.End(:failure)
 
