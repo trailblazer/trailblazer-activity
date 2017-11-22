@@ -37,6 +37,27 @@ class DSLPathTest < Minitest::Spec
     Ends(process).must_equal %{[#<End:success/:success>]}
   end
 
+  it "accepts :before and :group" do
+    seq, adds = Builder.draft do
+      task J, id: "report_invalid_result"
+      task K, id: "log_invalid_result", before: "report_invalid_result"
+      task I, id: "start/I", group: :start
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> DSLPathTest::I
+ (success)/Right ==> :success
+[:success] ==> DSLPathTest::K
+ (success)/Right ==> :success
+[:success] ==> DSLPathTest::J
+ (success)/Right ==> :success
+[:success] ==> #<End:success/:success>
+ []
+}
+  end
+
   it "fake Railway with Output(Left)s" do
     seq, adds = Builder.draft(track_color: :"track_9") do
       task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)

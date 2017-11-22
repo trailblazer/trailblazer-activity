@@ -74,9 +74,11 @@ module Trailblazer
         task, local_options = @normalizer.(task, local_options)
 
         # Strategy receives :plus_poles, :id, :track_color, :end_semantic
-        @adds += DSL::ProcessElement.( task, options, id: local_options[:id],
+        @adds += DSL::ProcessElement.( task, options,
+          id:               local_options[:id],
           # the strategy (Path.task) has nothing to do with (Output=>target) tuples
-          strategy: [ strategy, @strategy_options.merge( local_options ) ],
+          strategy:         [ strategy, @strategy_options.merge( local_options ) ],
+          sequence_options: sequence_options,
           &block
         )
       end
