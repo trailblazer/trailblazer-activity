@@ -11,13 +11,13 @@ module Trailblazer
 
       # @return ADDS
       def self.plan(options={}, normalizer=self.DefaultNormalizer, &block)
-        builder = new(options, normalizer)
+        builder = new(normalizer, options)
 
         # TODO: pass new edge color in block?
         builder.instance_exec(&block) #=> ADDS
       end
 
-      def initialize(strategy_options={}, normalizer)
+      def initialize(normalizer, strategy_options)
         @strategy_options = strategy_options
         @normalizer       = normalizer
         @adds             = []

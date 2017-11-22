@@ -9,10 +9,8 @@ module Trailblazer
         # strategy_options:
         #   :track_color
         #   :end_semantic
-        def initialize(strategy_options={}, normalizer)
+        def initialize(normalizer, strategy_options={})
           strategy_options = { track_color: :success, end_semantic: :success }.merge(strategy_options)
-          # FIXME: fixme.
-
           super
 
           # TODO: use Start strategy that has only one plus_pole?

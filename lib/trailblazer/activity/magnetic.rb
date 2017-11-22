@@ -30,9 +30,9 @@ require "trailblazer/activity/schema/dependencies"
 
 require "trailblazer/activity/magnetic"
 require "trailblazer/activity/magnetic/builder"
-
 require "trailblazer/activity/magnetic/builder/path"
-require "trailblazer/activity/magnetic/dsl/railway"
+require "trailblazer/activity/magnetic/builder/railway"
+
 require "trailblazer/activity/magnetic/dsl/fast_track" # TODO: move to Operation gem.
 
 require "trailblazer/activity/magnetic/generate"
