@@ -2,14 +2,6 @@ module Trailblazer
   module Activity::Magnetic
     class Builder
       class Path < Builder
-        # @return ADDS
-        def self.plan(options={}, normalizer=DefaultNormalizer, &block)
-          builder = new(options, normalizer)
-
-          # TODO: pass new edge color in block?
-          builder.instance_exec(&block) #=> ADDS
-        end
-
         def self.keywords
           [:type]
         end
@@ -36,15 +28,18 @@ module Trailblazer
           add!(adds)
         end
 
-        DefaultNormalizer = ->(task, local_options) do
-          local_options = { plus_poles: DefaultPlusPoles }.merge(local_options)
-          [ task, local_options ]
+        def self.DefaultNormalizer
+          ->(task, local_options) do
+            local_options = { plus_poles: DefaultPlusPoles }.merge(local_options)
+            [ task, local_options ]
+          end
         end
 
         DefaultPlusPoles = DSL::PlusPoles.new.merge(
           Activity::Magnetic.Output(Circuit::Right, :success) => nil
         ).freeze
 
+        # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
         def self.InitialAdds(normalizer, track_color:, end_semantic:, **strategy_options)
           strategy_options = strategy_options.merge( track_color: track_color, end_semantic: end_semantic )
 
