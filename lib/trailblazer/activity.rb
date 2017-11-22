@@ -34,11 +34,11 @@ module Trailblazer
     end
 
     def self.initialize_activity_dsl!
-      @builder = Magnetic::Path::Builder.new({}, Normalizer)
+      @builder = Magnetic::Builder::Path.new(Normalizer, {})
     end
 
     def self.recompile_process!
-      @process, @outputs = Magnetic::Path::Builder.finalize( @builder.instance_variable_get(:@adds) )
+      @process, @outputs = Magnetic::Builder::Path.finalize( @builder.instance_variable_get(:@adds) )
     end
 
     def self.outputs
