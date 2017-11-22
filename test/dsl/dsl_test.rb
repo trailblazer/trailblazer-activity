@@ -331,33 +331,48 @@ ActivityBuildTest::L
 }
   end
 
-  it "processes :group" do
-    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
-    )
+  it "processes :group, which makes I appear after G even though it was added before" do
+    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge( Activity::Magnetic.Output(Circuit::Right, :success) => :success )
 
-    adds = Activity::Magnetic::DSL::ProcessElement.(
+    adds = []
+
+    adds += Activity::Magnetic::DSL::ProcessElement.(
+      I,
+        id:                :i,
+        strategy:          [ Activity::Magnetic::DSL::Path.method(:task), plus_poles: initial_plus_poles ],
+     )
+
+    # adding group: :start here.
+    adds += Activity::Magnetic::DSL::ProcessElement.(
       G,
-        id: :g,
-        strategy: [
-          Activity::Magnetic::DSL::Path.method(:task),
-          plus_poles: initial_plus_poles,
-        ],
+        id:                :g,
+        strategy:          [ Activity::Magnetic::DSL::Path.method(:task), plus_poles: initial_plus_poles ],
 
-        group: :start
+        sequence_options: { group: :start }
      )
 
     seq = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
 
-    Seq(seq).must_equal %{}
+    Seq(seq).must_equal %{
+[:success] ==> ActivityBuildTest::G
+ (success)/Right ==> :success
+[:success] ==> ActivityBuildTest::I
+ (success)/Right ==> :success
+}
   end
 
-  it "processes :before" do
-    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
-    )
+  it "processes :before and puts G before I" do
+    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge( Activity::Magnetic.Output(Circuit::Right, :success) => :success )
 
-    adds = Activity::Magnetic::DSL::ProcessElement.(
+    adds = []
+
+    adds += Activity::Magnetic::DSL::ProcessElement.(
+      I,
+        id:                "some-id",
+        strategy:          [ Activity::Magnetic::DSL::Path.method(:task), plus_poles: initial_plus_poles ],
+     )
+
+    adds += Activity::Magnetic::DSL::ProcessElement.(
       G,
         id: :g,
         strategy: [
@@ -365,12 +380,17 @@ ActivityBuildTest::L
           plus_poles: initial_plus_poles,
         ],
 
-        before: "some-id"
+        sequence_options: { before: "some-id" }
      )
 
     seq = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
 
-    Seq(seq).must_equal %{}
+    Seq(seq).must_equal %{
+[:success] ==> ActivityBuildTest::G
+ (success)/Right ==> :success
+[:success] ==> ActivityBuildTest::I
+ (success)/Right ==> :success
+}
   end
 end
 

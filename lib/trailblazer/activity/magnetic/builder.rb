@@ -56,13 +56,24 @@ module Trailblazer
 
       private
 
+      # Options valid for all DSL calls with this Builder framework.
+      def generic_keywords
+        [ :id, :plus_poles ]
+      end
+
+      def sequence_keywords
+        [ :group, :before, :after, :replace, :delete ] # hard-wires Builder to Sequence/Alterations.
+      end
+
       # merge @strategy_options (for the track colors)
       # normalize options
       def add!(strategy, task, options={}, &block)
-        local_options, options = normalize(options, keywords)
+        options, local_options    = normalize( options, generic_keywords+keywords )
+        options, sequence_options = normalize( options, sequence_keywords )
 
         task, local_options = @normalizer.(task, local_options)
 
+        # Strategy receives :plus_poles, :id, :track_color, :end_semantic
         @adds += DSL::ProcessElement.( task, options, id: local_options[:id],
           # the strategy (Path.task) has nothing to do with (Output=>target) tuples
           strategy: [ strategy, @strategy_options.merge( local_options ) ],
@@ -76,7 +87,7 @@ module Trailblazer
         local, foreign = {}, {}
         options.each { |k,v| local_keys.include?(k) ? local[k] = v : foreign[k] = v }
 
-        return local, foreign
+        return foreign, local
       end
     end
 
@@ -91,7 +102,7 @@ module Trailblazer
         end
 
         def keywords
-          [:id, :plus_poles, :type]
+          [:type]
         end
 
         # strategy_options:
@@ -124,7 +135,7 @@ module Trailblazer
     end
     class FastTrack::Builder < Builder
       def keywords
-        [:id, :plus_poles, :fail_fast, :pass_fast, :fast_track]
+        [:fail_fast, :pass_fast, :fast_track]
       end
 
       def initialize(strategy_options={})

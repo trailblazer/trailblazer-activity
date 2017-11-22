@@ -7,10 +7,11 @@ module Trailblazer
         # add new task with Polarizations
         # add new connections
         # add new ends
-        def call(task, options={}, id:raise, strategy:raise, &block)
+        # passes through :group/:before (sequence options)
+        def call(task, options={}, id:raise, strategy:raise, sequence_options:{}, &block)
           # 2. compute default Polarizations by running the strategy
           strategy, args = strategy
-          magnetic_to, plus_poles = strategy.(task, args )
+          magnetic_to, plus_poles = strategy.( task, args )
 
           # 3. process user options
           arr = ProcessOptions.(id, options, args[:plus_poles], &block)
@@ -24,7 +25,7 @@ module Trailblazer
 
           # 5. add the instruction for the actual task: {seq.add(step, polarizations)}
           adds = [
-            [ :add, [id, [ magnetic_to, task, plus_poles.to_a ]] ], # sequence.add( id, [ magnetic_to, task, plus_poles.to_a ] )
+            [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ],
             *adds
           ]
         end
