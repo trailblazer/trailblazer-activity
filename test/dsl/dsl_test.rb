@@ -212,7 +212,7 @@ class ActivityBuildTest < Minitest::Spec
       task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    process = Activity::Magnetic::Builder::Path.finalize( adds )
+    process, _ = Activity::Magnetic::Builder.finalize( adds )
 
     Cct(process).must_equal %{
 #<Start:default/nil>

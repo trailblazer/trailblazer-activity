@@ -10,7 +10,7 @@ module Trailblazer
           builder.instance_exec(&block) #=> ADDS
         end
 
-        def keywords
+        def self.keywords
           [:type]
         end
 
@@ -18,25 +18,27 @@ module Trailblazer
         #   :track_color
         #   :end_semantic
         def initialize(strategy_options={}, normalizer)
+          strategy_options = { track_color: :success, end_semantic: :success }.merge(strategy_options)
+          track_color = strategy_options[:track_color]
+          end_semantic = strategy_options[:end_semantic]
+          # FIXME: fixme.
+
           super
 
           start_evt = Circuit::Start.new(:default)
 
           # TODO: use Start strategy that has only one plus_pole?
-          add!( Path.method(:task), start_evt, id: "Start.default", magnetic_to: [], group: :start )
+          add!( [Path.method(:task), strategy_options], normalizer, start_evt, id: "Start.default", magnetic_to: [], group: :start )
 
 
-          # FIXME: fixme.
-          track_color = strategy_options[:track_color] || :success
-          end_semantic = strategy_options[:end_semantic] || :success
 
           end_evt = Activity::Magnetic.End(track_color, end_semantic)
 
-          add!( Path.method(:End), end_evt, id: "End.#{track_color}", group: :end )
+          add!( [Path.method(:End), strategy_options], normalizer, end_evt, id: "End.#{track_color}", group: :end )
         end
 
         def task(*args, &block)
-          add!( Path.method(:task), *args, &block )
+          add!( [Path.method(:task), @strategy_options], @normalizer, *args, &block )
         end
 
         DefaultNormalizer = ->(task, local_options) do
@@ -50,7 +52,7 @@ module Trailblazer
 
       # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
       # Implements #task
-        def self.task(task, track_color: :success, plus_poles: raise, type: :task, magnetic_to: nil, **, &block)
+        def self.task(task, track_color:raise, plus_poles:raise, type: :task, magnetic_to: nil, **, &block)
           return End(task, track_color: track_color) if type == :End # DISCUSS: should this dispatch be here?
 
           [
@@ -61,7 +63,7 @@ module Trailblazer
           ]
         end
 
-        def self.End(task, track_color: :success, **)
+        def self.End(task, track_color:raise, **)
           [
             [track_color], {}
           ]
