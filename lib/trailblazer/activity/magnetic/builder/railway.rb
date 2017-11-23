@@ -62,22 +62,22 @@ module Trailblazer
         end
 
         def self.Step(strategy_options, normalizer, *args, &block)
-          Adds( [Railway.method(:_Step), strategy_options], normalizer, *args, &block )
+          AddsFor( [Railway.method(:_Step), strategy_options], normalizer, *args, &block )
         end
 
         def self.Fail(strategy_options, normalizer, *args, &block)
-          Adds( [Railway.method(:_Fail), strategy_options], normalizer, *args, &block )
+          AddsFor( [Railway.method(:_Fail), strategy_options], normalizer, *args, &block )
         end
 
         def self.Pass(strategy_options, normalizer, *args, &block)
-          Adds( [Railway.method(:_Pass), strategy_options], normalizer, *args, &block )
+          AddsFor( [Railway.method(:_Pass), strategy_options], normalizer, *args, &block )
         end
 
 
 
 
         def self._Step(task, track_color: :success, failure_color: :failure, plus_poles: raise, **, &block)
-          magnetic_to, plus_poles = Path._Task(task, track_color: track_color, plus_poles: plus_poles)
+          magnetic_to, plus_poles = Path.task_polarizations(task, track_color: track_color, plus_poles: plus_poles)
           [
             magnetic_to,
             plus_poles.reconnect( :failure => failure_color )

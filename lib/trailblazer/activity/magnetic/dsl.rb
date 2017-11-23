@@ -8,27 +8,29 @@ module Trailblazer
         # add new connections
         # add new ends
         # passes through :group/:before (sequence options)
-        def call(task, options={}, id:raise, strategy:raise, sequence_options:{}, &block)
-          # 2. compute default Polarizations by running the strategy
-          strategy, args = strategy
-          magnetic_to, plus_poles = strategy.( task, args )
+        def call(options={}, id:raise, plus_poles:raise, &block)
 
           # 3. process user options
-          arr = ProcessOptions.(id, options, args[:plus_poles], &block)
+          arr = ProcessOptions.(id, options, plus_poles, &block)
 
           _plus_poles = arr.collect { |cfg| cfg[0] }.compact
           adds       = arr.collect { |cfg| cfg[1] }.compact.flatten(1)
 
           # 4. merge them with the default Polarizations
+          pp _plus_poles
           plus_poles = plus_poles.merge( Hash[_plus_poles] )
 
 
           # 5. add the instruction for the actual task: {seq.add(step, polarizations)}
-          adds = [
-            [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ],
-            *adds
-          ]
+          return adds, plus_poles
         end
+
+      end
+
+      def self.AddsForTask(task, id:, magnetic_to:, plus_poles:, sequence_options:, **)
+        add = [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ]
+
+        [ add ]
       end
 
       # Generate PlusPoles and additional sequence alterations from the DSL options such as

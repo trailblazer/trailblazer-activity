@@ -89,22 +89,38 @@ module Trailblazer
       end
 
       # @return Adds
-      def self.Adds(strategy_cfg, normalizer, task, options, &block)
-        strategy, strategy_options = strategy_cfg
-
+      def self.AddsFor(strategy_cfg, normalizer, task, options, &block)
         options, local_options    = normalize( options, generic_keywords+keywords )
         options, sequence_options = normalize( options, sequence_keywords )
 
         task, local_options = normalizer.(task, local_options)
 
-        # Strategy receives :plus_poles, :id, :track_color, :end_semantic
-        DSL::ProcessElement.( task, options,
-          id:               local_options[:id],
-          # the strategy (Path.task) has nothing to do with (Output=>target) tuples
-          strategy:         [ strategy, strategy_options.merge( local_options ) ],
-          sequence_options: sequence_options,
+        # local_options: :plus_poles, :magnetic_to
+
+        strategy, strategy_options = strategy_cfg
+
+        adds, plus_poles = adds_for_task( task, strategy, strategy_options, local_options.merge( sequence_options: sequence_options ) )
+
+        # adds for DSL options
+        adds, plus_poles = DSL::ProcessElement.( options,
+          id:          local_options[:id],
+          plus_poles:  plus_poles,
           &block
         )
+
+
+      end
+
+      def self.adds_for_task(task, strategy, strategy_options, **options)
+        magnetic_to, plus_poles = strategy.( strategy_options.merge( options ) )
+
+        # adds for actual box.
+        adds = DSL.AddsForTask(
+          task,
+          options.merge( magnetic_to: magnetic_to, plus_poles: plus_poles )
+        )
+
+        return adds, plus_poles
       end
     end
 
