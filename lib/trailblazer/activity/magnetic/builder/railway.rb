@@ -54,11 +54,24 @@ module Trailblazer
         ).freeze
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(normalizer, failure_color:, **strategy_options)
-          strategy_options = strategy_options.merge( failure_color: failure_color )
+        def self.InitialAdds(failure_color:, **builder_options)
+          # strategy_options = strategy_options.merge( failure_color: failure_color )
 
-          # FIXME: i do hate the :track_color merge
-          Path.Task(strategy_options.merge(track_color: :failure), normalizer, Activity::Magnetic.End(failure_color, :failure), id: "End.failure", type: :End, group: :end )
+          path_adds = Path.InitialAdds(**builder_options)
+
+          end_adds = adds(
+            "End.#{failure_color}", Activity::Magnetic.End(failure_color, :failure),
+
+            {}, # plus_poles
+            Path::TaskPolarizations(builder_options.merge( type: :End )),
+            [],
+
+            {},
+            { group: :end },
+            [failure_color]
+          )
+
+          path_adds + end_adds
         end
 
         def self.Step(strategy_options, normalizer, *args, &block)

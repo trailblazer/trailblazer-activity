@@ -108,7 +108,7 @@ class AddsTest < Minitest::Spec
    {:group=>:start}]],
  [:add,
   ["End.green",
-   [:green,
+   [[:green],
     #<Trailblazer::Circuit::End:
      @name=:green,
      @options={:semantic=>:success}>,
@@ -117,6 +117,40 @@ class AddsTest < Minitest::Spec
 }
   end
 
+  it "Railway.InitialAdds" do
+    PP.pp Activity::Magnetic::Builder::Railway.InitialAdds(failure_color: :failure, track_color: :green, end_semantic: :success), dump =""
+
+    dump.gsub(/0x\w+/, "").must_equal %{[[:add,
+  ["Start.default",
+   [[],
+    #<Trailblazer::Circuit::Start:
+     @name=:default,
+     @options={}>,
+    [#<struct Trailblazer::Activity::Magnetic::PlusPole
+      output=
+       #<struct Trailblazer::Activity::Magnetic::Output
+        signal=Trailblazer::Circuit::Right,
+        semantic=:success>,
+      color=:green>]],
+   {:group=>:start}]],
+ [:add,
+  ["End.green",
+   [[:green],
+    #<Trailblazer::Circuit::End:
+     @name=:green,
+     @options={:semantic=>:success}>,
+    []],
+   {:group=>:end}]],
+ [:add,
+  ["End.failure",
+   [[:failure],
+    #<Trailblazer::Circuit::End:
+     @name=:failure,
+     @options={:semantic=>:failure}>,
+    []],
+   {:group=>:end}]]]
+}
+  end
 
 # task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
 

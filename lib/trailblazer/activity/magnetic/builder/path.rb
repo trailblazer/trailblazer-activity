@@ -38,13 +38,13 @@ module Trailblazer
         ).freeze
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:, end_semantic:, **)
+        def self.InitialAdds(track_color:, end_semantic:, default_plus_poles: DefaultPlusPoles, **)
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
           start_adds = adds(
             "Start.default", Circuit::Start.new(:default),
 
-            DefaultPlusPoles,
+            default_plus_poles,
             TaskPolarizations(builder_options),
             [],
 
@@ -89,7 +89,7 @@ module Trailblazer
         class EndPolarization < TaskPolarization
           def call(magnetic_to, plus_poles, options)
             [
-              magnetic_to || @track_color,
+              magnetic_to || [@track_color],
               {}
             ]
           end
