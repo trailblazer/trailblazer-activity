@@ -5,6 +5,8 @@ module Trailblazer
         def self.adds_to_tripletts(adds)
           alterations = DSL::Alterations.new
 
+          adds = adds.compact # TODO: test me explicitly
+
           adds.each { |method, cfg| alterations.send( method, *cfg ) }
 
           alterations.to_a
