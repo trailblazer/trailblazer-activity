@@ -89,7 +89,7 @@ module Trailblazer
       end
 
       # @return Adds
-      def self.AddsFor(strategy_cfg, normalizer, task, options, &block)
+      def self.AddsFor(strategy, normalizer, task, options, &block)
         options, local_options    = normalize( options, generic_keywords+keywords )
         options, sequence_options = normalize( options, sequence_keywords )
 
@@ -99,8 +99,9 @@ module Trailblazer
 
 
         polarizations_from_user_options = DSL::ProcessOptions.(id, options, plus_poles, &block)
+        polarizations = strategy.()
 
-
+        # Apply("a", String, nil, binary_plus_poles, polarizations, { fast_track: true }, { group: :main })
       end
 
       def self.adds_for_task(task, strategy, strategy_options, **options)
