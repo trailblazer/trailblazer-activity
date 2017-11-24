@@ -2,25 +2,6 @@ require "test_helper"
 
 require "trailblazer/activity/magnetic"
 
-module Trailblazer
-  module Activity::Magnetic
-    module DSL
-      class Polarization
-        def initialize( output:, color: )
-          @output, @color = output, color
-        end
-
-        def call(magnetic_to, plus_poles, options)
-          [
-            magnetic_to,
-            plus_poles.merge( @output => @color ) # this usually adds a new Output to the task.
-          ]
-        end
-      end # Polarization
-    end
-  end
-end
-
 class AddsTest < Minitest::Spec
   Left = Trailblazer::Circuit::Left
   Right = Trailblazer::Circuit::Right
@@ -96,20 +77,22 @@ class AddsTest < Minitest::Spec
     [ add ]
   end
 
+  # for all "dsl user options":
+  dsl_polarizations = Activity::Magnetic::DSL::ProcessOptions.("a", { Activity::Magnetic.Output("Signal", :success3) => :failure, Activity::Magnetic.Output("Signal2", :success2) => :failure } , binary_plus_poles )
+
 # for one task:
-polarization_transformations =
+polarizations =
   [
     Task::Polarization.new( track_color: :green ), # comes from ::task
-
-    Activity::Magnetic::DSL::Polarization.new(  # comes from ProcessOptions
-      output: Activity::Magnetic.Output("exception", :exception),
-      color:  :exception
-    ),
-
   ]
 
+polarizations += dsl_polarizations
 
-  pp Apply("a", String, nil, binary_plus_poles, polarization_transformations, { fast_track: true }, { group: :main })
+
+  pp Apply("a", String, nil, binary_plus_poles, polarizations, { fast_track: true }, { group: :main })
+
+
+puts
 end
 
 

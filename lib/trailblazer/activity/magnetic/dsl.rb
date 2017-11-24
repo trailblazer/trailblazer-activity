@@ -1,37 +1,18 @@
 module Trailblazer
   module Activity::Magnetic
     module DSL
-      # each "line" in the DSL adds an element, the entire line is processed here.
-      module ProcessElement
-        module_function
-        # add new task with Polarizations
-        # add new connections
-        # add new ends
-        # passes through :group/:before (sequence options)
-        def call(options={}, id:raise, plus_poles:raise, &block)
-
-          # 3. process user options
-          arr = ProcessOptions.(id, options, plus_poles, &block)
-
-          _plus_poles = arr.collect { |cfg| cfg[0] }.compact
-          adds       = arr.collect { |cfg| cfg[1] }.compact.flatten(1)
-
-          # 4. merge them with the default Polarizations
-          pp _plus_poles
-          plus_poles = plus_poles.merge( Hash[_plus_poles] )
-
-
-          # 5. add the instruction for the actual task: {seq.add(step, polarizations)}
-          return adds, plus_poles
+      class Polarization
+        def initialize( output:, color: )
+          @output, @color = output, color
         end
 
-      end
-
-      def self.AddsForTask(task, id:, magnetic_to:, plus_poles:, sequence_options:, **)
-        add = [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ]
-
-        [ add ]
-      end
+        def call(magnetic_to, plus_poles, options)
+          [
+            magnetic_to,
+            plus_poles.merge( @output => @color ) # this usually adds a new Output to the task.
+          ]
+        end
+      end # Polarization
 
       # Generate PlusPoles and additional sequence alterations from the DSL options such as
       #   Output(:success) => End("my.new")
@@ -45,12 +26,12 @@ module Trailblazer
         # options:
         #   { DSL::Output[::Semantic] => target }
         #
-        def call(id, options, outputs, &block)
-          options.collect { |key, task| process_tuple(id, key, task, outputs, &block) }
+        def call(id, options, initial_plus_poles, &block)
+          options.collect { |key, task| process_tuple(id, key, task, initial_plus_poles, &block) }
         end
 
-        def process_tuple(id, output, task, outputs, &block)
-          output = output_for(output, outputs) if output.kind_of?(DSL::Output::Semantic)
+        def process_tuple(id, output, task, initial_plus_poles, &block)
+          output = output_for(output, initial_plus_poles) if output.kind_of?(DSL::Output::Semantic)
 
           if task.kind_of?(Circuit::End)
             new_edge = "#{id}-#{output.signal}"
@@ -80,6 +61,8 @@ module Trailblazer
             [
               [ output, task ]
             ]
+
+            Polarization.new( output: output, color: task )
           end
         end
 
