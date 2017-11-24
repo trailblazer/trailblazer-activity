@@ -6,16 +6,15 @@ module Trailblazer
           [:type]
         end
 
-        def initialize(normalizer, strategy_options={})
-          strategy_options = { track_color: :success, end_semantic: :success,
-            failure_color: :failure,
-             }.merge(strategy_options)
-          # FIXME: fixme.
+        def initialize(normalizer, builder_options={})
+          builder_options = { # Ruby's kw args kind a suck.
+            track_color: :success, end_semantic: :success, failure_color: :failure,
+          }.merge(builder_options)
 
           super
 
           add!(
-            Railway.InitialAdds( strategy_options )   # add start, success end and failure end.
+            Railway.InitialAdds( builder_options )   # add start, success end and failure end.
           )
         end
 
