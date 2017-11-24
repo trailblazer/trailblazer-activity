@@ -16,7 +16,7 @@ module Trailblazer
           # TODO: use Start strategy that has only one plus_pole?
           # add start and default end.
           add!(
-            self.class.InitialAdds(builder_options)
+            sel f.class.InitialAdds(builder_options)
           )
         end
 

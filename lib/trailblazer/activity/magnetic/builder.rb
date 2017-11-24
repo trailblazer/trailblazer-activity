@@ -113,9 +113,13 @@ module Trailblazer
 
 
 
-        polarizations_from_user_options = DSL::ProcessOptions.(local_options[:id], options, initial_plus_poles, &block) # TODO/FIXME: :add's are missing
+        polarizations_from_user_options, additional_adds = DSL::ProcessOptions.(local_options[:id], options, initial_plus_poles, &block) # TODO/FIXME: :add's are missing
 
-        adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, options, sequence_options)
+        result = adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, options, sequence_options)
+
+pp additional_adds
+
+        result + additional_adds
       end
 
       # Low-level interface for DSL calls (e.g. Start, where "you know what you're doing")

@@ -27,7 +27,15 @@ module Trailblazer
         #   { DSL::Output[::Semantic] => target }
         #
         def call(id, options, initial_plus_poles, &block)
-          options.collect { |key, task| process_tuple(id, key, task, initial_plus_poles, &block) }
+          polarization, adds =
+            options.
+              collect { |key, task|
+                # this method call is the only thing that really matters here. # TODO: make this transformation a bit more obvious.
+                process_tuple(id, key, task, initial_plus_poles, &block)
+              }.
+              inject([[],[]]) { |memo, (polarization, adds)| memo[0]<<polarization; memo[1]<<adds; memo }
+
+          return polarization, adds.flatten(1)
         end
 
         def process_tuple(id, output, task, initial_plus_poles, &block)
@@ -37,15 +45,14 @@ module Trailblazer
             new_edge = "#{id}-#{output.signal}"
 
             [
-              [ output, new_edge ],
-
-              [[ :add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end] ]]
+              Polarization.new( output: output, color: new_edge ),
+              [ [:add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end]] ]
             ]
           elsif task.is_a?(String) # let's say this means an existing step
             new_edge = "#{output.signal}-#{task}"
-            [
-              [ output, new_edge ],
 
+            [
+              Polarization.new( output: output, color: new_edge ),
               [[ :magnetic_to, [ task, [new_edge] ] ]],
             ]
           # procs come from DSL calls such as `Path() do ... end`.
@@ -53,16 +60,14 @@ module Trailblazer
             start_color, adds = task.(block)
 
             [
-              [ output, start_color ],
+              Polarization.new( output: output, color: start_color ),
               # TODO: this is a pseudo-"merge" and should be public API at some point.
               adds[1..-1] # drop start
             ]
           else # An additional plus polarization. Example: Output => :success
             [
-              [ output, task ]
+              Polarization.new( output: output, color: task )
             ]
-
-            Polarization.new( output: output, color: task )
           end
         end
 
