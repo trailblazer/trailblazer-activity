@@ -31,7 +31,7 @@ class AddsTest < Minitest::Spec
     polarizations = Activity::Magnetic::Builder::FastTrack.StepPolarizations(builder_options)
     out = pp Activity::Magnetic::Builder.adds("A", String, binary_plus_poles, polarizations, [], { fast_track: true }, { group: :start })
 
-    out.inspect.must_equal %{[[:add, ["A", [:green, String, [#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:green>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast, semantic=:fail_fast>, color=:fail_fast>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast, semantic=:pass_fast>, color=:pass_fast>]], {:group=>:start}]]]}
+    out.inspect.must_equal %{[[:add, ["A", [[:green], String, [#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:green>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast, semantic=:fail_fast>, color=:fail_fast>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast, semantic=:pass_fast>, color=:pass_fast>]], {:group=>:start}]]]}
 
 # polarizations = Activity::Magnetic::Builder::Path.TaskPolarizations(builder_options)
 # pp Activity::Magnetic::Builder.adds("Start", String, binary_plus_poles, polarizations, [], { fast_track: true }, { group: :start })
@@ -46,7 +46,7 @@ class AddsTest < Minitest::Spec
 
     dump.must_equal %{[[:add,
   ["A",
-   [:green,
+   [[:green],
     String,
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
@@ -72,7 +72,7 @@ class AddsTest < Minitest::Spec
 
     dump.must_equal %{[[:add,
   ["A",
-   [:green,
+   [[:green],
     String,
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
@@ -149,6 +149,57 @@ class AddsTest < Minitest::Spec
      @options={:semantic=>:failure}>,
     []],
    {:group=>:end}]]]
+}
+  end
+
+  it "FastTrack.InitialAdds" do
+    PP.pp Activity::Magnetic::Builder::FastTrack.InitialAdds(failure_color: :failure, track_color: :green, end_semantic: :success), dump =""
+
+    dump.gsub(/0x\w+/, "").must_equal %{[[:add,
+  ["Start.default",
+   [[],
+    #<Trailblazer::Circuit::Start:
+     @name=:default,
+     @options={}>,
+    [#<struct Trailblazer::Activity::Magnetic::PlusPole
+      output=
+       #<struct Trailblazer::Activity::Magnetic::Output
+        signal=Trailblazer::Circuit::Right,
+        semantic=:success>,
+      color=:green>]],
+   {:group=>:start}]],
+ [:add,
+  ["End.green",
+   [[:green],
+    #<Trailblazer::Circuit::End:
+     @name=:green,
+     @options={:semantic=>:success}>,
+    []],
+   {:group=>:end}]],
+ [:add,
+  ["End.failure",
+   [[:failure],
+    #<Trailblazer::Circuit::End:
+     @name=:failure,
+     @options={:semantic=>:failure}>,
+    []],
+   {:group=>:end}]],
+ [[:add,
+   ["End.fail_fast",
+    [[:fail_fast],
+     #<Trailblazer::Circuit::End:
+      @name="fail_fast",
+      @options={:semantic=>:fail_fast}>,
+     []],
+    {:group=>:end}]]],
+ [[:add,
+   ["End.pass_fast",
+    [[:pass_fast],
+     #<Trailblazer::Circuit::End:
+      @name="pass_fast",
+      @options={:semantic=>:pass_fast}>,
+     []],
+    {:group=>:end}]]]]
 }
   end
 

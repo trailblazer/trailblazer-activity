@@ -34,6 +34,27 @@ module Trailblazer
         end
 
 
+        # Adds the End.fail_fast and End.pass_fast end to the Railway sequence.
+        def self.InitialAdds(**builder_options)
+          path_adds = Railway.InitialAdds(**builder_options)
+
+          ends = [:fail_fast, :pass_fast].collect do |name|
+            adds(
+              "End.#{name}", Activity::Magnetic.End("#{name}", name),
+
+              {}, # plus_poles
+              Path::TaskPolarizations(builder_options.merge( type: :End )),
+              [],
+
+              {},
+              { group: :end },
+              [name]
+            )
+          end
+
+          path_adds + ends
+        end
+
         def self.initialize_sequence(*)
           [
             [ :add, [ "End.fail_fast", [ [:fail_fast], Activity::Magnetic.End(:fail_fast), [] ], group: :end] ],

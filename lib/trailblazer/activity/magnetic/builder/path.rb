@@ -9,19 +9,22 @@ module Trailblazer
         # strategy_options:
         #   :track_color
         #   :end_semantic
-        def initialize(normalizer, strategy_options={})
-          strategy_options = { track_color: :success, end_semantic: :success }.merge(strategy_options)
+        def initialize(normalizer, builder_options={})
+          builder_options = { track_color: :success, end_semantic: :success }.merge(builder_options)
           super
 
           # TODO: use Start strategy that has only one plus_pole?
           # add start and default end.
           add!(
-            self.class.InitialAdds( normalizer, strategy_options )
+            self.class.InitialAdds(builder_options)
           )
         end
 
         def task(task, options={}, &block)
-          adds = self.class.Task( @strategy_options, @normalizer, task, options, &block )
+          polarizations = Path.TaskPolarizations(@builder_options)
+
+          # TODO: block!
+          adds = Path.adds_for(polarizations, @normalizer, task, options, &block)
 
           add!(adds)
         end
@@ -48,8 +51,7 @@ module Trailblazer
             TaskPolarizations(builder_options),
             [],
 
-            {},
-            { group: :start },
+            {}, { group: :start },
             [] # magnetic_to
           )
 
@@ -60,8 +62,7 @@ module Trailblazer
             TaskPolarizations(builder_options.merge( type: :End )),
             [],
 
-            {},
-            { group: :end }
+            {}, { group: :end }
           )
 
           start_adds + end_adds
@@ -80,7 +81,7 @@ module Trailblazer
 
           def call(magnetic_to, plus_poles, options)
             [
-              magnetic_to || @track_color,
+              magnetic_to || [@track_color],
               plus_poles.reconnect( :success => @track_color )
             ]
           end

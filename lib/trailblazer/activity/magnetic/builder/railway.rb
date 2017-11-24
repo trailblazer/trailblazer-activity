@@ -53,10 +53,9 @@ module Trailblazer
           Activity::Magnetic.Output(Circuit::Left,  :failure) => nil,
         ).freeze
 
+        # Adds the End.failure end to the Path sequence.
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
         def self.InitialAdds(failure_color:, **builder_options)
-          # strategy_options = strategy_options.merge( failure_color: failure_color )
-
           path_adds = Path.InitialAdds(**builder_options)
 
           end_adds = adds(

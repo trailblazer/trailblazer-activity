@@ -30,8 +30,8 @@ module Trailblazer
         builder.instance_exec(&block) #=> ADDS
       end
 
-      def initialize(normalizer, strategy_options)
-        @strategy_options = strategy_options
+      def initialize(normalizer, builder_options)
+        @builder_options = builder_options
         @normalizer       = normalizer
         @adds             = []
       end
@@ -77,7 +77,7 @@ module Trailblazer
 
       private
 
-      # merge @strategy_options (for the track colors)
+      # merge @builder_options (for the track colors)
       # normalize options
       def add!(adds)
         @adds += adds
@@ -102,8 +102,8 @@ module Trailblazer
       end
 
       # @return Adds
-      # High level interface for DSL calls
-      def self.AddsFor(polarization, normalizer, task, options, initial_plus_poles, &block)
+      # High level interface for DSL calls like ::task or ::step.
+      def self.adds_for(polarizations, normalizer, task, options, &block)
         # sort through the "original" user DSL options.
         options, local_options    = normalize( options, generic_keywords+keywords )
         options, sequence_options = normalize( options, sequence_keywords )
@@ -113,9 +113,9 @@ module Trailblazer
 
 
 
-        polarizations_from_user_options = DSL::ProcessOptions.(id, options, initial_plus_poles, &block) # TODO/FIXME: :add's are missing
+        polarizations_from_user_options = DSL::ProcessOptions.(local_options[:id], options, initial_plus_poles, &block) # TODO/FIXME: :add's are missing
 
-        adds(local_options[:id], initial_plus_poles, polarization, polarizations_from_user_options, options, sequence_options)
+        adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, options, sequence_options)
       end
 
       # Low-level interface for DSL calls (e.g. Start, where "you know what you're doing")
@@ -131,8 +131,6 @@ module Trailblazer
       def self.Apply(id, task, magnetic_to, plus_poles, polarizations, options, sequence_options)
         magnetic_to, plus_poles = Polarization.apply(polarizations, magnetic_to, plus_poles, options)
 
-
-      # def self.AddsForTask(task, id:, magnetic_to:, plus_poles:, sequence_options:, **)
         add = [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ]
 
         [ add ]
@@ -148,11 +146,11 @@ module Trailblazer
         [:fail_fast, :pass_fast, :fast_track]
       end
 
-      def initialize(strategy_options={})
+      def initialize(builder_options={})
         super
-        @adds += DSL::Path.initialize_sequence(strategy_options)
-        @adds += DSL::Railway.initialize_sequence(strategy_options)
-        @adds += DSL::FastTrack.initialize_sequence(strategy_options)
+        @adds += DSL::Path.initialize_sequence(builder_options)
+        @adds += DSL::Railway.initialize_sequence(builder_options)
+        @adds += DSL::FastTrack.initialize_sequence(builder_options)
       end
 
       def step(*args, &block)
