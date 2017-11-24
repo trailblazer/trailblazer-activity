@@ -38,52 +38,39 @@ module Trailblazer
         ).freeze
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(normalizer, track_color:, end_semantic:, **)
-          strategy_options={ track_color: track_color, end_semantic: end_semantic }
+        def self.InitialAdds(track_color:, end_semantic:, **)
+          builder_options={ track_color: track_color, end_semantic: end_semantic }
 
-          start_adds, _ = adds_for_task(
-            Circuit::Start.new(:default),
+          start_adds = adds(
+            "Start.default", Circuit::Start.new(:default),
 
-            Path.method(:task_polarizations),
-            strategy_options,
+            DefaultPlusPoles,
+            TaskPolarizations(builder_options),
+            [],
 
-            id:               "Start.default",
-            magnetic_to:      [],
-            plus_poles:       DefaultPlusPoles,
-
-            sequence_options: { group: :start }
+            {},
+            { group: :start },
+            [] # magnetic_to
           )
 
-          end_adds, _ = adds_for_task(
-            Activity::Magnetic.End(track_color, end_semantic),
+          end_adds = adds(
+            "End.#{track_color}", Activity::Magnetic.End(track_color, end_semantic),
 
-            Path.method(:task_polarizations),
-            strategy_options.merge( type: :End ),
+            {}, # plus_poles
+            TaskPolarizations(builder_options.merge( type: :End )),
+            [],
 
-            id: "End.#{track_color}",
-
-            sequence_options: { group: :end }
+            {},
+            { group: :end }
           )
 
           start_adds + end_adds
         end
 
-        def self.Task(strategy_options, normalizer, *args, &block)
-          AddsFor( [Path.method(:task_polarizations), strategy_options], normalizer, *args, &block )
-        end
-
-        # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
         def self.TaskPolarizations(track_color:, type: :task, **)
-          return [TaskPolarization.new( track_color: track_color )]
+          return [EndPolarization.new( track_color: track_color )] if type == :End # DISCUSS: should this dispatch be here?
 
-          return End(track_color: track_color) if type == :End # DISCUSS: should this dispatch be here?
-
-        end
-
-        def self.End(track_color:raise, **)
-          [
-            [track_color], {}
-          ]
+          [TaskPolarization.new( track_color: track_color )]
         end
 
         class TaskPolarization
@@ -98,6 +85,15 @@ module Trailblazer
             ]
           end
         end # TaskPolarization
+
+        class EndPolarization < TaskPolarization
+          def call(magnetic_to, plus_poles, options)
+            [
+              magnetic_to || @track_color,
+              {}
+            ]
+          end
+        end # EndPolarization
       end # Path
     end # Builder
   end

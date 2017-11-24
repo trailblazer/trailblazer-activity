@@ -3,6 +3,32 @@ module Trailblazer
   module Activity::Magnetic
     class Builder
       class FastTrack < Builder
+
+        def self.StepPolarizations(**options)
+          [
+            *Railway.StepPolarizations(options),
+            StepPolarization.new(options)
+          ]
+        end
+
+        class StepPolarization < Railway::StepPolarization
+          def call(magnetic_to, plus_poles, options)
+            plus_poles = plus_poles.reconnect( :success   => :pass_fast ) if options[:pass_fast]
+            plus_poles = plus_poles.reconnect( :failure   => :fail_fast ) if options[:fail_fast]
+            plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
+
+            [
+              magnetic_to,
+              plus_poles
+            ]
+          end
+        end
+
+
+
+
+
+
         def self.keywords
           [:fail_fast, :pass_fast, :fast_track, :type]
         end
