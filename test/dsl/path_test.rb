@@ -246,7 +246,6 @@ DSLPathTest::D
     Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
  (success)/Right ==> :success
- (failure)/Left ==> nil
 [:success] ==> DSLPathTest::A
  (success)/Right ==> :success
  (failure)/Left ==> nil

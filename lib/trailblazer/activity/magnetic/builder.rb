@@ -117,8 +117,6 @@ module Trailblazer
 
         result = adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, options, sequence_options)
 
-pp additional_adds
-
         result + additional_adds
       end
 
