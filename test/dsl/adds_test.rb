@@ -50,6 +50,9 @@ class AddsTest < Minitest::Spec
 
   module Polarization
     # Called once per DSL method call, e.g. ::step.
+    #
+    # The idea is to chain a bunch of PlusPoles transformations (and magnetic_to "transformations")
+    # for each DSL call, and thus realize things like path+railway+fast_track
     def self.apply(polarizations, magnetic_to, plus_poles, options)
       polarizations.inject([magnetic_to, plus_poles]) do |args, pol|
         magnetic, plus_poles = pol.(*args, options)
@@ -75,20 +78,6 @@ class AddsTest < Minitest::Spec
 
 
 
-# for one task:
-polarization_transformations =
-  [
-    Task::Polarization.new( track_color: :green ),
-
-    Activity::Magnetic::DSL::Polarization.new(
-      output: Activity::Magnetic.Output("exception", :exception),
-      color:  :exception
-    ),
-
-  ]
-
-
-  pp Polarization.apply(polarization_transformations, nil, binary_plus_poles, {})
 
 
   #task :    [:success], :success=>:success
@@ -97,11 +86,30 @@ polarization_transformations =
   #ff (alt):                               , :failure=>:fail_fast
   #tuples  :             :exception=>:failure/"new-end"
   #tuples  :             :good     =>"good-end"
-  def Apply(magnetic_to, plus_poles, dsl_tuples)
+  def self.Apply(id, task, magnetic_to, plus_poles, polarizations, options, sequence_options)
+    magnetic_to, plus_poles = Polarization.apply(polarizations, magnetic_to, plus_poles, options)
 
+
+  # def self.AddsForTask(task, id:, magnetic_to:, plus_poles:, sequence_options:, **)
+    add = [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ]
+
+    [ add ]
   end
 
-  # task, id:, plus_poles, magnetic_to ===> ADDS
+# for one task:
+polarization_transformations =
+  [
+    Task::Polarization.new( track_color: :green ), # comes from ::task
+
+    Activity::Magnetic::DSL::Polarization.new(  # comes from ProcessOptions
+      output: Activity::Magnetic.Output("exception", :exception),
+      color:  :exception
+    ),
+
+  ]
+
+
+  pp Apply("a", String, nil, binary_plus_poles, polarization_transformations, { fast_track: true }, { group: :main })
 end
 
 
