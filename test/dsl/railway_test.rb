@@ -28,7 +28,6 @@ class RailwayTest < Minitest::Spec
     Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
  (success)/Right ==> :success
- (failure)/Left ==> nil
 [:success] ==> RailwayTest::J
  (success)/Right ==> :success
  (failure)/Left ==> :failure

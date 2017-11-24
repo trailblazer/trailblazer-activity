@@ -210,24 +210,6 @@ class AddsTest < Minitest::Spec
 #                         Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
 
 
-  module Polarization
-    # Called once per DSL method call, e.g. ::step.
-    #
-    # The idea is to chain a bunch of PlusPoles transformations (and magnetic_to "transformations")
-    # for each DSL call, and thus realize things like path+railway+fast_track
-    def self.apply(polarizations, magnetic_to, plus_poles, options)
-      polarizations.inject([magnetic_to, plus_poles]) do |args, pol|
-        magnetic, plus_poles = pol.(*args, options)
-      end
-    end
-  end
-
-
-
-
-
-
-
 
   #task :    [:success], :success=>:success
   #step :    [:success], :success=>:success, :failure=>:failure
@@ -235,40 +217,6 @@ class AddsTest < Minitest::Spec
   #ff (alt):                               , :failure=>:fail_fast
   #tuples  :             :exception=>:failure/"new-end"
   #tuples  :             :good     =>"good-end"
-  def self.Apply(id, task, magnetic_to, plus_poles, polarizations, options, sequence_options)
-    magnetic_to, plus_poles = Polarization.apply(polarizations, magnetic_to, plus_poles, options)
-
-
-  # def self.AddsForTask(task, id:, magnetic_to:, plus_poles:, sequence_options:, **)
-    add = [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ]
-
-    [ add ]
-  end
-
-  # for all "dsl user options":
-  dsl_polarizations = Activity::Magnetic::DSL::ProcessOptions.("a", { Activity::Magnetic.Output("Signal", :success3) => :failure, Activity::Magnetic.Output("Signal2", :success2) => :failure } , binary_plus_poles )
-
-# for one task:
-polarizations =
-  [
-    Activity::Magnetic::Builder::Path::TaskPolarization.new( track_color: :green ), # comes from ::task
-  ]
-
-polarizations += dsl_polarizations
-
-
-  pp Apply("a", String, nil, binary_plus_poles, polarizations, { fast_track: true }, { group: :main })
-
-
-puts
-
-
-
-  #---
-
-
-
-
 end
 
 

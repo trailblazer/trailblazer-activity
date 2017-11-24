@@ -14,28 +14,31 @@ module Trailblazer
 
           super
 
-          # TODO: use Start strategy that has only one plus_pole?
-          # add start and default end.
           add!(
-            Path.InitialAdds( normalizer, strategy_options ) +
-            self.class.InitialAdds( normalizer, strategy_options )
+            Railway.InitialAdds( strategy_options )   # add start, success end and failure end.
           )
         end
 
         def step(task, options={}, &block)
-          adds = self.class.Step( @strategy_options, @normalizer, task, options, &block )
+          polarizations = Railway.StepPolarizations( @builder_options )
+
+          adds          = Railway.adds_for(polarizations, @normalizer, task, options, &block)
 
           add!(adds)
         end
 
         def fail(task, options={}, &block)
-          adds = self.class.Fail( @strategy_options, @normalizer, task, options, &block )
+          polarizations = [Railway::FailPolarization.new( @builder_options )]
+
+          adds          = Railway.adds_for(polarizations, @normalizer, task, options, &block)
 
           add!(adds)
         end
 
         def pass(task, options={}, &block)
-          adds = self.class.Pass( @strategy_options, @normalizer, task, options, &block )
+          polarizations = [Railway::PassPolarization.new( @builder_options )]
+
+          adds          = Railway.adds_for(polarizations, @normalizer, task, options, &block)
 
           add!(adds)
         end
@@ -73,19 +76,6 @@ module Trailblazer
           path_adds + end_adds
         end
 
-        def self.Step(strategy_options, normalizer, *args, &block)
-          AddsFor( [Railway.method(:_Step), strategy_options], normalizer, *args, &block )
-        end
-
-        def self.Fail(strategy_options, normalizer, *args, &block)
-          AddsFor( [Railway.method(:_Fail), strategy_options], normalizer, *args, &block )
-        end
-
-        def self.Pass(strategy_options, normalizer, *args, &block)
-          AddsFor( [Railway.method(:_Pass), strategy_options], normalizer, *args, &block )
-        end
-
-
         # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
         def self.StepPolarizations(**options)
           [
@@ -101,26 +91,31 @@ module Trailblazer
 
           def call(magnetic_to, plus_poles, options)
             [
-              magnetic_to,
+              [@track_color],
               plus_poles.reconnect( :failure => @failure_color )
             ]
           end
         end
 
-        def self._Pass(task, track_color: :success, failure_color: :failure, plus_poles: raise, **)
-          [
-            [track_color],
-            plus_poles.reconnect( :success => track_color, :failure => track_color)
-          ]
+        class PassPolarization < StepPolarization
+          def call(magnetic_to, plus_poles, options)
+            [
+              [@track_color],
+              plus_poles.reconnect( :failure => @track_color, :success => @track_color )
+            ]
+          end
         end
 
-        def self._Fail(task, track_color: :success, failure_color: :failure, plus_poles: raise, **)
-          [
-            [failure_color], # a fail task is magnetic to :failure
-            plus_poles.reconnect( :success => failure_color, :failure => failure_color)
-          ]
+        class FailPolarization < StepPolarization
+          def call(magnetic_to, plus_poles, options)
+            [
+              [@failure_color],
+              plus_poles.reconnect( :failure => @failure_color, :success => @failure_color )
+            ]
+          end
         end
-      end # Path
+
+      end # Railway
     end # Builder
   end
 end
