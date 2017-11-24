@@ -74,14 +74,25 @@ module Trailblazer
         end
 
 
-
-
-        def self._Step(task, track_color: :success, failure_color: :failure, plus_poles: raise, **, &block)
-          magnetic_to, plus_poles = Path.task_polarizations(task, track_color: track_color, plus_poles: plus_poles)
+        # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
+        def self.StepPolarizations(**options)
           [
-            magnetic_to,
-            plus_poles.reconnect( :failure => failure_color )
+            *Path.TaskPolarizations(options),
+            StepPolarization.new(options)
           ]
+        end
+
+        class StepPolarization
+          def initialize(track_color: :success, failure_color: :failure, **)
+            @track_color, @failure_color = track_color, failure_color
+          end
+
+          def call(magnetic_to, plus_poles, options)
+            [
+              magnetic_to,
+              plus_poles.reconnect( :failure => @failure_color )
+            ]
+          end
         end
 
         def self._Pass(task, track_color: :success, failure_color: :failure, plus_poles: raise, **)

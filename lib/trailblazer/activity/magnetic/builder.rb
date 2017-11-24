@@ -2,6 +2,19 @@ require "trailblazer/activity/magnetic/finalizer"
 
 module Trailblazer
   module Activity::Magnetic
+    module Polarization
+                # Called once per DSL method call, e.g. ::step.
+                #
+                # The idea is to chain a bunch of PlusPoles transformations (and magnetic_to "transformations")
+                # for each DSL call, and thus realize things like path+railway+fast_track
+                def self.apply(polarizations, magnetic_to, plus_poles, options)
+                  polarizations.inject([magnetic_to, plus_poles]) do |args, pol|
+                    magnetic, plus_poles = pol.(*args, options)
+                  end
+                end
+              end
+
+
     class Builder
       def self.build(options={}, &block)
         adds = plan( options, &block )
@@ -89,32 +102,42 @@ module Trailblazer
       end
 
       # @return Adds
-      def self.AddsFor(strategy, normalizer, task, options, &block)
+      # High level interface for DSL calls
+      def self.AddsFor(polarization, normalizer, task, options, initial_plus_poles, &block)
+        # sort through the "original" user DSL options.
         options, local_options    = normalize( options, generic_keywords+keywords )
         options, sequence_options = normalize( options, sequence_keywords )
 
         task, local_options = normalizer.(task, local_options)
-        plus_poles = local_options[:plus_poles]
+        initial_plus_poles = local_options[:plus_poles]
 
 
 
-        polarizations_from_user_options = DSL::ProcessOptions.(id, options, plus_poles, &block)
-        polarizations = strategy.()
+        polarizations_from_user_options = DSL::ProcessOptions.(id, options, initial_plus_poles, &block) # TODO/FIXME: :add's are missing
 
-        # Apply("a", String, nil, binary_plus_poles, polarizations, { fast_track: true }, { group: :main })
+        adds(local_options[:id], initial_plus_poles, polarization, polarizations_from_user_options, options, sequence_options)
       end
 
-      def self.adds_for_task(task, strategy, strategy_options, **options)
-        magnetic_to, plus_poles = strategy.( strategy_options.merge( options ) )
+      # Low-level interface for DSL calls (e.g. Start, where "you know what you're doing")
+      def self.adds(id, task, initial_plus_poles, polarization, polarizations_from_user_options, options, sequence_options, magnetic_to = nil)
+        polarizations = polarization + polarizations_from_user_options
 
-        # adds for actual box.
-        adds = DSL.AddsForTask(
-          task,
-          options.merge( magnetic_to: magnetic_to, plus_poles: plus_poles )
+        Apply(id, task, magnetic_to, initial_plus_poles, polarizations,
+          options, #{ fast_track: true },
+          sequence_options #{ group: :main }
         )
-
-        return adds, plus_poles
       end
+
+      def self.Apply(id, task, magnetic_to, plus_poles, polarizations, options, sequence_options)
+        magnetic_to, plus_poles = Polarization.apply(polarizations, magnetic_to, plus_poles, options)
+
+
+      # def self.AddsForTask(task, id:, magnetic_to:, plus_poles:, sequence_options:, **)
+        add = [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ]
+
+        [ add ]
+      end
+
     end
 
     module FastTrack

@@ -73,15 +73,11 @@ module Trailblazer
         end
 
         # ONLY JOB: magnetic_to and Outputs ("Polarization") via PlusPoles.merge
-        def self.task_polarizations(track_color:, plus_poles:nil, type: :task, magnetic_to: nil, **)
+        def self.TaskPolarizations(track_color:, type: :task, **)
+          return [TaskPolarization.new( track_color: track_color )]
+
           return End(track_color: track_color) if type == :End # DISCUSS: should this dispatch be here?
 
-          [
-            # magnetic_to:
-            magnetic_to || [track_color],
-            # outputs:
-            plus_poles.reconnect( :success => track_color )
-          ]
         end
 
         def self.End(track_color:raise, **)
@@ -89,6 +85,19 @@ module Trailblazer
             [track_color], {}
           ]
         end
+
+        class TaskPolarization
+          def initialize( track_color: )
+            @track_color = track_color
+          end
+
+          def call(magnetic_to, plus_poles, options)
+            [
+              magnetic_to || @track_color,
+              plus_poles.reconnect( :success => @track_color )
+            ]
+          end
+        end # TaskPolarization
       end # Path
     end # Builder
   end

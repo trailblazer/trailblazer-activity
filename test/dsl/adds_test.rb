@@ -42,20 +42,7 @@ class AddsTest < Minitest::Spec
   end
 
 
-  module Task
-    class Polarization
-      def initialize( track_color: )
-        @track_color = track_color
-      end
 
-      def call(magnetic_to, plus_poles, options)
-        [
-          magnetic_to || @track_color,
-          plus_poles.reconnect( :success => @track_color )
-        ]
-      end
-    end
-  end
 
 
 
@@ -83,7 +70,7 @@ class AddsTest < Minitest::Spec
 # for one task:
 polarizations =
   [
-    Task::Polarization.new( track_color: :green ), # comes from ::task
+    Activity::Magnetic::Builder::Path::TaskPolarization.new( track_color: :green ), # comes from ::task
   ]
 
 polarizations += dsl_polarizations
@@ -93,6 +80,22 @@ polarizations += dsl_polarizations
 
 
 puts
+
+
+
+  #---
+
+builder_options = { track_color: :green }
+
+# path = Activity::Magnetic::Builder::Path.new(builder_options)
+
+polarizations = Activity::Magnetic::Builder::Railway.StepPolarizations(builder_options)
+pp Activity::Magnetic::Builder.adds("A", String, binary_plus_poles, polarizations, [], { fast_track: true }, { group: :start })
+
+# polarizations = Activity::Magnetic::Builder::Path.TaskPolarizations(builder_options)
+# pp Activity::Magnetic::Builder.adds("Start", String, binary_plus_poles, polarizations, [], { fast_track: true }, { group: :start })
+
+
 end
 
 
