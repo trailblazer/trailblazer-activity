@@ -138,6 +138,14 @@ module Trailblazer
         [ add ]
       end
 
+      def self.DefaultNormalizer(default_plus_poles=self.DefaultPlusPoles)
+        ->(task, local_options) do
+          local_options = { plus_poles: default_plus_poles }.merge(local_options)
+
+          return task, local_options
+        end
+      end
+
     end
 
     module FastTrack

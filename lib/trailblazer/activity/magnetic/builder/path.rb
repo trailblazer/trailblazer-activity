@@ -28,19 +28,15 @@ module Trailblazer
           add!(adds)
         end
 
-        def self.DefaultNormalizer
-          ->(task, local_options) do
-            local_options = { plus_poles: DefaultPlusPoles }.merge(local_options)
-            [ task, local_options ]
-          end
+
+        def self.DefaultPlusPoles
+          DSL::PlusPoles.new.merge(
+            Activity::Magnetic.Output( Circuit::Right, :success ) => nil
+          ).freeze
         end
 
-        DefaultPlusPoles = DSL::PlusPoles.new.merge(
-          Activity::Magnetic.Output(Circuit::Right, :success) => nil
-        ).freeze
-
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:, end_semantic:, default_plus_poles: DefaultPlusPoles, **)
+        def self.InitialAdds(track_color:, end_semantic:, default_plus_poles: self.DefaultPlusPoles, **)
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
           start_adds = adds(

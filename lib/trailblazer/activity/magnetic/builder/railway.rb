@@ -42,18 +42,12 @@ module Trailblazer
           add!(adds)
         end
 
-        def self.DefaultNormalizer # FIXME: remove me, use Path.
-          ->(task, local_options) do
-            local_options = { plus_poles: DefaultPlusPoles }.merge(local_options)
-
-            [ task, local_options ]
-          end
+        def self.DefaultPlusPoles
+          DSL::PlusPoles.new.merge(
+            Activity::Magnetic.Output(Circuit::Right, :success) => nil,
+            Activity::Magnetic.Output(Circuit::Left,  :failure) => nil,
+          ).freeze
         end
-
-        DefaultPlusPoles = DSL::PlusPoles.new.merge(
-          Activity::Magnetic.Output(Circuit::Right, :success) => nil,
-          Activity::Magnetic.Output(Circuit::Left,  :failure) => nil,
-        ).freeze
 
         # Adds the End.failure end to the Path sequence.
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
