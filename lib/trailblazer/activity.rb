@@ -69,7 +69,7 @@ module Trailblazer
       end
     end
 
-    class Normalizer
+    class Normalizer # FIXME: copied from Builder::Path.
       def self.call(task, options)
         options =
           {

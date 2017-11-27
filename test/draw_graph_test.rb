@@ -1,8 +1,5 @@
 require "test_helper"
 
-require "trailblazer/activity/schema/magnetic"
-require "trailblazer/activity/schema/dependencies"
-
 class DrawGraphTest < Minitest::Spec
   Right = Circuit::Right
   Left  = Circuit::Left
