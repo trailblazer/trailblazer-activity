@@ -46,7 +46,7 @@ class WrapTest < Minitest::Spec
 
       Trailblazer::Activity.build do# |start, _end|
         task Model
-        task _nested, Output(_nested.outputs.keys.first, :success) => :success
+        task _nested, Output(_nested.outputs.keys.first, :success) => :success, id: "A"
         task Uuid, Output(SpecialDirection, :success) => :success
         # {
         #   start     => { Circuit::Right => Model },
@@ -140,12 +140,10 @@ class WrapTest < Minitest::Spec
     #---
     #- Tracing
     it "trail" do
-      wrap_alterations = [
-        [ :insert_before!, "task_wrap.call_task", node: [ Activity::Wrap::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
-        [ :insert_before!, "End.default", node: [ Activity::Wrap::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
-        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Call, Activity::Trace.method(:capture_args), signal: Circuit::Right ) },
-        # ->(wrap_circuit) { Circuit::Activity::Before( wrap_circuit, Wrap::Activity[:End], Activity::Trace.method(:capture_return), signal: Circuit::Right ) },
-      ]
+      wrap_alterations = Activity::Magnetic::Builder::Path.plan do
+        task Activity::Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
+        task Activity::Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
+      end
 
       signal, (options, flow_options) = activity.(
         [
