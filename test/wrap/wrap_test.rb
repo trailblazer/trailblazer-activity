@@ -18,33 +18,42 @@ class WrapTest < Minitest::Spec
 
   describe "nested trailing" do
     let (:more_nested) do
-      Trailblazer::Activity.from_hash do |start, _end|
-        {
-          start  => { Circuit::Right => Upload },
-          Upload => { Circuit::Right => _end }
-        }
+      Trailblazer::Activity.build do #|start, _end|
+        task Upload#  => { Circuit::Right => Upload },
+          # Upload => { Circuit::Right => _end }
+        # }
       end
     end
 
     let (:nested) do
-      Trailblazer::Activity.from_hash do |start, _end|
-        {
-          start => { Circuit::Right    => Save },
-          Save        => { Circuit::Right  => more_nested },
-          more_nested => { more_nested.outputs.keys.first => Cleanup },
-          Cleanup     => { Circuit::Right => _end }
-        }
+      _more_nested = more_nested
+
+      Trailblazer::Activity.build do# |start, _end|
+        task Save
+        task _more_nested, Output(_more_nested.outputs.keys.first, :success) => :success
+        task Cleanup
+        # {
+        #   start => { Circuit::Right    => Save },
+        #   Save        => { Circuit::Right  => more_nested },
+        #   more_nested => { more_nested.outputs.keys.first => Cleanup },
+        #   Cleanup     => { Circuit::Right => _end }
+        # }
       end
     end
 
     let (:activity) do
-      Trailblazer::Activity.from_hash do |start, _end|
-        {
-          start     => { Circuit::Right => Model },
-          Model     => { Circuit::Right => nested  },
-          nested    => { nested.outputs.keys.first => Uuid },
-          Uuid      => { SpecialDirection => _end }
-        }
+      _nested = nested
+
+      Trailblazer::Activity.build do# |start, _end|
+        task Model
+        task _nested, Output(_nested.outputs.keys.first, :success) => :success
+        task Uuid
+        # {
+        #   start     => { Circuit::Right => Model },
+        #   Model     => { Circuit::Right => nested  },
+        #   nested    => { nested.outputs.keys.first => Uuid },
+        #   Uuid      => { SpecialDirection => _end }
+        # }
       end
     end
 
