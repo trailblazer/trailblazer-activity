@@ -7,8 +7,6 @@ require "trailblazer/circuit/testing"
 
 require "pp"
 
-Inspect = Trailblazer::Activity::Inspect
-
 Minitest::Spec::Circuit  = Trailblazer::Circuit
 Minitest::Spec::Activity = Trailblazer::Activity
 
