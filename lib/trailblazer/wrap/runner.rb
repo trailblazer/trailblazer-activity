@@ -41,7 +41,12 @@ class Trailblazer::Activity
 
         # Apply runtime alterations.
         # Grab the additional wirings for the particular `task` from `wrap_runtime` (returns default otherwise).
-        wrap_activity = Trailblazer::Activity.merge(wrap_activity, wrap_runtime[task])
+
+        # NOTE: the recompilation is absolutely not necessary at runtime and could be avoided if the runtime wrap is empty.
+        # TODO: make this faster.
+        wrap_activity, outputs = Trailblazer::Activity::Magnetic::Builder.merge(wrap_activity, wrap_runtime[task])
+
+        wrap_activity
       end
     end # Runner
   end

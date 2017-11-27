@@ -42,7 +42,7 @@ module Trailblazer
       end
 
       def self.merge(activity, merged)
-        finalize(activity + merged[2..-1])
+        finalize( activity + (merged[2..-1] || []) )
       end
 
       # TODO: remove, only for testing.
