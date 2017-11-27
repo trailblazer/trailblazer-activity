@@ -28,17 +28,16 @@ class DSLFastTrackTest < Minitest::Spec
     initial_plus_poles = self.initial_plus_poles
 
     # this is what happens in Operation.
-    incremental = Builder.draft( track_color: :pink, failure_color: :black ) do
+    seq, adds = Builder.draft( track_color: :pink, failure_color: :black ) do
       step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true # these options we WANT built by Operation (task, id, plus_poles)
       step I, id: :I, plus_poles: initial_plus_poles
       fail J, id: :J, plus_poles: initial_plus_poles
       pass K, id: :K, plus_poles: initial_plus_poles
     end
 
-    sequence, adds = incremental.draft
-    pp sequence
+    # pp seq
 
-    Seq(sequence).must_equal %{
+    Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
  (success)/Right ==> :pink
 [:pink] ==> DSLFastTrackTest::G
@@ -71,16 +70,16 @@ class DSLFastTrackTest < Minitest::Spec
   # hand additional DSL options
   it do
     # this is what happens in Operation.
-    incremental = Builder.new( track_color: :pink, failure_color: :black )
-    incremental.step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true, Activity::Magnetic.Output("Exception", :exception) => Activity::Magnetic.End(:exception)
-    incremental.step I, id: :I, plus_poles: initial_plus_poles
-    incremental.fail J, id: :J, plus_poles: initial_plus_poles
-    incremental.pass K, id: :K, plus_poles: initial_plus_poles
+    seq, adds = Builder.draft( track_color: :pink, failure_color: :black ) do
+      step G, id: :G, fail_fast: true, Activity::Magnetic.Output("Exception", :exception) => Activity::Magnetic.End(:exception)
+      step I, id: :I
+      fail J, id: :J
+      pass K, id: :K
+    end
 
-    sequence, adds = incremental.draft
     # pp sequence
 # puts Seq(sequence)
-    Seq(sequence).must_equal %{
+    Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
  (success)/Right ==> :pink
 [:pink] ==> DSLFastTrackTest::G

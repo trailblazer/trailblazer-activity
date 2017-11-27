@@ -3,7 +3,6 @@ module Trailblazer
   module Activity::Magnetic
     class Builder
       class FastTrack < Builder
-
         def initialize(normalizer, builder_options={})
           builder_options = { # Ruby's kw args kind a suck.
             track_color: :success, end_semantic: :success, failure_color: :failure,
@@ -23,11 +22,29 @@ module Trailblazer
           ]
         end
 
+        def self.FailPolarizations(**options)
+          [
+            *Railway.FailPolarizations(options),
+            FailPolarization.new(options)
+          ]
+        end
+
+        def self.PassPolarizations(**options)
+          [
+            *Railway.PassPolarizations(options),
+            PassPolarization.new(options)
+          ]
+        end
+
         class StepPolarization < Railway::StepPolarization
           def call(magnetic_to, plus_poles, options)
             plus_poles = plus_poles.reconnect( :success   => :pass_fast ) if options[:pass_fast]
             plus_poles = plus_poles.reconnect( :failure   => :fail_fast ) if options[:fail_fast]
-            plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
+
+            plus_poles = plus_poles.merge(
+              Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast,
+              Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast
+            ) if options[:fast_track]
 
             [
               magnetic_to,
@@ -67,8 +84,6 @@ module Trailblazer
           Railway.DefaultPlusPoles(*args)
         end
 
-
-
         def self.keywords
           [:fail_fast, :pass_fast, :fast_track, :type]
         end
@@ -92,9 +107,8 @@ module Trailblazer
             )
           end
 
-          path_adds + ends
+          path_adds + ends.flatten(1)
         end
-
 
         # todo: remove the signals in Operation.
         FailFast = Class.new
@@ -112,7 +126,13 @@ module Trailblazer
           insert_element!( FastTrack.PassPolarizations(@builder_options), task, options, &block )
         end
 
-
+        # FIXME: copied from Railway!
+        def insert_element!(polarizations, task, options, &block)
+          adds = FastTrack.adds_for(polarizations, @normalizer, task, options, &block)
+puts "@@@"
+pp adds
+          add!(adds)
+        end
       end
     end
   end

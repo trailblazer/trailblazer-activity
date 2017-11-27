@@ -115,7 +115,7 @@ module Trailblazer
 
         polarizations_from_user_options, additional_adds = DSL::ProcessOptions.(local_options[:id], options, initial_plus_poles, &block) # TODO/FIXME: :add's are missing
 
-        result = adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, options, sequence_options)
+        result = adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, local_options, sequence_options)
 
         result + additional_adds
       end
@@ -146,32 +146,6 @@ module Trailblazer
         end
       end
 
-    end
-
-    module FastTrack
-
-    end
-    class FastTrack::Builder < Builder
-      def self.keywords
-        [:fail_fast, :pass_fast, :fast_track]
-      end
-
-      def initialize(builder_options={})
-        super
-        @adds += DSL::Path.initialize_sequence(builder_options)
-        @adds += DSL::Railway.initialize_sequence(builder_options)
-        @adds += DSL::FastTrack.initialize_sequence(builder_options)
-      end
-
-      def step(*args, &block)
-        add!(DSL::FastTrack.method(:step), *args, &block)
-      end
-      def fail(*args, &block)
-        add!(DSL::FastTrack.method(:fail), *args, &block)
-      end
-      def pass(*args, &block)
-        add!(DSL::FastTrack.method(:pass), *args, &block)
-      end
     end # Builder
   end
 end
