@@ -47,7 +47,7 @@ class WrapTest < Minitest::Spec
       Trailblazer::Activity.build do# |start, _end|
         task Model
         task _nested, Output(_nested.outputs.keys.first, :success) => :success
-        task Uuid
+        task Uuid, Output(SpecialDirection, :success) => :success
         # {
         #   start     => { Circuit::Right => Model },
         #   Model     => { Circuit::Right => nested  },
