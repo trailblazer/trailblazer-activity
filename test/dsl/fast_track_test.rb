@@ -14,7 +14,7 @@ class DSLFastTrackTest < Minitest::Spec
   class K; end
   class L; end
 
-  Builder = Activity::Magnetic::FastTrack::Builder
+  Builder = Activity::Magnetic::Builder::FastTrack
 
   let(:initial_plus_poles) do
     Activity::Magnetic::DSL::PlusPoles.new.merge(
@@ -25,12 +25,15 @@ class DSLFastTrackTest < Minitest::Spec
   end
 
   it "builder API, what we use in Operation" do
+    initial_plus_poles = self.initial_plus_poles
+
     # this is what happens in Operation.
-    incremental = Builder.new( track_color: :pink, failure_color: :black )
-    incremental.step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true # these options we WANT built by Operation (task, id, plus_poles)
-    incremental.step I, id: :I, plus_poles: initial_plus_poles
-    incremental.fail J, id: :J, plus_poles: initial_plus_poles
-    incremental.pass K, id: :K, plus_poles: initial_plus_poles
+    incremental = Builder.draft( track_color: :pink, failure_color: :black ) do
+      step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true # these options we WANT built by Operation (task, id, plus_poles)
+      step I, id: :I, plus_poles: initial_plus_poles
+      fail J, id: :J, plus_poles: initial_plus_poles
+      pass K, id: :K, plus_poles: initial_plus_poles
+    end
 
     sequence, adds = incremental.draft
     pp sequence

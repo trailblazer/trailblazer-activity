@@ -4,6 +4,18 @@ module Trailblazer
     class Builder
       class FastTrack < Builder
 
+        def initialize(normalizer, builder_options={})
+          builder_options = { # Ruby's kw args kind a suck.
+            track_color: :success, end_semantic: :success, failure_color: :failure,
+          }.merge(builder_options) # FIXME: copied from Railway!!!!
+
+          super
+
+          add!(
+            FastTrack.InitialAdds( builder_options )   # add start, success end and failure end, pass_fast and fail_fast.
+          )
+        end
+
         def self.StepPolarizations(**options)
           [
             *Railway.StepPolarizations(options),
@@ -24,8 +36,36 @@ module Trailblazer
           end
         end
 
+        class FailPolarization < Railway::StepPolarization
+          def call(magnetic_to, plus_poles, options)
+            plus_poles = plus_poles.reconnect( :failure => :fail_fast, :success => :fail_fast ) if options[:fail_fast]
+            plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
 
+            [
+              magnetic_to,
+              plus_poles
+            ]
+          end
+        end
 
+        class PassPolarization < Railway::StepPolarization
+          def call(magnetic_to, plus_poles, options)
+            plus_poles = plus_poles.reconnect( :success => :pass_fast, :failure => :pass_fast ) if options[:pass_fast]
+            plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
+
+            [
+              magnetic_to,
+              plus_poles
+            ]
+          end
+        end
+
+        def self.DefaultNormalizer(*args)
+          Railway.DefaultNormalizer(*args)
+        end
+        def self.DefaultPlusPoles(*args)
+          Railway.DefaultPlusPoles(*args)
+        end
 
 
 
@@ -55,56 +95,24 @@ module Trailblazer
           path_adds + ends
         end
 
-        def self.initialize_sequence(*)
-          [
-            [ :add, [ "End.fail_fast", [ [:fail_fast], Activity::Magnetic.End(:fail_fast), [] ], group: :end] ],
-            [ :add, [ "End.pass_fast", [ [:pass_fast], Activity::Magnetic.End(:pass_fast), [] ], group: :end] ],
-          ]
-        end
-
-
-
 
         # todo: remove the signals in Operation.
         FailFast = Class.new
         PassFast = Class.new
 
-        def self.step(task, **options)
-          magnetic_to, plus_poles = Railway.step(task, options)
-
-          plus_poles = plus_poles.reconnect( :success   => :pass_fast ) if options[:pass_fast]
-          plus_poles = plus_poles.reconnect( :failure   => :fail_fast ) if options[:fail_fast]
-          plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
-
-          [
-            magnetic_to,
-            plus_poles
-          ]
+        def step(task, options={}, &block)
+          insert_element!( FastTrack.StepPolarizations(@builder_options), task, options, &block )
         end
 
-        def self.fail(task, **options)
-          magnetic_to, plus_poles = Railway.fail(task, options)
-
-          plus_poles = plus_poles.reconnect( :failure => :fail_fast, :success => :fail_fast ) if options[:fail_fast]
-          plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
-
-          [
-            magnetic_to,
-            plus_poles
-          ]
+        def fail(task, options={}, &block)
+          insert_element!( FastTrack.FailPolarizations(@builder_options), task, options, &block )
         end
 
-        def self.pass(task, **options)
-          magnetic_to, plus_poles = Railway.pass(task, options)
-
-          plus_poles = plus_poles.reconnect( :success => :pass_fast, :failure => :pass_fast ) if options[:pass_fast]
-          plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
-
-          [
-            magnetic_to,
-            plus_poles
-          ]
+        def pass(task, options={}, &block)
+          insert_element!( FastTrack.PassPolarizations(@builder_options), task, options, &block )
         end
+
+
       end
     end
   end
