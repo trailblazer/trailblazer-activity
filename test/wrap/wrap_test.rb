@@ -79,10 +79,10 @@ class WrapTest < Minitest::Spec
     #-
     describe "Wrap::Runner#call with :wrap_runtime" do
       let(:wrap_alterations) do
-        [
-          [ :insert_before!, "task_wrap.call_task", node: [ Activity::Wrap::Trace.method(:capture_args), { id: "task_wrap.capture_args" } ],   outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ],
-          [ :insert_before!, "End.default", node: [ Activity::Wrap::Trace.method(:capture_return), { id: "task_wrap.capture_return" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
-        ]
+        Activity::Magnetic::Builder::Path.plan do
+          task Activity::Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
+          task Activity::Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
+        end
       end
 
       # no :wrap_alterations, default Wrap
@@ -102,10 +102,13 @@ class WrapTest < Minitest::Spec
 
           [ Circuit::Right, [ cdfg, original_args], circuit_options ]
         end
-        upload_wrap   = [ [ :insert_before!, "task_wrap.call_task", node: [ only_for_wrap, { id: "task_wrap.upload" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true }  ] ]
+
+        upload_wrap  = Activity::Magnetic::Builder::Path.plan do
+          task only_for_wrap, id: "task_wrap.upload", before: "task_wrap.call_task"
+        end
 
         wrap_static         = Hash.new( Trailblazer::Activity::Wrap.initial_activity )
-        wrap_static[Upload] = Trailblazer::Activity.merge( Trailblazer::Activity::Wrap.initial_activity, upload_wrap )
+        wrap_static[Upload] = Trailblazer::Activity::Magnetic::Builder.merge( Trailblazer::Activity::Wrap.initial_activity, upload_wrap )
 
         signal, (options, flow_options, *ret) = more_nested.(
           [

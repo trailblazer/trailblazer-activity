@@ -44,7 +44,8 @@ class Trailblazer::Activity
 
         # NOTE: the recompilation is absolutely not necessary at runtime and could be avoided if the runtime wrap is empty.
         # TODO: make this faster.
-        wrap_activity, outputs = Trailblazer::Activity::Magnetic::Builder.merge(wrap_activity, wrap_runtime[task])
+        adds = Trailblazer::Activity::Magnetic::Builder.merge(wrap_activity, wrap_runtime[task])
+        wrap_activity, outputs = Magnetic::Builder.finalize(adds)
 
         wrap_activity
       end
