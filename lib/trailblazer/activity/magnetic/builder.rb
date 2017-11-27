@@ -41,6 +41,10 @@ module Trailblazer
         Finalizer.(adds)
       end
 
+      def self.merge(activity, merged)
+        finalize(activity + merged[2..-1])
+      end
+
       # TODO: remove, only for testing.
       # @return Tripletts
       def self.draft(*args, &block)
