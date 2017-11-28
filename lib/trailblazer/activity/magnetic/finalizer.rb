@@ -3,13 +3,19 @@ module Trailblazer
     class Builder
       module Finalizer
         def self.adds_to_tripletts(adds)
+          alterations = adds_to_alterations(adds)
+
+          alterations.to_a
+        end
+
+        def self.adds_to_alterations(adds)
           alterations = DSL::Alterations.new
 
           adds = adds.compact # TODO: test me explicitly
 
           adds.each { |method, cfg| alterations.send( method, *cfg ) }
 
-          alterations.to_a
+          alterations
         end
 
         def self.tripletts_to_circuit_hash(tripletts)

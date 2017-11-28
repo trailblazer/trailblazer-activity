@@ -85,7 +85,7 @@ module Trailblazer
         end
 
         def self.keywords
-          [:fail_fast, :pass_fast, :fast_track, :type]
+          [:fail_fast, :pass_fast, :fast_track, :type, :override]
         end
 
 
