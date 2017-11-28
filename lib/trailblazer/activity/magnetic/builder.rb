@@ -109,12 +109,9 @@ module Trailblazer
 
       # @return Adds
       # High level interface for DSL calls like ::task or ::step.
+      # TODO: RETURN ALL OPTIONS
       def self.adds_for(polarizations, normalizer, task, options, &block)
-        # sort through the "original" user DSL options.
-        options, local_options    = normalize( options, generic_keywords+keywords )
-        options, sequence_options = normalize( options, sequence_keywords )
-
-        task, local_options, sequence_options = normalizer.(task, local_options, sequence_options)
+        task, local_options, options, sequence_options = normalize_options(normalizer, task, options)
 
         initial_plus_poles = local_options[:plus_poles]
 
@@ -125,6 +122,17 @@ module Trailblazer
         result = adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, local_options, sequence_options)
 
         result + additional_adds
+      end
+
+      # @private
+      def self.normalize_options(normalizer, task, options)
+         # sort through the "original" user DSL options.
+        options, local_options    = normalize( options, generic_keywords+keywords ) # DISCUSS:
+        options, sequence_options = normalize( options, sequence_keywords )
+
+        task, local_options, sequence_options = normalizer.(task, local_options, sequence_options)
+
+        return task, local_options, options, sequence_options
       end
 
       # Low-level interface for DSL calls (e.g. Start, where "you know what you're doing")
