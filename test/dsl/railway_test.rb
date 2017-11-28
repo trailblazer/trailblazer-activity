@@ -1,7 +1,7 @@
 require "test_helper"
 
 class RailwayTest < Minitest::Spec
-    Left = Trailblazer::Circuit::Left
+  Left = Trailblazer::Circuit::Left
   Right = Trailblazer::Circuit::Right
 
   class A; end
@@ -73,5 +73,26 @@ RailwayTest::D
 #<End:failure/:failure>
 }
     Ends(process).must_equal %{[#<End:success/:success>,#<End:failure/:failure>]}
+  end
+
+  it "allows to define custom End instance" do
+    class MyFail; end
+    class MySuccess; end
+
+    seq, _ = Builder.build track_end: MySuccess, failure_end: MyFail do
+      step :a, {}
+    end
+
+    puts Cct(seq)
+    Cct( seq ).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => :a
+:a
+ {Trailblazer::Circuit::Right} => RailwayTest::MySuccess
+ {Trailblazer::Circuit::Left} => RailwayTest::MyFail
+RailwayTest::MySuccess
+
+RailwayTest::MyFail
+}
   end
 end

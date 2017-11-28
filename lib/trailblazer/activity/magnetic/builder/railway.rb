@@ -45,11 +45,11 @@ module Trailblazer
 
         # Adds the End.failure end to the Path sequence.
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(failure_color:, **builder_options)
+        def self.InitialAdds(failure_color:, failure_end: Activity::Magnetic.End(failure_color, :failure), **builder_options)
           path_adds = Path.InitialAdds(**builder_options)
 
           end_adds = adds(
-            "End.#{failure_color}", Activity::Magnetic.End(failure_color, :failure),
+            "End.#{failure_color}", failure_end,
 
             {}, # plus_poles
             Path::TaskPolarizations(builder_options.merge( type: :End )),

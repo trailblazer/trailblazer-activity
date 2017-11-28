@@ -58,6 +58,22 @@ class DSLPathTest < Minitest::Spec
 }
   end
 
+  it "allows to define custom End instance" do
+    class MyEnd; end
+
+    seq, _ = Builder.build track_end: MyEnd do
+      task :a, {}
+    end
+
+    Cct( seq ).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => :a
+:a
+ {Trailblazer::Circuit::Right} => DSLPathTest::MyEnd
+DSLPathTest::MyEnd
+}
+  end
+
   it "fake Railway with Output(Left)s" do
     seq, adds = Builder.draft(track_color: :"track_9") do
       task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)

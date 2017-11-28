@@ -107,4 +107,28 @@ class DSLFastTrackTest < Minitest::Spec
  []
 }
   end
+
+  it "allows to define custom End instance" do
+    class MyFail; end
+    class MySuccess; end
+
+    seq, _ = Builder.build track_end: MySuccess, failure_end: MyFail do
+      step :a, {}
+    end
+
+    Cct( seq ).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => :a
+:a
+ {Trailblazer::Circuit::Right} => DSLFastTrackTest::MySuccess
+ {Trailblazer::Circuit::Left} => DSLFastTrackTest::MyFail
+DSLFastTrackTest::MySuccess
+
+DSLFastTrackTest::MyFail
+
+#<End:fail_fast/:fail_fast>
+
+#<End:pass_fast/:pass_fast>
+}
+  end
 end

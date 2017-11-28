@@ -36,7 +36,8 @@ module Trailblazer
         end
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:, end_semantic:, default_plus_poles: self.DefaultPlusPoles, **)
+        def self.InitialAdds(track_color:, end_semantic:, default_plus_poles: self.DefaultPlusPoles, track_end: Activity::Magnetic.End(track_color, end_semantic), **)
+
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
           start_adds = adds(
@@ -51,7 +52,7 @@ module Trailblazer
           )
 
           end_adds = adds(
-            "End.#{track_color}", Activity::Magnetic.End(track_color, end_semantic),
+            "End.#{track_color}", track_end,
 
             {}, # plus_poles
             TaskPolarizations(builder_options.merge( type: :End )),
