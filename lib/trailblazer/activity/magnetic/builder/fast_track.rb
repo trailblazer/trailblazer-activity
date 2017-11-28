@@ -129,8 +129,7 @@ module Trailblazer
         # FIXME: copied from Railway!
         def insert_element!(polarizations, task, options, &block)
           adds = FastTrack.adds_for(polarizations, @normalizer, task, options, &block)
-puts "@@@"
-pp adds
+
           add!(adds)
         end
       end
