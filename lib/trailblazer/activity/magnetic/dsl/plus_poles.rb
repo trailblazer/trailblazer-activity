@@ -14,7 +14,7 @@ module Trailblazer
         end
 
         def merge(map)
-          overrides = Hash[ map.collect { |output, color| [ output.semantic, [output, color] ] } ]
+          overrides = ::Hash[ map.collect { |output, color| [ output.semantic, [output, color] ] } ]
           PlusPoles.new(@plus_poles.merge(overrides))
         end
 
@@ -25,7 +25,7 @@ module Trailblazer
             [ Activity::Magnetic.Output(existing_output.signal, existing_output.semantic), color ]
           end
 
-          merge( Hash[ary] )
+          merge( ::Hash[ary] )
         end
 
         def to_a

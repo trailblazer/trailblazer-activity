@@ -32,7 +32,7 @@ module Trailblazer
               tasks_with_incoming_edge.include?(task) ? [task, task.instance_variable_get(:@options)[:semantic]] : nil
           end
 
-          Hash[ ary.compact ]
+          ::Hash[ ary.compact ]
         end
 
         def self.call(adds)
