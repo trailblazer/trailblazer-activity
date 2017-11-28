@@ -70,14 +70,14 @@ module Trailblazer
     end
 
     class Normalizer # FIXME: copied from Builder::Path.
-      def self.call(task, options)
+      def self.call(task, options, sequence_options)
         options =
           {
             plus_poles: initial_plus_poles,
             id:         task.inspect, # TODO.
           }.merge(options)
 
-        return task, options
+        return task, options, sequence_options
       end
 
       def self.initial_plus_poles

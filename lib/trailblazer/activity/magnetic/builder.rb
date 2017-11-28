@@ -114,7 +114,8 @@ module Trailblazer
         options, local_options    = normalize( options, generic_keywords+keywords )
         options, sequence_options = normalize( options, sequence_keywords )
 
-        task, local_options = normalizer.(task, local_options)
+        task, local_options, sequence_options = normalizer.(task, local_options, sequence_options)
+
         initial_plus_poles = local_options[:plus_poles]
 
 
@@ -145,10 +146,10 @@ module Trailblazer
       end
 
       def self.DefaultNormalizer(default_plus_poles=self.DefaultPlusPoles)
-        ->(task, local_options) do
+        ->(task, local_options, sequence_options) do
           local_options = { plus_poles: default_plus_poles }.merge(local_options)
 
-          return task, local_options
+          return task, local_options, sequence_options
         end
       end
 

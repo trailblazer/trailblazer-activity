@@ -248,7 +248,7 @@ DSLPathTest::D
       Activity::Magnetic.Output(Circuit::Right, :success) => nil,
       Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
 
-    normalizer = ->(task, options) { [ task, options.merge(plus_poles: binary_plus_poles) ] }
+    normalizer = ->(task, options, seq_options) { [ task, options.merge(plus_poles: binary_plus_poles), seq_options ] }
 
     seq, adds = Builder.draft( {}, normalizer ) do
       task A, id: "A"
