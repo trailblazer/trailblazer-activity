@@ -3,8 +3,6 @@ require "trailblazer-activity"
 
 require "minitest/autorun"
 
-require "trailblazer/circuit/testing"
-
 require "pp"
 
 Minitest::Spec::Circuit  = Trailblazer::Circuit
