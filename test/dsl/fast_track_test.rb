@@ -14,7 +14,8 @@ class DSLFastTrackTest < Minitest::Spec
   class K; end
   class L; end
 
-  Builder = Activity::Magnetic::Builder::FastTrack
+  Builder   = Activity::Magnetic::Builder::FastTrack
+  PlusPoles = Activity::Magnetic::DSL::PlusPoles
 
   let(:initial_plus_poles) do
     Activity::Magnetic::DSL::PlusPoles.new.merge(
@@ -81,6 +82,9 @@ class DSLFastTrackTest < Minitest::Spec
     # pp activity
   end
 
+  #---
+  #- test options
+
   it "adds :pass_fast pole" do
     seq, adds = Builder.draft do
       step G, pass_fast: true
@@ -93,6 +97,54 @@ class DSLFastTrackTest < Minitest::Spec
 }
   end
 
+  it "does NOT add :pass_fast pole when :poles_poles are given" do
+    plus_poles = PlusPoles.from_outputs( Signal => :success, "Another" => :failure )
+
+    seq, adds = Builder.draft do
+      step G, plus_poles: plus_poles, pass_fast: true
+    end
+
+    assert_main seq, %{
+[:success] ==> DSLFastTrackTest::G
+ (success)/Signal ==> :pass_fast
+ (failure)/Another ==> :failure
+}
+  end
+  # pass_fast: true simply means: color my :success Output with :pass_fast color
+  it "does NOT override :pass_fast pole when :poles_poles are given, >>>>>>>>>>>>>>>>>>>>>" do
+    plus_poles = PlusPoles.from_outputs( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
+
+    seq, adds = Builder.draft do
+      step G, plus_poles: plus_poles, pass_fast: true, id: :G
+    end
+
+    # only overwrites success's color to :pass_fast
+    assert_main seq, %{
+[:success] ==> DSLFastTrackTest::G
+ (success)/Signal ==> :pass_fast
+ (failure)/Another ==> :failure
+ (pass_fast)/Pff ==> :pass_fast
+}
+
+    process, _ = Builder::Finalizer.(adds)
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => DSLFastTrackTest::G
+DSLFastTrackTest::G
+ {Another} => #<End:failure/:failure>
+ {Signal} => #<End:pass_fast/:pass_fast>
+ {Pff} => #<End:pass_fast/:pass_fast>
+#<End:success/:success>
+
+#<End:failure/:failure>
+
+#<End:pass_fast/:pass_fast>
+
+#<End:fail_fast/:fail_fast>
+}
+  end
+
   it "adds :fail_fast pole" do
     seq, adds = Builder.draft do
       step G, fail_fast: true
@@ -102,6 +154,38 @@ class DSLFastTrackTest < Minitest::Spec
 [:success] ==> DSLFastTrackTest::G
  (success)/Right ==> :success
  (failure)/Left ==> :fail_fast
+}
+  end
+
+  #- :fast_track
+  it "adds :fail_fast and :pass_fast pole" do
+    seq, adds = Builder.draft do
+      step G, fast_track: true
+    end
+
+    assert_main seq, %{
+[:success] ==> DSLFastTrackTest::G
+ (success)/Right ==> :success
+ (failure)/Left ==> :failure
+ (fail_fast)/Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast ==> :fail_fast
+ (pass_fast)/Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast ==> :pass_fast
+}
+  end
+
+  #- :fast_track
+  it "don't overwrite :pass_fast/:fail_fast colored outputs that are existing in :plus_poles" do
+    plus_poles = PlusPoles.from_outputs( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
+
+    seq, adds = Builder.draft do
+      step G, fast_track: true, plus_poles: plus_poles
+    end
+
+    assert_main seq, %{
+[:success] ==> DSLFastTrackTest::G
+ (success)/Signal ==> :success
+ (failure)/Another ==> :failure
+ (pass_fast)/Pff ==> :pass_fast
+ (fail_fast)/Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast ==> :fail_fast
 }
   end
 

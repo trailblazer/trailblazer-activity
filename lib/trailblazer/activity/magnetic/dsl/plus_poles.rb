@@ -8,14 +8,24 @@ module Trailblazer
       # Mutable DSL datastructure for managing all PlusPoles for a particular task.
       #
       # Produces [ PlusPole, PlusPole, ] via `to_a`.
+      #
+      # @privat
+      # @note This is private until we know what we want.
       class PlusPoles
         def initialize(plus_poles={})
           @plus_poles = plus_poles.freeze
         end
 
-        def merge(map)
-          overrides = ::Hash[ map.collect { |output, color| [ output.semantic, [output, color] ] } ]
+        def merge(output_to_color)
+          overrides = ::Hash[ output_to_color.collect { |output, color| [ output.semantic, [output, color] ] } ]
           PlusPoles.new(@plus_poles.merge(overrides))
+        end
+
+        def reverse_merge(output_to_color)
+          existing_colors = @plus_poles.values.collect { |pole_cfg| pole_cfg.last }
+
+          overrides = output_to_color.find_all { |output, color| !existing_colors.include?(color) } # filter all outputs with a color that already exists.
+          merge(overrides)
         end
 
         def reconnect(semantic_to_color)

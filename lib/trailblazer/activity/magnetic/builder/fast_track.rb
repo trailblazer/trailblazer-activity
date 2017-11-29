@@ -36,12 +36,14 @@ module Trailblazer
           ]
         end
 
+        # pass_fast: true simply means: color my :success Output with :pass_fast color
         class StepPolarization < Railway::StepPolarization
           def call(magnetic_to, plus_poles, options)
             plus_poles = plus_poles.reconnect( :success   => :pass_fast ) if options[:pass_fast]
             plus_poles = plus_poles.reconnect( :failure   => :fail_fast ) if options[:fail_fast]
 
-            plus_poles = plus_poles.merge(
+            # add fast track outputs if :fast_track
+            plus_poles = plus_poles.reverse_merge(
               Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast,
               Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast
             ) if options[:fast_track]
@@ -56,7 +58,7 @@ module Trailblazer
         class FailPolarization < Railway::StepPolarization
           def call(magnetic_to, plus_poles, options)
             plus_poles = plus_poles.reconnect( :failure => :fail_fast, :success => :fail_fast ) if options[:fail_fast]
-            plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
+            plus_poles = plus_poles.reverse_merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
 
             [
               magnetic_to,
@@ -68,7 +70,7 @@ module Trailblazer
         class PassPolarization < Railway::StepPolarization
           def call(magnetic_to, plus_poles, options)
             plus_poles = plus_poles.reconnect( :success => :pass_fast, :failure => :pass_fast ) if options[:pass_fast]
-            plus_poles = plus_poles.merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
+            plus_poles = plus_poles.reverse_merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
 
             [
               magnetic_to,
