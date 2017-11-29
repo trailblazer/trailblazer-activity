@@ -120,9 +120,9 @@ module Trailblazer
           path_adds + ends
         end
 
-        # todo: remove the signals in Operation.
-        FailFast = Class.new
-        PassFast = Class.new
+        # Direction signals.
+        FailFast = Class.new(Circuit::Signal)
+        PassFast = Class.new(Circuit::Signal)
 
         def step(task, options={}, &block)
           insert_element!( FastTrack, FastTrack.StepPolarizations(@builder_options), task, options, &block )
