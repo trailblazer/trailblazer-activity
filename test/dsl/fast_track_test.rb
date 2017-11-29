@@ -56,9 +56,9 @@ class DSLFastTrackTest < Minitest::Spec
  []
 [:black] ==> #<End:black/:failure>
  []
-[:fail_fast] ==> #<End:fail_fast/:fail_fast>
- []
 [:pass_fast] ==> #<End:pass_fast/:pass_fast>
+ []
+[:fail_fast] ==> #<End:fail_fast/:fail_fast>
  []
 }
 
@@ -99,9 +99,9 @@ class DSLFastTrackTest < Minitest::Spec
  []
 [:black] ==> #<End:black/:failure>
  []
-[:fail_fast] ==> #<End:fail_fast/:fail_fast>
- []
 [:pass_fast] ==> #<End:pass_fast/:pass_fast>
+ []
+[:fail_fast] ==> #<End:fail_fast/:fail_fast>
  []
 ["G-Exception"] ==> #<End:exception/:exception>
  []
@@ -111,8 +111,10 @@ class DSLFastTrackTest < Minitest::Spec
   it "allows to define custom End instance" do
     class MyFail; end
     class MySuccess; end
+    class MyPassFast; end
+    class MyFailFast; end
 
-    seq, _ = Builder.build track_end: MySuccess, failure_end: MyFail do
+    seq, _ = Builder.build track_end: MySuccess, failure_end: MyFail, pass_fast_end: MyPassFast, fail_fast_end: MyFailFast do
       step :a, {}
     end
 
@@ -126,9 +128,9 @@ DSLFastTrackTest::MySuccess
 
 DSLFastTrackTest::MyFail
 
-#<End:fail_fast/:fail_fast>
+DSLFastTrackTest::MyPassFast
 
-#<End:pass_fast/:pass_fast>
+DSLFastTrackTest::MyFailFast
 }
   end
 end

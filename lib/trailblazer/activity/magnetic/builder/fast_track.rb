@@ -90,12 +90,12 @@ module Trailblazer
 
 
         # Adds the End.fail_fast and End.pass_fast end to the Railway sequence.
-        def self.InitialAdds(**builder_options)
+        def self.InitialAdds(pass_fast_end: Activity::Magnetic.End("pass_fast", :pass_fast), fail_fast_end: Activity::Magnetic.End("fail_fast", :fail_fast), **builder_options)
           path_adds = Railway.InitialAdds(**builder_options)
 
-          ends = [:fail_fast, :pass_fast].collect do |name|
+          ends =
             adds(
-              "End.#{name}", Activity::Magnetic.End("#{name}", name),
+              "End.pass_fast", pass_fast_end,
 
               {}, # plus_poles
               Path::TaskPolarizations(builder_options.merge( type: :End )),
@@ -103,11 +103,21 @@ module Trailblazer
 
               {},
               { group: :end },
-              [name]
-            )
-          end
+              [:pass_fast]
+            )+
+            adds(
+              "End.fail_fast", fail_fast_end,
 
-          path_adds + ends.flatten(1)
+              {}, # plus_poles
+              Path::TaskPolarizations(builder_options.merge( type: :End )),
+              [],
+
+              {},
+              { group: :end },
+              [:fail_fast]
+            )
+
+          path_adds + ends
         end
 
         # todo: remove the signals in Operation.
