@@ -185,19 +185,19 @@ class AddsTest < Minitest::Spec
     []],
    {:group=>:end}]],
  [:add,
-  ["End.fail_fast",
-   [[:fail_fast],
-    #<Trailblazer::Circuit::End:
-     @name="fail_fast",
-     @options={:semantic=>:fail_fast}>,
-    []],
-   {:group=>:end}]],
- [:add,
   ["End.pass_fast",
    [[:pass_fast],
     #<Trailblazer::Circuit::End:
      @name="pass_fast",
      @options={:semantic=>:pass_fast}>,
+    []],
+   {:group=>:end}]],
+ [:add,
+  ["End.fail_fast",
+   [[:fail_fast],
+    #<Trailblazer::Circuit::End:
+     @name="fail_fast",
+     @options={:semantic=>:fail_fast}>,
     []],
    {:group=>:end}]]]
 }
