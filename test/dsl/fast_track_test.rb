@@ -24,6 +24,20 @@ class DSLFastTrackTest < Minitest::Spec
     )
   end
 
+  def assert_main(sequence, expected)
+    Seq(sequence).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success#{expected}[:success] ==> #<End:success/:success>
+ []
+[:failure] ==> #<End:failure/:failure>
+ []
+[:pass_fast] ==> #<End:pass_fast/:pass_fast>
+ []
+[:fail_fast] ==> #<End:fail_fast/:fail_fast>
+ []
+}
+  end
+
   it "builder API, what we use in Operation" do
     initial_plus_poles = self.initial_plus_poles
 
@@ -65,6 +79,30 @@ class DSLFastTrackTest < Minitest::Spec
     activity = Builder.finalize(adds)
 
     # pp activity
+  end
+
+  it "adds :pass_fast pole" do
+    seq, adds = Builder.draft do
+      step G, pass_fast: true
+    end
+
+    assert_main seq, %{
+[:success] ==> DSLFastTrackTest::G
+ (success)/Right ==> :pass_fast
+ (failure)/Left ==> :failure
+}
+  end
+
+  it "adds :fail_fast pole" do
+    seq, adds = Builder.draft do
+      step G, fail_fast: true
+    end
+
+    assert_main seq, %{
+[:success] ==> DSLFastTrackTest::G
+ (success)/Right ==> :success
+ (failure)/Left ==> :fail_fast
+}
   end
 
   # hand additional DSL options
