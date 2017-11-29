@@ -31,6 +31,14 @@ module Trailblazer
         def to_a
           @plus_poles.values.collect { |output, color| PlusPole.new(output, color) }
         end
+
+        #---
+        #-  builders
+        def self.from_outputs(outputs)
+          ary = outputs.collect { |evt, semantic| [ Activity::Magnetic::Output(evt, semantic), semantic ] }
+
+          new.merge(::Hash[ary])
+        end
       end
     end
   end
