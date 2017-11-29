@@ -19,21 +19,15 @@ module Trailblazer
         end
 
         def step(task, options={}, &block)
-          insert_element!( Railway.StepPolarizations(@builder_options), task, options, &block )
+          insert_element!( Railway, Railway.StepPolarizations(@builder_options), task, options, &block )
         end
 
         def fail(task, options={}, &block)
-          insert_element!( Railway.FailPolarizations(@builder_options), task, options, &block )
+          insert_element!( Railway, Railway.FailPolarizations(@builder_options), task, options, &block )
         end
 
         def pass(task, options={}, &block)
-          insert_element!( Railway.PassPolarizations(@builder_options), task, options, &block )
-        end
-
-        def insert_element!(polarizations, task, options, &block)
-          adds = Railway.adds_for(polarizations, @normalizer, task, options, &block)
-
-          add!(adds)
+          insert_element!( Railway, Railway.PassPolarizations(@builder_options), task, options, &block )
         end
 
         def self.DefaultPlusPoles

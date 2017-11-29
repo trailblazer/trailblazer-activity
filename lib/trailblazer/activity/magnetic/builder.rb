@@ -27,13 +27,19 @@ module Trailblazer
         builder = new(normalizer, options)
 
         # TODO: pass new edge color in block?
-        builder.instance_exec(&block) #=> ADDS
+        builder.(&block) #=> ADDS
       end
 
       def initialize(normalizer, builder_options)
         @builder_options = builder_options
         @normalizer       = normalizer
         @adds             = []
+      end
+
+      # Evaluate user's block and return the new ADDS.
+      def call(&block)
+        instance_exec(&block)
+        @adds
       end
 
       # @private
@@ -83,6 +89,14 @@ module Trailblazer
 
       private
 
+      def insert_element!(impl, polarizations, task, options, &block)
+        adds, *returned_options = impl.adds_for(polarizations, @normalizer, task, options, &block)
+
+        adds = add!(adds)
+
+        return adds, *returned_options
+      end
+
       # merge @builder_options (for the track colors)
       # normalize options
       def add!(adds)
@@ -117,11 +131,11 @@ module Trailblazer
 
 
 
-        polarizations_from_user_options, additional_adds = DSL::ProcessOptions.(local_options[:id], options, initial_plus_poles, &block) # TODO/FIXME: :add's are missing
+        polarizations_from_user_options, additional_adds = DSL::ProcessOptions.(local_options[:id], options, initial_plus_poles, &block)
 
         result = adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, local_options, sequence_options)
 
-        result + additional_adds
+        return result + additional_adds, task, local_options, options, sequence_options
       end
 
       # @private

@@ -115,22 +115,15 @@ module Trailblazer
         PassFast = Class.new
 
         def step(task, options={}, &block)
-          insert_element!( FastTrack.StepPolarizations(@builder_options), task, options, &block )
+          insert_element!( FastTrack, FastTrack.StepPolarizations(@builder_options), task, options, &block )
         end
 
         def fail(task, options={}, &block)
-          insert_element!( FastTrack.FailPolarizations(@builder_options), task, options, &block )
+          insert_element!( FastTrack, FastTrack.FailPolarizations(@builder_options), task, options, &block )
         end
 
         def pass(task, options={}, &block)
-          insert_element!( FastTrack.PassPolarizations(@builder_options), task, options, &block )
-        end
-
-        # FIXME: copied from Railway!
-        def insert_element!(polarizations, task, options, &block)
-          adds = FastTrack.adds_for(polarizations, @normalizer, task, options, &block)
-
-          add!(adds)
+          insert_element!( FastTrack, FastTrack.PassPolarizations(@builder_options), task, options, &block )
         end
       end
     end

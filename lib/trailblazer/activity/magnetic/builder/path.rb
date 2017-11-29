@@ -23,9 +23,7 @@ module Trailblazer
         def task(task, options={}, &block)
           polarizations = Path.TaskPolarizations( @builder_options.merge(type: options[:type]) ) # DISCUSS: handle :type here? Really?
 
-          adds = Path.adds_for(polarizations, @normalizer, task, options, &block)
-
-          add!(adds)
+          insert_element!( Path, polarizations, task, options, &block )
         end
 
 

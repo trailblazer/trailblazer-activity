@@ -11,7 +11,7 @@ module Trailblazer
         def self.adds_to_alterations(adds)
           alterations = DSL::Alterations.new
 
-          adds = adds.compact # TODO: test me explicitly
+          adds = adds.compact # TODO: test me explicitly, and where does this come from anyway?
 
           adds.each { |method, cfg| alterations.send( method, *cfg ) }
 
