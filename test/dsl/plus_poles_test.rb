@@ -62,6 +62,17 @@ class PlusPolesTest < Minitest::Spec
     new_poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:green>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:greenish>]}
   end
 
+  describe "#reconnect" do
+    it "skips not existing semantics" do
+      poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
+      new_poles = poles.merge( Activity::Magnetic.Output("My.Right", :success) => nil )
+
+      new_poles = new_poles.reconnect( :success => :fantastic, :failure => :ignored )
+
+      new_poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"My.Right\", semantic=:success>, color=:fantastic>]}
+    end
+  end
+
   describe "::from_outputs" do
     it do
       activity = Activity.build do

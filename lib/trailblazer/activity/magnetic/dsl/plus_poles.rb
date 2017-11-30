@@ -31,8 +31,8 @@ module Trailblazer
         def reconnect(semantic_to_color)
           ary = semantic_to_color.collect do |semantic, color|
             existing_output, _ = @plus_poles[semantic]
-            # raise "output for #{semantic.inspect} does not exist" # TODO: test me.
-            next unless existing_output # FIXME
+
+            next unless existing_output
 
             [ Activity::Magnetic.Output(existing_output.signal, existing_output.semantic), color ]
           end
