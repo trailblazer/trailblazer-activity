@@ -2,6 +2,15 @@ module Trailblazer
   module Activity::Magnetic
     class Builder
       module Finalizer
+
+        def self.call(adds)
+          tripletts = adds_to_tripletts(adds)
+
+          circuit_hash = tripletts_to_circuit_hash( tripletts )
+
+          circuit_hash_to_process( circuit_hash )
+        end
+
         def self.adds_to_tripletts(adds)
           alterations = adds_to_alterations(adds)
 
@@ -39,14 +48,6 @@ module Trailblazer
           end
 
           ::Hash[ ary.compact ]
-        end
-
-        def self.call(adds)
-          tripletts = adds_to_tripletts(adds)
-
-          circuit_hash = tripletts_to_circuit_hash( tripletts )
-
-          circuit_hash_to_process( circuit_hash )
         end
       end
     end
