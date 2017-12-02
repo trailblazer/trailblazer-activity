@@ -128,12 +128,11 @@ module Trailblazer
         task, local_options, options, sequence_options = normalize_options(normalizer, task, options)
 
         initial_plus_poles = local_options[:plus_poles]
-
-
+        magnetic_to        = local_options[:magnetic_to]
 
         polarizations_from_user_options, additional_adds = DSL::ProcessOptions.(local_options[:id], options, initial_plus_poles, &block)
 
-        result = adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, local_options, sequence_options)
+        result = adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, local_options, sequence_options, magnetic_to)
 
         return result + additional_adds, task, local_options, options, sequence_options
       end

@@ -74,6 +74,32 @@ DSLPathTest::MyEnd
 }
   end
 
+describe "magnetic_to:" do
+  it "allows to skip minus poles" do
+    seq, adds = Builder.draft do
+      task D, id: "D", magnetic_to: []
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[] ==> DSLPathTest::D
+ (success)/Right ==> :success
+[:success] ==> #<End:success/:success>
+ []
+}
+
+    Cct( Builder.finalize(adds).first ).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => #<End:success/:success>
+DSLPathTest::D
+ {Trailblazer::Circuit::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+  end
+
+end
+
   it "fake Railway with Output(Left)s" do
     seq, adds = Builder.draft(track_color: :"track_9") do
       task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
@@ -306,6 +332,32 @@ DSLPathTest::B
 
 DSLPathTest::D
  {Trailblazer::Circuit::Right} => DSLPathTest::D
+#<End:success/:success>
+}
+    end
+
+    it "multiple type: :End with magnetic_to:" do
+      seq, adds = Builder.draft do
+        task A, id: "A"
+        task B, id: "B", type: :End
+        task D, id: "D", magnetic_to: [] # start event
+        task I, id: "I", type: :End
+        task G, id: "G", magnetic_to: [] # start event
+      end
+
+      Cct( Builder.finalize(adds).first ).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Circuit::Right} => DSLPathTest::A
+DSLPathTest::A
+ {Trailblazer::Circuit::Right} => DSLPathTest::B
+DSLPathTest::B
+
+DSLPathTest::D
+ {Trailblazer::Circuit::Right} => DSLPathTest::I
+DSLPathTest::I
+
+DSLPathTest::G
+ {Trailblazer::Circuit::Right} => #<End:success/:success>
 #<End:success/:success>
 }
     end
