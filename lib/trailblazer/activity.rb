@@ -37,7 +37,7 @@ module Trailblazer
     end
 
     def self.recompile_process!
-      @process, @outputs = Magnetic::Builder::Path.finalize( @builder.instance_variable_get(:@adds) )
+      @process, @outputs = Magnetic::Builder.finalize( @builder.instance_variable_get(:@adds) )
     end
 
     def self.outputs
@@ -86,19 +86,5 @@ module Trailblazer
       end
     end
 
-
-    class Introspection
-      # @param activity Activity
-      def initialize(activity)
-        @activity = activity
-        @graph    = activity.graph
-        @circuit  = activity.circuit
-      end
-
-      # Find the node that wraps `task` or return nil.
-      def [](task)
-        @graph.find_all { |node| node[:_wrapped] == task  }.first
-      end
-    end
   end
 end

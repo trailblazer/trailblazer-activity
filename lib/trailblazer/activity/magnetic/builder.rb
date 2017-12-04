@@ -37,6 +37,7 @@ module Trailblazer
       end
 
       # Evaluate user's block and return the new ADDS.
+      # Used in Builder::build.
       def call(&block)
         instance_exec(&block)
         @adds
