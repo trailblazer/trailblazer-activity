@@ -33,7 +33,7 @@ module Trailblazer
     end
 
     def self.initialize_activity_dsl!
-      @builder = Magnetic::Builder::Path.new(Normalizer, {})
+      @builder = builder_class.new(Normalizer, {})
     end
 
     def self.recompile_process!
@@ -48,10 +48,24 @@ module Trailblazer
       @process.( args, circuit_options.merge( exec_context: new ) ) # DISCUSS: do we even need that?
     end
 
+    #- modelling
+
+    # @private
+    # DISCUSS: #each instead?
+    def self.find(&block)
+      @process.instance_variable_get(:@circuit).instance_variable_get(:@map).find(&block)
+    end
+
     #- DSL part
 
     def self.build(&block)
       Class.new(Activity, &block)
+    end
+
+    private
+
+    def self.builder_class
+      Magnetic::Builder::Path
     end
 
     # DSL part
