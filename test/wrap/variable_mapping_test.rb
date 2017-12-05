@@ -20,35 +20,33 @@ class VariableMappingTest < Minitest::Spec
   end
 
   let (:activity) do
-    Activity.from_hash do |start, _end|
-      {
-        start     => { Circuit::Right => Model },
-        Model     => { Circuit::Right => Uuid  },
-        Uuid      => { Circuit::Right => _end }
-      }
+    Activity.build do
+      task Model
+      task Uuid
     end
   end
 
   describe "input/output" do
-    let(:model_input)  { ->(options) { { "a"       => options["a"]+1 } }  }
-    let(:model_output) { ->(options) { { "model.a" => options["a"] } } }
-    let(:uuid_input)   { ->(options) { { "a"       => options["a"]*3, "model.a" => options["model.a"] } }  }
-    let(:uuid_output)  { ->(options) { { "uuid.a"  => options["a"] } } }
 
     it do
+      model_input  = ->(options) { { "a"       => options["a"]+1 } }
+      model_output = ->(options) { { "model.a" => options["a"] } }
+      uuid_input   = ->(options) { { "a"       => options["a"]*3, "model.a" => options["model.a"] } }
+      uuid_output  = ->(options) { { "uuid.a"  => options["a"] } }
+
       runtime = Hash.new([])
 
       # add filters around Model.
-      runtime[ Model ] = [
-        [ :insert_before!, "task_wrap.call_task", node: [ Activity::Wrap::Input.new( model_input ),   { id: "task_wrap.input" } ],  outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
-        [ :insert_before!, "End.default",         node: [ Activity::Wrap::Output.new( model_output ), { id: "task_wrap.output" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
-      ]
+      runtime[ Model ] = Activity::Magnetic::Builder::Path.plan do
+        task Activity::Wrap::Input.new( model_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::Wrap::Output.new( model_output ), id: "task_wrap.output", before: "End.success", group: :end
+      end
 
       # add filters around Uuid.
-      runtime[ Uuid ] = [
-        [ :insert_before!, "task_wrap.call_task", node: [ Activity::Wrap::Input.new( uuid_input ),   { id: "task_wrap.input" } ],  outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
-        [ :insert_before!, "End.default",         node: [ Activity::Wrap::Output.new( uuid_output ), { id: "task_wrap.output" } ], outgoing: [ Circuit::Right, {} ], incoming: Proc.new{ true } ],
-      ]
+      runtime[ Uuid ] = Activity::Magnetic::Builder::Path.plan do
+        task Activity::Wrap::Input.new( uuid_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::Wrap::Output.new( uuid_output ), id: "task_wrap.output", before: "End.success", group: :end
+      end
 
       signal, (options, flow_options) = activity.(
       [
