@@ -69,7 +69,7 @@ module Trailblazer
         end
 
         class TaskPolarization
-          def initialize( track_color: )
+          def initialize( track_color:raise )
             @track_color = track_color
           end
 
