@@ -243,7 +243,7 @@ ActivityBuildTest::L
     Ends(process).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid_result>]}
   end
 
-  it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do
+  it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do # FIXME: what were we (or I, haha) testing in here?
     binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
       Activity::Magnetic.Output(Circuit::Right, :success) => nil,
       Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
@@ -264,7 +264,7 @@ ActivityBuildTest::L
       task L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    process = Activity::Magnetic::Path::Builder.finalize( adds )
+    process, _ = Activity::Magnetic::Builder::Path.finalize( adds )
 
     Cct(process).must_equal %{
 #<Start:default/nil>
@@ -291,105 +291,6 @@ ActivityBuildTest::L
 #<End:track_0./:invalid_resulto>
 
 #<End:End.invalid_result/:invalid_result>
-}
-
-    # activity.outputs.values.must_equal [:success, :invalid_resulto, :invalid_result]
-  end
-
-
-  it "what" do
-    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
-      Activity::Magnetic.Output("Signal A", :exception)  => :exception,
-      Activity::Magnetic.Output(Circuit::Left, :failure) => :failure )
-
-    adds = Activity::Magnetic::DSL::ProcessElement.(
-      G,
-        id: :receive_process_id,
-        strategy: [
-          Activity::Magnetic::DSL::FastTrack.method(:step),
-          plus_poles: initial_plus_poles,
-        ],
-
-        # existing success to new end
-        Activity::Magnetic.Output(Right, :success) => Activity::Magnetic.End(:invalid_result),
-
-        Activity::Magnetic.Output("Signal A", :exception) => Activity::Magnetic.End(:signal_a_reached),
-     )
-
-    seq = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
-
-    Seq(seq).must_equal %{
-[:success] ==> ActivityBuildTest::G
- (success)/Right ==> "receive_process_id-Trailblazer::Circuit::Right"
- (exception)/Signal A ==> "receive_process_id-Signal A"
- (failure)/Left ==> :failure
-["receive_process_id-Trailblazer::Circuit::Right"] ==> #<End:invalid_result/:invalid_result>
- []
-["receive_process_id-Signal A"] ==> #<End:signal_a_reached/:signal_a_reached>
- []
-}
-  end
-
-  it "processes :group, which makes I appear after G even though it was added before" do
-    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge( Activity::Magnetic.Output(Circuit::Right, :success) => :success )
-
-    adds = []
-
-    adds += Activity::Magnetic::DSL::ProcessElement.(
-      I,
-        id:                :i,
-        strategy:          [ Activity::Magnetic::Builder::Path.method(:Task), plus_poles: initial_plus_poles ],
-     )
-
-    # adding group: :start here.
-    adds += Activity::Magnetic::DSL::ProcessElement.(
-      G,
-        id:                :g,
-        strategy:          [ Activity::Magnetic::Builder::Path.method(:Task), plus_poles: initial_plus_poles ],
-
-        sequence_options: { group: :start }
-     )
-
-    seq = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
-
-    Seq(seq).must_equal %{
-[:success] ==> ActivityBuildTest::G
- (success)/Right ==> :success
-[:success] ==> ActivityBuildTest::I
- (success)/Right ==> :success
-}
-  end
-
-  it "processes :before and puts G before I" do
-    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge( Activity::Magnetic.Output(Circuit::Right, :success) => :success )
-
-    adds = []
-
-    adds += Activity::Magnetic::DSL::ProcessElement.(
-      I,
-        id:                "some-id",
-        strategy:          [ Activity::Magnetic::Builder::Path.method(:Task), plus_poles: initial_plus_poles ],
-     )
-
-    adds += Activity::Magnetic::DSL::ProcessElement.(
-      G,
-        id: :g,
-        strategy: [
-          Activity::Magnetic::Builder::Path.method(:Task),
-          plus_poles: initial_plus_poles,
-        ],
-
-        sequence_options: { before: "some-id" }
-     )
-
-    seq = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
-
-    Seq(seq).must_equal %{
-[:success] ==> ActivityBuildTest::G
- (success)/Right ==> :success
-[:success] ==> ActivityBuildTest::I
- (success)/Right ==> :success
 }
   end
 end

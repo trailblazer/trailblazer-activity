@@ -255,4 +255,74 @@ DSLFastTrackTest::MyPassFast
 DSLFastTrackTest::MyFailFast
 }
   end
+
+  it "allows to provide :plus_poles and customize their connections" do
+    initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
+      Activity::Magnetic.Output("Signal A", :exception)  => :exception,
+      Activity::Magnetic.Output(Circuit::Left, :failure) => :failure
+    )
+
+
+    seq, _ = Builder.draft do
+      step G,
+        id: :receive_process_id,
+        plus_poles: initial_plus_poles,
+
+        # existing success to new end
+        Activity::Magnetic.Output(Right, :success)        => Activity::Magnetic.End(:invalid_result),
+        Activity::Magnetic.Output("Signal A", :exception) => Activity::Magnetic.End(:signal_a_reached)
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> DSLFastTrackTest::G
+ (success)/Right ==> "receive_process_id-Trailblazer::Circuit::Right"
+ (exception)/Signal A ==> "receive_process_id-Signal A"
+ (failure)/Left ==> :failure
+[:success] ==> #<End:success/:success>
+ []
+[:failure] ==> #<End:failure/:failure>
+ []
+[:pass_fast] ==> #<End:pass_fast/:pass_fast>
+ []
+[:fail_fast] ==> #<End:fail_fast/:fail_fast>
+ []
+["receive_process_id-Trailblazer::Circuit::Right"] ==> #<End:invalid_result/:invalid_result>
+ []
+["receive_process_id-Signal A"] ==> #<End:signal_a_reached/:signal_a_reached>
+ []
+}
+  end
+
+  it "accepts :before and :group" do
+    seq, adds = Builder.draft do
+      step J, id: "report_invalid_result"
+      step K, id: "log_invalid_result", before: "report_invalid_result"
+      step I, id: "start/I", group: :start
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> DSLFastTrackTest::I
+ (success)/Right ==> :success
+ (failure)/Left ==> :failure
+[:success] ==> DSLFastTrackTest::K
+ (success)/Right ==> :success
+ (failure)/Left ==> :failure
+[:success] ==> DSLFastTrackTest::J
+ (success)/Right ==> :success
+ (failure)/Left ==> :failure
+[:success] ==> #<End:success/:success>
+ []
+[:failure] ==> #<End:failure/:failure>
+ []
+[:pass_fast] ==> #<End:pass_fast/:pass_fast>
+ []
+[:fail_fast] ==> #<End:fail_fast/:fail_fast>
+ []
+}
+  end
 end
