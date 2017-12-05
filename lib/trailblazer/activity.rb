@@ -7,6 +7,17 @@ require "trailblazer/container_chain"
 
 module Trailblazer
   class Activity
+    module Interface
+      def decompose # TODO: test me
+        @process.instance_variable_get(:@circuit).to_fields
+      end
+
+      def debug # TODO: TEST ME
+        @debug
+      end
+    end
+
+    extend Interface
 
     require "trailblazer/activity/version"
     require "trailblazer/activity/subprocess"
@@ -25,6 +36,7 @@ module Trailblazer
     require "trailblazer/activity/schema/sequence"
 
     require "trailblazer/activity/process"
+    require "trailblazer/activity/magnetic/builder/introspection"
 
 
     def self.inherited(inheriter)
@@ -46,10 +58,7 @@ module Trailblazer
     end
 
     def self.call(args, circuit_options={})
-      @process.( args, circuit_options.merge(
-        exec_context:  new, # DISCUSS: do we even need that?
-        introspection: @debug # DISCUSS/FIXME: i don't like this here just because Trace needs it.
-      ) )
+      @process.( args, circuit_options.merge( exec_context:  new ) ) # DISCUSS: do we even need that?
     end
 
     #- modelling

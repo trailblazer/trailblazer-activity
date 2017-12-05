@@ -116,13 +116,13 @@ class WrapTest < Minitest::Spec
 
             {
               stack:         Activity::Trace::Stack.new,
-              introspection: { } # TODO: crashes without :debug.
             },
           ],
 
           runner:        Wrap::Runner,
           wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
           wrap_static:   wrap_static,
+          introspection: { } # TODO: crashes without :debug.
         )
 
         # upload should contain only one 1.
@@ -169,17 +169,15 @@ class WrapTest < Minitest::Spec
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
 |-- outsideg.Model
-|-- #<Trailblazer::Activity:>
+|-- #<Class:>
 |   |-- #<Trailblazer::Circuit::Start:>
 |   |-- #<Proc:.rb:11 (lambda)>
-|   |-- #<Trailblazer::Activity:>
+|   |-- #<Class:>
 |   |   |-- #<Trailblazer::Circuit::Start:>
 |   |   |-- #<Proc:.rb:12 (lambda)>
-|   |   |-- #<Trailblazer::Circuit::End:>
-|   |   `-- #<Trailblazer::Activity:>
+|   |   `-- #<Trailblazer::Circuit::End:>
 |   |-- #<Proc:.rb:13 (lambda)>
-|   |-- #<Trailblazer::Circuit::End:>
-|   `-- #<Trailblazer::Activity:>
+|   `-- #<Trailblazer::Circuit::End:>
 |-- outsideg.Uuid
 `-- #<Trailblazer::Circuit::End:>}
     end

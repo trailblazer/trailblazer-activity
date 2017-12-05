@@ -14,10 +14,10 @@ module Trailblazer
         }
 
         tracing_circuit_options = {
-          runner:          Wrap::Runner,
-          wrap_runtime:    ::Hash.new(Trace.wirings), # FIXME: this still overrides existing wrap_runtimes.
-          wrap_static:     ::Hash.new( Trailblazer::Activity::Wrap.initial_activity ) # FIXME
-          # introspection: activity.instance_variable_get(:@debug), # FIXME: this is still also set in Activity::call
+          runner:        Wrap::Runner,
+          wrap_runtime:  ::Hash.new(Trace.wirings), # FIXME: this still overrides existing wrap_runtimes.
+          wrap_static:   ::Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # FIXME
+          introspection: compute_debug(activity), # FIXME: this is still also set in Activity::call
         }
 
         last_signal, (options, flow_options) = call_activity( activity, [
@@ -29,10 +29,21 @@ module Trailblazer
         return flow_options[:stack].to_a, last_signal, options, flow_options
       end
 
+      private
+
       # TODO: test alterations with any wrap_circuit.
       def self.call_activity(activity, *args, &block)
         return activity.(*args) unless block
         block.(activity, *args)
+      end
+
+      # TODO: this is experimental.
+      # Go through all nested Activities and grab their `Activity.debug` field. This gets all merged into
+      # one big debugging hash, instead of computing it overly complex at runtime and while executing the circuit.
+      def self.compute_debug(activity)
+        arrs = Introspect.collect( activity, recursive: true ) { |task, _| task }.find_all { |task| task.is_a?(Interface) }.collect { |task| task.debug }.flatten(1)
+
+        arrs.inject( activity.debug ) { |memo, debug| memo.merge(debug) }
       end
 
       # Insertions for the trace tasks that capture the arguments just before calling the task,

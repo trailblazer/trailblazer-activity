@@ -1,4 +1,21 @@
 module Trailblazer
+  class Activity
+    # Introspection is not used at run-time except for rendering diagrams, tracing, and the like.
+    module Introspect
+
+      def self.collect(activity, options={}, &block)
+        circuit_hash, _ = activity.decompose
+
+        locals = circuit_hash.collect do |task, connections|
+          [
+            yield(task, connections),
+            *options[:recursive] && task.is_a?(Activity::Interface) ? collect(task, options, &block) : []
+          ]
+        end.flatten(1)
+      end
+    end #Introspect
+  end
+
   module Activity::Magnetic
     module Builder::Introspection
       def self.seq(builder)
