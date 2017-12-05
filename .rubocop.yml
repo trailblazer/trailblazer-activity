@@ -1,0 +1,14 @@
+inherit_from: .rubocop_todo.yml
+
+# Trailblazer uses constant named methods for macros.
+# Ignore the false positives in these files.
+Naming/MethodName:
+  Exclude:
+    - 'test/activity_test.rb'
+    - 'test/test_helper.rb'
+    - 'lib/trailblazer/activity/magnetic/structures.rb'
+    - 'lib/trailblazer/activity/magnetic/builder/introspection.rb'
+    - 'lib/trailblazer/activity/magnetic/builder/path.rb'
+    - 'lib/trailblazer/activity/magnetic/builder/railway.rb'
+    - 'lib/trailblazer/activity/magnetic/builder/fast_track.rb'
+    - 'lib/trailblazer/activity/magnetic/builder.rb'
