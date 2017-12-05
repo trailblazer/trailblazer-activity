@@ -90,15 +90,21 @@ class AddsTest < Minitest::Spec
 }
   end
 
+  def start
+    return %{#<Trailblazer::Circuit::Start: @name=:default, @options={}>} if RUBY_PLATFORM == "java"
+
+    %{#<Trailblazer::Circuit::Start:
+     @name=:default,
+     @options={}>}
+  end
+
   it "Path.InitialAdds" do
     PP.pp Activity::Magnetic::Builder::Path.InitialAdds(track_color: :green, end_semantic: :success), dump =""
 
     dump.gsub(/0x\w+/, "").must_equal %{[[:add,
   ["Start.default",
    [[],
-    #<Trailblazer::Circuit::Start:
-     @name=:default,
-     @options={}>,
+    #{start},
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Magnetic::Output
@@ -123,9 +129,7 @@ class AddsTest < Minitest::Spec
     dump.gsub(/0x\w+/, "").must_equal %{[[:add,
   ["Start.default",
    [[],
-    #<Trailblazer::Circuit::Start:
-     @name=:default,
-     @options={}>,
+    #{start},
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Magnetic::Output
@@ -158,9 +162,7 @@ class AddsTest < Minitest::Spec
     dump.gsub(/0x\w+/, "").must_equal %{[[:add,
   ["Start.default",
    [[],
-    #<Trailblazer::Circuit::Start:
-     @name=:default,
-     @options={}>,
+    #{start},
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Magnetic::Output
