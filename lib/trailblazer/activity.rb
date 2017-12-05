@@ -85,8 +85,8 @@ module Trailblazer
     # delegate as much as possible to Builder
     # let us process options and e.g. do :id
     class << self
-      extend Forwardable
-      def_delegators :@builder, :Output, :Path#, :task
+      extend Forwardable # TODO: test those helpers
+      def_delegators :@builder, :Output, :Path, :End#, :task
 
       def task(*args, &block)
         adds, *options = @builder.task(*args, &block)
