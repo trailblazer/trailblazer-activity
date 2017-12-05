@@ -151,14 +151,14 @@ class WrapTest < Minitest::Spec
           {
             # Trace specific:
             stack:      Activity::Trace::Stack.new,
-            introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } } # optional, eg. per Activity.
           }
         ],
 
         # wrap_static
         wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
         wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
-        runner:       Wrap::Runner
+        runner:       Wrap::Runner,
+        introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } }, # optional, eg. per Activity.
       )
 
       signal.must_equal activity.outputs.keys.first # the actual activity's End signal.
