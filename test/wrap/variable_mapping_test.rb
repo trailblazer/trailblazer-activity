@@ -4,7 +4,7 @@ require "test_helper"
 # These are task wrap steps added before and after the task.
 class VariableMappingTest < Minitest::Spec
   # first task
-  Model = ->((options, flow), **) do
+  Model = ->((options, flow), **o) do
     options["a"]        = options["a"] * 2 # rename to model.a
     options["model.nonsense"] = true       # filter me out
 
@@ -12,7 +12,7 @@ class VariableMappingTest < Minitest::Spec
   end
 
   # second task
-  Uuid = ->((options, flow), **) do
+  Uuid = ->((options, flow), **o) do
     options["a"]             = options["a"] + options["model.a"] # rename to uuid.a
     options["uuid.nonsense"] = false                             # filter me out
 

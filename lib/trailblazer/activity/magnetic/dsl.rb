@@ -2,7 +2,7 @@ module Trailblazer
   module Activity::Magnetic
     module DSL
       class Polarization
-        def initialize( output:, color: )
+        def initialize( output:raise, color:raise )
           @output, @color = output, color
         end
 

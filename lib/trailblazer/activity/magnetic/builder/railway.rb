@@ -39,7 +39,7 @@ module Trailblazer
 
         # Adds the End.failure end to the Path sequence.
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(failure_color:, failure_end: Activity::Magnetic.End(failure_color, :failure), **builder_options)
+        def self.InitialAdds(failure_color:raise, failure_end: Activity::Magnetic.End(failure_color, :failure), **builder_options)
           path_adds = Path.InitialAdds(**builder_options)
 
           end_adds = adds(
@@ -78,7 +78,7 @@ module Trailblazer
         end
 
         class StepPolarization
-          def initialize(track_color: :success, failure_color: :failure, **)
+          def initialize(track_color: :success, failure_color: :failure, **o)
             @track_color, @failure_color = track_color, failure_color
           end
 

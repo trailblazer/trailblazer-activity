@@ -34,7 +34,7 @@ module Trailblazer
         end
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:, end_semantic:, default_plus_poles: self.DefaultPlusPoles, track_end: Activity::Magnetic.End(track_color, end_semantic), **)
+        def self.InitialAdds(track_color:raise, end_semantic:raise, default_plus_poles: self.DefaultPlusPoles, track_end: Activity::Magnetic.End(track_color, end_semantic), **o)
 
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
@@ -62,7 +62,7 @@ module Trailblazer
           start_adds + end_adds
         end
 
-        def self.TaskPolarizations(track_color:, type: :task, **)
+        def self.TaskPolarizations(track_color:raise, type: :task, **o)
           return [EndPolarization.new( track_color: track_color )] if type == :End # DISCUSS: should this dispatch be here?
 
           [TaskPolarization.new( track_color: track_color )]
