@@ -39,9 +39,3 @@ module Trailblazer
     end
   end
 end
-
-
-# Activity.build do
-#   step :extract,  failure: End("End.validate.extract_failed")
-#   step :validate
-# end
