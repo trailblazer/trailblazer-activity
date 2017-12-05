@@ -13,6 +13,10 @@ module Trailblazer
           ]
         end.flatten(1)
       end
+
+      def self.cct(activity)
+        Activity::Magnetic::Builder::Introspection.cct(activity.instance_variable_get(:@builder))
+      end
     end #Introspect
   end
 

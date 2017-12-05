@@ -16,27 +16,28 @@ class SubprocessHelper < Minitest::Spec
 
   ### Subprocess( )
   ###
-  describe "circuit with 1 level of nesting" do
+  describe "circuit with 1 level of nesting" do # TODO: test this kind of configuration in dsl_tests somewhere.
     let(:blog) do
-     Trailblazer::Activity.from_hash { |start, _end|
-        {
-          start  => { Circuit::Right => Blog::Read },
-          Blog::Read => { Circuit::Right => Blog::Next },
-          Blog::Next => { Circuit::Right => _end, Circuit::Left => Blog::Comment },
-          Blog::Comment => { Circuit::Right => _end }
-        }
-      }
+      Activity.build do
+        task Blog::Read
+        task Blog::Next, Output(Circuit::Right, :done) => "End.success", Output(Circuit::Left, :success) => :success
+        task Blog::Comment
+        # {
+        #   start  => { Circuit::Right => Blog::Read },
+        #   Blog::Read => { Circuit::Right => Blog::Next },
+        #   Blog::Next => { Circuit::Right => _end, Circuit::Left => Blog::Comment },
+        #   Blog::Comment => { Circuit::Right => _end }
+        # }
+      end
     end
 
     let(:user) do
-      Trailblazer::Activity.from_hash { |start, _end|
-        {
-          start => { Circuit::Right => nested=blog  },
-          nested     => { blog.outputs.keys.first => User::Relax },
+      _blog = blog
 
-          User::Relax => { Circuit::Right => _end }
-        }
-      }
+      Activity.build do
+        task _blog, Output(_blog.outputs.keys.first, :bla) => :success
+        task User::Relax
+      end
     end
 
     it "ends before comment, on next_page" do
@@ -50,25 +51,20 @@ class SubprocessHelper < Minitest::Spec
   ###
   describe "circuit with 2 end events in the nested process" do
     let(:blog) do
-      _retry = Circuit::End.new(:retry)
-      Trailblazer::Activity.from_hash { |start, _end|
-        {
-          start  => { Circuit::Right => Blog::Read },
-          Blog::Read => { Circuit::Right => Blog::Next },
-          Blog::Next => { Circuit::Right => _end, Circuit::Left => _retry },
-        }
-      }
+      Activity.build do
+        task Blog::Read
+        task Blog::Next, Output(Circuit::Right, :success___) => :__success, Output(Circuit::Left, :retry___) => _retry=End(:retry, :retry)
+      end
     end
 
     let(:user) do
-      Trailblazer::Activity.from_hash { |start, _end|
-        {
-          start => { Circuit::Right => blog },
-          blog     => { blog.outputs.keys.first => User::Relax, blog.outputs.keys[1] => _end },
+      _blog = blog
 
-          User::Relax => { Circuit::Right => _end }
-        }
-      }
+      Activity.build do
+                                                      # why do we need a semantic here?to override the existin?
+        task _blog, Output(_blog.outputs.keys.first, :__success) => :success, Output(_blog.outputs.keys[1], :retry) => "End.success"
+        task User::Relax
+      end
     end
 
     it "runs from Subprocess->default to Relax" do
@@ -92,14 +88,12 @@ class SubprocessHelper < Minitest::Spec
     #---
     #- Subprocess( activity, start_at )
     let(:with_nested_and_start_at) do
-      Trailblazer::Activity.from_hash { |start, _end|
-        {
-          start => { Circuit::Right => nested=Activity::Subprocess( blog, start_event: Blog::Next ) },
-          nested     => { blog.outputs.keys.first => User::Relax },
+      _blog = blog
 
-          User::Relax => { Circuit::Right => _end }
-        }
-      }
+      Activity.build do
+        task nested=Activity::Subprocess( _blog, task: Blog::Next ), Output(_blog.outputs.keys.first, :success) => :success
+        task User::Relax
+      end
     end
 
     it "runs Subprocess from alternative start" do
@@ -126,14 +120,10 @@ class SubprocessHelper < Minitest::Spec
 
         nested = Activity::Subprocess( Workout, call: :__call__ )
 
-        Trailblazer::Activity.from_hash { |start, _end|
-          {
-            start       => { Circuit::Right => nested },
-            nested      => { Circuit::Right => User::Relax },
-
-            User::Relax => { Circuit::Right => _end }
-          }
-        }
+        Activity.build do
+          task nested
+          task User::Relax
+        end
       end
 
       it "runs Subprocess process with __call__" do
