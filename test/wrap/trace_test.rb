@@ -7,44 +7,37 @@ class TraceTest < Minitest::Spec
   D = ->(*args) { [ Circuit::Right, *args ] }
 
   let(:activity) do
-    Activity.from_hash do |start, _end|
-      {
-        start  => { Circuit::Right => A },
-        A      => { Circuit::Right => bc },
-        bc     => { bc.outputs.keys.first => D },
-      }
+    nested = bc
+    seq = Activity.build do
+      task A, id: "A"
+      task nested, Output(nested.outputs.keys.first, :success) => :success, id: "<Nested>"
+      task D, id: "D"
     end
   end
 
   let(:bc) do
-    Activity.from_hash do |start, _end|
-      {
-        start  => { Circuit::Right => B },
-        B      => { Circuit::Right => C },
-        C      => { Circuit::Right => _end },
-      }
+    Activity.build do
+      task B, id: "B"
+      task C, id: "C"
     end
   end
-
 
   it do
     activity.({})
   end
 
   it do
-      stack, _ = Trailblazer::Activity::Trace.( activity,
-        [
-          { content: "Let's start writing" }
-        ]
-      )
-      #:trace-call end
+    stack, _ = Trailblazer::Activity::Trace.( activity,
+      [
+        { content: "Let's start writing" }
+      ]
+    )
 
-      output = Trailblazer::Activity::Trace::Present.tree(stack)
+    output = Trailblazer::Activity::Trace::Present.tree(stack)
 
-      # output = Trailblazer::Activity::Inspect.(output)
-      puts output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
+    puts output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
-      output.must_equal %{|-- #<Trailblazer::Circuit::Start:>
+    output.must_equal %{|-- #<Trailblazer::Circuit::Start:>
 |-- #<Proc:.rb:4 (lambda)>
 |-- #<Trailblazer::Activity:>
 |   |-- #<Trailblazer::Circuit::Start:>
