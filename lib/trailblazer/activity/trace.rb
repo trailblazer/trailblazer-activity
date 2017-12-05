@@ -46,6 +46,8 @@ module Trailblazer
         end
       end
 
+      Entity = Struct.new(:task, :type, :value, :value2, :introspection)
+
       # Mutable/stateful per design. We want a (global) stack!
       class Stack
         def initialize

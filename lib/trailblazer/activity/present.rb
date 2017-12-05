@@ -3,8 +3,7 @@ require "hirb"
 module Trailblazer
   class Activity
     module Trace
-      # TODO:
-      # * Struct for debug_item
+      # TODO: make this simpler.
       module Present
         module_function
 
@@ -14,24 +13,18 @@ module Trailblazer
           Hirb::Console.format_output(tree, class: :tree, type: :directory)
         end
 
-        # API HERE is: we only know the current element (e.g. task), input, output, and have an "introspection" object that tells us more about the element.
-        # TODO: the debug_item's "api" sucks, this should be a struct.
         def tree_for(stack, level, tree)
-          stack.each do |debug_item|
-            task = debug_item[0][0]
+          stack.each do |captured, *returned|
+            task = captured.task
 
-            if debug_item.size == 2 # flat
-              introspect = debug_item[0].last
+            name = (node = captured.introspection[task]) ? node[:id] : task
 
-              name = (node = introspect[task]) ? node[:id] : task
-
-              tree << [ level,  name ]
+            if returned.size == 1 # flat
+              tree << [ level, name ]
             else # nesting
-              tree << [ level, task ]
+              tree << [ level, name ]
 
-              tree_for(debug_item[1..-2], level + 1, tree)
-
-              tree << [ level+1, debug_item[-1][0] ]
+              tree_for(returned[0..-2], level + 1, tree)
             end
 
             tree
