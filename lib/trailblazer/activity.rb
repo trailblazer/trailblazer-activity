@@ -34,6 +34,7 @@ module Trailblazer
 
     def self.initialize_activity_dsl!
       @builder = builder_class.new(Normalizer, {})
+      @debug   = {}
     end
 
     def self.recompile_process!
@@ -45,7 +46,10 @@ module Trailblazer
     end
 
     def self.call(args, circuit_options={})
-      @process.( args, circuit_options.merge( exec_context: new ) ) # DISCUSS: do we even need that?
+      @process.( args, circuit_options.merge(
+        exec_context:  new, # DISCUSS: do we even need that?
+        introspection: @debug # DISCUSS/FIXME: i don't like this here just because Trace needs it.
+      ) )
     end
 
     #- modelling
@@ -76,9 +80,19 @@ module Trailblazer
       def_delegators :@builder, :Output, :Path#, :task
 
       def task(*args, &block)
-        cfg = @builder.task(*args, &block)
+        adds, *options = @builder.task(*args, &block)
+
         recompile_process!
-        cfg
+
+        add_introspection!(adds, *options)
+
+        return adds, options
+      end
+
+      private
+
+      def add_introspection!(adds, task, local_options, *)
+        @debug[task] = { id: local_options[:id] }.freeze
       end
     end
 

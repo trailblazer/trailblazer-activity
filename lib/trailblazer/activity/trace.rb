@@ -10,15 +10,14 @@ module Trailblazer
     module Trace
       def self.call(activity, (options), *args, &block)
         tracing_flow_options = {
-          stack:        Trace::Stack.new,
-          # Note that we don't pass :wrap_static here, that's handled by Task.__call__.
-          introspection:        {}, # usually set that in Activity::call.
+          stack:         Trace::Stack.new,
         }
 
         tracing_circuit_options = {
-          runner:       Wrap::Runner,
-          wrap_runtime: ::Hash.new(Trace.wirings), # FIXME: this still overrides existing wrap_runtimes.
-          wrap_static:  ::Hash.new( Trailblazer::Activity::Wrap.initial_activity ) # FIXME
+          runner:          Wrap::Runner,
+          wrap_runtime:    ::Hash.new(Trace.wirings), # FIXME: this still overrides existing wrap_runtimes.
+          wrap_static:     ::Hash.new( Trailblazer::Activity::Wrap.initial_activity ) # FIXME
+          # introspection: activity.instance_variable_get(:@debug), # FIXME: this is still also set in Activity::call
         }
 
         last_signal, (options, flow_options) = call_activity( activity, [
