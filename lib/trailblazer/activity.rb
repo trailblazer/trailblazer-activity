@@ -1,10 +1,5 @@
 require "trailblazer/circuit"
 
-# TODO: move to separate gem.
-require "trailblazer/option"
-require "trailblazer/context"
-require "trailblazer/container_chain"
-
 module Trailblazer
   class Activity
     module Interface
