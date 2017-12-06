@@ -35,6 +35,7 @@ module Trailblazer
     require "trailblazer/activity/magnetic/builder/introspection"
 
     def self.inherited(inheriter)
+      super
       inheriter.initialize_activity_dsl!
       inheriter.recompile_process!
     end
