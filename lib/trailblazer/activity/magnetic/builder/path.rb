@@ -29,12 +29,12 @@ module Trailblazer
 
         def self.DefaultPlusPoles
           DSL::PlusPoles.new.merge(
-            Activity::Magnetic.Output( Circuit::Right, :success ) => nil
+            Activity.Output( Circuit::Right, :success ) => nil
           ).freeze
         end
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:raise, end_semantic:raise, default_plus_poles: self.DefaultPlusPoles, track_end: Activity::Magnetic.End(track_color, end_semantic), **o)
+        def self.InitialAdds(track_color:raise, end_semantic:raise, default_plus_poles: self.DefaultPlusPoles, track_end: Activity.End(track_color, end_semantic), **o)
 
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 

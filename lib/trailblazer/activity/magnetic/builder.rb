@@ -71,11 +71,11 @@ module Trailblazer
         def Output(signal, semantic=nil)
           return DSL::Output::Semantic.new(signal) if semantic.nil?
 
-          Activity::Magnetic.Output(signal, semantic)
+          Activity.Output(signal, semantic)
         end
 
         def End(name, semantic)
-          Activity::Magnetic.End(name, semantic)
+          Activity.End(name, semantic)
         end
 
         def Path(track_color: "track_#{rand}", end_semantic: :success, **options)

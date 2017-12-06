@@ -35,12 +35,13 @@ module Trailblazer
 
             next unless existing_output
 
-            [ Activity::Magnetic.Output(existing_output.signal, existing_output.semantic), color ]
+            [ Activity.Output(existing_output.signal, existing_output.semantic), color ]
           end
 
           merge( ::Hash[ary.compact] )
         end
 
+        # The DSL is a series of transformations that yield in tasks with several PlusPole instances each.
         def to_a
           @plus_poles.values.collect { |output, color| PlusPole.new(output, color) }
         end
@@ -48,7 +49,7 @@ module Trailblazer
         #---
         #-  builders
         def self.from_outputs(outputs)
-          ary = outputs.collect { |evt, semantic| [ Activity::Magnetic::Output(evt, semantic), semantic ] }
+          ary = outputs.collect { |evt, semantic| [ Activity::Output(evt, semantic), semantic ] }
 
           new.merge(::Hash[ary])
         end

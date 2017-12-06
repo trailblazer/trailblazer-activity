@@ -106,8 +106,8 @@ class ActivityBuildTest < Minitest::Spec
         Output(Left, :trigger) => End("End.trigger", :triggered),
         # this comes from the Operation DSL since it knows {Activity}J
         plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
-          Activity::Magnetic.Output(Circuit::Left,  :trigger) => nil,
-          Activity::Magnetic.Output(Circuit::Right, :success) => nil,
+          Activity.Output(Circuit::Left,  :trigger) => nil,
+          Activity.Output(Circuit::Right, :success) => nil,
         ).freeze
       task K, id: "normal"
     end
@@ -135,8 +135,8 @@ class ActivityBuildTest < Minitest::Spec
         Output(:trigger) => End("End.trigger", :triggered),
         # this comes from the Operation DSL since it knows {Activity}J
         plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
-          Activity::Magnetic.Output(Circuit::Left,  :trigger) => nil,
-          Activity::Magnetic.Output(Circuit::Right, :success) => nil,
+          Activity.Output(Circuit::Left,  :trigger) => nil,
+          Activity.Output(Circuit::Right, :success) => nil,
         ).freeze
       task K, id: "normal"
     end
@@ -191,8 +191,8 @@ class ActivityBuildTest < Minitest::Spec
   # circulars, etc.
   it do
     binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity::Magnetic.Output(Circuit::Right, :success) => nil,
-      Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
+      Activity.Output(Circuit::Right, :success) => nil,
+      Activity.Output(Circuit::Left, :failure) => nil )
 
     tripletts, adds = Activity::Process.draft do
       # circular
@@ -245,8 +245,8 @@ ActivityBuildTest::L
 
   it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do # FIXME: what were we (or I, haha) testing in here?
     binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity::Magnetic.Output(Circuit::Right, :success) => nil,
-      Activity::Magnetic.Output(Circuit::Left, :failure) => nil )
+      Activity.Output(Circuit::Right, :success) => nil,
+      Activity.Output(Circuit::Left, :failure) => nil )
 
     seq, adds = Activity::Process.draft do
       task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", Output(:success) => "receive_process_id"

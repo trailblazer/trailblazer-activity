@@ -32,14 +32,14 @@ module Trailblazer
 
         def self.DefaultPlusPoles
           DSL::PlusPoles.new.merge(
-            Activity::Magnetic.Output(Circuit::Right, :success) => nil,
-            Activity::Magnetic.Output(Circuit::Left,  :failure) => nil,
+            Activity.Output(Circuit::Right, :success) => nil,
+            Activity.Output(Circuit::Left,  :failure) => nil,
           ).freeze
         end
 
         # Adds the End.failure end to the Path sequence.
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(failure_color:raise, failure_end: Activity::Magnetic.End(failure_color, :failure), **builder_options)
+        def self.InitialAdds(failure_color:raise, failure_end: Activity.End(failure_color, :failure), **builder_options)
           path_adds = Path.InitialAdds(**builder_options)
 
           end_adds = adds(

@@ -19,9 +19,9 @@ class DSLFastTrackTest < Minitest::Spec
 
   let(:initial_plus_poles) do
     Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
-      # Activity::Magnetic.Output("Signal A", :exception)  => :exception,
-      Activity::Magnetic.Output(Circuit::Left, :failure) => :failure
+      Activity.Output(Circuit::Right, :success) => :success,
+      # Activity.Output("Signal A", :exception)  => :exception,
+      Activity.Output(Circuit::Left, :failure) => :failure
     )
   end
 
@@ -97,7 +97,7 @@ class DSLFastTrackTest < Minitest::Spec
 }
   end
 
-  it "does NOT add :pass_fast pole when :poles_poles are given" do
+  it "does NOT add :pass_fast pole when :plus_poles are given" do
     plus_poles = PlusPoles.from_outputs( Signal => :success, "Another" => :failure )
 
     seq, adds = Builder.draft do
@@ -193,7 +193,7 @@ DSLFastTrackTest::G
   it do
     # this is what happens in Operation.
     seq, adds = Builder.draft( track_color: :pink, failure_color: :black ) do
-      step G, id: :G, fail_fast: true, Activity::Magnetic.Output("Exception", :exception) => Activity::Magnetic.End(:exception)
+      step G, id: :G, fail_fast: true, Activity.Output("Exception", :exception) => Activity.End(:exception)
       step I, id: :I
       fail J, id: :J
       pass K, id: :K
@@ -258,9 +258,9 @@ DSLFastTrackTest::MyFailFast
 
   it "allows to provide :plus_poles and customize their connections" do
     initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity::Magnetic.Output(Circuit::Right, :success) => :success,
-      Activity::Magnetic.Output("Signal A", :exception)  => :exception,
-      Activity::Magnetic.Output(Circuit::Left, :failure) => :failure
+      Activity.Output(Circuit::Right, :success) => :success,
+      Activity.Output("Signal A", :exception)  => :exception,
+      Activity.Output(Circuit::Left, :failure) => :failure
     )
 
 
@@ -270,8 +270,8 @@ DSLFastTrackTest::MyFailFast
         plus_poles: initial_plus_poles,
 
         # existing success to new end
-        Activity::Magnetic.Output(Right, :success)        => Activity::Magnetic.End(:invalid_result),
-        Activity::Magnetic.Output("Signal A", :exception) => Activity::Magnetic.End(:signal_a_reached)
+        Activity.Output(Right, :success)        => Activity.End(:invalid_result),
+        Activity.Output("Signal A", :exception) => Activity.End(:signal_a_reached)
     end
 
     Seq(seq).must_equal %{

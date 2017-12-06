@@ -1,7 +1,17 @@
 module Trailblazer
   class Activity
+    # all code related to the magnetic building of a circuit hash lives in this namespace.
     module Magnetic
-      # all code related to the magnetic building of a circuit hash lives in this namespace.
+      # PlusPole "radiates" a color that MinusPoles are attracted to.
+      #
+      # This datastructure is produced by the DSL and sits in an ADDS.
+      PlusPole = Struct.new(:output, :color) do
+        private :output
+
+        def signal
+          output.signal
+        end
+      end # PlusPole
     end
 
     class Process
@@ -17,14 +27,13 @@ module Trailblazer
         Magnetic::Builder::Path.draft(options, &block)
       end
     end
+
   end
 end
 
 require "trailblazer/activity/magnetic/dsl"
 require "trailblazer/activity/magnetic/dsl/plus_poles"
 require "trailblazer/activity/magnetic/dsl/alterations"
-
-require "trailblazer/activity/magnetic/structures"
 
 require "trailblazer/activity/schema/dependencies"
 

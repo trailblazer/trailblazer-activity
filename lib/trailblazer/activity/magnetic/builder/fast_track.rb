@@ -44,8 +44,8 @@ module Trailblazer
 
             # add fast track outputs if :fast_track
             plus_poles = plus_poles.reverse_merge(
-              Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast,
-              Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast
+              Activity.Output(FailFast, :fail_fast) => :fail_fast,
+              Activity.Output(PassFast, :pass_fast) => :pass_fast
             ) if options[:fast_track]
 
             [
@@ -58,7 +58,7 @@ module Trailblazer
         class FailPolarization < Railway::StepPolarization
           def call(magnetic_to, plus_poles, options)
             plus_poles = plus_poles.reconnect( :failure => :fail_fast, :success => :fail_fast ) if options[:fail_fast]
-            plus_poles = plus_poles.reverse_merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
+            plus_poles = plus_poles.reverse_merge( Activity.Output(FailFast, :fail_fast) => :fail_fast, Activity.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
 
             [
               magnetic_to,
@@ -70,7 +70,7 @@ module Trailblazer
         class PassPolarization < Railway::StepPolarization
           def call(magnetic_to, plus_poles, options)
             plus_poles = plus_poles.reconnect( :success => :pass_fast, :failure => :pass_fast ) if options[:pass_fast]
-            plus_poles = plus_poles.reverse_merge( Activity::Magnetic.Output(FailFast, :fail_fast) => :fail_fast, Activity::Magnetic.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
+            plus_poles = plus_poles.reverse_merge( Activity.Output(FailFast, :fail_fast) => :fail_fast, Activity.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
 
             [
               magnetic_to,
@@ -92,7 +92,7 @@ module Trailblazer
 
 
         # Adds the End.fail_fast and End.pass_fast end to the Railway sequence.
-        def self.InitialAdds(pass_fast_end: Activity::Magnetic.End("pass_fast", :pass_fast), fail_fast_end: Activity::Magnetic.End("fail_fast", :fail_fast), **builder_options)
+        def self.InitialAdds(pass_fast_end: Activity.End("pass_fast", :pass_fast), fail_fast_end: Activity.End("fail_fast", :fail_fast), **builder_options)
           path_adds = Railway.InitialAdds(**builder_options)
 
           ends =

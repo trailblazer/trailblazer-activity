@@ -28,9 +28,9 @@ class DrawGraphTest < Minitest::Spec
 
   Magnetic = Trailblazer::Activity::Magnetic
 
-  R = Magnetic::Output(Right, :success)
-  L = Magnetic::Output(Left,  :failure)
-  Z = Magnetic::Output("bla", :my_z)
+  R = Activity.Output(Right, :success)
+  L = Activity.Output(Left,  :failure)
+  Z = Activity.Output("bla", :my_z)
 
   it do
     tripletts = [
@@ -75,7 +75,7 @@ class DrawGraphTest < Minitest::Spec
   # circular
   it do
     tripletts = [
-      [ [:success, :to_a], A, [ R, Magnetic::Output("SIG", :to_a) ] ],
+      [ [:success, :to_a], A, [ R, Activity.Output("SIG", :to_a) ] ],
       [ [:success], B, [ R ] ],
 
       [ [:success], ES, [] ],
@@ -96,10 +96,10 @@ class DrawGraphTest < Minitest::Spec
       alterations.add( :ES,  [ [:success], ES, {} ], group: :end )
 
       # step A
-      alterations.add( :A,   [ [:success], A, [ Magnetic.Output(Right, :success), Magnetic.Output(Left, :failure) ] ] )
+      alterations.add( :A,   [ [:success], A, [ Activity.Output(Right, :success), Activity.Output(Left, :failure) ] ] )
 
       # fail E, success: "End.success"
-      alterations.add( :E,   [ [:failure], E, [ Magnetic.Output(Right, :failure, :success), Magnetic.Output(Left, :failure) ] ], )
+      alterations.add( :E,   [ [:failure], E, [ Activity.Output(Right, :failure, :success), Activity.Output(Left, :failure) ] ], )
       alterations.connect_to( :E, { success: "e_to_success" } )
       alterations.magnetic_to( :ES, ["e_to_success"] ) # existing target: add a "magnetic_to" to it!
 
@@ -127,7 +127,7 @@ puts graph
 
     sequence = dependencies.to_a
 
-    sequence.inspect.must_equal %{[[[:success], DrawGraphTest::A, [#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, #<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>]], [[:another_success], DrawGraphTest::ES, []], [[:failure], DrawGraphTest::EF, []], [[:success], DrawGraphTest::ES, []]]}
+    sequence.inspect.must_equal %{[[[:success], DrawGraphTest::A, [#<struct Trailblazer::Activity::Output signal=Trailblazer::Circuit::Right, semantic=:success>, #<struct Trailblazer::Activity::Output signal=Trailblazer::Circuit::Left, semantic=:failure>]], [[:another_success], DrawGraphTest::ES, []], [[:failure], DrawGraphTest::EF, []], [[:success], DrawGraphTest::ES, []]]}
   end
 end
 

@@ -20,6 +20,8 @@ module Trailblazer
     extend Interface
 
     require "trailblazer/activity/version"
+    require "trailblazer/activity/structures"
+
     require "trailblazer/activity/subprocess"
 
     require "trailblazer/activity/wrap"
@@ -37,6 +39,7 @@ module Trailblazer
 
     require "trailblazer/activity/process"
     require "trailblazer/activity/magnetic/builder/introspection"
+
 
 
     def self.inherited(inheriter)
@@ -86,7 +89,7 @@ module Trailblazer
     # let us process options and e.g. do :id
     class << self
       extend Forwardable # TODO: test those helpers
-      def_delegators :@builder, :Output, :Path, :End#, :task
+      def_delegators :@builder, :Path#, :task
 
       def task(*args, &block)
         adds, *options = @builder.task(*args, &block)
@@ -118,7 +121,7 @@ module Trailblazer
 
       def self.initial_plus_poles
         Magnetic::DSL::PlusPoles.new.merge(
-          Magnetic.Output(Circuit::Right, :success) => nil
+          Activity.Output(Circuit::Right, :success) => nil
         ).freeze
       end
     end
