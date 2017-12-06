@@ -182,10 +182,5 @@ ActivityTest::L
     signal.must_equal activity.outputs[:success].signal
     options.inspect.must_equal %{{:L=>1}}
   end
-
-  def Outputs(outputs)
-    outputs.collect { |semantic, output| "#{semantic}=> (#{output.signal}, #{output.semantic})" }.
-      join("\n").gsub(/0x\w+/, "").gsub(/\d\d+/, "")
-  end
 end
 

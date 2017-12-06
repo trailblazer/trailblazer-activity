@@ -44,9 +44,4 @@ class IntrospectionTest < Minitest::Spec
       all_tasks[4..5].must_equal [B, C]
     end
   end
-
-require "trailblazer/activity/magnetic/builder/introspection"
-  it do
-    puts Trailblazer::Activity::Magnetic::Builder::Introspection.cct( activity.instance_variable_get(:@builder) )
-end
 end

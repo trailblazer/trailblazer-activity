@@ -32,7 +32,7 @@ module Trailblazer
     require "trailblazer/activity/schema/sequence"
 
     require "trailblazer/activity/process"
-    require "trailblazer/activity/magnetic/builder/introspection"
+    require "trailblazer/activity/introspection"
 
     def self.inherited(inheriter)
       super
