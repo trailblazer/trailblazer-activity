@@ -20,7 +20,6 @@ module Trailblazer
     require "trailblazer/activity/subprocess"
 
     require "trailblazer/activity/wrap"
-    require "trailblazer/wrap/variable_mapping"
     require "trailblazer/wrap/call_task"
     require "trailblazer/wrap/trace"
     require "trailblazer/wrap/runner"
