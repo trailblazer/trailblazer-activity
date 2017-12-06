@@ -6,7 +6,6 @@ module Trailblazer
   #
   # @param map         [Hash] Defines the wiring.
   # @param stop_events [Array] Tasks that stop execution of the circuit.
-  # @param name        [Hash] Names for tracing, debugging and exceptions. `:id` is a reserved key for circuit name.
   #
   #   result = circuit.(start_at, *args)
   #

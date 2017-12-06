@@ -1,12 +1,9 @@
 module Trailblazer
-  # Schema helps you managing the construction of an {Activity}.
-  # It is used in the Operation and Activity DSL, and also for the TaskWrap.
-  # A Schema always produces an Activity.
-  #
-  # only knows about PlusPole
   module Activity::Magnetic
+    # Transforms an array of {Triplett}s into a circuit hash.
     module Generate
-      Line   = Struct.new(:source, :output)
+      Line      = Struct.new(:source, :output)
+      MinusPole = Struct.new(:color)
 
       class OpenLines
         def initialize
@@ -27,9 +24,9 @@ module Trailblazer
       end
 
       def self.call(tasks)
-        open_plus_poles = OpenLines.new
-        open_minus_poles    = OpenLines.new
-        circuit_hash        = {}
+        open_plus_poles  = OpenLines.new
+        open_minus_poles = OpenLines.new
+        circuit_hash     = {}
 
         tasks.each do |(magnetic_to, node, outputs)|
           circuit_hash[ node ] ||= {} # DISCUSS: or needed?
@@ -40,7 +37,7 @@ module Trailblazer
             end and next
 
             # only run when there were no open_minus_poles
-            open_minus_poles << [node, Activity::Magnetic::PlusPole.new(nil, edge_color)] # fixme: THIS IS AN INPUT
+            open_minus_poles << [node, MinusPole.new(edge_color)] # open inputs on a node, waiting to be connected.
           end
 
           outputs.each do |output|
