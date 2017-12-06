@@ -51,12 +51,18 @@ module Trailblazer
     end
 
     def self.recompile_process!
-      @process, outputs = Magnetic::Builder.finalize( @builder.instance_variable_get(:@adds) )
-      @outputs = recompile_outputs!(outputs)
+      @process, end_events = Magnetic::Builder.finalize( @builder.instance_variable_get(:@adds) )
+      @outputs = recompile_outputs!(end_events)
     end
 
-    def self.recompile_outputs!(outputs_hash)
-      ary = outputs_hash.collect { |end_event, semantic| [semantic, Output(end_event, semantic)] }
+    def self.recompile_outputs!(end_events)
+      ary = end_events.collect do |evt|
+        [
+          semantic = evt.instance_variable_get(:@options)[:semantic], # DISCUSS: better API here?
+          Output(evt, semantic)
+        ]
+      end
+
       ::Hash[ ary ]
     end
 
