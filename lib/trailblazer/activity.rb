@@ -53,7 +53,14 @@ module Trailblazer
     end
 
     def self.recompile_process!
-      @process, @outputs = Magnetic::Builder.finalize( @builder.instance_variable_get(:@adds) )
+      @process, outputs = Magnetic::Builder.finalize( @builder.instance_variable_get(:@adds) )
+      @outputs = recompile_outputs!(outputs)
+    end
+
+    def self.recompile_outputs!(outputs_hash)
+      Hash[
+        outputs_hash.collect { |end_event, semantic| [semantic, Output(end_event, semantic)] }
+      ]
     end
 
     def self.outputs

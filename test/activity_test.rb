@@ -76,13 +76,13 @@ class ActivityTest < Minitest::Spec
 #<End:success/:success>
 }
 
-    Outputs(activity.outputs).must_equal %{{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>=>:success}}
+    Outputs(activity.outputs).must_equal %{success=> (#<Trailblazer::Circuit::End:>, success)}
 
     options = { id: 1 }
 
     signal, args, circuit_options = activity.( [options, {}], {} )
 
-    Outputs(signal).must_equal %{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>}
+    signal.must_equal activity.outputs[:success].signal
     args.inspect.must_equal %{[{:id=>1}, {}]}
     circuit_options.must_be_nil
   end
@@ -106,7 +106,9 @@ class ActivityTest < Minitest::Spec
   end
 
   it do
-    Outputs(activity.outputs).must_equal %{{#<ActivityTest::B: @name=:resume_for_correct, @options={:semantic=>:resume_1}>=>:resume_1, #<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>=>:success, #<Trailblazer::Circuit::End: @name=\"track_0.\", @options={:semantic=>:invalid_result}>=>:invalid_result}}
+    Outputs(activity.outputs).must_equal %{resume_1=> (#<ActivityTest::B:>, resume_1)
+success=> (#<Trailblazer::Circuit::End:>, success)
+invalid_result=> (#<Trailblazer::Circuit::End:>, invalid_result)}
 
     Cct(activity.instance_variable_get(:@process)).must_equal %{
 #<Start:default/nil>
@@ -144,7 +146,7 @@ ActivityTest::L
     # ::call
     signal, (options, _) = activity.( [options, flow_options], circuit_options )
 
-    Outputs(signal).must_equal %{#<ActivityTest::B: @name=:resume_for_correct, @options={:semantic=>:resume_1}>}
+    signal.must_equal activity.outputs[:resume_1].signal
     options.inspect.must_equal %{{:id=>1, :a_return=>Trailblazer::Circuit::Left, :b_return=>Trailblazer::Circuit::Right, :A=>1, :B=>1}}
 
     #---
@@ -152,7 +154,7 @@ ActivityTest::L
     options = { c_return: Circuit::Right, a_return: Circuit::Left }
     signal, (options, _) = activity.( [options, flow_options], task: C )
 
-    Outputs(signal).must_equal %{#<ActivityTest::B: @name=:resume_for_correct, @options={:semantic=>:resume_1}>}
+    signal.must_equal activity.outputs[:resume_1].signal
     options.inspect.must_equal %{{:c_return=>Trailblazer::Circuit::Right, :a_return=>Trailblazer::Circuit::Left, :C=>1, :A=>1, :B=>1}}
 
     #---
@@ -160,7 +162,7 @@ ActivityTest::L
     options = { c_return: Circuit::Right, a_return: Circuit::Right, g_return: Circuit::Right, i_return: Circuit::Right }
     signal, (options, _) = activity.( [options, flow_options], task: C )
 
-    Outputs(signal).must_equal %{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>}
+    signal.must_equal activity.outputs[:success].signal
     options.inspect.must_equal %{{:c_return=>Trailblazer::Circuit::Right, :a_return=>Trailblazer::Circuit::Right, :g_return=>Trailblazer::Circuit::Right, :i_return=>Trailblazer::Circuit::Right, :C=>1, :A=>1, :G=>1, :I=>1, :L=>1}}
 
     #---
@@ -168,7 +170,7 @@ ActivityTest::L
     options = { c_return: Circuit::Right, a_return: Circuit::Right, g_return: Circuit::Right, i_return: Circuit::Left }
     signal, (options, _) = activity.( [options, flow_options], task: C )
 
-    Outputs(signal).must_equal %{#<Trailblazer::Circuit::End: @name=\"track_0.\", @options={:semantic=>:invalid_result}>}
+    signal.must_equal activity.outputs[:invalid_result].signal
     options.inspect.must_equal %{{:c_return=>Trailblazer::Circuit::Right, :a_return=>Trailblazer::Circuit::Right, :g_return=>Trailblazer::Circuit::Right, :i_return=>Trailblazer::Circuit::Left, :C=>1, :A=>1, :G=>1, :I=>1, :J=>1, :K=>1}}
 
     # activity.draft #=> mergeable, inheritance.
@@ -177,12 +179,13 @@ ActivityTest::L
   it "can start with any task" do
     signal, (options, _) = activity.( [{}], task: L )
 
-    Outputs(signal).must_equal %{#<Trailblazer::Circuit::End: @name=:success, @options={:semantic=>:success}>}
+    signal.must_equal activity.outputs[:success].signal
     options.inspect.must_equal %{{:L=>1}}
   end
 
   def Outputs(outputs)
-    outputs.inspect.gsub(/0x\w+/, "").gsub(/\d\d+/, "")
+    outputs.collect { |semantic, output| "#{semantic}=> (#{output.signal}, #{output.semantic})" }.
+      join("\n").gsub(/0x\w+/, "").gsub(/\d\d+/, "")
   end
 end
 

@@ -10,7 +10,7 @@ class TraceTest < Minitest::Spec
     nested = bc
     seq = Activity.build do
       task A, id: "A"
-      task nested, Output(nested.outputs.keys.first, :success) => :success, id: "<Nested>"
+      task nested, nested.outputs[:success] => :success, id: "<Nested>"
       task D, id: "D"
     end
   end

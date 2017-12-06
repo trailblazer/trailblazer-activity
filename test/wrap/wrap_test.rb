@@ -30,12 +30,12 @@ class WrapTest < Minitest::Spec
 
       Trailblazer::Activity.build do# |start, _end|
         task Save
-        task _more_nested, Output(_more_nested.outputs.keys.first, :success) => :success
+        task _more_nested, _more_nested.outputs[:success] => :success
         task Cleanup
         # {
         #   start => { Circuit::Right    => Save },
         #   Save        => { Circuit::Right  => more_nested },
-        #   more_nested => { more_nested.outputs.keys.first => Cleanup },
+        #   more_nested => { more_nested.outputs[:success] => Cleanup },
         #   Cleanup     => { Circuit::Right => _end }
         # }
       end
@@ -46,12 +46,12 @@ class WrapTest < Minitest::Spec
 
       Trailblazer::Activity.build do# |start, _end|
         task Model
-        task _nested, Output(_nested.outputs.keys.first, :success) => :success, id: "A"
+        task _nested, _nested.outputs[:success] => :success, id: "A"
         task Uuid, Output(SpecialDirection, :success) => :success
         # {
         #   start     => { Circuit::Right => Model },
         #   Model     => { Circuit::Right => nested  },
-        #   nested    => { nested.outputs.keys.first => Uuid },
+        #   nested    => { nested.outputs[:success] => Uuid },
         #   Uuid      => { SpecialDirection => _end }
         # }
       end
@@ -70,7 +70,7 @@ class WrapTest < Minitest::Spec
         wrap_static: Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
       )
 
-      signal.must_equal activity.outputs.keys.first # the actual activity's End signal.
+      signal.must_equal activity.outputs[:success].signal # the actual activity's End signal.
       options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
       end
     end
@@ -161,7 +161,7 @@ class WrapTest < Minitest::Spec
         introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } }, # optional, eg. per Activity.
       )
 
-      signal.must_equal activity.outputs.keys.first # the actual activity's End signal.
+      signal.must_equal activity.outputs[:success].signal # the actual activity's End signal.
       options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
 

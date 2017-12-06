@@ -39,6 +39,13 @@ class DSLFastTrackTest < Minitest::Spec
 }
   end
 
+  # builder for PlusPoles
+  def from_outputs(outputs)
+    ary = outputs.collect { |evt, semantic| [ Activity::Output(evt, semantic), semantic ] }
+
+    Activity::Magnetic::DSL::PlusPoles.new.merge(::Hash[ary])
+  end
+
   it "builder API, what we use in Operation" do
     initial_plus_poles = self.initial_plus_poles
 
@@ -98,7 +105,7 @@ class DSLFastTrackTest < Minitest::Spec
   end
 
   it "does NOT add :pass_fast pole when :plus_poles are given" do
-    plus_poles = PlusPoles.from_outputs( Signal => :success, "Another" => :failure )
+    plus_poles = from_outputs( Signal => :success, "Another" => :failure )
 
     seq, adds = Builder.draft do
       step G, plus_poles: plus_poles, pass_fast: true
@@ -112,7 +119,7 @@ class DSLFastTrackTest < Minitest::Spec
   end
   # pass_fast: true simply means: color my :success Output with :pass_fast color
   it "does NOT override :pass_fast pole when :poles_poles are given, >>>>>>>>>>>>>>>>>>>>>" do
-    plus_poles = PlusPoles.from_outputs( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
+    plus_poles = from_outputs( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
 
     seq, adds = Builder.draft do
       step G, plus_poles: plus_poles, pass_fast: true, id: :G
@@ -174,7 +181,7 @@ DSLFastTrackTest::G
 
   #- :fast_track
   it "don't overwrite :pass_fast/:fail_fast colored outputs that are existing in :plus_poles" do
-    plus_poles = PlusPoles.from_outputs( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
+    plus_poles = from_outputs( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
 
     seq, adds = Builder.draft do
       step G, fast_track: true, plus_poles: plus_poles

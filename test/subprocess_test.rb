@@ -35,13 +35,15 @@ class SubprocessHelper < Minitest::Spec
       _blog = blog
 
       Activity.build do
-        task _blog, Output(_blog.outputs.keys.first, :bla) => :success
+        task _blog, _blog.outputs[:success] => :success
         task User::Relax
       end
     end
 
     it "ends before comment, on next_page" do
-      user.([options = { "return" => Circuit::Right }]).must_equal([user.outputs.keys.first, [{"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}]])
+      user.( [options = { "return" => Circuit::Right }] ).must_equal(
+        [user.outputs[:success].signal, [{"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true}]]
+      )
 
       options.must_equal({"return"=>Trailblazer::Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true})
     end
@@ -61,15 +63,14 @@ class SubprocessHelper < Minitest::Spec
       _blog = blog
 
       Activity.build do
-                                                      # why do we need a semantic here?to override the existin?
-        task _blog, Output(_blog.outputs.keys.first, :__success) => :success, Output(_blog.outputs.keys[1], :retry) => "End.success"
+        task _blog, _blog.outputs[:success] => :success, _blog.outputs[:retry] => "End.success"
         task User::Relax
       end
     end
 
     it "runs from Subprocess->default to Relax" do
       user.( [ options = { "return" => Circuit::Right } ] ).must_equal [
-        user.outputs.keys.first,
+        user.outputs[:success].signal,
         [ {"return"=>Circuit::Right, "Read"=>1, "NextPage"=>[], "Relax"=>true} ]
       ]
 
@@ -78,7 +79,7 @@ class SubprocessHelper < Minitest::Spec
 
     it "runs from other Subprocess end" do
       user.( [ options = { "return" => Circuit::Left } ] ).must_equal [
-        user.outputs.keys.first,
+        user.outputs[:success].signal,
         [ {"return"=>Circuit::Left, "Read"=>1, "NextPage"=>[]} ]
       ]
 
@@ -91,7 +92,7 @@ class SubprocessHelper < Minitest::Spec
       _blog = blog
 
       Activity.build do
-        task nested=Activity::Subprocess( _blog, task: Blog::Next ), Output(_blog.outputs.keys.first, :success) => :success
+        task Activity::Subprocess( _blog, task: Blog::Next ), _blog.outputs[:success] => :success
         task User::Relax
       end
     end
@@ -99,7 +100,7 @@ class SubprocessHelper < Minitest::Spec
     it "runs Subprocess from alternative start" do
       with_nested_and_start_at.( [options = { "return" => Circuit::Right }] ).
         must_equal [
-          with_nested_and_start_at.outputs.keys.first,
+          with_nested_and_start_at.outputs[:success].signal,
           [ {"return"=>Circuit::Right, "NextPage"=>[], "Relax"=>true} ]
         ]
 
@@ -114,14 +115,14 @@ class SubprocessHelper < Minitest::Spec
           def self.__call__((options, *args), *)
             options[:workout]   = 9
 
-            [ direction=Circuit::Right, [options, *args] ]
+            return Circuit::Right, [options, *args]
           end
         end
 
-        nested = Activity::Subprocess( Workout, call: :__call__ )
+        subprocess = Activity::Subprocess( Workout, call: :__call__ )
 
         Activity.build do
-          task nested
+          task subprocess
           task User::Relax
         end
       end
@@ -129,7 +130,7 @@ class SubprocessHelper < Minitest::Spec
       it "runs Subprocess process with __call__" do
         process.( [options = { "return" => Circuit::Right }] ).
           must_equal [
-            process.outputs.keys.first,
+            process.outputs[:success].signal,
             [{"return"=>Circuit::Right, :workout=>9, "Relax"=>true}]
           ]
 
