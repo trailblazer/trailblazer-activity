@@ -5,8 +5,7 @@ class DrawGraphTest < Minitest::Spec
   Left  = Circuit::Left
   # Z = "bla"
 
-  S = ->(*) { snippet }
-
+  class S; end
   class A; end
   class E; end
   class B; end
@@ -28,15 +27,15 @@ class DrawGraphTest < Minitest::Spec
 
   Magnetic = Trailblazer::Activity::Magnetic
 
-  R = Activity.Output(Right, :success)
-  L = Activity.Output(Left,  :failure)
-  Z = Activity.Output("bla", :my_z)
+  R = Magnetic::PlusPole.new( Activity.Output(Right, :success), :success )
+  L = Magnetic::PlusPole.new( Activity.Output(Left,  :failure), :failure )
+  Z = Magnetic::PlusPole.new( Activity.Output("bla", :my_z), :my_z )
 
   it do
     tripletts = [
       #  magnetic to
       #  color | signal|outputs
-      [ [:success], A,  [R, L] ],
+      [ [], A,  [R, L] ],
       [ [:failure], E, [] ],
       [ [:success], B, [R, L] ],
       [ [:success], C, [R, L] ],
@@ -48,10 +47,29 @@ class DrawGraphTest < Minitest::Spec
       [ [:failure], EF, [] ],
     ]
 
-    graph = Trailblazer::Activity::Magnetic::Builder::Finalizer.adds_to_tripletts( tripletts )
+    hash = Trailblazer::Activity::Magnetic::Builder::Finalizer.tripletts_to_circuit_hash( tripletts )
 
-    puts graph.inspect
-    Inspect(graph.inspect).must_equal %{"{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>DrawGraphTest::A}, DrawGraphTest::A=>{Trailblazer::Circuit::Left=>DrawGraphTest::E, Trailblazer::Circuit::Right=>DrawGraphTest::B}, DrawGraphTest::E=>{}, DrawGraphTest::B=>{Trailblazer::Circuit::Right=>DrawGraphTest::C, Trailblazer::Circuit::Left=>DrawGraphTest::F}, DrawGraphTest::C=>{Trailblazer::Circuit::Left=>DrawGraphTest::F, Trailblazer::Circuit::Right=>DrawGraphTest::ES}, DrawGraphTest::F=>{\\\"bla\\\"=>#<Proc:@test/draw_graph_test.rb:11 (lambda)>, Trailblazer::Circuit::Left=>DrawGraphTest::EF}, #<Proc:@test/draw_graph_test.rb:11 (lambda)>=>{}, DrawGraphTest::ES=>{}, DrawGraphTest::EF=>{}}"}
+    circuit_hash(hash).must_equal %{
+DrawGraphTest::A
+ {Trailblazer::Circuit::Left} => DrawGraphTest::E
+ {Trailblazer::Circuit::Right} => DrawGraphTest::B
+DrawGraphTest::E
+
+DrawGraphTest::B
+ {Trailblazer::Circuit::Right} => DrawGraphTest::C
+ {Trailblazer::Circuit::Left} => DrawGraphTest::F
+DrawGraphTest::C
+ {Trailblazer::Circuit::Left} => DrawGraphTest::F
+ {Trailblazer::Circuit::Right} => DrawGraphTest::ES
+DrawGraphTest::F
+ {bla} => DrawGraphTest::S
+ {Trailblazer::Circuit::Left} => DrawGraphTest::EF
+DrawGraphTest::S
+
+DrawGraphTest::ES
+
+DrawGraphTest::EF
+}
   end
 
   # A points to C
@@ -59,7 +77,7 @@ class DrawGraphTest < Minitest::Spec
     tripletts = [
       #  magnetic to
       #  color | signal|outputs
-      [ [:success], A,  [ Z, L ] ],
+      [ [], A,  [ Z, L ] ],
       [ [], B, [R, L] ],
       [ [:success, :my_z], C, [R, L] ],
 
@@ -67,29 +85,52 @@ class DrawGraphTest < Minitest::Spec
       [ [:failure], EF, [] ],
     ]
 
-    graph = Trailblazer::Activity::Magnetic::Builder::Finalizer.adds_to_tripletts( tripletts )
+    hash = Trailblazer::Activity::Magnetic::Builder::Finalizer.tripletts_to_circuit_hash( tripletts )
 
-    Inspect(graph.inspect).must_equal %{"{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>DrawGraphTest::A}, DrawGraphTest::A=>{\\\"bla\\\"=>DrawGraphTest::C, Trailblazer::Circuit::Left=>DrawGraphTest::EF}, DrawGraphTest::B=>{Trailblazer::Circuit::Right=>DrawGraphTest::C, Trailblazer::Circuit::Left=>DrawGraphTest::EF}, DrawGraphTest::C=>{Trailblazer::Circuit::Right=>DrawGraphTest::ES, Trailblazer::Circuit::Left=>DrawGraphTest::EF}, DrawGraphTest::ES=>{}, DrawGraphTest::EF=>{}}"}
+    circuit_hash(hash).gsub(/0x\w+/, "").must_equal %{
+DrawGraphTest::A
+ {bla} => DrawGraphTest::C
+ {Trailblazer::Circuit::Left} => DrawGraphTest::EF
+DrawGraphTest::B
+ {Trailblazer::Circuit::Right} => DrawGraphTest::C
+ {Trailblazer::Circuit::Left} => DrawGraphTest::EF
+DrawGraphTest::C
+ {Trailblazer::Circuit::Right} => DrawGraphTest::ES
+ {Trailblazer::Circuit::Left} => DrawGraphTest::EF
+DrawGraphTest::ES
+
+DrawGraphTest::EF
+}
   end
 
   # circular
   it do
     tripletts = [
-      [ [:success, :to_a], A, [ R, Activity.Output("SIG", :to_a) ] ],
+      [ [:to_a], A, [ R, Magnetic::PlusPole.new( Activity.Output("SIG", :to_a), :to_a) ] ],
       [ [:success], B, [ R ] ],
 
       [ [:success], ES, [] ],
       [ [:failure], EF, [] ],
     ]
 
-    graph = Trailblazer::Activity::Magnetic::Builder::Finalizer.adds_to_tripletts( tripletts )
+    hash = Trailblazer::Activity::Magnetic::Builder::Finalizer.tripletts_to_circuit_hash( tripletts )
 
-    Inspect(graph.inspect).must_equal %{"{#<Trailblazer::Circuit::Start: @name=:default, @options={}>=>{Trailblazer::Circuit::Right=>DrawGraphTest::A}, DrawGraphTest::A=>{\\\"SIG\\\"=>DrawGraphTest::A, Trailblazer::Circuit::Right=>DrawGraphTest::B}, DrawGraphTest::B=>{Trailblazer::Circuit::Right=>DrawGraphTest::ES}, DrawGraphTest::ES=>{}, DrawGraphTest::EF=>{}}"}
+   circuit_hash(hash).gsub(/0x\w+/, "").must_equal %{
+DrawGraphTest::A
+ {SIG} => DrawGraphTest::A
+ {Trailblazer::Circuit::Right} => DrawGraphTest::B
+DrawGraphTest::B
+ {Trailblazer::Circuit::Right} => DrawGraphTest::ES
+DrawGraphTest::ES
+
+DrawGraphTest::EF
+}
   end
 
   describe "Alterations" do
     it do
-      alterations = Trailblazer::Activity::Schema::Alterations.new
+      skip "please unit-test Alterations"
+      alterations = Trailblazer::Activity::Magnetic::DSL::Alterations.new
 
       # happens in Operation::initialize_sequence
       alterations.add( :EF,  [ [:failure], EF, {} ], group: :end )
@@ -127,7 +168,7 @@ puts graph
 
     sequence = dependencies.to_a
 
-    sequence.inspect.must_equal %{[[[:success], DrawGraphTest::A, [#<struct Trailblazer::Activity::Output signal=Trailblazer::Circuit::Right, semantic=:success>, #<struct Trailblazer::Activity::Output signal=Trailblazer::Circuit::Left, semantic=:failure>]], [[:another_success], DrawGraphTest::ES, []], [[:failure], DrawGraphTest::EF, []], [[:success], DrawGraphTest::ES, []]]}
+    sequence.inspect.must_equal %{[[[:success], DrawGraphTest::A, [#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:success>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]], [[:another_success], DrawGraphTest::ES, []], [[:failure], DrawGraphTest::EF, []], [[:success], DrawGraphTest::ES, []]]}
   end
 end
 

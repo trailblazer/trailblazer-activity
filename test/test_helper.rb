@@ -47,10 +47,12 @@ Minitest::Spec.class_eval do
   end
 
   def Cct(process)
-    hash = process.instance_variable_get(:@circuit).to_fields[0]
+    Circuit( process.instance_variable_get(:@circuit).to_fields[0] )
+  end
 
+  def circuit_hash(circuit_hash)
     content =
-      hash.collect do |task, connections|
+      circuit_hash.collect do |task, connections|
         conns = connections.collect do |signal, target|
           " {#{signal}} => #{Seq.Task(target)}"
         end
@@ -62,6 +64,7 @@ Minitest::Spec.class_eval do
 
       "\n#{content}".gsub(/\d\d+/, "")
   end
+  alias_method :Circuit, :circuit_hash
 
   def Ends(process)
     end_events = process.instance_variable_get(:@circuit).to_fields[1]
