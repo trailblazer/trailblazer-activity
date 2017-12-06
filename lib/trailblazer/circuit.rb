@@ -44,15 +44,15 @@ module Trailblazer
         return [ last_signal, args ] if @stop_events.include?(task) # DISCUSS: return circuit_options here?
 
         task = next_for(task, last_signal) do |next_task, in_map|
-          raise IllegalInputError.new("#{@name[:id]} #{task}") unless in_map
-          raise IllegalOutputSignalError.new("from #{@name[:id]}: `#{task}`===>[ #{last_signal.inspect} ]") unless next_task
+          raise IllegalInputError.new("#{task}") unless in_map
+          raise IllegalOutputSignalError.new("from : `#{task}`===>[ #{last_signal.inspect} ]") unless next_task
         end
       end
     end
 
     # Returns the circuit's components.
     def to_fields
-      [ @map, @stop_events, @name]
+      [ @map, @stop_events ]
     end
 
   private
