@@ -40,8 +40,6 @@ module Trailblazer
     require "trailblazer/activity/process"
     require "trailblazer/activity/magnetic/builder/introspection"
 
-
-
     def self.inherited(inheriter)
       inheriter.initialize_activity_dsl!
       inheriter.recompile_process!
@@ -58,13 +56,8 @@ module Trailblazer
     end
 
     def self.recompile_outputs!(outputs_hash)
-      Hash[
-        outputs_hash.collect { |end_event, semantic| [semantic, Output(end_event, semantic)] }
-      ]
-    end
-
-    def self.outputs
-      @outputs
+      ary = outputs_hash.collect { |end_event, semantic| [semantic, Output(end_event, semantic)] }
+      ::Hash[ ary ]
     end
 
     def self.call(args, circuit_options={})
@@ -77,6 +70,10 @@ module Trailblazer
     # DISCUSS: #each instead?
     def self.find(&block)
       @process.instance_variable_get(:@circuit).instance_variable_get(:@map).find(&block)
+    end
+
+    def self.outputs
+      @outputs
     end
 
     #- DSL part
