@@ -1,31 +1,84 @@
 require "test_helper"
 
 class PlusPolesTest < Minitest::Spec
+  def test(description, &block)
+    instance_exec(&block)
+  end
+
   Left = Trailblazer::Circuit::Left
   Right = Trailblazer::Circuit::Right
 
-  it do
-    poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
+  let(:poles) { Trailblazer::Activity::Magnetic::DSL::PlusPoles.new }
 
-    new_poles = poles.merge( Activity::Magnetic.Output(Right, :success) => :success, Activity::Magnetic.Output(Left, :failure) => :failure )
+  # it do # TODO: delete me
+  #   test "writes poles on brand-new instance" do
+  #     poles = poles.merge(
+  #       Activity::Magnetic.Output(Right, :success) => :success,
+  #       Activity::Magnetic.Output(Left, :failure) => :failure
+  #     )
 
-    new_poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:success>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]}
+  #     poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:success>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]}
+  #   end
 
-    # overwrites the old :success Output
-    overwritten = new_poles.merge( Activity::Magnetic.Output("Right", :success) => :failure )
-    overwritten.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"Right\", semantic=:success>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]}
+  #   test "same-named semantic overwrites" do
+  #     poles = poles.merge( Activity::Magnetic.Output("Right", :success) => :failure )
+  #     poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"Right\", semantic=:success>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]}
+  #   end
+
+  #   # overwrites the old :success Output
+  #   overwritten = new_poles.merge( Activity::Magnetic.Output("Right", :success) => :failure )
+  #   overwritten.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"Right\", semantic=:success>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]}
 
 
-    # add new output
-    new_poles = new_poles.merge( Activity::Magnetic.Output("Another", :exception) => :fail_fast )
+  #   # add new output
+  #   new_poles = new_poles.merge( Activity::Magnetic.Output("Another", :exception) => :fail_fast )
 
-    new_poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:success>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"Another\", semantic=:exception>, color=:fail_fast>]}
+  #   new_poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:success>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"Another\", semantic=:exception>, color=:fail_fast>]}
+  # end
+
+  describe "#merge" do
+    # it do # FIXME.
+    #   require "simpletest"
+    #   Simpletest.test "#merge" do
+    #     poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
+    #     let(:poles, poles)
+    #     # let(:poles) { Trailblazer::Activity::Magnetic::DSL::PlusPoles.new }
+
+    #     test "writes poles on brand-new instance" do |poles:|
+    #       new_poles = poles.merge(
+    #         Activity::Magnetic.Output(Right, :success) => :success,
+    #         Activity::Magnetic.Output(Left, :failure)  => :failure
+    #       )
+
+    #       new_poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:success>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]}
+    #     end
+
+
+    #   end
+    # end
+
+    it "writes poles on brand-new instance" do
+      new_poles = poles.merge(
+        Activity::Magnetic.Output(Right, :success) => :success,
+        Activity::Magnetic.Output(Left, :failure)  => :failure
+      )
+
+      new_poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:success>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]}
+    end
+
+    it "same-named semantic overwrites" do
+      new_poles = poles.merge(
+        Activity::Magnetic.Output(Right, :success) => :success,
+        Activity::Magnetic.Output(Left, :failure)  => :failure
+      )
+
+      overwritten = new_poles.merge( Activity::Magnetic.Output("Right", :success) => :failure )
+      overwritten.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=\"Right\", semantic=:success>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Magnetic::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>]}
+    end
   end
 
   describe "#reverse_merge" do
     it do
-      poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
-
       # this could be auto-compiled by Nested:
       new_poles = poles.merge( Activity::Magnetic.Output("My.Right", :success) => :success, Activity::Magnetic.Output("My.Left", :failure) => :failure )
       # don't merge :success colored plus pole, because it's already there.
@@ -37,8 +90,6 @@ class PlusPolesTest < Minitest::Spec
 
   it "bug" do
     skip "how to suppress doubles?"
-    poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
-
     new_poles = poles.merge( Activity::Magnetic.Output(Right, :success) => :success, Activity::Magnetic.Output(Left, :failure) => :failure )
     new_poles = new_poles.merge( Activity::Magnetic.Output("Signal", :pass_fast) => :success )
 
@@ -47,8 +98,6 @@ class PlusPolesTest < Minitest::Spec
 
   # overwrite existing
   it do
-    poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
-
     new_poles = poles.merge( Activity::Magnetic.Output(Right, :success) => :success, Activity::Magnetic.Output(Left, :failure) => :failure )
 
     # reconnect

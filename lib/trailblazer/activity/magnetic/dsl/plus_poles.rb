@@ -16,6 +16,7 @@ module Trailblazer
           @plus_poles = plus_poles.freeze
         end
 
+        #   merge( Activity::Magnetic.Output(Right, :success) => :success
         def merge(output_to_color)
           overrides = ::Hash[ output_to_color.collect { |output, color| [ output.semantic, [output, color] ] } ]
           PlusPoles.new(@plus_poles.merge(overrides))
