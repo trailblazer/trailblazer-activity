@@ -1,8 +1,8 @@
 require "test_helper"
 
 class RailwayTest < Minitest::Spec
-  Left = Trailblazer::Circuit::Left
-  Right = Trailblazer::Circuit::Right
+  Left = Trailblazer::Activity::Left
+  Right = Trailblazer::Activity::Right
 
   class A; end
   class B; end
@@ -52,22 +52,22 @@ class RailwayTest < Minitest::Spec
     process, _ = Builder.finalize( adds )
 Cct(process).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => RailwayTest::J
+ {Trailblazer::Activity::Right} => RailwayTest::J
 RailwayTest::J
- {Trailblazer::Circuit::Right} => RailwayTest::K
- {Trailblazer::Circuit::Left} => RailwayTest::B
+ {Trailblazer::Activity::Right} => RailwayTest::K
+ {Trailblazer::Activity::Left} => RailwayTest::B
 RailwayTest::K
- {Trailblazer::Circuit::Left} => RailwayTest::B
- {Trailblazer::Circuit::Right} => RailwayTest::C
+ {Trailblazer::Activity::Left} => RailwayTest::B
+ {Trailblazer::Activity::Right} => RailwayTest::C
 RailwayTest::B
- {Trailblazer::Circuit::Right} => RailwayTest::D
- {Trailblazer::Circuit::Left} => RailwayTest::D
+ {Trailblazer::Activity::Right} => RailwayTest::D
+ {Trailblazer::Activity::Left} => RailwayTest::D
 RailwayTest::C
- {Trailblazer::Circuit::Right} => #<End:success/:success>
- {Trailblazer::Circuit::Left} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Left} => #<End:success/:success>
 RailwayTest::D
- {Trailblazer::Circuit::Right} => #<End:failure/:failure>
- {Trailblazer::Circuit::Left} => #<End:failure/:failure>
+ {Trailblazer::Activity::Right} => #<End:failure/:failure>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
 #<End:success/:success>
 
 #<End:failure/:failure>
@@ -86,10 +86,10 @@ RailwayTest::D
     puts Cct(seq)
     Cct( seq ).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => :a
+ {Trailblazer::Activity::Right} => :a
 :a
- {Trailblazer::Circuit::Right} => RailwayTest::MySuccess
- {Trailblazer::Circuit::Left} => RailwayTest::MyFail
+ {Trailblazer::Activity::Right} => RailwayTest::MySuccess
+ {Trailblazer::Activity::Left} => RailwayTest::MyFail
 RailwayTest::MySuccess
 
 RailwayTest::MyFail

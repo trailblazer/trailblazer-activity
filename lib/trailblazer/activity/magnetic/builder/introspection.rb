@@ -58,7 +58,7 @@ module Trailblazer
     end
 
     def self.Task(task)
-      return task.inspect unless task.kind_of?(Trailblazer::Circuit::End)
+      return task.inspect unless task.kind_of?(Trailblazer::Activity::End)
 
       class_name = strip(task.class)
       name     = task.instance_variable_get(:@name)

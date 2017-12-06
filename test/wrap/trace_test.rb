@@ -1,10 +1,10 @@
 require "test_helper"
 
 class TraceTest < Minitest::Spec
-  A = ->(*args) { [ Circuit::Right, *args ] }
-  B = ->(*args) { [ Circuit::Right, *args ] }
-  C = ->(*args) { [ Circuit::Right, *args ] }
-  D = ->(*args) { [ Circuit::Right, *args ] }
+  A = ->(*args) { [ Activity::Right, *args ] }
+  B = ->(*args) { [ Activity::Right, *args ] }
+  C = ->(*args) { [ Activity::Right, *args ] }
+  D = ->(*args) { [ Activity::Right, *args ] }
 
   let(:activity) do
     nested = bc
@@ -37,14 +37,14 @@ class TraceTest < Minitest::Spec
 
     puts output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
-    output.must_equal %{|-- #<Trailblazer::Circuit::Start:>
+    output.must_equal %{|-- #<Trailblazer::Activity::Start:>
 |-- A
 |-- <Nested>
-|   |-- #<Trailblazer::Circuit::Start:>
+|   |-- #<Trailblazer::Activity::Start:>
 |   |-- B
 |   |-- C
-|   `-- #<Trailblazer::Circuit::End:>
+|   `-- #<Trailblazer::Activity::End:>
 |-- D
-`-- #<Trailblazer::Circuit::End:>}
+`-- #<Trailblazer::Activity::End:>}
   end
 end

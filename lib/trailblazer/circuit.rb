@@ -73,33 +73,5 @@ module Trailblazer
 
     class IllegalOutputSignalError < RuntimeError
     end
-
-    # End event is just another callable task.
-    # Any instance of subclass of End will halt the circuit's execution when hit.
-    class End
-      def initialize(name, options={})
-        @name    = name
-        @options = options
-      end
-
-      def call(*args)
-        [ self, *args ]
-      end
-    end
-
-    class Start < End
-      def call(*args)
-        [ Right, *args ]
-      end
-    end
-
-    # Builder for Circuit::End when defining the Activity's circuit.
-    def self.End(name, options={})
-      End.new(name, options)
-    end
-
-    class Signal;         end
-		class Right < Signal; end
-    class Left  < Signal; end
   end
 end

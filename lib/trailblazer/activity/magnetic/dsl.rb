@@ -41,7 +41,7 @@ module Trailblazer
         def process_tuple(id, output, task, initial_plus_poles, &block)
           output = output_for(output, initial_plus_poles) if output.kind_of?(DSL::Output::Semantic)
 
-          if task.kind_of?(Circuit::End)
+          if task.kind_of?(Activity::End)
             new_edge = "#{id}-#{output.signal}"
 
             [

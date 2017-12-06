@@ -1,10 +1,10 @@
 require "test_helper"
 
 class IntrospectionTest < Minitest::Spec
-  A = ->(*args) { [ Circuit::Right, *args ] }
-  B = ->(*args) { [ Circuit::Right, *args ] }
-  C = ->(*args) { [ Circuit::Right, *args ] }
-  D = ->(*args) { [ Circuit::Right, *args ] }
+  A = ->(*args) { [ Activity::Right, *args ] }
+  B = ->(*args) { [ Activity::Right, *args ] }
+  C = ->(*args) { [ Activity::Right, *args ] }
+  D = ->(*args) { [ Activity::Right, *args ] }
 
   let(:activity) do
     nested = bc

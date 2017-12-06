@@ -32,8 +32,8 @@ module Trailblazer
 
         def self.DefaultPlusPoles
           DSL::PlusPoles.new.merge(
-            Activity.Output(Circuit::Right, :success) => nil,
-            Activity.Output(Circuit::Left,  :failure) => nil,
+            Activity.Output(Activity::Right, :success) => nil,
+            Activity.Output(Activity::Left,  :failure) => nil,
           ).freeze
         end
 

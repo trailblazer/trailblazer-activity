@@ -52,10 +52,10 @@ module Trailblazer
 
         def color_map
           {
-            Trailblazer::Circuit::Start => :blue,
-            Trailblazer::Circuit::End   => :pink,
-            Trailblazer::Circuit::Right => :green,
-            Trailblazer::Circuit::Left  => :red
+            Trailblazer::Activity::Start => :blue,
+            Trailblazer::Activity::End   => :pink,
+            Trailblazer::Activity::Right => :green,
+            Trailblazer::Activity::Left  => :red
           }
         end
 

@@ -123,8 +123,8 @@ module Trailblazer
         end
 
         # Direction signals.
-        FailFast = Class.new(Circuit::Signal)
-        PassFast = Class.new(Circuit::Signal)
+        FailFast = Class.new(Activity::Signal)
+        PassFast = Class.new(Activity::Signal)
 
         def step(task, options={}, &block)
           insert_element!( FastTrack, FastTrack.StepPolarizations(@builder_options), task, options, &block )

@@ -6,21 +6,21 @@ class WrapTest < Minitest::Spec
   SpecialDirection = Class.new
   Wrap             = Activity::Wrap
 
-  Model     = ->((options, *args), **circuit_options) { options = options.merge("model" => String); [ Circuit::Right, [options, *args], **circuit_options] }
+  Model     = ->((options, *args), **circuit_options) { options = options.merge("model" => String); [ Activity::Right, [options, *args], **circuit_options] }
   Uuid      = ->((options, *args), **circuit_options) { options = options.merge("uuid" => 999);     [ SpecialDirection, [options, *args], **circuit_options] }
-  Save      = ->((options, *args), **circuit_options) { options = options.merge("saved" => true);   [ Circuit::Right, [options, *args], **circuit_options] }
-  Upload    = ->((options, *args), **circuit_options) { options = options.merge("bits" => 64);      [ Circuit::Right, [options, *args], **circuit_options] }
-  Cleanup   = ->((options, *args), **circuit_options) { options = options.merge("ok" => true);      [ Circuit::Right, [options, *args], **circuit_options] }
+  Save      = ->((options, *args), **circuit_options) { options = options.merge("saved" => true);   [ Activity::Right, [options, *args], **circuit_options] }
+  Upload    = ->((options, *args), **circuit_options) { options = options.merge("bits" => 64);      [ Activity::Right, [options, *args], **circuit_options] }
+  Cleanup   = ->((options, *args), **circuit_options) { options = options.merge("ok" => true);      [ Activity::Right, [options, *args], **circuit_options] }
 
-  MyInject  = ->((options)) { [ Circuit::Right, options.merge( current_user: Module ) ] }
+  MyInject  = ->((options)) { [ Activity::Right, options.merge( current_user: Module ) ] }
 
   #- tracing
 
   describe "nested trailing" do
     let (:more_nested) do
       Trailblazer::Activity.build do #|start, _end|
-        task Upload#  => { Circuit::Right => Upload },
-          # Upload => { Circuit::Right => _end }
+        task Upload#  => { Activity::Right => Upload },
+          # Upload => { Activity::Right => _end }
         # }
       end
     end
@@ -33,10 +33,10 @@ class WrapTest < Minitest::Spec
         task _more_nested, _more_nested.outputs[:success] => :success
         task Cleanup
         # {
-        #   start => { Circuit::Right    => Save },
-        #   Save        => { Circuit::Right  => more_nested },
+        #   start => { Activity::Right    => Save },
+        #   Save        => { Activity::Right  => more_nested },
         #   more_nested => { more_nested.outputs[:success] => Cleanup },
-        #   Cleanup     => { Circuit::Right => _end }
+        #   Cleanup     => { Activity::Right => _end }
         # }
       end
     end
@@ -49,8 +49,8 @@ class WrapTest < Minitest::Spec
         task _nested, _nested.outputs[:success] => :success, id: "A"
         task Uuid, Output(SpecialDirection, :success) => :success
         # {
-        #   start     => { Circuit::Right => Model },
-        #   Model     => { Circuit::Right => nested  },
+        #   start     => { Activity::Right => Model },
+        #   Model     => { Activity::Right => nested  },
         #   nested    => { nested.outputs[:success] => Uuid },
         #   Uuid      => { SpecialDirection => _end }
         # }
@@ -100,7 +100,7 @@ class WrapTest < Minitest::Spec
           _options[:upload] ||= []
           _options[:upload]<<1
 
-          [ Circuit::Right, [ cdfg, original_args], circuit_options ]
+          [ Activity::Right, [ cdfg, original_args], circuit_options ]
         end
 
         upload_wrap  = Activity::Magnetic::Builder::Path.plan do
@@ -131,9 +131,9 @@ class WrapTest < Minitest::Spec
         tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
 
         # all three tasks should be executed.
-        tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
+        tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start:>
 |-- #<Proc:.rb:12 (lambda)>
-`-- #<Trailblazer::Circuit::End:>}
+`-- #<Trailblazer::Activity::End:>}
       end
     end
 
@@ -167,19 +167,19 @@ class WrapTest < Minitest::Spec
 
       puts tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
 
-      tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Circuit::Start:>
+      tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start:>
 |-- outsideg.Model
 |-- #<Class:>
-|   |-- #<Trailblazer::Circuit::Start:>
+|   |-- #<Trailblazer::Activity::Start:>
 |   |-- #<Proc:.rb:11 (lambda)>
 |   |-- #<Class:>
-|   |   |-- #<Trailblazer::Circuit::Start:>
+|   |   |-- #<Trailblazer::Activity::Start:>
 |   |   |-- #<Proc:.rb:12 (lambda)>
-|   |   `-- #<Trailblazer::Circuit::End:>
+|   |   `-- #<Trailblazer::Activity::End:>
 |   |-- #<Proc:.rb:13 (lambda)>
-|   `-- #<Trailblazer::Circuit::End:>
+|   `-- #<Trailblazer::Activity::End:>
 |-- outsideg.Uuid
-`-- #<Trailblazer::Circuit::End:>}
+`-- #<Trailblazer::Activity::End:>}
     end
   end
 end

@@ -8,7 +8,7 @@ class ActivityTest < Minitest::Spec
       [ options[:a_return], options, flow_options ]
     end
   end
-  class B < Circuit::End
+  class B < Activity::End
     def call((options, flow_options), *)
       options[:B] = 1
       super
@@ -44,26 +44,26 @@ class ActivityTest < Minitest::Spec
     def self.call((options, flow_options), *)
       options[:J] = 1
 
-      [ Trailblazer::Circuit::Right, options, flow_options ]
+      [ Trailblazer::Activity::Right, options, flow_options ]
     end
   end
   class K
     def self.call((options, flow_options), *)
       options[:K] = 1
 
-      [ Trailblazer::Circuit::Right, options, flow_options ]
+      [ Trailblazer::Activity::Right, options, flow_options ]
     end
   end
   class L
     def self.call((options, flow_options), *)
       options[:L] = 1
 
-      [ Trailblazer::Circuit::Right, options, flow_options ]
+      [ Trailblazer::Activity::Right, options, flow_options ]
     end
   end
 
-  Left = Trailblazer::Circuit::Left
-  Right = Trailblazer::Circuit::Right
+  Left = Trailblazer::Activity::Left
+  Right = Trailblazer::Activity::Right
 
   it "empty Activity" do
     activity = Activity.build do
@@ -72,11 +72,11 @@ class ActivityTest < Minitest::Spec
     # puts Cct(activity.instance_variable_get(:@process))
     Cct(activity.instance_variable_get(:@process)).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 }
 
-    Outputs(activity.outputs).must_equal %{success=> (#<Trailblazer::Circuit::End:>, success)}
+    Outputs(activity.outputs).must_equal %{success=> (#<Trailblazer::Activity::End:>, success)}
 
     options = { id: 1 }
 
@@ -107,30 +107,30 @@ class ActivityTest < Minitest::Spec
 
   it do
     Outputs(activity.outputs).must_equal %{resume_1=> (#<ActivityTest::B:>, resume_1)
-success=> (#<Trailblazer::Circuit::End:>, success)
-invalid_result=> (#<Trailblazer::Circuit::End:>, invalid_result)}
+success=> (#<Trailblazer::Activity::End:>, success)
+invalid_result=> (#<Trailblazer::Activity::End:>, invalid_result)}
 
     Cct(activity.instance_variable_get(:@process)).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => ActivityTest::A
+ {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
- {Trailblazer::Circuit::Left} => #<ActivityTest::B:resume_for_correct/:resume_1>
- {Trailblazer::Circuit::Right} => ActivityTest::G
+ {Trailblazer::Activity::Left} => #<ActivityTest::B:resume_for_correct/:resume_1>
+ {Trailblazer::Activity::Right} => ActivityTest::G
 #<ActivityTest::B:resume_for_correct/:resume_1>
 
 ActivityTest::C
- {Trailblazer::Circuit::Right} => ActivityTest::A
+ {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::G
- {Trailblazer::Circuit::Right} => ActivityTest::I
+ {Trailblazer::Activity::Right} => ActivityTest::I
 ActivityTest::I
- {Trailblazer::Circuit::Left} => ActivityTest::J
- {Trailblazer::Circuit::Right} => ActivityTest::L
+ {Trailblazer::Activity::Left} => ActivityTest::J
+ {Trailblazer::Activity::Right} => ActivityTest::L
 ActivityTest::J
- {Trailblazer::Circuit::Right} => ActivityTest::K
+ {Trailblazer::Activity::Right} => ActivityTest::K
 ActivityTest::K
- {Trailblazer::Circuit::Right} => #<End:track_0./:invalid_result>
+ {Trailblazer::Activity::Right} => #<End:track_0./:invalid_result>
 ActivityTest::L
- {Trailblazer::Circuit::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 
 #<End:track_0./:success>
@@ -142,36 +142,36 @@ ActivityTest::L
     Ends(activity.instance_variable_get(:@process)).must_equal %{[#<ActivityTest::B:resume_for_correct/:resume_1>,#<End:success/:success>,#<End:track_0./:invalid_result>]}
 
     # A -> B -> End.suspend
-    options, flow_options, circuit_options = {id: 1, a_return: Circuit::Left, b_return: Circuit::Right }, {}, {}
+    options, flow_options, circuit_options = {id: 1, a_return: Activity::Left, b_return: Activity::Right }, {}, {}
     # ::call
     signal, (options, _) = activity.( [options, flow_options], circuit_options )
 
     signal.must_equal activity.outputs[:resume_1].signal
-    options.inspect.must_equal %{{:id=>1, :a_return=>Trailblazer::Circuit::Left, :b_return=>Trailblazer::Circuit::Right, :A=>1, :B=>1}}
+    options.inspect.must_equal %{{:id=>1, :a_return=>Trailblazer::Activity::Left, :b_return=>Trailblazer::Activity::Right, :A=>1, :B=>1}}
 
     #---
     #- start from C, stop in B
-    options = { c_return: Circuit::Right, a_return: Circuit::Left }
+    options = { c_return: Activity::Right, a_return: Activity::Left }
     signal, (options, _) = activity.( [options, flow_options], task: C )
 
     signal.must_equal activity.outputs[:resume_1].signal
-    options.inspect.must_equal %{{:c_return=>Trailblazer::Circuit::Right, :a_return=>Trailblazer::Circuit::Left, :C=>1, :A=>1, :B=>1}}
+    options.inspect.must_equal %{{:c_return=>Trailblazer::Activity::Right, :a_return=>Trailblazer::Activity::Left, :C=>1, :A=>1, :B=>1}}
 
     #---
     #- start from C, via G>I>L
-    options = { c_return: Circuit::Right, a_return: Circuit::Right, g_return: Circuit::Right, i_return: Circuit::Right }
+    options = { c_return: Activity::Right, a_return: Activity::Right, g_return: Activity::Right, i_return: Activity::Right }
     signal, (options, _) = activity.( [options, flow_options], task: C )
 
     signal.must_equal activity.outputs[:success].signal
-    options.inspect.must_equal %{{:c_return=>Trailblazer::Circuit::Right, :a_return=>Trailblazer::Circuit::Right, :g_return=>Trailblazer::Circuit::Right, :i_return=>Trailblazer::Circuit::Right, :C=>1, :A=>1, :G=>1, :I=>1, :L=>1}}
+    options.inspect.must_equal %{{:c_return=>Trailblazer::Activity::Right, :a_return=>Trailblazer::Activity::Right, :g_return=>Trailblazer::Activity::Right, :i_return=>Trailblazer::Activity::Right, :C=>1, :A=>1, :G=>1, :I=>1, :L=>1}}
 
     #---
     #- start from C, via G>I>J>K
-    options = { c_return: Circuit::Right, a_return: Circuit::Right, g_return: Circuit::Right, i_return: Circuit::Left }
+    options = { c_return: Activity::Right, a_return: Activity::Right, g_return: Activity::Right, i_return: Activity::Left }
     signal, (options, _) = activity.( [options, flow_options], task: C )
 
     signal.must_equal activity.outputs[:invalid_result].signal
-    options.inspect.must_equal %{{:c_return=>Trailblazer::Circuit::Right, :a_return=>Trailblazer::Circuit::Right, :g_return=>Trailblazer::Circuit::Right, :i_return=>Trailblazer::Circuit::Left, :C=>1, :A=>1, :G=>1, :I=>1, :J=>1, :K=>1}}
+    options.inspect.must_equal %{{:c_return=>Trailblazer::Activity::Right, :a_return=>Trailblazer::Activity::Right, :g_return=>Trailblazer::Activity::Right, :i_return=>Trailblazer::Activity::Left, :C=>1, :A=>1, :G=>1, :I=>1, :J=>1, :K=>1}}
 
     # activity.draft #=> mergeable, inheritance.
   end

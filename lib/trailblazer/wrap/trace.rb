@@ -10,7 +10,7 @@ class Trailblazer::Activity
 
         original_flow_options[:stack] << Trailblazer::Activity::Trace::Entity.new( wrap_config[:task], :args, nil, {}, original_circuit_options[:introspection] )
 
-        [ Trailblazer::Circuit::Right, [wrap_config, original_args], **circuit_options ]
+        [ Trailblazer::Activity::Right, [wrap_config, original_args], **circuit_options ]
       end
 
       def self.capture_return((wrap_config, original_args), **circuit_options)
@@ -21,7 +21,7 @@ class Trailblazer::Activity
         original_flow_options[:stack].unindent!
 
 
-        [ Trailblazer::Circuit::Right, [wrap_config, original_args], **circuit_options ]
+        [ Trailblazer::Activity::Right, [wrap_config, original_args], **circuit_options ]
       end
     end
   end

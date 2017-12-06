@@ -29,7 +29,7 @@ module Trailblazer
 
         def self.DefaultPlusPoles
           DSL::PlusPoles.new.merge(
-            Activity.Output( Circuit::Right, :success ) => nil
+            Activity.Output( Activity::Right, :success ) => nil
           ).freeze
         end
 
@@ -39,7 +39,7 @@ module Trailblazer
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
           start_adds = adds(
-            "Start.default", Circuit::Start.new(:default),
+            "Start.default", Activity::Start.new(:default),
 
             default_plus_poles,
             TaskPolarizations(builder_options),

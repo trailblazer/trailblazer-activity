@@ -131,7 +131,7 @@ module Trailblazer
 
       def self.initial_plus_poles
         Magnetic::DSL::PlusPoles.new.merge(
-          Activity.Output(Circuit::Right, :success) => nil
+          Activity.Output(Activity::Right, :success) => nil
         ).freeze
       end
     end

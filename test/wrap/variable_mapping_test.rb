@@ -8,7 +8,7 @@ class VariableMappingTest < Minitest::Spec
     options["a"]        = options["a"] * 2 # rename to model.a
     options["model.nonsense"] = true       # filter me out
 
-    [Circuit::Right, [options, flow]]
+    [Activity::Right, [options, flow]]
   end
 
   # second task
@@ -16,7 +16,7 @@ class VariableMappingTest < Minitest::Spec
     options["a"]             = options["a"] + options["model.a"] # rename to uuid.a
     options["uuid.nonsense"] = false                             # filter me out
 
-    [Circuit::Right, [options, flow]]
+    [Activity::Right, [options, flow]]
   end
 
   let (:activity) do

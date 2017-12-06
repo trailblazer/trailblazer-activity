@@ -1,8 +1,8 @@
 require "test_helper"
 
 class ActivityBuildTest < Minitest::Spec
-  Left = Trailblazer::Circuit::Left
-  Right = Trailblazer::Circuit::Right
+  Left = Trailblazer::Activity::Left
+  Right = Trailblazer::Activity::Right
 
 
   class A; end
@@ -26,15 +26,15 @@ class ActivityBuildTest < Minitest::Spec
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
  (success)/Right ==> :track_9
- (failure)/Left ==> "extract-Trailblazer::Circuit::Left"
+ (failure)/Left ==> "extract-Trailblazer::Activity::Left"
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
- (failure)/Left ==> "validate-Trailblazer::Circuit::Left"
+ (failure)/Left ==> "validate-Trailblazer::Activity::Left"
 [:track_9] ==> #<End:track_9/:success>
  []
-["extract-Trailblazer::Circuit::Left"] ==> #<End:End.extract.key_not_found/:key_not_found>
+["extract-Trailblazer::Activity::Left"] ==> #<End:End.extract.key_not_found/:key_not_found>
  []
-["validate-Trailblazer::Circuit::Left"] ==> #<End:End.invalid/:invalid>
+["validate-Trailblazer::Activity::Left"] ==> #<End:End.invalid/:invalid>
  []
 }
   end
@@ -106,8 +106,8 @@ class ActivityBuildTest < Minitest::Spec
         Output(Left, :trigger) => End("End.trigger", :triggered),
         # this comes from the Operation DSL since it knows {Activity}J
         plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
-          Activity.Output(Circuit::Left,  :trigger) => nil,
-          Activity.Output(Circuit::Right, :success) => nil,
+          Activity.Output(Activity::Left,  :trigger) => nil,
+          Activity.Output(Activity::Right, :success) => nil,
         ).freeze
       task K, id: "normal"
     end
@@ -116,13 +116,13 @@ class ActivityBuildTest < Minitest::Spec
 [] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
- (trigger)/Left ==> "confused-Trailblazer::Circuit::Left"
+ (trigger)/Left ==> "confused-Trailblazer::Activity::Left"
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
 [:track_9] ==> #<End:track_9/:success>
  []
-["confused-Trailblazer::Circuit::Left"] ==> #<End:End.trigger/:triggered>
+["confused-Trailblazer::Activity::Left"] ==> #<End:End.trigger/:triggered>
  []
 }
   end
@@ -135,8 +135,8 @@ class ActivityBuildTest < Minitest::Spec
         Output(:trigger) => End("End.trigger", :triggered),
         # this comes from the Operation DSL since it knows {Activity}J
         plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
-          Activity.Output(Circuit::Left,  :trigger) => nil,
-          Activity.Output(Circuit::Right, :success) => nil,
+          Activity.Output(Activity::Left,  :trigger) => nil,
+          Activity.Output(Activity::Right, :success) => nil,
         ).freeze
       task K, id: "normal"
     end
@@ -145,13 +145,13 @@ class ActivityBuildTest < Minitest::Spec
 [] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
- (trigger)/Left ==> "confused-Trailblazer::Circuit::Left"
+ (trigger)/Left ==> "confused-Trailblazer::Activity::Left"
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
 [:track_9] ==> #<End:track_9/:success>
  []
-["confused-Trailblazer::Circuit::Left"] ==> #<End:End.trigger/:triggered>
+["confused-Trailblazer::Activity::Left"] ==> #<End:End.trigger/:triggered>
  []
 }
   end
@@ -179,10 +179,10 @@ class ActivityBuildTest < Minitest::Spec
 [] ==> #<Start:default/nil>
  (success)/Right ==> :track_9
 [:track_9] ==> ActivityBuildTest::J
- (success)/Right ==> "Trailblazer::Circuit::Right-End.track_9"
+ (success)/Right ==> "Trailblazer::Activity::Right-End.track_9"
 [:track_9] ==> ActivityBuildTest::K
  (success)/Right ==> :track_9
-[:track_9, "Trailblazer::Circuit::Right-End.track_9"] ==> #<End:track_9/:success>
+[:track_9, "Trailblazer::Activity::Right-End.track_9"] ==> #<End:track_9/:success>
  []
 }
   end
@@ -191,8 +191,8 @@ class ActivityBuildTest < Minitest::Spec
   # circulars, etc.
   it do
     binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity.Output(Circuit::Right, :success) => nil,
-      Activity.Output(Circuit::Left, :failure) => nil )
+      Activity.Output(Activity::Right, :success) => nil,
+      Activity.Output(Activity::Left, :failure) => nil )
 
     tripletts, adds = Activity::Process.draft do
       # circular
@@ -216,23 +216,23 @@ class ActivityBuildTest < Minitest::Spec
 
     Cct(process).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => ActivityBuildTest::A
+ {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
- {Trailblazer::Circuit::Left} => ActivityBuildTest::B
- {Trailblazer::Circuit::Right} => ActivityBuildTest::G
+ {Trailblazer::Activity::Left} => ActivityBuildTest::B
+ {Trailblazer::Activity::Right} => ActivityBuildTest::G
 ActivityBuildTest::B
- {Trailblazer::Circuit::Right} => ActivityBuildTest::A
+ {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::G
- {Trailblazer::Circuit::Right} => ActivityBuildTest::I
+ {Trailblazer::Activity::Right} => ActivityBuildTest::I
 ActivityBuildTest::I
- {Trailblazer::Circuit::Left} => ActivityBuildTest::J
- {Trailblazer::Circuit::Right} => ActivityBuildTest::L
+ {Trailblazer::Activity::Left} => ActivityBuildTest::J
+ {Trailblazer::Activity::Right} => ActivityBuildTest::L
 ActivityBuildTest::J
- {Trailblazer::Circuit::Right} => ActivityBuildTest::K
+ {Trailblazer::Activity::Right} => ActivityBuildTest::K
 ActivityBuildTest::K
- {Trailblazer::Circuit::Right} => #<End:track_0./:invalid_result>
+ {Trailblazer::Activity::Right} => #<End:track_0./:invalid_result>
 ActivityBuildTest::L
- {Trailblazer::Circuit::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 
 #<End:track_0./:success>
@@ -245,8 +245,8 @@ ActivityBuildTest::L
 
   it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do # FIXME: what were we (or I, haha) testing in here?
     binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity.Output(Circuit::Right, :success) => nil,
-      Activity.Output(Circuit::Left, :failure) => nil )
+      Activity.Output(Activity::Right, :success) => nil,
+      Activity.Output(Activity::Left, :failure) => nil )
 
     seq, adds = Activity::Process.draft do
       task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", Output(:success) => "receive_process_id"
@@ -268,24 +268,24 @@ ActivityBuildTest::L
 
     Cct(process).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => ActivityBuildTest::A
+ {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
- {Trailblazer::Circuit::Left} => ActivityBuildTest::B
- {Trailblazer::Circuit::Right} => ActivityBuildTest::G
+ {Trailblazer::Activity::Left} => ActivityBuildTest::B
+ {Trailblazer::Activity::Right} => ActivityBuildTest::G
 ActivityBuildTest::B
- {Trailblazer::Circuit::Right} => ActivityBuildTest::B
- {Trailblazer::Circuit::Left} => ActivityBuildTest::A
+ {Trailblazer::Activity::Right} => ActivityBuildTest::B
+ {Trailblazer::Activity::Left} => ActivityBuildTest::A
 ActivityBuildTest::G
- {Trailblazer::Circuit::Right} => ActivityBuildTest::G
+ {Trailblazer::Activity::Right} => ActivityBuildTest::G
 ActivityBuildTest::I
- {Trailblazer::Circuit::Right} => ActivityBuildTest::I
- {Trailblazer::Circuit::Left} => ActivityBuildTest::J
+ {Trailblazer::Activity::Right} => ActivityBuildTest::I
+ {Trailblazer::Activity::Left} => ActivityBuildTest::J
 ActivityBuildTest::J
- {Trailblazer::Circuit::Right} => ActivityBuildTest::K
+ {Trailblazer::Activity::Right} => ActivityBuildTest::K
 ActivityBuildTest::K
- {Trailblazer::Circuit::Right} => #<End:End.invalid_result/:invalid_result>
+ {Trailblazer::Activity::Right} => #<End:End.invalid_result/:invalid_result>
 ActivityBuildTest::L
- {Trailblazer::Circuit::Right} => ActivityBuildTest::L
+ {Trailblazer::Activity::Right} => ActivityBuildTest::L
 #<End:success/:success>
 
 #<End:track_0./:invalid_resulto>

@@ -27,13 +27,13 @@ Minitest::Spec.class_eval do
 
   module Seq
     def self.PlusPole(plus_pole)
-      signal = plus_pole.signal.to_s.sub("Trailblazer::Circuit::", "")
+      signal = plus_pole.signal.to_s.sub("Trailblazer::Activity::", "")
       semantic = plus_pole.send(:output).semantic
       " (#{semantic})/#{signal} ==> #{plus_pole.color.inspect}"
     end
 
     def self.Task(task)
-      return task.inspect unless task.kind_of?(Trailblazer::Circuit::End)
+      return task.inspect unless task.kind_of?(Trailblazer::Activity::End)
 
       class_name = strip(task.class)
       name     = task.instance_variable_get(:@name)
@@ -42,7 +42,7 @@ Minitest::Spec.class_eval do
     end
 
     def self.strip(string)
-      string.to_s.sub("Trailblazer::Circuit::", "")
+      string.to_s.sub("Trailblazer::Activity::", "")
     end
   end
 

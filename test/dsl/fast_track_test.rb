@@ -1,8 +1,8 @@
 require "test_helper"
 
 class DSLFastTrackTest < Minitest::Spec
-  Left = Trailblazer::Circuit::Left
-  Right = Trailblazer::Circuit::Right
+  Left = Trailblazer::Activity::Left
+  Right = Trailblazer::Activity::Right
 
   class A; end
   class B; end
@@ -19,9 +19,9 @@ class DSLFastTrackTest < Minitest::Spec
 
   let(:initial_plus_poles) do
     Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity.Output(Circuit::Right, :success) => :success,
+      Activity.Output(Activity::Right, :success) => :success,
       # Activity.Output("Signal A", :exception)  => :exception,
-      Activity.Output(Circuit::Left, :failure) => :failure
+      Activity.Output(Activity::Left, :failure) => :failure
     )
   end
 
@@ -137,7 +137,7 @@ class DSLFastTrackTest < Minitest::Spec
 
     Cct(process).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => DSLFastTrackTest::G
+ {Trailblazer::Activity::Right} => DSLFastTrackTest::G
 DSLFastTrackTest::G
  {Another} => #<End:failure/:failure>
  {Signal} => #<End:pass_fast/:pass_fast>
@@ -174,8 +174,8 @@ DSLFastTrackTest::G
 [:success] ==> DSLFastTrackTest::G
  (success)/Right ==> :success
  (failure)/Left ==> :failure
- (fail_fast)/Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast ==> :fail_fast
- (pass_fast)/Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast ==> :pass_fast
+ (fail_fast)/Magnetic::Builder::FastTrack::FailFast ==> :fail_fast
+ (pass_fast)/Magnetic::Builder::FastTrack::PassFast ==> :pass_fast
 }
   end
 
@@ -192,7 +192,7 @@ DSLFastTrackTest::G
  (success)/Signal ==> :success
  (failure)/Another ==> :failure
  (pass_fast)/Pff ==> :pass_fast
- (fail_fast)/Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast ==> :fail_fast
+ (fail_fast)/Magnetic::Builder::FastTrack::FailFast ==> :fail_fast
 }
   end
 
@@ -249,10 +249,10 @@ DSLFastTrackTest::G
 
     Cct( seq ).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => :a
+ {Trailblazer::Activity::Right} => :a
 :a
- {Trailblazer::Circuit::Right} => DSLFastTrackTest::MySuccess
- {Trailblazer::Circuit::Left} => DSLFastTrackTest::MyFail
+ {Trailblazer::Activity::Right} => DSLFastTrackTest::MySuccess
+ {Trailblazer::Activity::Left} => DSLFastTrackTest::MyFail
 DSLFastTrackTest::MySuccess
 
 DSLFastTrackTest::MyFail
@@ -265,9 +265,9 @@ DSLFastTrackTest::MyFailFast
 
   it "allows to provide :plus_poles and customize their connections" do
     initial_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity.Output(Circuit::Right, :success) => :success,
+      Activity.Output(Activity::Right, :success) => :success,
       Activity.Output("Signal A", :exception)  => :exception,
-      Activity.Output(Circuit::Left, :failure) => :failure
+      Activity.Output(Activity::Left, :failure) => :failure
     )
 
 
@@ -285,7 +285,7 @@ DSLFastTrackTest::MyFailFast
 [] ==> #<Start:default/nil>
  (success)/Right ==> :success
 [:success] ==> DSLFastTrackTest::G
- (success)/Right ==> "receive_process_id-Trailblazer::Circuit::Right"
+ (success)/Right ==> "receive_process_id-Trailblazer::Activity::Right"
  (exception)/Signal A ==> "receive_process_id-Signal A"
  (failure)/Left ==> :failure
 [:success] ==> #<End:success/:success>
@@ -296,7 +296,7 @@ DSLFastTrackTest::MyFailFast
  []
 [:fail_fast] ==> #<End:fail_fast/:fail_fast>
  []
-["receive_process_id-Trailblazer::Circuit::Right"] ==> #<End:invalid_result/:invalid_result>
+["receive_process_id-Trailblazer::Activity::Right"] ==> #<End:invalid_result/:invalid_result>
  []
 ["receive_process_id-Signal A"] ==> #<End:signal_a_reached/:signal_a_reached>
  []

@@ -67,12 +67,12 @@ Instead of using an operation, you can manually define activities by using the `
 ```ruby
 activity = Activity.from_hash do |start, _end|
   {
-    start            => { Trailblazer::Circuit::Right => Blog::Write },
-    Blog::Write      => { Trailblazer::Circuit::Right => Blog::SpellCheck },
-    Blog::SpellCheck => { Trailblazer::Circuit::Right => Blog::Publish,
-                          Trailblazer::Circuit::Left => Blog::Correct },
-    Blog::Correct    => { Trailblazer::Circuit::Right => Blog::SpellCheck },
-    Blog::Publish    => { Trailblazer::Circuit::Right => _end }
+    start            => { Trailblazer::Activity::Right => Blog::Write },
+    Blog::Write      => { Trailblazer::Activity::Right => Blog::SpellCheck },
+    Blog::SpellCheck => { Trailblazer::Activity::Right => Blog::Publish,
+                          Trailblazer::Activity::Left => Blog::Correct },
+    Blog::Correct    => { Trailblazer::Activity::Right => Blog::SpellCheck },
+    Blog::Publish    => { Trailblazer::Activity::Right => _end }
   }
 end
 ```
@@ -89,7 +89,7 @@ my_options = {}
 last_signal, options, flow_options, _ = activity.( nil, my_options, {} )
 ```
 
-1. The `start` event is `call`ed and per default returns the generic _signal_`Trailblazer::Circuit::Right`.
+1. The `start` event is `call`ed and per default returns the generic _signal_`Trailblazer::Activity::Right`.
 2. This emitted (or returned) signal is connected to the next task `Blog::Write`, which is now `call`ed.
 3. `Blog::Write` emits another `Right` signal that leads to `Blog::SpellCheck` being `call`ed.
 4. `Blog::SpellCheck` defines two outgoing signals and hence can decide what next task to call by emitting either `Right` if the spell check was ok, or `Left` if the post contains typos.

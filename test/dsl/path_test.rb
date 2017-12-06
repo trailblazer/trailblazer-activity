@@ -1,8 +1,8 @@
 require "test_helper"
 
 class DSLPathTest < Minitest::Spec
-  Left = Trailblazer::Circuit::Left
-  Right = Trailblazer::Circuit::Right
+  Left = Trailblazer::Activity::Left
+  Right = Trailblazer::Activity::Right
 
   class A; end
   class B; end
@@ -67,9 +67,9 @@ class DSLPathTest < Minitest::Spec
 
     Cct( seq ).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => :a
+ {Trailblazer::Activity::Right} => :a
 :a
- {Trailblazer::Circuit::Right} => DSLPathTest::MyEnd
+ {Trailblazer::Activity::Right} => DSLPathTest::MyEnd
 DSLPathTest::MyEnd
 }
   end
@@ -91,9 +91,9 @@ describe "magnetic_to:" do
 
     Cct( Builder.finalize(adds).first ).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 DSLPathTest::D
- {Trailblazer::Circuit::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 }
   end
@@ -111,15 +111,15 @@ end
  (success)/Right ==> :track_9
 [:track_9] ==> DSLPathTest::J
  (success)/Right ==> :track_9
- (failure)/Left ==> "extract-Trailblazer::Circuit::Left"
+ (failure)/Left ==> "extract-Trailblazer::Activity::Left"
 [:track_9] ==> DSLPathTest::K
  (success)/Right ==> :track_9
- (failure)/Left ==> "validate-Trailblazer::Circuit::Left"
+ (failure)/Left ==> "validate-Trailblazer::Activity::Left"
 [:track_9] ==> #<End:track_9/:success>
  []
-["extract-Trailblazer::Circuit::Left"] ==> #<End:End.extract.key_not_found/:key_not_found>
+["extract-Trailblazer::Activity::Left"] ==> #<End:End.extract.key_not_found/:key_not_found>
  []
-["validate-Trailblazer::Circuit::Left"] ==> #<End:End.invalid/:invalid>
+["validate-Trailblazer::Activity::Left"] ==> #<End:End.invalid/:invalid>
  []
 }
 
@@ -143,19 +143,19 @@ end
 
     Cct(process).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => DSLPathTest::J
+ {Trailblazer::Activity::Right} => DSLPathTest::J
 DSLPathTest::J
- {Trailblazer::Circuit::Right} => DSLPathTest::K
- {Trailblazer::Circuit::Left} => #<End:End.extract.key_not_found/:key_not_found>
+ {Trailblazer::Activity::Right} => DSLPathTest::K
+ {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
 DSLPathTest::K
- {Trailblazer::Circuit::Left} => DSLPathTest::A
- {Trailblazer::Circuit::Right} => DSLPathTest::L
+ {Trailblazer::Activity::Left} => DSLPathTest::A
+ {Trailblazer::Activity::Right} => DSLPathTest::L
 DSLPathTest::A
- {Trailblazer::Circuit::Right} => DSLPathTest::B
+ {Trailblazer::Activity::Right} => DSLPathTest::B
 DSLPathTest::B
- {Trailblazer::Circuit::Right} => DSLPathTest::J
+ {Trailblazer::Activity::Right} => DSLPathTest::J
 DSLPathTest::L
- {Trailblazer::Circuit::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 
 #<End:End.extract.key_not_found/:key_not_found>
@@ -177,10 +177,10 @@ DSLPathTest::L
 [:track_9] ==> DSLPathTest::J
  (success)/Right ==> :track_9
 [:track_9] ==> DSLPathTest::K
- (success)/Right ==> "log_invalid_result-Trailblazer::Circuit::Right"
+ (success)/Right ==> "log_invalid_result-Trailblazer::Activity::Right"
 [:track_9] ==> #<End:track_9/:success>
  []
-["log_invalid_result-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result/:invalid_result>
+["log_invalid_result-Trailblazer::Activity::Right"] ==> #<End:End.invalid_result/:invalid_result>
  []
 }
   end
@@ -198,10 +198,10 @@ DSLPathTest::L
 [:track_9] ==> DSLPathTest::J
  (success)/Right ==> :track_9
 [:track_9] ==> DSLPathTest::K
- (success)/Right ==> "log_invalid_result-Trailblazer::Circuit::Right"
+ (success)/Right ==> "log_invalid_result-Trailblazer::Activity::Right"
 [:track_9] ==> #<End:track_9/:success>
  []
-["log_invalid_result-Trailblazer::Circuit::Right"] ==> #<End:End.invalid_result/:invalid_result>
+["log_invalid_result-Trailblazer::Activity::Right"] ==> #<End:End.invalid_result/:invalid_result>
  []
 }
     process, _ = Builder.finalize( adds )
@@ -213,8 +213,8 @@ DSLPathTest::L
   #- nested blocks
   it "nested PATH ends in End.invalid" do
     # binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-    #   Activity.Output(Circuit::Right, :success) => nil,
-    #   Activity.Output(Circuit::Left, :failure) => nil )
+    #   Activity.Output(Activity::Right, :success) => nil,
+    #   Activity.Output(Activity::Left, :failure) => nil )
 
     seq, adds = Builder.draft do
       task A, id: "A"
@@ -251,18 +251,18 @@ Seq(seq).must_equal %{
 
     Cct(process).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => DSLPathTest::A
+ {Trailblazer::Activity::Right} => DSLPathTest::A
 DSLPathTest::A
- {Trailblazer::Circuit::Right} => DSLPathTest::B
+ {Trailblazer::Activity::Right} => DSLPathTest::B
 DSLPathTest::B
- {Trailblazer::Circuit::Left} => DSLPathTest::C
- {Trailblazer::Circuit::Right} => DSLPathTest::D
+ {Trailblazer::Activity::Left} => DSLPathTest::C
+ {Trailblazer::Activity::Right} => DSLPathTest::D
 DSLPathTest::C
- {Trailblazer::Circuit::Right} => DSLPathTest::K
+ {Trailblazer::Activity::Right} => DSLPathTest::K
 DSLPathTest::K
- {Trailblazer::Circuit::Right} => #<End:track_0./:invalid>
+ {Trailblazer::Activity::Right} => #<End:track_0./:invalid>
 DSLPathTest::D
- {Trailblazer::Circuit::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 
 #<End:track_0./:invalid>
@@ -271,8 +271,8 @@ DSLPathTest::D
 
   it "with :normalizer" do
     binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity.Output(Circuit::Right, :success) => nil,
-      Activity.Output(Circuit::Left, :failure) => nil )
+      Activity.Output(Activity::Right, :success) => nil,
+      Activity.Output(Activity::Left, :failure) => nil )
 
     normalizer = ->(task, options, seq_options) { [ task, options.merge(plus_poles: binary_plus_poles), seq_options ] }
 
@@ -296,7 +296,7 @@ DSLPathTest::D
  (failure)/Left ==> "track_0."
 ["track_0."] ==> DSLPathTest::C
  (success)/Right ==> "track_0."
- (failure)/Left ==> "-Trailblazer::Circuit::Left"
+ (failure)/Left ==> "-Trailblazer::Activity::Left"
 ["track_0."] ==> DSLPathTest::K
  (success)/Right ==> "track_0."
  (failure)/Left ==> nil
@@ -307,7 +307,7 @@ DSLPathTest::D
  []
 ["track_0."] ==> #<End:track_0./:invalid>
  []
-["-Trailblazer::Circuit::Left"] ==> #<End:left/:left>
+["-Trailblazer::Activity::Left"] ==> #<End:left/:left>
  []
 }
   end
@@ -325,13 +325,13 @@ DSLPathTest::D
 
       Cct( Builder.finalize(adds).first ).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => DSLPathTest::A
+ {Trailblazer::Activity::Right} => DSLPathTest::A
 DSLPathTest::A
- {Trailblazer::Circuit::Right} => DSLPathTest::B
+ {Trailblazer::Activity::Right} => DSLPathTest::B
 DSLPathTest::B
 
 DSLPathTest::D
- {Trailblazer::Circuit::Right} => DSLPathTest::D
+ {Trailblazer::Activity::Right} => DSLPathTest::D
 #<End:success/:success>
 }
     end
@@ -347,17 +347,17 @@ DSLPathTest::D
 
       Cct( Builder.finalize(adds).first ).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => DSLPathTest::A
+ {Trailblazer::Activity::Right} => DSLPathTest::A
 DSLPathTest::A
- {Trailblazer::Circuit::Right} => DSLPathTest::B
+ {Trailblazer::Activity::Right} => DSLPathTest::B
 DSLPathTest::B
 
 DSLPathTest::D
- {Trailblazer::Circuit::Right} => DSLPathTest::I
+ {Trailblazer::Activity::Right} => DSLPathTest::I
 DSLPathTest::I
 
 DSLPathTest::G
- {Trailblazer::Circuit::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 }
     end
@@ -367,7 +367,7 @@ DSLPathTest::G
   describe "Procedural interface" do
     let(:initial_plus_poles) do
       Activity::Magnetic::DSL::PlusPoles.new.merge(
-        Activity.Output(Circuit::Right, :success) => :success,
+        Activity.Output(Activity::Right, :success) => :success,
       )
     end
 
@@ -375,7 +375,7 @@ DSLPathTest::G
     it do
       incremental = Activity::Magnetic::Builder::Path.new( Activity::Magnetic::Builder::Path.DefaultNormalizer, {track_color: :pink} )
       incremental.task G, id: G, plus_poles: initial_plus_poles, Activity.Output("Exception", :exception) => Activity.End(:exception)
-      incremental.task I, id: I, plus_poles: initial_plus_poles, Activity.Output(Circuit::Left, :failure) => Activity.End(:failure)
+      incremental.task I, id: I, plus_poles: initial_plus_poles, Activity.Output(Activity::Left, :failure) => Activity.End(:failure)
 
       sequence, adds = incremental.draft
 
@@ -387,12 +387,12 @@ DSLPathTest::G
  (exception)/Exception ==> "DSLPathTest::G-Exception"
 [:pink] ==> DSLPathTest::I
  (success)/Right ==> :pink
- (failure)/Left ==> "DSLPathTest::I-Trailblazer::Circuit::Left"
+ (failure)/Left ==> "DSLPathTest::I-Trailblazer::Activity::Left"
 [:pink] ==> #<End:pink/:success>
  []
 ["DSLPathTest::G-Exception"] ==> #<End:exception/:exception>
  []
-["DSLPathTest::I-Trailblazer::Circuit::Left"] ==> #<End:failure/:failure>
+["DSLPathTest::I-Trailblazer::Activity::Left"] ==> #<End:failure/:failure>
  []
 }
 
@@ -404,7 +404,7 @@ DSLPathTest::G
     it do
       incremental = Activity::Magnetic::Builder::Path.new( Activity::Magnetic::Builder::Path.DefaultNormalizer, {plus_poles: initial_plus_poles} )
       incremental.task G, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception)
-      incremental.task I, id: I, Activity.Output(Circuit::Left, :failure) => Activity.End(:failure)
+      incremental.task I, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure)
 
       sequence, adds = incremental.draft
 
@@ -416,12 +416,12 @@ DSLPathTest::G
  (exception)/Exception ==> "DSLPathTest::G-Exception"
 [:success] ==> DSLPathTest::I
  (success)/Right ==> :success
- (failure)/Left ==> "DSLPathTest::I-Trailblazer::Circuit::Left"
+ (failure)/Left ==> "DSLPathTest::I-Trailblazer::Activity::Left"
 [:success] ==> #<End:success/:success>
  []
 ["DSLPathTest::G-Exception"] ==> #<End:exception/:exception>
  []
-["DSLPathTest::I-Trailblazer::Circuit::Left"] ==> #<End:failure/:failure>
+["DSLPathTest::I-Trailblazer::Activity::Left"] ==> #<End:failure/:failure>
  []
 }
       process, _ = Builder.finalize(adds)

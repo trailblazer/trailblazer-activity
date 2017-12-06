@@ -28,7 +28,7 @@ class Trailblazer::Activity
         (original_ctx, original_flow_options), original_circuit_options = original_args
 
         # instead of the original Context, pass on the filtered `input_ctx` in the wrap.
-        return Trailblazer::Circuit::Right, [ wrap_ctx, [[input_ctx, original_flow_options], original_circuit_options] ]
+        return Trailblazer::Activity::Right, [ wrap_ctx, [[input_ctx, original_flow_options], original_circuit_options] ]
       end
 
       private
@@ -67,7 +67,7 @@ class Trailblazer::Activity
         wrap_ctx = wrap_ctx.merge( result_args: [new_ctx, original_flow_options] )
 
         # and then pass on the "new" context.
-        return Trailblazer::Circuit::Right, [ wrap_ctx, original_args ]
+        return Trailblazer::Activity::Right, [ wrap_ctx, original_args ]
       end
 
       private

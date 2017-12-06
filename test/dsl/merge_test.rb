@@ -20,13 +20,13 @@ class MergeTest < Minitest::Spec
 
     Cct(process).must_equal %{
 #<Start:default/nil>
- {Trailblazer::Circuit::Right} => :b
+ {Trailblazer::Activity::Right} => :b
 :b
- {Trailblazer::Circuit::Right} => :a
+ {Trailblazer::Activity::Right} => :a
 :a
- {Trailblazer::Circuit::Right} => :c
+ {Trailblazer::Activity::Right} => :c
 :c
- {Trailblazer::Circuit::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 }
   end

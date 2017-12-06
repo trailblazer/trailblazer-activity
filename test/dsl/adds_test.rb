@@ -1,8 +1,8 @@
 require "test_helper"
 
 class AddsTest < Minitest::Spec
-  Left  = Trailblazer::Circuit::Left
-  Right = Trailblazer::Circuit::Right
+  Left  = Trailblazer::Activity::Left
+  Right = Trailblazer::Activity::Right
 
   class A; end
   class B; end
@@ -17,8 +17,8 @@ class AddsTest < Minitest::Spec
   Builder = Activity::Magnetic::Builder::Path
 
   binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-    Activity.Output(Circuit::Right, :success) => nil,
-    Activity.Output(Circuit::Left, :failure) => nil
+    Activity.Output(Activity::Right, :success) => nil,
+    Activity.Output(Activity::Left, :failure) => nil
   )
 
 
@@ -30,7 +30,7 @@ class AddsTest < Minitest::Spec
     polarizations = Activity::Magnetic::Builder::FastTrack.StepPolarizations(builder_options)
     out = pp Activity::Magnetic::Builder.adds("A", String, binary_plus_poles, polarizations, [], { fast_track: true }, { group: :start })
 
-    out.inspect.must_equal %{[[:add, ["A", [[:green], String, [#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Circuit::Right, semantic=:success>, color=:green>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Circuit::Left, semantic=:failure>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast, semantic=:fail_fast>, color=:fail_fast>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast, semantic=:pass_fast>, color=:pass_fast>]], {:group=>:start}]]]}
+    out.inspect.must_equal %{[[:add, ["A", [[:green], String, [#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Right, semantic=:success>, color=:green>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Left, semantic=:failure>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast, semantic=:fail_fast>, color=:fail_fast>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast, semantic=:pass_fast>, color=:pass_fast>]], {:group=>:start}]]]}
 
 # polarizations = Activity::Magnetic::Builder::Path.TaskPolarizations(builder_options)
 # pp Activity::Magnetic::Builder.adds("Start", String, binary_plus_poles, polarizations, [], { fast_track: true }, { group: :start })
@@ -50,13 +50,13 @@ class AddsTest < Minitest::Spec
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Output
-        signal=Trailblazer::Circuit::Right,
+        signal=Trailblazer::Activity::Right,
         semantic=:success>,
       color=:green>,
      #<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Output
-        signal=Trailblazer::Circuit::Left,
+        signal=Trailblazer::Activity::Left,
         semantic=:failure>,
       color=:failure>]],
    {:group=>:main}]]]
@@ -76,13 +76,13 @@ class AddsTest < Minitest::Spec
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Output
-        signal=Trailblazer::Circuit::Right,
+        signal=Trailblazer::Activity::Right,
         semantic=:success>,
       color=:pass_fast>,
      #<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Output
-        signal=Trailblazer::Circuit::Left,
+        signal=Trailblazer::Activity::Left,
         semantic=:failure>,
       color=:failure>]],
    {:group=>:main}]]]
@@ -90,9 +90,9 @@ class AddsTest < Minitest::Spec
   end
 
   def start
-    return %{#<Trailblazer::Circuit::Start: @name=:default, @options={}>} if RUBY_PLATFORM == "java"
+    return %{#<Trailblazer::Activity::Start: @name=:default, @options={}>} if RUBY_PLATFORM == "java"
 
-    %{#<Trailblazer::Circuit::Start:
+    %{#<Trailblazer::Activity::Start:
      @name=:default,
      @options={}>}
   end
@@ -107,14 +107,14 @@ class AddsTest < Minitest::Spec
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Output
-        signal=Trailblazer::Circuit::Right,
+        signal=Trailblazer::Activity::Right,
         semantic=:success>,
       color=:green>]],
    {:group=>:start}]],
  [:add,
   ["End.green",
    [[:green],
-    #<Trailblazer::Circuit::End:
+    #<Trailblazer::Activity::End:
      @name=:green,
      @options={:semantic=>:success}>,
     []],
@@ -132,14 +132,14 @@ class AddsTest < Minitest::Spec
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Output
-        signal=Trailblazer::Circuit::Right,
+        signal=Trailblazer::Activity::Right,
         semantic=:success>,
       color=:green>]],
    {:group=>:start}]],
  [:add,
   ["End.green",
    [[:green],
-    #<Trailblazer::Circuit::End:
+    #<Trailblazer::Activity::End:
      @name=:green,
      @options={:semantic=>:success}>,
     []],
@@ -147,7 +147,7 @@ class AddsTest < Minitest::Spec
  [:add,
   ["End.failure",
    [[:failure],
-    #<Trailblazer::Circuit::End:
+    #<Trailblazer::Activity::End:
      @name=:failure,
      @options={:semantic=>:failure}>,
     []],
@@ -165,14 +165,14 @@ class AddsTest < Minitest::Spec
     [#<struct Trailblazer::Activity::Magnetic::PlusPole
       output=
        #<struct Trailblazer::Activity::Output
-        signal=Trailblazer::Circuit::Right,
+        signal=Trailblazer::Activity::Right,
         semantic=:success>,
       color=:green>]],
    {:group=>:start}]],
  [:add,
   ["End.green",
    [[:green],
-    #<Trailblazer::Circuit::End:
+    #<Trailblazer::Activity::End:
      @name=:green,
      @options={:semantic=>:success}>,
     []],
@@ -180,7 +180,7 @@ class AddsTest < Minitest::Spec
  [:add,
   ["End.failure",
    [[:failure],
-    #<Trailblazer::Circuit::End:
+    #<Trailblazer::Activity::End:
      @name=:failure,
      @options={:semantic=>:failure}>,
     []],
@@ -188,7 +188,7 @@ class AddsTest < Minitest::Spec
  [:add,
   ["End.pass_fast",
    [[:pass_fast],
-    #<Trailblazer::Circuit::End:
+    #<Trailblazer::Activity::End:
      @name="pass_fast",
      @options={:semantic=>:pass_fast}>,
     []],
@@ -196,7 +196,7 @@ class AddsTest < Minitest::Spec
  [:add,
   ["End.fail_fast",
    [[:fail_fast],
-    #<Trailblazer::Circuit::End:
+    #<Trailblazer::Activity::End:
      @name="fail_fast",
      @options={:semantic=>:fail_fast}>,
     []],

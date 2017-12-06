@@ -42,7 +42,7 @@ module Trailblazer
           tasks_with_incoming_edge = circuit_hash.values.collect { |connections| connections.values }.flatten(1)
 
           ary = circuit_hash.collect do |task, connections|
-            task.kind_of?(Circuit::End) &&
+            task.kind_of?(Activity::End) &&
               connections.empty? &&
               tasks_with_incoming_edge.include?(task) ? task : nil
           end
