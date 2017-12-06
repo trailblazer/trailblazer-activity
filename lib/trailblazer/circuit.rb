@@ -13,10 +13,9 @@ module Trailblazer
   # @see Activity
   # @api semi-private
   class Circuit
-    def initialize(map, stop_events, name)
+    def initialize(map, stop_events)
       @map         = map
       @stop_events = stop_events
-      @name        = name
     end
 
     # @param args [Array] all arguments to be passed to the task's `call`
@@ -46,9 +45,8 @@ module Trailblazer
         return [ last_signal, args ] if @stop_events.include?(task) # DISCUSS: return circuit_options here?
 
         task = next_for(task, last_signal) do |next_task, in_map|
-          task_name = @name[task] || task # TODO: this must be implemented only once, somewhere.
-          raise IllegalInputError.new("#{@name[:id]} #{task_name}") unless in_map
-          raise IllegalOutputSignalError.new("from #{@name[:id]}: `#{task_name}`===>[ #{last_signal.inspect} ]") unless next_task
+          raise IllegalInputError.new("#{@name[:id]} #{task}") unless in_map
+          raise IllegalOutputSignalError.new("from #{@name[:id]}: `#{task}`===>[ #{last_signal.inspect} ]") unless next_task
         end
       end
     end
