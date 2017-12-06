@@ -46,19 +46,7 @@ module Trailblazer
     end
 
     def self.recompile_process!
-      @process, end_events = Magnetic::Builder.finalize( @builder.instance_variable_get(:@adds) )
-      @outputs = recompile_outputs!(end_events)
-    end
-
-    def self.recompile_outputs!(end_events)
-      ary = end_events.collect do |evt|
-        [
-          semantic = evt.instance_variable_get(:@options)[:semantic], # DISCUSS: better API here?
-          Output(evt, semantic)
-        ]
-      end
-
-      ::Hash[ ary ]
+      @process, @outputs = Recompile.( @builder )
     end
 
     def self.call(args, circuit_options={})
@@ -110,6 +98,29 @@ module Trailblazer
 
       def add_introspection!(adds, task, local_options, *)
         @debug[task] = { id: local_options[:id] }.freeze
+      end
+    end
+
+    module Recompile
+      # Recompile the process and outputs from the {Builder} instance.
+      def self.call(builder)
+        process, end_events = Magnetic::Builder.finalize( builder.instance_variable_get(:@adds) )
+        outputs             = recompile_outputs(end_events)
+
+        return process, outputs
+      end
+
+      private
+
+      def self.recompile_outputs(end_events)
+        ary = end_events.collect do |evt|
+          [
+            semantic = evt.instance_variable_get(:@options)[:semantic], # DISCUSS: better API here?
+            Activity::Output(evt, semantic)
+          ]
+        end
+
+        ::Hash[ ary ]
       end
     end
 
