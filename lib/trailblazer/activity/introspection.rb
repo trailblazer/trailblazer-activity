@@ -16,11 +16,11 @@ module Trailblazer
 
 
 # render
-      def self.Cct(process)
-        circuit_hash( process.instance_variable_get(:@circuit).to_fields[0] )
+      def self.Cct(process, **options)
+        circuit_hash( process.instance_variable_get(:@circuit).to_fields[0], **options )
       end
 
-      def self.circuit_hash(circuit_hash)
+      def self.circuit_hash(circuit_hash, show_ids:false)
         content =
           circuit_hash.collect do |task, connections|
             conns = connections.collect do |signal, target|
@@ -32,7 +32,8 @@ module Trailblazer
 
           content = content.join("\n")
 
-          "\n#{content}".gsub(/\d\d+/, "")
+          return "\n#{content}" if show_ids
+          return "\n#{content}".gsub(/\d\d+/, "")
       end
 
       def self.Ends(process)
