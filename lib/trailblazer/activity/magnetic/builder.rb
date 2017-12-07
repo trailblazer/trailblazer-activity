@@ -23,7 +23,7 @@ module Trailblazer
       end
 
       # @return ADDS
-      def self.plan(options={}, normalizer=self.DefaultNormalizer, &block)
+      def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
         builder = new(normalizer, options)
 
         # TODO: pass new edge color in block?
@@ -107,7 +107,7 @@ module Trailblazer
 
       # Options valid for all DSL calls with this Builder framework.
       def self.generic_keywords
-        [ :id, :plus_poles, :magnetic_to ]
+        [ :id, :plus_poles, :magnetic_to, :adds ]
       end
 
       def self.sequence_keywords
@@ -131,12 +131,14 @@ module Trailblazer
 
         initial_plus_poles = local_options[:plus_poles]
         magnetic_to        = local_options[:magnetic_to]
+        adds               = local_options[:adds] || []
 
+        # go through all wiring options such as Output()=>:color.
         polarizations_from_user_options, additional_adds = DSL::ProcessOptions.(local_options[:id], options, initial_plus_poles, &block)
 
         result = adds(local_options[:id], task, initial_plus_poles, polarizations, polarizations_from_user_options, local_options, sequence_options, magnetic_to)
 
-        return result + additional_adds, task, local_options, options, sequence_options
+        return result + adds + additional_adds, task, local_options, options, sequence_options
       end
 
       # @private
@@ -168,9 +170,16 @@ module Trailblazer
         [ add ]
       end
 
-      def self.DefaultNormalizer(default_plus_poles=self.DefaultPlusPoles)
-        ->(task, local_options, sequence_options) do
-          local_options = { plus_poles: default_plus_poles }.merge(local_options)
+      class DefaultNormalizer
+        def initialize( **default_options )
+          raise "you didn't specify default :plus_poles" unless default_options[:plus_poles]
+
+          @default_options = default_options
+        end
+
+        # called for every ::task, ::step call etc to defaultize the `local_options`.
+        def call(task, local_options, sequence_options)
+          local_options = @default_options.merge(local_options) # here, we merge default :plus_poles.
 
           return task, local_options, sequence_options
         end

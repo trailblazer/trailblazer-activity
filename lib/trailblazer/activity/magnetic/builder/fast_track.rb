@@ -79,11 +79,8 @@ module Trailblazer
           end
         end
 
-        def self.DefaultNormalizer(*args)
-          Railway.DefaultNormalizer(*args)
-        end
-        def self.DefaultPlusPoles(*args)
-          Railway.DefaultPlusPoles(*args)
+        def self.default_plus_poles(*args)
+          Railway.default_plus_poles(*args)
         end
 
         def self.keywords

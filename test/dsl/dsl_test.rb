@@ -13,6 +13,30 @@ class ActivityBuildTest < Minitest::Spec
   class K; end
   class L; end
 
+
+  describe ":adds" do
+    let(:adds) do
+      [
+        [ :add, [ "my.id", [ [:success], "MyTask", [] ], group: :end ]]
+      ]
+    end
+
+    it do
+      _adds = adds
+
+      seq, adds = Activity::Process.draft do
+        task J, id: "extract", adds: _adds
+      end
+
+   puts Seq(seq)
+      Seq(seq).must_equal %{
+      }
+    end
+  end
+
+  #---
+  # wiring options
+
   # 3 ends, 1 of 'em default.
   it do
     seq, adds = Activity::Process.draft(track_color: :"track_9") do

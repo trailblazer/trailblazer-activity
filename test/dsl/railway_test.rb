@@ -16,6 +16,39 @@ class RailwayTest < Minitest::Spec
 
   Builder = Activity::Magnetic::Builder::Railway
 
+  describe "Activity::Railway" do
+    it "move me" do
+      activity = Activity::Railway.build do
+        step J
+        step K
+      end
+
+      puts Trailblazer::Activity::Introspect.Cct( activity.instance_variable_get(:@process))
+    end
+  end
+
+  it "builds tripletts for Railway pattern" do
+    seq, adds = Builder.draft do
+      step J
+      step K
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> RailwayTest::J
+ (success)/Right ==> :success
+ (failure)/Left ==> :failure
+[:success] ==> RailwayTest::K
+ (success)/Right ==> :success
+ (failure)/Left ==> :failure
+[:success] ==> #<End:success/:success>
+ []
+[:failure] ==> #<End:failure/:failure>
+ []
+}
+  end
+
   it "standard path ends in End.success/:success" do
     seq, adds = Builder.draft do
       step J, id: "report_invalid_result"

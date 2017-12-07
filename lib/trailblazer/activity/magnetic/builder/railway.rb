@@ -30,7 +30,7 @@ module Trailblazer
           insert_element!( Railway, Railway.PassPolarizations(@builder_options), task, options, &block )
         end
 
-        def self.DefaultPlusPoles
+        def self.default_plus_poles
           DSL::PlusPoles.new.merge(
             Activity.Output(Activity::Right, :success) => nil,
             Activity.Output(Activity::Left,  :failure) => nil,
