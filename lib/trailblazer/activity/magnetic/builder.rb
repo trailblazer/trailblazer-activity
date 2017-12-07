@@ -90,8 +90,9 @@ module Trailblazer
 
       private
 
+      # Internal top-level entry point to add task(s) and connections.
       def insert_element!(impl, polarizations, task, options, &block)
-        adds, *returned_options = impl.adds_for(polarizations, @normalizer, task, options, &block)
+        adds, *returned_options = Builder.adds_for(polarizations, @normalizer, impl.keywords, task, options, &block)
 
         adds = add!(adds)
 
@@ -125,8 +126,8 @@ module Trailblazer
       # @return Adds
       # High level interface for DSL calls like ::task or ::step.
       # TODO: RETURN ALL OPTIONS
-      def self.adds_for(polarizations, normalizer, task, options, &block)
-        task, local_options, options, sequence_options = normalize_options(normalizer, task, options)
+      def self.adds_for(polarizations, normalizer, keywords, task, options, &block)
+        task, local_options, options, sequence_options = normalize_options(normalizer, keywords, task, options)
 
         initial_plus_poles = local_options[:plus_poles]
         magnetic_to        = local_options[:magnetic_to]
@@ -139,7 +140,7 @@ module Trailblazer
       end
 
       # @private
-      def self.normalize_options(normalizer, task, options)
+      def self.normalize_options(normalizer, keywords, task, options)
          # sort through the "original" user DSL options.
         options, local_options    = normalize( options, generic_keywords+keywords ) # DISCUSS:
         options, sequence_options = normalize( options, sequence_keywords )

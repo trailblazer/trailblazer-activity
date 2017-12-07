@@ -14,8 +14,10 @@ module Trailblazer
         end
       end # Polarization
 
-      # Generate PlusPoles and additional sequence alterations from the DSL options such as
+      # This module only processes additional "wiring" options from the DSL calls
       #   Output(:success) => End("my.new")
+      #
+      # Returns PlusPoles and additional sequence alterations.
       module ProcessOptions
         module_function
 
@@ -72,9 +74,9 @@ module Trailblazer
         end
 
         # @param semantic DSL::Output::Semantic
-        def output_for(semantic, outputs)
+        def output_for(semantic, plus_poles)
           # DISCUSS: review PlusPoles#[]
-          output, _ = outputs.instance_variable_get(:@plus_poles)[semantic.value]
+          output, _ = plus_poles.instance_variable_get(:@plus_poles)[semantic.value]
           output or raise("Couldn't find existing output for `#{semantic.value.inspect}`.")
         end
       end # OptionsProcessing
