@@ -26,6 +26,23 @@ class TraceTest < Minitest::Spec
     activity.({})
   end
 
+  it "traces flat activity" do
+    stack, _ = Trailblazer::Activity::Trace.( bc,
+      [
+        { content: "Let's start writing" }
+      ]
+    )
+
+    output = Trailblazer::Activity::Trace::Present.tree(stack)
+
+    output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
+
+    output.must_equal %{|-- #<Trailblazer::Activity::Start:>
+|-- B
+|-- C
+`-- #<Trailblazer::Activity::End:>}
+  end
+
   it do
     stack, _ = Trailblazer::Activity::Trace.( activity,
       [
