@@ -23,7 +23,19 @@ class RailwayTest < Minitest::Spec
         step K
       end
 
-      puts Trailblazer::Activity::Introspect.Cct( activity.instance_variable_get(:@process))
+      Trailblazer::Activity::Introspect.Cct( activity.instance_variable_get(:@process) ).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => RailwayTest::J
+RailwayTest::J
+ {Trailblazer::Activity::Right} => RailwayTest::K
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+RailwayTest::K
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+#<End:success/:success>
+
+#<End:failure/:failure>
+}
     end
   end
 

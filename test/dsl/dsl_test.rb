@@ -28,9 +28,17 @@ class ActivityBuildTest < Minitest::Spec
         task J, id: "extract", adds: _adds
       end
 
-   puts Seq(seq)
+   # puts Seq(seq)
       Seq(seq).must_equal %{
-      }
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> ActivityBuildTest::J
+ (success)/Right ==> :success
+[:success] ==> #<End:success/:success>
+ []
+[:success] ==> \"MyTask\"
+ []
+}
     end
   end
 

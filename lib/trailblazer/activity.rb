@@ -41,7 +41,9 @@ module Trailblazer
     end
 
     def self.initialize_activity_dsl!
-      @builder = builder_class.new(Normalizer, {})
+      builder_class, normalizer = config
+
+      @builder = builder_class.new(normalizer, {})
       @debug   = {}
     end
 
@@ -68,13 +70,13 @@ module Trailblazer
     #- DSL part
 
     def self.build(&block)
-      Class.new(Activity, &block)
+      Class.new(self, &block)
     end
 
     private
 
-    def self.builder_class
-      Magnetic::Builder::Path
+    def self.config # FIXME: the normalizer is the same we have in Builder::plan.
+      return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Path.default_plus_poles)
     end
 
     # DSL part
@@ -124,23 +126,21 @@ module Trailblazer
       end
     end
 
-    class Normalizer # FIXME: copied from Builder::Path.
-      def self.call(task, options, sequence_options)
-        options =
-          {
-            plus_poles: initial_plus_poles,
-            id:         task.inspect, # TODO.
-          }.merge(options)
-
-        return task, options, sequence_options
+    # TODO: hm
+    class Railway < Activity
+      def self.config # FIXME: the normalizer is the same we have in Builder::plan.
+        return Magnetic::Builder::Railway, Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles)
       end
 
-      def self.initial_plus_poles
-        Magnetic::DSL::PlusPoles.new.merge(
-          Activity.Output(Activity::Right, :success) => nil
-        ).freeze
+      def self.step(*args, &block)
+        adds, *options = @builder.step(*args, &block)
+
+        recompile_process!
+
+        add_introspection!(adds, *options)
+
+        return adds, options
       end
     end
-
   end
 end
