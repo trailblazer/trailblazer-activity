@@ -42,9 +42,9 @@ class DSLPathTest < Minitest::Spec
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result", before: "report_invalid_result"
       task I, id: "start/I", group: :start
-    end
+  end
 
-    Seq(seq).must_equal %{
+  Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
  (success)/Right ==> :success
 [:success] ==> DSLPathTest::I
@@ -63,7 +63,7 @@ class DSLPathTest < Minitest::Spec
 
     seq, _ = Builder.build track_end: MyEnd do
       task :a, {}
-    end
+  end
 
     Cct( seq ).must_equal %{
 #<Start:default/nil>
@@ -72,7 +72,36 @@ class DSLPathTest < Minitest::Spec
  {Trailblazer::Activity::Right} => DSLPathTest::MyEnd
 DSLPathTest::MyEnd
 }
+end
+
+describe "with :plus_poles" do
+  let(:plus_poles) do
+    Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity.Output(Activity::Right, :success) => :success,
+      Activity.Output(Activity::Left,  :failure) => :failure,
+    )
   end
+
+  it "allows overriding existing outputs via semantic=>:new_color" do
+    _plus_poles = plus_poles
+
+    seq, adds = Builder.draft do
+      task D, plus_poles: _plus_poles, Output(:failure) => :something_completely_different
+    end
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> DSLPathTest::D
+ (success)/Right ==> :success
+ (failure)/Left ==> :something_completely_different
+[:success] ==> #<End:success/:success>
+ []
+}
+  end
+end
+
+
 
 describe "magnetic_to:" do
   it "allows to skip minus poles" do

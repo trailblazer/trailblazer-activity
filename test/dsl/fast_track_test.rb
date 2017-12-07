@@ -40,8 +40,8 @@ class DSLFastTrackTest < Minitest::Spec
   end
 
   # builder for PlusPoles
-  def plus_poles_for(outputs)
-    ary = outputs.collect { |evt, semantic| [ Activity::Output(evt, semantic), semantic ] }
+  def plus_poles_for(mapping)
+    ary = mapping.collect { |evt, semantic| [ Activity::Output(evt, semantic), semantic ] }
 
     Activity::Magnetic::DSL::PlusPoles.new.merge(::Hash[ary])
   end
@@ -104,7 +104,7 @@ class DSLFastTrackTest < Minitest::Spec
 }
   end
 
-  it "does NOT add :pass_fast pole when :plus_poles are given" do
+  it "does NOT add another :pass_fast pole when :plus_poles are given" do
     plus_poles = plus_poles_for( Signal => :success, "Another" => :failure )
 
     seq, adds = Builder.draft do
@@ -181,7 +181,11 @@ DSLFastTrackTest::G
 
   #- :fast_track
   it "don't overwrite :pass_fast/:fail_fast colored outputs that are existing in :plus_poles" do
-    plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
+    plus_poles = plus_poles_for(
+      Signal    => :success,
+      "Another" => :failure,
+      "Pff"     => :pass_fast, # we already provide :pass_fast
+    )
 
     seq, adds = Builder.draft do
       step G, fast_track: true, plus_poles: plus_poles
@@ -192,6 +196,28 @@ DSLFastTrackTest::G
  (success)/Signal ==> :success
  (failure)/Another ==> :failure
  (pass_fast)/Pff ==> :pass_fast
+ (fail_fast)/Magnetic::Builder::FastTrack::FailFast ==> :fail_fast
+}
+  end
+
+  it "additional DSL options override given :plus_poles" do
+    # these are PlusPoles as found when nesting another operation.
+    plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity.Output(Activity::Right, :success) => :success,
+      Activity.Output(Activity::Left,  :failure) => :failure,
+      Activity.Output(Activity::Magnetic::Builder::FastTrack::PassFast,  :pass_fast) => :pass_fast,
+      Activity.Output(Activity::Magnetic::Builder::FastTrack::FailFast,  :fail_fast) => :fail_fast,
+    )
+
+    seq, adds = Builder.draft do
+      step G, plus_poles: plus_poles, Output(:success)=> :failure, Output(:pass_fast) => :success
+    end
+
+    assert_main seq, %{
+[:success] ==> DSLFastTrackTest::G
+ (success)/Right ==> :failure
+ (failure)/Left ==> :failure
+ (pass_fast)/Magnetic::Builder::FastTrack::PassFast ==> :success
  (fail_fast)/Magnetic::Builder::FastTrack::FailFast ==> :fail_fast
 }
   end
