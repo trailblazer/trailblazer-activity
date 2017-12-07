@@ -39,13 +39,6 @@ class DSLFastTrackTest < Minitest::Spec
 }
   end
 
-  # builder for PlusPoles
-  def plus_poles_for(mapping)
-    ary = mapping.collect { |evt, semantic| [ Activity::Output(evt, semantic), semantic ] }
-
-    Activity::Magnetic::DSL::PlusPoles.new.merge(::Hash[ary])
-  end
-
   it "builder API, what we use in Operation" do
     initial_plus_poles = self.initial_plus_poles
 
@@ -220,6 +213,44 @@ DSLFastTrackTest::G
  (pass_fast)/Magnetic::Builder::FastTrack::PassFast ==> :success
  (fail_fast)/Magnetic::Builder::FastTrack::FailFast ==> :fail_fast
 }
+  end
+
+  describe ":magnetic_to" do
+    it "overrides default @track_color" do
+      seq, adds = Builder.draft do
+        step G, magnetic_to: []
+        pass I, magnetic_to: [:pass_me_a_beer]
+        fail J, magnetic_to: []
+      end
+
+      assert_main seq, %{
+[] ==> DSLFastTrackTest::G
+ (success)/Right ==> :success
+ (failure)/Left ==> :failure
+[:pass_me_a_beer] ==> DSLFastTrackTest::I
+ (success)/Right ==> :success
+ (failure)/Left ==> :success
+[] ==> DSLFastTrackTest::J
+ (success)/Right ==> :failure
+ (failure)/Left ==> :failure
+}
+    end
+
+    it "merges with new connections" do
+      seq, adds = Builder.draft do
+        step G, magnetic_to: [], id: "G"
+        step I, Output(:success) => "G"
+      end
+
+      assert_main seq, %{
+["Trailblazer::Activity::Right-G"] ==> DSLFastTrackTest::G
+ (success)/Right ==> :success
+ (failure)/Left ==> :failure
+[:success] ==> DSLFastTrackTest::I
+ (success)/Right ==> "Trailblazer::Activity::Right-G"
+ (failure)/Left ==> :failure
+}
+    end
   end
 
   # hand additional DSL options

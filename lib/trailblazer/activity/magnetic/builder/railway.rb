@@ -82,29 +82,38 @@ module Trailblazer
             @track_color, @failure_color = track_color, failure_color
           end
 
+          # Returns the polarization for a DSL call. Takes care of user options such as :magnetic_to.
           def call(magnetic_to, plus_poles, options)
             [
-              [@track_color],
-              plus_poles.reconnect( :failure => @failure_color )
+              magnetic_to || default_magnetic_to,
+              plus_poles_for(plus_poles, options),
             ]
+          end
+
+          private
+
+          def plus_poles_for(plus_poles, options)
+            plus_poles.reconnect( :failure => @failure_color )
+          end
+
+          def default_magnetic_to
+            [@track_color]
           end
         end
 
         class PassPolarization < StepPolarization
-          def call(magnetic_to, plus_poles, options)
-            [
-              [@track_color],
-              plus_poles.reconnect( :failure => @track_color, :success => @track_color )
-            ]
+          def plus_poles_for(plus_poles, options)
+            plus_poles.reconnect( :failure => @track_color, :success => @track_color )
           end
         end
 
         class FailPolarization < StepPolarization
-          def call(magnetic_to, plus_poles, options)
-            [
-              [@failure_color],
-              plus_poles.reconnect( :failure => @failure_color, :success => @failure_color )
-            ]
+          def default_magnetic_to
+            [@failure_color]
+          end
+
+          def plus_poles_for(plus_poles, options)
+            plus_poles.reconnect( :failure => @failure_color, :success => @failure_color )
           end
         end
 
