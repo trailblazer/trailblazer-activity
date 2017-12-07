@@ -24,6 +24,15 @@ class IntrospectionTest < Minitest::Spec
   end
 
   describe "#collect" do
+    it "collects all tasks of a flat activity" do
+      all_tasks = Activity::Introspect.collect(bc) do |task, connections|
+        task
+      end
+
+      all_tasks.size.must_equal 4
+      all_tasks[1..2].must_equal [B, C]
+    end
+
     it "iterates over each task element in the top activity" do
       all_tasks = Activity::Introspect.collect(activity) do |task, connections|
         task
