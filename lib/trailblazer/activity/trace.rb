@@ -20,11 +20,8 @@ module Trailblazer
           introspection: compute_debug(activity), # FIXME: this is still also set in Activity::call
         }
 
-        last_signal, (options, flow_options) = call_activity( activity, [
-          options,
+        last_signal, (options, flow_options) = call_activity( activity, [ options, tracing_flow_options ], tracing_circuit_options, &block )
           # tracing_flow_options.merge(flow_options),
-          tracing_flow_options,
-        ], tracing_circuit_options, &block )
 
         return flow_options[:stack].to_a, last_signal, options, flow_options
       end

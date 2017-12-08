@@ -99,8 +99,6 @@ module Trailblazer
         return adds, *returned_options
       end
 
-      # merge @builder_options (for the track colors)
-      # normalize options
       def add!(adds)
         @adds += adds
       end
@@ -147,7 +145,7 @@ module Trailblazer
         options, local_options    = normalize( options, generic_keywords+keywords ) # DISCUSS:
         options, sequence_options = normalize( options, sequence_keywords )
 
-        task, local_options, sequence_options = normalizer.(task, local_options, sequence_options)
+        task, local_options, options, sequence_options = normalizer.(task, local_options, options, sequence_options)
 
         return task, local_options, options, sequence_options
       end
@@ -178,10 +176,10 @@ module Trailblazer
         end
 
         # called for every ::task, ::step call etc to defaultize the `local_options`.
-        def call(task, local_options, sequence_options)
+        def call(task, local_options, options, sequence_options)
           local_options = @default_options.merge(local_options) # here, we merge default :plus_poles.
 
-          return task, local_options, sequence_options
+          return task, local_options, options, sequence_options
         end
       end
 

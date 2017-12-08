@@ -303,7 +303,7 @@ DSLPathTest::D
       Activity.Output(Activity::Right, :success) => nil,
       Activity.Output(Activity::Left, :failure) => nil )
 
-    normalizer = ->(task, options, seq_options) { [ task, options.merge(plus_poles: binary_plus_poles), seq_options ] }
+    normalizer = ->(task, local_options, options, seq_options) { [ task, options.merge(plus_poles: binary_plus_poles), options, seq_options ] }
 
     seq, adds = Builder.draft( {}, normalizer ) do
       task A, id: "A"
