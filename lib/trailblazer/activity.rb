@@ -52,7 +52,7 @@ module Trailblazer
     end
 
     def self.call(args, circuit_options={})
-      @process.( args, circuit_options.merge( exec_context:  new ) ) # DISCUSS: do we even need that?
+      @process.( args, circuit_options )
     end
 
     #- modelling
