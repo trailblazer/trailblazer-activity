@@ -38,7 +38,7 @@ module Trailblazer
       # Go through all nested Activities and grab their `Activity.debug` field. This gets all merged into
       # one big debugging hash, instead of computing it overly complex at runtime and while executing the circuit.
       def self.compute_debug(activity)
-        arrs = Introspect.collect( activity, recursive: true ) { |task, _| task }.find_all { |task| task.is_a?(Interface) }.collect { |task| task.debug }.flatten(1)
+        arrs = Introspect.collect( activity, recursive: true ) { |task, _| task }.find_all { |task| task.is_a?(Interface) }.collect { |task| task.debug }.flatten(1).compact
 
         arrs.inject( activity.debug ) { |memo, debug| memo.merge(debug) }
       end

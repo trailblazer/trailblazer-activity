@@ -9,6 +9,8 @@ module Trailblazer
     # Subprocess allows to have tasks with a different call interface and start event.
     # @param activity any object with an {Activity interface}
     class Subprocess
+      include Interface
+
       def initialize(activity, call: :call, **options)
         @activity = activity
         @options = options
@@ -20,7 +22,9 @@ module Trailblazer
       end
 
       # @private
-      attr_reader :activity # we actually only need this for introspection.
+      def decompose
+        @activity.decompose # TODO: test explicitly
+      end
     end
   end
 end
