@@ -25,6 +25,10 @@ module Trailblazer
       def decompose
         @activity.decompose # TODO: test explicitly
       end
+
+      def debug
+        @activity.debug
+      end
     end
   end
 end
