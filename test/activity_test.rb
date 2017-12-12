@@ -182,5 +182,40 @@ ActivityTest::L
     signal.must_equal activity.outputs[:success].signal
     options.inspect.must_equal %{{:L=>1}}
   end
+
+  describe "inheritance" do
+    it "creates a fresh Activity" do
+      activity = Class.new(Activity) do
+        task A
+        task B
+      end
+
+      Cct(activity.instance_variable_get(:@process)).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => ActivityTest::A
+ActivityTest::A
+ {Trailblazer::Activity::Right} => ActivityTest::B
+ActivityTest::B
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+
+      subactivity = Class.new(activity) do
+        task C
+      end
+
+      Cct(subactivity.instance_variable_get(:@process)).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => ActivityTest::A
+ActivityTest::A
+ {Trailblazer::Activity::Right} => ActivityTest::B
+ActivityTest::B
+ {Trailblazer::Activity::Right} => ActivityTest::C
+ActivityTest::C
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+    end
+  end
 end
 
