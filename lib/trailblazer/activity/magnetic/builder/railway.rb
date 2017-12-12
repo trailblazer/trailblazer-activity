@@ -1,17 +1,17 @@
 module Trailblazer
   module Activity::Magnetic
     class Builder
-      def self.Railway(normalizer, builder_options={}) # Build the Builder.
-        Activity::Magnetic::Builder(
-          Railway,
-          normalizer,
-          { track_color: :success, end_semantic: :success, failure_color: :failure }.merge( builder_options )
-        )
-      end
-
       class Railway < Builder
+        def self.for(normalizer, builder_options={}) # Build the Builder.
+          Activity::Magnetic::Builder(
+            Railway,
+            normalizer,
+            { track_color: :success, end_semantic: :success, failure_color: :failure }.merge( builder_options )
+          )
+        end
+
         def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
-          plan_for( *Railway(normalizer, options), &block )
+          plan_for( *Railway.for(normalizer, options), &block )
         end
 
         def self.keywords

@@ -2,17 +2,18 @@
 module Trailblazer
   module Activity::Magnetic
     class Builder
-      def self.FastTrack(normalizer, builder_options={}) # Build the Builder.
-        Activity::Magnetic::Builder(
-          FastTrack,
-          normalizer,
-          { track_color: :success, end_semantic: :success, failure_color: :failure }.merge( builder_options )
-        )
-      end
 
       class FastTrack < Builder
+        def self.for(normalizer, builder_options={}) # Build the Builder.
+          Activity::Magnetic::Builder(
+            FastTrack,
+            normalizer,
+            { track_color: :success, end_semantic: :success, failure_color: :failure }.merge( builder_options )
+          )
+        end
+
         def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
-          plan_for( *FastTrack(normalizer, options), &block )
+          plan_for( *FastTrack.for(normalizer, options), &block )
         end
 
         def self.StepPolarizations(**options)
