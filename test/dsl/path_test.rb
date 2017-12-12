@@ -449,11 +449,14 @@ DSLPathTest::G
 
     # with plus_poles.
     it do
-      incremental = Activity::Magnetic::Builder::Path.new( Activity::Magnetic::Builder::DefaultNormalizer.new(plus_poles: Activity::Magnetic::Builder::Path.default_plus_poles), {plus_poles: initial_plus_poles} )
-      incremental.task G, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception)
-      incremental.task I, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure)
+      builder, adds = Builder::Path( Builder::DefaultNormalizer.new(plus_poles: Builder::Path.default_plus_poles), {plus_poles: initial_plus_poles} )
 
-      sequence, adds = incremental.draft
+      _adds, _ = builder.task G, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception)
+      adds += _adds
+      _adds, _ = builder.task I, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure)
+      adds += _adds
+
+      sequence = Finalizer.adds_to_tripletts(adds)
 
       Seq(sequence).must_equal %{
 [] ==> #<Start:default/nil>
