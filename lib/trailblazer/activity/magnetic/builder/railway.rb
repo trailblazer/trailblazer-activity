@@ -1,33 +1,33 @@
 module Trailblazer
   module Activity::Magnetic
     class Builder
+      def self.Railway(normalizer, builder_options={}) # Build the Builder.
+        Activity::Magnetic::Builder(
+          Railway,
+          normalizer,
+          { track_color: :success, end_semantic: :success, failure_color: :failure }.merge( builder_options )
+        )
+      end
+
       class Railway < Builder
+        def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
+          plan_for( *Railway(normalizer, options), &block )
+        end
+
         def self.keywords
           [:type]
         end
 
-        def initialize(normalizer, builder_options={})
-          builder_options = { # Ruby's kw args kind a suck.
-            track_color: :success, end_semantic: :success, failure_color: :failure,
-          }.merge(builder_options)
-
-          super
-
-          add!(
-            Railway.InitialAdds( builder_options )   # add start, success end and failure end.
-          )
-        end
-
         def step(task, options={}, &block)
-          insert_element!( Railway, Railway.StepPolarizations(@builder_options), task, options, &block )
+          insert_element( Railway, Railway.StepPolarizations(@builder_options), task, options, &block )
         end
 
         def fail(task, options={}, &block)
-          insert_element!( Railway, Railway.FailPolarizations(@builder_options), task, options, &block )
+          insert_element( Railway, Railway.FailPolarizations(@builder_options), task, options, &block )
         end
 
         def pass(task, options={}, &block)
-          insert_element!( Railway, Railway.PassPolarizations(@builder_options), task, options, &block )
+          insert_element( Railway, Railway.PassPolarizations(@builder_options), task, options, &block )
         end
 
         def self.default_plus_poles

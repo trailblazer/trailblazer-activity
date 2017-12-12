@@ -46,7 +46,7 @@ class DSLPathTest < Minitest::Spec
  []
 }
 
-    process, _ = Builder.finalize( adds )
+    process, _ = Finalizer.( adds )
     Ends(process).must_equal %{[#<End:success/:success>]}
   end
 
@@ -131,7 +131,7 @@ describe "magnetic_to:" do
  []
 }
 
-    Cct( Builder.finalize(adds).first ).must_equal %{
+    Cct( Finalizer.(adds).first ).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<End:success/:success>
 DSLPathTest::D
@@ -165,7 +165,7 @@ end
  []
 }
 
-    process, _ = Builder.finalize( adds )
+    process, _ = Finalizer.( adds )
     Ends(process).must_equal %{[#<End:track_9/:success>,#<End:End.extract.key_not_found/:key_not_found>,#<End:End.invalid/:invalid>]}
   end
 
@@ -181,7 +181,7 @@ end
 
     # puts Seq(seq)
 
-    process, _ = Builder.finalize( adds )
+    process, _ = Finalizer.( adds )
 
     Cct(process).must_equal %{
 #<Start:default/nil>
@@ -246,7 +246,7 @@ DSLPathTest::L
 ["log_invalid_result-Trailblazer::Activity::Right"] ==> #<End:End.invalid_result/:invalid_result>
  []
 }
-    process, _ = Builder.finalize( adds )
+    process, _ = Finalizer.( adds )
     Ends(process).must_equal %{[#<End:End.invalid_result/:invalid_result>]}
   end
 
@@ -290,7 +290,7 @@ Seq(seq).must_equal %{
 }
 
 
-    process, _ = Builder.finalize( adds )
+    process, _ = Finalizer.( adds )
     Ends(process).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid>]}
 
     Cct(process).must_equal %{
@@ -367,7 +367,7 @@ DSLPathTest::D
         task D, id: "D"
       end
 
-      Cct( Builder.finalize(adds).first ).must_equal %{
+      Cct( Finalizer.(adds).first ).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => DSLPathTest::A
 DSLPathTest::A
@@ -389,7 +389,7 @@ DSLPathTest::D
         task G, id: "G", magnetic_to: [] # start event
       end
 
-      Cct( Builder.finalize(adds).first ).must_equal %{
+      Cct( Finalizer.(adds).first ).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => DSLPathTest::A
 DSLPathTest::A
@@ -443,7 +443,7 @@ DSLPathTest::G
  []
 }
 
-      process, _ = Builder.finalize(adds)
+      process, _ = Finalizer.(adds)
       Ends(process).must_equal %{[#<End:pink/:success>,#<End:exception/:exception>,#<End:failure/:failure>]}
     end
 
@@ -474,7 +474,7 @@ DSLPathTest::G
 ["DSLPathTest::I-Trailblazer::Activity::Left"] ==> #<End:failure/:failure>
  []
 }
-      process, _ = Builder.finalize(adds)
+      process, _ = Finalizer.(adds)
       Ends(process).must_equal %{[#<End:success/:success>,#<End:exception/:exception>,#<End:failure/:failure>]}
     end
   end

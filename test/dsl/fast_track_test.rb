@@ -14,7 +14,8 @@ class DSLFastTrackTest < Minitest::Spec
   class K; end
   class L; end
 
-  Builder   = Activity::Magnetic::Builder::FastTrack
+  Builder   = Activity::Magnetic::Builder
+  Finalizer = Activity::Magnetic::Builder::Finalizer
   PlusPoles = Activity::Magnetic::DSL::PlusPoles
 
   let(:initial_plus_poles) do
@@ -43,14 +44,14 @@ class DSLFastTrackTest < Minitest::Spec
     initial_plus_poles = self.initial_plus_poles
 
     # this is what happens in Operation.
-    seq, adds = Builder.draft( track_color: :pink, failure_color: :black ) do
+    adds = Builder::FastTrack.plan( track_color: :pink, failure_color: :black ) do
       step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true # these options we WANT built by Operation (task, id, plus_poles)
       step I, id: :I, plus_poles: initial_plus_poles
       fail J, id: :J, plus_poles: initial_plus_poles
       pass K, id: :K, plus_poles: initial_plus_poles
     end
 
-    # pp seq
+    seq = Finalizer.adds_to_tripletts(adds)
 
     Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
@@ -77,7 +78,7 @@ class DSLFastTrackTest < Minitest::Spec
  []
 }
 
-    activity = Builder.finalize(adds)
+    process = Finalizer.(adds)
 
     # pp activity
   end
@@ -86,9 +87,11 @@ class DSLFastTrackTest < Minitest::Spec
   #- test options
 
   it "adds :pass_fast pole" do
-    seq, adds = Builder.draft do
+    adds = Builder::FastTrack.plan do
       step G, pass_fast: true
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     assert_main seq, %{
 [:success] ==> DSLFastTrackTest::G
@@ -100,9 +103,11 @@ class DSLFastTrackTest < Minitest::Spec
   it "does NOT add another :pass_fast pole when :plus_poles are given" do
     plus_poles = plus_poles_for( Signal => :success, "Another" => :failure )
 
-    seq, adds = Builder.draft do
+    adds = Builder::FastTrack.plan do
       step G, plus_poles: plus_poles, pass_fast: true
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     assert_main seq, %{
 [:success] ==> DSLFastTrackTest::G
@@ -114,9 +119,11 @@ class DSLFastTrackTest < Minitest::Spec
   it "does NOT override :pass_fast pole when :poles_poles are given, >>>>>>>>>>>>>>>>>>>>>" do
     plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
 
-    seq, adds = Builder.draft do
+    adds = Builder::FastTrack.plan do
       step G, plus_poles: plus_poles, pass_fast: true, id: :G
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     # only overwrites success's color to :pass_fast
     assert_main seq, %{
@@ -146,9 +153,11 @@ DSLFastTrackTest::G
   end
 
   it "adds :fail_fast pole" do
-    seq, adds = Builder.draft do
+    adds = Builder::FastTrack.plan do
       step G, fail_fast: true
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     assert_main seq, %{
 [:success] ==> DSLFastTrackTest::G
@@ -159,9 +168,11 @@ DSLFastTrackTest::G
 
   #- :fast_track
   it "adds :fail_fast and :pass_fast pole" do
-    seq, adds = Builder.draft do
+    adds = Builder::FastTrack.plan do
       step G, fast_track: true
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     assert_main seq, %{
 [:success] ==> DSLFastTrackTest::G
@@ -180,9 +191,11 @@ DSLFastTrackTest::G
       "Pff"     => :pass_fast, # we already provide :pass_fast
     )
 
-    seq, adds = Builder.draft do
+    adds = Builder::FastTrack.plan do
       step G, fast_track: true, plus_poles: plus_poles
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     assert_main seq, %{
 [:success] ==> DSLFastTrackTest::G
@@ -202,9 +215,11 @@ DSLFastTrackTest::G
       Activity.Output(Activity::Magnetic::Builder::FastTrack::FailFast,  :fail_fast) => :fail_fast,
     )
 
-    seq, adds = Builder.draft do
+    adds = Builder::FastTrack.plan do
       step G, plus_poles: plus_poles, Output(:success)=> :failure, Output(:pass_fast) => :success
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     assert_main seq, %{
 [:success] ==> DSLFastTrackTest::G
@@ -217,11 +232,13 @@ DSLFastTrackTest::G
 
   describe ":magnetic_to" do
     it "overrides default @track_color" do
-      seq, adds = Builder.draft do
+      adds = Builder::FastTrack.plan do
         step G, magnetic_to: []
         pass I, magnetic_to: [:pass_me_a_beer]
         fail J, magnetic_to: []
       end
+
+      seq = Finalizer.adds_to_tripletts(adds)
 
       assert_main seq, %{
 [] ==> DSLFastTrackTest::G
@@ -237,10 +254,12 @@ DSLFastTrackTest::G
     end
 
     it "merges with new connections" do
-      seq, adds = Builder.draft do
+      adds = Builder::FastTrack.plan do
         step G, magnetic_to: [], id: "G"
         step I, Output(:success) => "G"
       end
+
+      seq = Finalizer.adds_to_tripletts(adds)
 
       assert_main seq, %{
 ["Trailblazer::Activity::Right-G"] ==> DSLFastTrackTest::G
@@ -256,12 +275,14 @@ DSLFastTrackTest::G
   # hand additional DSL options
   it do
     # this is what happens in Operation.
-    seq, adds = Builder.draft( track_color: :pink, failure_color: :black ) do
+    adds = Builder::FastTrack.plan( track_color: :pink, failure_color: :black ) do
       step G, id: :G, fail_fast: true, Activity.Output("Exception", :exception) => Activity.End(:exception)
       step I, id: :I
       fail J, id: :J
       pass K, id: :K
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     # pp sequence
 # puts Seq(sequence)
@@ -300,9 +321,11 @@ DSLFastTrackTest::G
     class MyPassFast; end
     class MyFailFast; end
 
-    seq, _ = Builder.build track_end: MySuccess, failure_end: MyFail, pass_fast_end: MyPassFast, fail_fast_end: MyFailFast do
+    adds = Builder::FastTrack.build track_end: MySuccess, failure_end: MyFail, pass_fast_end: MyPassFast, fail_fast_end: MyFailFast do
       step :a, {}
     end
+
+    # seq = Finalizer.adds_to_tripletts(adds)
 
     Cct( seq ).must_equal %{
 #<Start:default/nil>
@@ -328,7 +351,7 @@ DSLFastTrackTest::MyFailFast
     )
 
 
-    seq, _ = Builder.draft do
+    adds = Builder::FastTrack.plan do
       step G,
         id: :receive_process_id,
         plus_poles: initial_plus_poles,
@@ -337,6 +360,8 @@ DSLFastTrackTest::MyFailFast
         Activity.Output(Right, :success)        => Activity.End(:invalid_result),
         Activity.Output("Signal A", :exception) => Activity.End(:signal_a_reached)
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
@@ -361,11 +386,13 @@ DSLFastTrackTest::MyFailFast
   end
 
   it "accepts :before and :group" do
-    seq, adds = Builder.draft do
+    adds = Builder::FastTrack.plan do
       step J, id: "report_invalid_result"
       step K, id: "log_invalid_result", before: "report_invalid_result"
       step I, id: "start/I", group: :start
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>

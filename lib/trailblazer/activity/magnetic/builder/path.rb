@@ -5,18 +5,16 @@ module Trailblazer
         #   :track_color
         #   :end_semantic
       def self.Path(normalizer, builder_options={}) # Build the Builder.
-        builder_options = { track_color: :success, end_semantic: :success }.merge(builder_options)
-
-        builder = Path.new(normalizer, builder_options.freeze).freeze
-
-        return builder, Path.InitialAdds(builder_options)
+        Activity::Magnetic::Builder(
+          Path,
+          normalizer,
+          { track_color: :success, end_semantic: :success }.merge( builder_options )
+        )
       end
 
       class Path < Builder
         def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
-          builder, adds = Path(normalizer, options)
-
-          adds += Block.new(builder).(&block) # returns ADDS
+          plan_for( *Path(normalizer, options), &block )
         end
 
 

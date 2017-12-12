@@ -15,57 +15,28 @@ module Trailblazer
               end
 
 
+    def self.Builder(implementation, normalizer, builder_options={})
+      builder = implementation.new(normalizer, builder_options.freeze).freeze # e.g. Path.new(...)
+
+      return builder, implementation.InitialAdds(builder_options)
+    end
+
     class Builder
-      class Block
-        def initialize(builder)
-          @builder = builder
-          @adds    = [] # mutable
-        end
-
-        # Evaluate user's block and return the new ADDS.
-        # Used in Builder::plan or in nested DSL calls.
-        def call(&block)
-          instance_exec(&block)
-          @adds
-        end
-
-        extend Forwardable
-        def_delegators :@builder, :Output, :Path, :End # TODO: make this official.
 
 
-        # #task, #step, etc. are called via the immutable builder.
-        def method_missing(name, *args, &block) # alternatively, we could define the methods via the constructor (explicitly.)
-          adds, *returned_options = @builder.send(name, *args, &block)
-          @adds += adds
-        end
+      def self.plan_for(builder, adds, &block)
+        adds += Block.new(builder).(&block) # returns ADDS
       end
 
       # TODO: DO WE NEED THIS?
       def self.build(options={}, &block)
         adds = plan( options, &block )
 
-        finalize(adds)
-      end
-
-      # @return ADDS
-      def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
-        builder = new(normalizer, options)
-
-        Block.new(builder).(&block) #=> ADDS
-        # TODO: pass new edge color in block?
-        # builder.(&block) #=> ADDS
+        Finalizer.(adds)
       end
 
       def initialize(normalizer, builder_options)
-        @builder_options = builder_options.freeze
-        @normalizer       = normalizer
-      end
-
-
-
-      # @private
-      def self.finalize(adds)
-        Finalizer.(adds)
+        @normalizer, @builder_options = normalizer, builder_options
       end
 
       def self.merge(activity, merged)

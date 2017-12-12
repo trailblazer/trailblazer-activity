@@ -2,17 +2,17 @@
 module Trailblazer
   module Activity::Magnetic
     class Builder
+      def self.FastTrack(normalizer, builder_options={}) # Build the Builder.
+        Activity::Magnetic::Builder(
+          FastTrack,
+          normalizer,
+          { track_color: :success, end_semantic: :success, failure_color: :failure }.merge( builder_options )
+        )
+      end
+
       class FastTrack < Builder
-        def initialize(normalizer, builder_options={})
-          builder_options = { # Ruby's kw args kind a suck.
-            track_color: :success, end_semantic: :success, failure_color: :failure,
-          }.merge(builder_options) # FIXME: copied from Railway!!!!
-
-          super
-
-          add!(
-            FastTrack.InitialAdds( builder_options )   # add start, success end and failure end, pass_fast and fail_fast.
-          )
+        def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
+          plan_for( *FastTrack(normalizer, options), &block )
         end
 
         def self.StepPolarizations(**options)
@@ -124,15 +124,15 @@ module Trailblazer
         PassFast = Class.new(Activity::Signal)
 
         def step(task, options={}, &block)
-          insert_element!( FastTrack, FastTrack.StepPolarizations(@builder_options), task, options, &block )
+          insert_element( FastTrack, FastTrack.StepPolarizations(@builder_options), task, options, &block )
         end
 
         def fail(task, options={}, &block)
-          insert_element!( FastTrack, FastTrack.FailPolarizations(@builder_options), task, options, &block )
+          insert_element( FastTrack, FastTrack.FailPolarizations(@builder_options), task, options, &block )
         end
 
         def pass(task, options={}, &block)
-          insert_element!( FastTrack, FastTrack.PassPolarizations(@builder_options), task, options, &block )
+          insert_element( FastTrack, FastTrack.PassPolarizations(@builder_options), task, options, &block )
         end
       end
     end

@@ -14,7 +14,8 @@ class RailwayTest < Minitest::Spec
   class K; end
   class L; end
 
-  Builder = Activity::Magnetic::Builder::Railway
+  Builder   = Activity::Magnetic::Builder
+  Finalizer = Activity::Magnetic::Builder::Finalizer
 
   describe "Activity::Railway" do
     it "move me" do
@@ -40,10 +41,12 @@ RailwayTest::K
   end
 
   it "builds tripletts for Railway pattern" do
-    seq, adds = Builder.draft do
+    adds = Builder::Railway.plan do
       step J
       step K
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
@@ -62,13 +65,15 @@ RailwayTest::K
   end
 
   it "standard path ends in End.success/:success" do
-    seq, adds = Builder.draft do
+    adds = Builder::Railway.plan do
       step J, id: "report_invalid_result"
       step K, id: "log_invalid_result"
       fail B, id: "b"
       pass C, id: "c"
       fail D, id: "d"
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
@@ -94,7 +99,7 @@ RailwayTest::K
  []
 }
 
-    process, _ = Builder.finalize( adds )
+    process, _ = Finalizer.( adds )
 Cct(process).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => RailwayTest::J
@@ -124,12 +129,14 @@ RailwayTest::D
     class MyFail; end
     class MySuccess; end
 
-    seq, _ = Builder.build track_end: MySuccess, failure_end: MyFail do
+    adds = Builder::Railway.plan( track_end: MySuccess, failure_end: MyFail ) do
       step :a, {}
     end
 
-    puts Cct(seq)
-    Cct( seq ).must_equal %{
+    process, _ = Finalizer.(adds)
+
+    puts Cct(process)
+    Cct( process ).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => :a
 :a
