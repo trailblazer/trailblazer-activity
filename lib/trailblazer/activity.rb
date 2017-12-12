@@ -48,7 +48,7 @@ module Trailblazer
     end
 
     def self.recompile_process!
-      @process, @outputs = Recompile.( @builder )
+      @process, @outputs = Recompile.( @builder.instance_variable_get(:@adds) )
     end
 
     def self.call(args, circuit_options={})
@@ -103,10 +103,11 @@ module Trailblazer
       end
     end
 
+    # MOVE ME TO ADDS
     module Recompile
       # Recompile the process and outputs from the {Builder} instance.
-      def self.call(builder)
-        process, end_events = Magnetic::Builder.finalize( builder.instance_variable_get(:@adds) )
+      def self.call(adds)
+        process, end_events = Magnetic::Builder.finalize(adds)
         outputs             = recompile_outputs(end_events)
 
         return process, outputs
