@@ -34,27 +34,6 @@ module Trailblazer
     require "trailblazer/activity/process"
     require "trailblazer/activity/introspection"
 
-    def self.inherited(inheriter)
-      super
-      inheriter.initialize!(*inheriter.config)
-    end
-
-    def self.initialize!(*args)
-      initialize_activity_dsl!(*args)
-      recompile_process!
-    end
-
-    # @private
-    def self.initialize_activity_dsl!(builder_class, normalizer)
-      @builder, @adds = builder_class.for( normalizer ) # e.g. Path.for(...) which creates a Builder::Path instance.
-      @debug          = {} # only @adds and @debug are mutable
-    end
-
-    # @private
-    def self.recompile_process!
-      @process, @outputs = Recompile.( @adds )
-    end
-
     def self.call(args, circuit_options={})
       @process.( args, circuit_options )
     end
@@ -78,6 +57,25 @@ module Trailblazer
     end
 
     private
+
+    def self.inherited(inheriter)
+      super
+      inheriter.initialize!(*inheriter.config)
+    end
+
+    def self.initialize!(*args)
+      initialize_activity_dsl!(*args)
+      recompile_process!
+    end
+
+    def self.initialize_activity_dsl!(builder_class, normalizer)
+      @builder, @adds = builder_class.for( normalizer ) # e.g. Path.for(...) which creates a Builder::Path instance.
+      @debug          = {} # only @adds and @debug are mutable
+    end
+
+    def self.recompile_process!
+      @process, @outputs = Recompile.( @adds )
+    end
 
     def self.config # FIXME: the normalizer is the same we have in Builder::plan.
       return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Path.default_plus_poles)
