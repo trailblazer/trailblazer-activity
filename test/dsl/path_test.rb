@@ -1,5 +1,15 @@
 require "test_helper"
 
+class Trailblazer::Activity::Magnetic::Builder::Path
+        # TODO: remove, only for testing.
+      # @return Tripletts
+      def self.draft(*args, &block)
+        adds = plan( *args, &block )
+
+        return Finalizer.adds_to_tripletts(adds), adds
+      end
+end
+
 class DSLPathTest < Minitest::Spec
   Left = Trailblazer::Activity::Left
   Right = Trailblazer::Activity::Right
@@ -14,13 +24,16 @@ class DSLPathTest < Minitest::Spec
   class K; end
   class L; end
 
-  Builder = Activity::Magnetic::Builder::Path
+  Builder   = Activity::Magnetic::Builder
+  Finalizer = Activity::Magnetic::Builder::Finalizer
 
   it "standard path ends in End.success/:success" do
-    seq, adds = Builder.draft do
+    adds = Builder::Path.plan do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result"
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
     Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
@@ -38,7 +51,7 @@ class DSLPathTest < Minitest::Spec
   end
 
   it "accepts :before and :group" do
-    seq, adds = Builder.draft do
+    seq, adds = Builder::Path.draft do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result", before: "report_invalid_result"
       task I, id: "start/I", group: :start
@@ -61,7 +74,7 @@ class DSLPathTest < Minitest::Spec
   it "allows to define custom End instance" do
     class MyEnd; end
 
-    seq, _ = Builder.build track_end: MyEnd do
+    seq, _ = Builder::Path.build track_end: MyEnd do
       task :a, {}
   end
 
@@ -85,7 +98,7 @@ describe "with :plus_poles" do
   it "allows overriding existing outputs via semantic=>:new_color" do
     _plus_poles = plus_poles
 
-    seq, adds = Builder.draft do
+    seq, adds = Builder::Path.draft do
       task D, plus_poles: _plus_poles, Output(:failure) => :something_completely_different
     end
 
@@ -105,7 +118,7 @@ end
 
 describe "magnetic_to:" do
   it "allows to skip minus poles" do
-    seq, adds = Builder.draft do
+    seq, adds = Builder::Path.draft do
       task D, id: "D", magnetic_to: []
     end
 
@@ -130,7 +143,7 @@ DSLPathTest::D
 end
 
   it "fake Railway with Output(Left)s" do
-    seq, adds = Builder.draft(track_color: :"track_9") do
+    seq, adds = Builder::Path.draft(track_color: :"track_9") do
       task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
       task K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
     end
@@ -195,7 +208,7 @@ DSLPathTest::L
   end
 
   it "Output(:success) finds the correct Output" do
-    seq, adds = Builder.draft( track_color: :"track_9" ) do
+    seq, adds = Builder::Path.draft( track_color: :"track_9" ) do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
     end
@@ -216,7 +229,7 @@ DSLPathTest::L
 
   # Activity.plan( track_color: :pink )
   it "Output(Right, :success) => End adds new End.invalid_result" do
-    seq, adds = Builder.draft( track_color: :"track_9" ) do
+    seq, adds = Builder::Path.draft( track_color: :"track_9" ) do
       task J, id: "report_invalid_result"
       task K, id: "log_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
     end
@@ -245,7 +258,7 @@ DSLPathTest::L
     #   Activity.Output(Activity::Right, :success) => nil,
     #   Activity.Output(Activity::Left, :failure) => nil )
 
-    seq, adds = Builder.draft do
+    adds = Builder::Path.plan do
       task A, id: "A"
       task B, id: "B", Output(Left, :failure) => Path(end_semantic: :invalid) do
         task C, id: "C"
@@ -253,6 +266,8 @@ DSLPathTest::L
       end
       task D, id: "D"
     end
+
+    seq = Finalizer.adds_to_tripletts(adds)
 
 Seq(seq).must_equal %{
 [] ==> #<Start:default/nil>
@@ -305,7 +320,7 @@ DSLPathTest::D
 
     normalizer = ->(task, local_options, options, seq_options) { [ task, options.merge(plus_poles: binary_plus_poles), options, seq_options ] }
 
-    seq, adds = Builder.draft( {}, normalizer ) do
+    seq, adds = Builder::Path.draft( {}, normalizer ) do
       task A, id: "A"
       task B, id: "B", Output(:failure) => Path(end_semantic: :invalid) do
         task C, Output(:failure) => End(:left, :left)
@@ -343,7 +358,7 @@ DSLPathTest::D
 
   describe ":type" do
     it ":type => :end" do
-      seq, adds = Builder.draft do
+      seq, adds = Builder::Path.draft do
         task A, id: "A"
         task B, id: "B", type: :End #, Output(:failure) => Path(end_semantic: :invalid) do
          # task C, Output(:failure) => End(:left, :left)
@@ -366,7 +381,7 @@ DSLPathTest::D
     end
 
     it "multiple type: :End with magnetic_to:" do
-      seq, adds = Builder.draft do
+      seq, adds = Builder::Path.draft do
         task A, id: "A"
         task B, id: "B", type: :End
         task D, id: "D", magnetic_to: [] # start event
@@ -402,11 +417,14 @@ DSLPathTest::G
 
     # with all options.
     it do
-      incremental = Activity::Magnetic::Builder::Path.new( Activity::Magnetic::Builder::DefaultNormalizer.new(plus_poles: Activity::Magnetic::Builder::Path.default_plus_poles), {track_color: :pink} )
-      incremental.task G, id: G, plus_poles: initial_plus_poles, Activity.Output("Exception", :exception) => Activity.End(:exception)
-      incremental.task I, id: I, plus_poles: initial_plus_poles, Activity.Output(Activity::Left, :failure) => Activity.End(:failure)
+      builder, adds = Builder::Path( Builder::DefaultNormalizer.new(plus_poles: Builder::Path.default_plus_poles), {track_color: :pink} )
 
-      sequence, adds = incremental.draft
+      _adds, _ = builder.task( G, id: G, plus_poles: initial_plus_poles, Activity.Output("Exception", :exception) => Activity.End(:exception) )
+      adds += _adds
+      _adds, _ = builder.task( I, id: I, plus_poles: initial_plus_poles, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
+      adds += _adds
+
+      sequence = Finalizer.adds_to_tripletts(adds)
 
       Seq(sequence).must_equal %{
 [] ==> #<Start:default/nil>

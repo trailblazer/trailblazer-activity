@@ -34,11 +34,11 @@ module Trailblazer
     require "trailblazer/activity/process"
     require "trailblazer/activity/introspection"
 
-    def self.inherited(inheriter)
-      super
-      inheriter.initialize_activity_dsl!
-      inheriter.recompile_process!
-    end
+    # def self.inherited(inheriter)
+    #   super
+    #   inheriter.initialize_activity_dsl!
+    #   inheriter.recompile_process!
+    # end
 
     def self.initialize_activity_dsl!
       builder_class, normalizer = config
@@ -105,7 +105,7 @@ module Trailblazer
 
     # MOVE ME TO ADDS
     module Recompile
-      # Recompile the process and outputs from the {Builder} instance.
+      # Recompile the process and outputs from the {ADDS} instance that collects circuit tasks and connections.
       def self.call(adds)
         process, end_events = Magnetic::Builder.finalize(adds)
         outputs             = recompile_outputs(end_events)

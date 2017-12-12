@@ -1,29 +1,33 @@
 module Trailblazer
   module Activity::Magnetic
     class Builder
-      class Path < Builder
-        def self.keywords
-          [:type]
-        end
-
         # strategy_options:
         #   :track_color
         #   :end_semantic
-        def initialize(normalizer, builder_options={})
-          builder_options = { track_color: :success, end_semantic: :success }.merge(builder_options)
-          super
+      def self.Path(normalizer, builder_options={}) # Build the Builder.
+        builder_options = { track_color: :success, end_semantic: :success }.merge(builder_options)
 
-          # TODO: use Start strategy that has only one plus_pole?
-          # add start and default end.
-          add!(
-            self.class.InitialAdds(builder_options)
-          )
+        builder = Path.new(normalizer, builder_options.freeze).freeze
+
+        return builder, Path.InitialAdds(builder_options)
+      end
+
+      class Path < Builder
+        def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
+          builder, adds = Path(normalizer, options)
+
+          adds += Block.new(builder).(&block) # returns ADDS
+        end
+
+
+        def self.keywords
+          [:type]
         end
 
         def task(task, options={}, &block)
           polarizations = Path.TaskPolarizations( @builder_options.merge(type: options[:type]) ) # DISCUSS: handle :type here? Really?
 
-          insert_element!( Path, polarizations, task, options, &block )
+          insert_element( Path, polarizations, task, options, &block )
         end
 
 

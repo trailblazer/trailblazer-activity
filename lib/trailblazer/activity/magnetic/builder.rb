@@ -16,6 +16,31 @@ module Trailblazer
 
 
     class Builder
+      class Block
+        def initialize(builder)
+          @builder = builder
+          @adds    = [] # mutable
+        end
+
+        # Evaluate user's block and return the new ADDS.
+        # Used in Builder::plan or in nested DSL calls.
+        def call(&block)
+          instance_exec(&block)
+          @adds
+        end
+
+        extend Forwardable
+        def_delegators :@builder, :Output, :Path, :End # TODO: make this official.
+
+
+        # #task, #step, etc. are called via the immutable builder.
+        def method_missing(name, *args, &block) # alternatively, we could define the methods via the constructor (explicitly.)
+          adds, *returned_options = @builder.send(name, *args, &block)
+          @adds += adds
+        end
+      end
+
+      # TODO: DO WE NEED THIS?
       def self.build(options={}, &block)
         adds = plan( options, &block )
 
@@ -26,22 +51,17 @@ module Trailblazer
       def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
         builder = new(normalizer, options)
 
+        Block.new(builder).(&block) #=> ADDS
         # TODO: pass new edge color in block?
-        builder.(&block) #=> ADDS
+        # builder.(&block) #=> ADDS
       end
 
       def initialize(normalizer, builder_options)
-        @builder_options = builder_options
+        @builder_options = builder_options.freeze
         @normalizer       = normalizer
-        @adds             = []
       end
 
-      # Evaluate user's block and return the new ADDS.
-      # Used in Builder::build.
-      def call(&block)
-        instance_exec(&block)
-        @adds
-      end
+
 
       # @private
       def self.finalize(adds)
@@ -52,17 +72,6 @@ module Trailblazer
         merged = merged[2..-1] || []
 
         activity + merged
-      end
-
-      # TODO: remove, only for testing.
-      # @return Tripletts
-      def self.draft(*args, &block)
-        adds = plan( *args, &block )
-
-        return Finalizer.adds_to_tripletts(adds), adds
-      end
-      def draft
-        return Finalizer.adds_to_tripletts(@adds), @adds # remove me.
       end
 
       module DSLMethods
@@ -91,16 +100,8 @@ module Trailblazer
       private
 
       # Internal top-level entry point to add task(s) and connections.
-      def insert_element!(impl, polarizations, task, options, &block)
+      def insert_element(impl, polarizations, task, options, &block)
         adds, *returned_options = Builder.adds_for(polarizations, @normalizer, impl.keywords, task, options, &block)
-
-        adds = add!(adds)
-
-        return adds, *returned_options
-      end
-
-      def add!(adds)
-        @adds += adds
       end
 
       # Options valid for all DSL calls with this Builder framework.
