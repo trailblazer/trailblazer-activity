@@ -34,21 +34,25 @@ module Trailblazer
     require "trailblazer/activity/process"
     require "trailblazer/activity/introspection"
 
-    # def self.inherited(inheriter)
-    #   super
-    #   inheriter.initialize_activity_dsl!
-    #   inheriter.recompile_process!
-    # end
-
-    def self.initialize_activity_dsl!
-      builder_class, normalizer = config
-
-      @builder = builder_class.new(normalizer, {})
-      @debug   = {}
+    def self.inherited(inheriter)
+      super
+      inheriter.initialize!(*inheriter.config)
     end
 
+    def self.initialize!(*args)
+      initialize_activity_dsl!(*args)
+      recompile_process!
+    end
+
+    # @private
+    def self.initialize_activity_dsl!(builder_class, normalizer)
+      @builder, @adds = builder_class.for( normalizer ) # e.g. Path.for(...) which creates a Builder::Path instance.
+      @debug          = {} # only @adds and @debug are mutable
+    end
+
+    # @private
     def self.recompile_process!
-      @process, @outputs = Recompile.( @builder.instance_variable_get(:@adds) )
+      @process, @outputs = Recompile.( @adds )
     end
 
     def self.call(args, circuit_options={})
@@ -89,6 +93,8 @@ module Trailblazer
       def task(*args, &block)
         adds, *options = @builder.task(*args, &block)
 
+        @adds += adds
+
         recompile_process!
 
         add_introspection!(adds, *options)
@@ -107,7 +113,7 @@ module Trailblazer
     module Recompile
       # Recompile the process and outputs from the {ADDS} instance that collects circuit tasks and connections.
       def self.call(adds)
-        process, end_events = Magnetic::Builder.finalize(adds)
+        process, end_events = Magnetic::Builder::Finalizer.(adds)
         outputs             = recompile_outputs(end_events)
 
         return process, outputs

@@ -1,20 +1,21 @@
 module Trailblazer
   module Activity::Magnetic
     class Builder
-        # strategy_options:
-        #   :track_color
-        #   :end_semantic
-      def self.Path(normalizer, builder_options={}) # Build the Builder.
-        Activity::Magnetic::Builder(
-          Path,
-          normalizer,
-          { track_color: :success, end_semantic: :success }.merge( builder_options )
-        )
-      end
 
       class Path < Builder
+          # strategy_options:
+          #   :track_color
+          #   :end_semantic
+        def self.for(normalizer, builder_options={}) # Build the Builder.
+          Activity::Magnetic::Builder(
+            Path,
+            normalizer,
+            { track_color: :success, end_semantic: :success }.merge( builder_options )
+          )
+        end
+
         def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
-          plan_for( *Path(normalizer, options), &block )
+          plan_for( *Path.for(normalizer, options), &block )
         end
 
 

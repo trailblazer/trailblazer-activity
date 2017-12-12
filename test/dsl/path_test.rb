@@ -417,7 +417,7 @@ DSLPathTest::G
 
     # with all options.
     it do
-      builder, adds = Builder::Path( Builder::DefaultNormalizer.new(plus_poles: Builder::Path.default_plus_poles), {track_color: :pink} )
+      builder, adds = Builder::Path.for( Builder::DefaultNormalizer.new(plus_poles: Builder::Path.default_plus_poles), {track_color: :pink} )
 
       _adds, _ = builder.task( G, id: G, plus_poles: initial_plus_poles, Activity.Output("Exception", :exception) => Activity.End(:exception) )
       adds += _adds
@@ -449,7 +449,7 @@ DSLPathTest::G
 
     # with plus_poles.
     it do
-      builder, adds = Builder::Path( Builder::DefaultNormalizer.new(plus_poles: Builder::Path.default_plus_poles), {plus_poles: initial_plus_poles} )
+      builder, adds = Builder::Path.for( Builder::DefaultNormalizer.new(plus_poles: Builder::Path.default_plus_poles), {plus_poles: initial_plus_poles} )
 
       _adds, _ = builder.task G, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception)
       adds += _adds
