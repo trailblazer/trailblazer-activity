@@ -64,11 +64,12 @@ module Trailblazer
       inheriter.initialize!(*inheriter.config)
     end
 
-    def self.initialize!(*args)
-      initialize_activity_dsl!(*args)
+    def self.initialize!(builder_class, normalizer)
+      initialize_activity_dsl!(builder_class, normalizer)
       recompile_process!
     end
 
+    # builder is stateless, it's up to you to save @adds somewhere.
     def self.initialize_activity_dsl!(builder_class, normalizer)
       @builder, @adds = builder_class.for( normalizer ) # e.g. Path.for(...) which creates a Builder::Path instance.
       @debug          = {} # only @adds and @debug are mutable
@@ -86,14 +87,17 @@ module Trailblazer
 
     # DISCUSS: make this functions and don't include?
     module DSL
+
+      # Create a new method (e.g. Activity::step) that delegates to its builder, recompiles
+      # the process, etc. Method comes in a module so it can be overridden via modules.
+      #
+      # This approach assumes you maintain a @adds and a @debug instance variable.
       def self.def_dsl!(_name)
-        mod = Module.new
-
-        mod.send( :define_method, _name) do |*args, &block|
-          _task(_name, *args, &block)  # TODO: similar to Block.
+        Module.new do
+          define_method(_name) do |*args, &block|
+            _task(_name, *args, &block)  # TODO: similar to Block.
+          end
         end
-
-        mod
       end
 
       private
@@ -104,6 +108,7 @@ module Trailblazer
         @adds += adds
 
         recompile_process!
+
         add_introspection!(adds, *returned_options)
 
         return adds, returned_options
@@ -122,8 +127,8 @@ module Trailblazer
       def_delegators :@builder, :Path#, :task
     end
 
-    extend DSL # _task, :add_introspection
-    extend DSL.def_dsl!(:task)
+    extend DSL                  # _task, :add_introspection
+    extend DSL.def_dsl!(:task)  # define Activity::task.
 
 
     # MOVE ME TO ADDS
@@ -156,15 +161,10 @@ module Trailblazer
         return Magnetic::Builder::Railway, Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles)
       end
 
-      def self.step(*args, &block)
-        adds, *options = @builder.step(*args, &block)
-
-        recompile_process!
-
-        add_introspection!(adds, *options)
-
-        return adds, options
-      end
+      extend DSL
+      extend DSL.def_dsl!(:step)
+      extend DSL.def_dsl!(:fail)
+      extend DSL.def_dsl!(:pass)
     end
   end
 end
