@@ -190,6 +190,10 @@ ActivityTest::L
         task B
       end
 
+      subactivity = Class.new(activity) do
+        task C
+      end
+
       Cct(activity.instance_variable_get(:@process)).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityTest::A
@@ -199,10 +203,6 @@ ActivityTest::B
  {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 }
-
-      subactivity = Class.new(activity) do
-        task C
-      end
 
       Cct(subactivity.instance_variable_get(:@process)).must_equal %{
 #<Start:default/nil>

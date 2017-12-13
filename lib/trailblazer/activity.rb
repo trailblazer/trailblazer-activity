@@ -34,6 +34,8 @@ module Trailblazer
     require "trailblazer/activity/process"
     require "trailblazer/activity/introspection"
 
+    require "trailblazer/activity/heritage"
+
     def self.call(args, circuit_options={})
       @process.( args, circuit_options )
     end
@@ -59,9 +61,10 @@ module Trailblazer
 
     private
 
-    def self.inherited(inheriter)
+    def self.inherited(subclass)
       super
-      inheriter.initialize!(*inheriter.config)
+      subclass.initialize!(*subclass.config)
+      heritage.(subclass)
     end
 
     def self.initialize!(builder_class, normalizer)
@@ -91,7 +94,7 @@ module Trailblazer
       # Create a new method (e.g. Activity::step) that delegates to its builder, recompiles
       # the process, etc. Method comes in a module so it can be overridden via modules.
       #
-      # This approach assumes you maintain a @adds and a @debug instance variable.
+      # This approach assumes you maintain a @adds and a @debug instance variable. and #heritage
       def self.def_dsl!(_name)
         Module.new do
           define_method(_name) do |*args, &block|
@@ -103,9 +106,12 @@ module Trailblazer
       private
 
       def _task(name, *args, &block)
+        heritage.record(name, *args, &block)
+
         adds, *returned_options = @builder.send(name, *args, &block)
 
         @adds += adds
+        @adds.freeze
 
         recompile_process!
 
@@ -129,6 +135,8 @@ module Trailblazer
 
     extend DSL                  # _task, :add_introspection
     extend DSL.def_dsl!(:task)  # define Activity::task.
+
+    extend Heritage::Accessor
 
 
     # MOVE ME TO ADDS
