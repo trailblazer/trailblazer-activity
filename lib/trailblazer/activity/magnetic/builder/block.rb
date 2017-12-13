@@ -11,7 +11,6 @@ module Trailblazer
       def initialize(builder)
         @builder = builder
         @adds    = [] # mutable
-
       end
 
       # Evaluate user's block and return the new ADDS.

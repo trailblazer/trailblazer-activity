@@ -42,6 +42,7 @@ module Trailblazer
 
     # @private
     # DISCUSS: #each instead?
+    # FIXME: move to Introspection
     def self.find(&block)
       @process.instance_variable_get(:@circuit).instance_variable_get(:@map).find(&block)
     end
@@ -82,30 +83,48 @@ module Trailblazer
     end
 
     # DSL part
-    # delegate as much as possible to Builder
-    # let us process options and e.g. do :id
-    class << self
-      extend Forwardable # TODO: test those helpers
-      def_delegators :@builder, :Path#, :task
 
-      def task(*args, &block)
-        adds, *options = @builder.task(*args, &block)
+    # DISCUSS: make this functions and don't include?
+    module DSL
+      def self.def_dsl!(_name)
+        mod = Module.new
+
+        mod.send( :define_method, _name) do |*args, &block|
+          _task(_name, *args, &block)  # TODO: similar to Block.
+        end
+
+        mod
+      end
+
+      private
+
+      def _task(name, *args, &block)
+        adds, *returned_options = @builder.send(name, *args, &block)
 
         @adds += adds
 
         recompile_process!
+        add_introspection!(adds, *returned_options)
 
-        add_introspection!(adds, *options)
-
-        return adds, options
+        return adds, returned_options
       end
 
-      private
 
       def add_introspection!(adds, task, local_options, *)
         @debug[task] = { id: local_options[:id] }.freeze
       end
     end
+
+    # delegate as much as possible to Builder
+    # let us process options and e.g. do :id
+    class << self
+      extend Forwardable # TODO: test those helpers
+      def_delegators :@builder, :Path#, :task
+    end
+
+    extend DSL # _task, :add_introspection
+    extend DSL.def_dsl!(:task)
+
 
     # MOVE ME TO ADDS
     module Recompile
