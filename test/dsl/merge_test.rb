@@ -16,7 +16,7 @@ class MergeTest < Minitest::Spec
     # pp activity+merged
     adds = Activity::Magnetic::Builder.merge(activity, merged)
 
-    process, outputs = Activity::Magnetic::Builder.finalize(adds)
+    process, outputs = Activity::Magnetic::Builder::Finalizer.(adds)
 
     Cct(process).must_equal %{
 #<Start:default/nil>
