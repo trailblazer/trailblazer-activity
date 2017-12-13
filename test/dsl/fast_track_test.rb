@@ -321,13 +321,13 @@ DSLFastTrackTest::G
     class MyPassFast; end
     class MyFailFast; end
 
-    adds = Builder::FastTrack.build track_end: MySuccess, failure_end: MyFail, pass_fast_end: MyPassFast, fail_fast_end: MyFailFast do
+    process, _ = Builder::FastTrack.build track_end: MySuccess, failure_end: MyFail, pass_fast_end: MyPassFast, fail_fast_end: MyFailFast do
       step :a, {}
     end
 
     # seq = Finalizer.adds_to_tripletts(adds)
 
-    Cct( seq ).must_equal %{
+    Cct( process ).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => :a
 :a
