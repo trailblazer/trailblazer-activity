@@ -65,8 +65,8 @@ module Trailblazer
 
   module Activity::Magnetic
     module Introspect
-      def self.seq(builder)
-        adds = builder.instance_variable_get(:@adds)
+      def self.seq(activity)
+        adds = activity.instance_variable_get(:@adds)
         tripletts = Builder::Finalizer.adds_to_tripletts(adds)
 
         Seq(tripletts)
