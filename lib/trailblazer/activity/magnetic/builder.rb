@@ -2,19 +2,6 @@ require "trailblazer/activity/magnetic/finalizer"
 
 module Trailblazer
   module Activity::Magnetic
-    module Polarization
-                # Called once per DSL method call, e.g. ::step.
-                #
-                # The idea is to chain a bunch of PlusPoles transformations (and magnetic_to "transformations")
-                # for each DSL call, and thus realize things like path+railway+fast_track
-                def self.apply(polarizations, magnetic_to, plus_poles, options)
-                  polarizations.inject([magnetic_to, plus_poles]) do |args, pol|
-                    magnetic, plus_poles = pol.(*args, options)
-                  end
-                end
-              end
-
-
     def self.Builder(implementation, normalizer, builder_options={})
       builder = implementation.new(normalizer, builder_options.freeze).freeze # e.g. Path.new(...)
 
@@ -23,12 +10,10 @@ module Trailblazer
 
     class Builder
 
-
       def self.plan_for(builder, adds, &block)
         adds += Block.new(builder).(&block) # returns ADDS
       end
 
-      # TODO: DO WE NEED THIS?
       def self.build(options={}, &block)
         adds = plan( options, &block )
 
@@ -123,21 +108,35 @@ module Trailblazer
       end
 
       # Low-level interface for DSL calls (e.g. Start, where "you know what you're doing")
+      # @private
       def self.adds(id, task, initial_plus_poles, polarization, polarizations_from_user_options, options, sequence_options, magnetic_to = nil)
-        polarizations = polarization + polarizations_from_user_options
+        magnetic_to, plus_poles = apply_polarizations(
+          polarization + polarizations_from_user_options,
+          magnetic_to,
+          initial_plus_poles,
+          options
+        )
 
-        Apply(id, task, magnetic_to, initial_plus_poles, polarizations,
-          options, #{ fast_track: true },
+        Add( id, task, magnetic_to, plus_poles,
+          options,         #{ fast_track: true },
           sequence_options #{ group: :main }
         )
       end
 
-      def self.Apply(id, task, magnetic_to, plus_poles, polarizations, options, sequence_options)
-        magnetic_to, plus_poles = Polarization.apply(polarizations, magnetic_to, plus_poles, options)
+      # Called once per DSL method call, e.g. ::step.
+      #
+      # The idea is to chain a bunch of PlusPoles transformations (and magnetic_to "transformations")
+      # for each DSL call, and thus realize things like path+railway+fast_track
+      def self.apply_polarizations(polarizations, magnetic_to, plus_poles, options)
+        polarizations.inject([magnetic_to, plus_poles]) do |args, pol|
+          magnetic, plus_poles = pol.(*args, options)
+        end
+      end
 
-        add = [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ]
-
-        [ add ]
+      def self.Add(id, task, magnetic_to, plus_poles, options, sequence_options)
+        [
+          [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ],
+        ]
       end
 
       class DefaultNormalizer
