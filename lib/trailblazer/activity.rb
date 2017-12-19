@@ -120,7 +120,6 @@ module Trailblazer
         return adds, returned_options
       end
 
-
       def add_introspection!(adds, task, local_options, *)
         @debug[task] = { id: local_options[:id] }.freeze
       end
