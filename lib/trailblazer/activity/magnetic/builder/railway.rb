@@ -14,10 +14,6 @@ module Trailblazer
           plan_for( *Railway.for(normalizer, options), &block )
         end
 
-        def self.keywords
-          [:type]
-        end
-
         def step(task, options={}, &block)
           insert_element( Railway, Railway.StepPolarizations(@builder_options), task, options, &block )
         end

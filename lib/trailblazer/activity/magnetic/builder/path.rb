@@ -18,11 +18,6 @@ module Trailblazer
           plan_for( *Path.for(normalizer, options), &block )
         end
 
-
-        def self.keywords
-          [:type]
-        end
-
         def task(task, options={}, &block)
           polarizations = Path.TaskPolarizations( @builder_options.merge(type: options[:type]) ) # DISCUSS: handle :type here? Really?
 

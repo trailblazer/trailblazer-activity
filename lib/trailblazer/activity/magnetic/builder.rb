@@ -57,12 +57,7 @@ module Trailblazer
 
       # Internal top-level entry point to add task(s) and connections.
       def insert_element(impl, polarizations, task, options, &block)
-        adds, *returned_options = Builder.adds_for(polarizations, @normalizer, impl.keywords, task, options, &block)
-      end
-
-      # Options valid for all DSL calls with this Builder framework.
-      def self.generic_keywords
-        [ :id, :plus_poles, :magnetic_to, :adds ]
+        adds, *returned_options = Builder.adds_for(polarizations, @normalizer, task, options, &block)
       end
 
       def self.sequence_keywords
@@ -81,8 +76,8 @@ module Trailblazer
       # @return Adds
       # High level interface for DSL calls like ::task or ::step.
       # TODO: RETURN ALL OPTIONS
-      def self.adds_for(polarizations, normalizer, keywords, task, options, &block)
-        task, local_options, options, sequence_options = normalize_options(normalizer, keywords, task, options)
+      def self.adds_for(polarizations, normalizer, task, options, &block)
+        task, local_options, options, sequence_options = normalize_options(normalizer, task, options)
 
         initial_plus_poles = local_options[:plus_poles]
         magnetic_to        = local_options[:magnetic_to]
@@ -97,14 +92,21 @@ module Trailblazer
       end
 
       # @private
-      def self.normalize_options(normalizer, keywords, task, options)
+      def self.normalize_options(normalizer, task, options)
+        keywords = extract_dsl_keywords(options)
+
          # sort through the "original" user DSL options.
-        options, local_options    = normalize( options, generic_keywords+keywords ) # DISCUSS:
-        options, sequence_options = normalize( options, sequence_keywords )
+        options, local_options          = normalize( options, keywords ) # DISCUSS:
+        local_options, sequence_options = normalize( local_options, sequence_keywords )
 
         task, local_options, options, sequence_options = normalizer.(task, local_options, options, sequence_options)
 
         return task, local_options, options, sequence_options
+      end
+
+      # Filter out connections, e.g. `Output(:fail_fast) => :success` and return only the keywords like `:id` or `:replace`.
+      def self.extract_dsl_keywords(options, connection_classes = [Activity::Output, DSL::Output::Semantic])
+        options.keys - options.keys.find_all { |k| connection_classes.include?( k.class ) }
       end
 
       # Low-level interface for DSL calls (e.g. Start, where "you know what you're doing")
