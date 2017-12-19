@@ -1,3 +1,8 @@
+# 0.3.1
+
+* Allow passing a `:normalizer` to the DSL.
+* Builders don't have to provide `keywords` as we can filter them automatically.
+
 # 0.2.2
 
 * Remove `Activity#end_events`.
