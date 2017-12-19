@@ -87,6 +87,37 @@ DSLPathTest::MyEnd
 }
 end
 
+describe ":normalizer" do
+  let(:plus_poles) do
+    Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity.Output(Activity::Right, :success) => :success,
+    )
+  end
+
+  it "allows injecting a normalizer" do
+    normalizer  = ->(task, options, *args) { [task.inspect, options, *args] }
+    _plus_poles = plus_poles
+
+    adds = Builder::Path.plan do
+      task I, normalizer: normalizer, plus_poles: _plus_poles
+      task K
+    end
+
+    seq = Finalizer.adds_to_tripletts(adds)
+
+    Seq(seq).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> "DSLPathTest::I"
+ (success)/Right ==> :success
+[:success] ==> DSLPathTest::K
+ (success)/Right ==> :success
+[:success] ==> #<End:success/:success>
+ []
+}
+  end
+end
+
 describe "with :plus_poles" do
   let(:plus_poles) do
     Activity::Magnetic::DSL::PlusPoles.new.merge(
