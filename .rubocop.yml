@@ -12,3 +12,5 @@ Naming/MethodName:
     - 'lib/trailblazer/activity/magnetic/builder/railway.rb'
     - 'lib/trailblazer/activity/magnetic/builder/fast_track.rb'
     - 'lib/trailblazer/activity/magnetic/builder.rb'
+    - 'lib/trailblazer/activity/introspection.rb'
+    - 'lib/trailblazer/activity/structures.rb'
