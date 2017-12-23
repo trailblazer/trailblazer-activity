@@ -27,7 +27,7 @@ class Trailblazer::Activity
         # don't return the wrap's end signal, but the one from call_task.
         # return all original_args for the next "real" task in the circuit (this includes circuit_options).
 
-        [ wrap_ctx[:result_direction], wrap_ctx[:result_args] ]
+        [ wrap_ctx[:return_signal], wrap_ctx[:return_args] ]
       end
 
       private

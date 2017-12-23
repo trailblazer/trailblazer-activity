@@ -1,3 +1,7 @@
+# 0.3.2
+
+* In the `TaskWrap`, rename `:result_direction` to `:return_signal` and `:result_args` to `:return_args`,
+
 # 0.3.1
 
 * Allow passing a `:normalizer` to the DSL.
