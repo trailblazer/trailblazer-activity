@@ -2,6 +2,19 @@ require "trailblazer/activity/magnetic/finalizer"
 
 module Trailblazer
   module Activity::Magnetic
+
+    # TODO: move?
+    module Options
+      # Produce two hashes, one "local" options with DSL-specific options such as `:fast_track`,
+      # one with generic DSL options, for example tuples like `Right=>Output(:failure)`.
+      def self.normalize(options, local_keys)
+        local, foreign = {}, {}
+        options.each { |k,v| local_keys.include?(k) ? local[k] = v : foreign[k] = v }
+
+        return foreign, local
+      end
+    end
+
     def self.Builder(implementation, normalizer, builder_options={})
       builder = implementation.new(normalizer, builder_options.freeze).freeze # e.g. Path.new(...)
 
@@ -59,6 +72,8 @@ module Trailblazer
       def insert_element(impl, polarizations, task, options, &block)
         normalizer = options[:normalizer] || @normalizer # DISCUSS: do this at a deeper point?
 
+
+
         adds, *returned_options = Builder.adds_for(polarizations, normalizer, task, options, &block)
       end
 
@@ -66,14 +81,7 @@ module Trailblazer
         [ :group, :before, :after, :replace, :delete ] # hard-wires Builder to Sequence/Alterations.
       end
 
-      # Produce two hashes, one "local" options with DSL-specific options such as `:fast_track`,
-      # one with generic DSL options, for example tuples like `Right=>Output(:failure)`.
-      def self.normalize(options, local_keys)
-        local, foreign = {}, {}
-        options.each { |k,v| local_keys.include?(k) ? local[k] = v : foreign[k] = v }
 
-        return foreign, local
-      end
 
       # @return Adds
       # High level interface for DSL calls like ::task or ::step.
@@ -98,8 +106,8 @@ module Trailblazer
         keywords = extract_dsl_keywords(options)
 
          # sort through the "original" user DSL options.
-        options, local_options          = normalize( options, keywords ) # DISCUSS:
-        local_options, sequence_options = normalize( local_options, sequence_keywords )
+        options, local_options          = Options.normalize( options, keywords ) # DISCUSS:
+        local_options, sequence_options = Options.normalize( local_options, sequence_keywords )
 
         task, local_options, options, sequence_options = normalizer.(task, local_options, options, sequence_options)
 
