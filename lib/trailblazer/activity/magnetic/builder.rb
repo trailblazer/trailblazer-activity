@@ -72,8 +72,6 @@ module Trailblazer
       def insert_element(impl, polarizations, task, options, &block)
         normalizer = options[:normalizer] || @normalizer # DISCUSS: do this at a deeper point?
 
-
-
         adds, *returned_options = Builder.adds_for(polarizations, normalizer, task, options, &block)
       end
 

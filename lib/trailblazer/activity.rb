@@ -23,6 +23,7 @@ module Trailblazer
     require "trailblazer/wrap/call_task"
     require "trailblazer/wrap/trace"
     require "trailblazer/wrap/runner"
+    require "trailblazer/wrap/merge"
 
     require "trailblazer/activity/trace"
     require "trailblazer/activity/present"

@@ -14,6 +14,47 @@ class WrapTest < Minitest::Spec
 
   MyInject  = ->((options)) { [ Activity::Right, options.merge( current_user: Module ) ] }
 
+  describe "DSL: storing taskWrap configurations via :extension API" do
+    # {TaskWrap API} extension task
+    TaskWrap_Extension_task = ->( (wrap_config, original_args), **circuit_options ) do
+      (ctx, b), c = original_args
+
+      ctx[:seq] << "Hi from taskWrap!"
+
+      return Activity::Right, [ wrap_config, [[ctx, b], c] ]
+    end
+
+    it do
+      extension_adds = Activity::Magnetic::Builder::Path.plan do
+        task TaskWrap_Extension_task, before: "task_wrap.call_task" # "Hi from taskWrap!"
+      end
+
+      activity = Class.new(Activity) do
+        def self.static_task_wrap
+          @static_task_wrap ||= ::Hash.new(Activity::Wrap.initial_activity)
+        end
+
+        def self.a( (ctx, flow_options), **)
+          ctx[:seq] << :a
+
+          return Activity::Right, [ ctx, flow_options ]
+        end
+
+        task method(:a), extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
+      end
+
+
+      event, (options, _) = activity.( [ {seq: []}, {} ],
+        wrap_static:    activity.static_task_wrap,
+        runner:         Activity::Wrap::Runner,
+        wrap_runtime:   Hash.new([]),
+      )
+
+      options.must_equal(:seq=>["Hi from taskWrap!", :a])
+    end
+  end
+
+
   #- tracing
 
   describe "nested trailing" do
