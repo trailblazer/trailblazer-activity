@@ -105,6 +105,7 @@ module Trailblazer
 
       private
 
+      # @param name (:step|:pass|:fail)
       def _task(name, *args, &block)
         heritage.record(name, *args, &block)
 
@@ -115,7 +116,11 @@ module Trailblazer
 
         recompile_process!
 
-        add_introspection!(adds, *returned_options)
+        task, local_options, _ = returned_options
+        # {Extension API} call all extensions.
+        local_options[:extension].collect { |ext| ext.(self, adds, *returned_options) } if local_options[:extension]
+
+        add_introspection!(adds, *returned_options) # DISCUSS: should we use the :extension API here, too?
 
         return adds, returned_options
       end
