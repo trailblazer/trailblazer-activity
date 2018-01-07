@@ -5,12 +5,12 @@ class TaskWrapMacroTest < Minitest::Spec
   Builder  = Trailblazer::Activity::Magnetic::Builder
 
   # Sample {Extension}
-  SampleExtension = ->(activity, adds, original_task, local_options, *returned_options) do
+  SampleExtension = ->(activity, adds, task, local_options, *returned_options) do
     activity.task activity.method(:b), id: "add_another_1", before: local_options[:id]
   end
 
   #
-  # Actual {Activity} using the {Macro}
+  # Actual {Activity} using :extension
   class Create < Trailblazer::Activity
     def self.a( (ctx, flow_options), **)
       ctx[:seq] << :a
@@ -24,7 +24,7 @@ class TaskWrapMacroTest < Minitest::Spec
       return Right, [ ctx, flow_options ]
     end
 
-    task method(:a), extension: [ SampleExtension ]
+    task method(:a), extension: [ SampleExtension ], id: "a"
   end
 
   it "runs two tasks" do
