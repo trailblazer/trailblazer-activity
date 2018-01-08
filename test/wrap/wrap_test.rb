@@ -34,6 +34,18 @@ class WrapTest < Minitest::Spec
           @static_task_wrap ||= ::Hash.new(Activity::Wrap.initial_activity)
         end
 
+        def self.arguments_for_call(args, **circuit_options)
+          activity = self
+
+
+
+          return args, circuit_options.merge(
+            wrap_static:    self.static_task_wrap, # TODO: all wrap_statics from graph.
+            runner:         Activity::Wrap::Runner,
+            wrap_runtime:   Hash.new([]),
+          )
+        end
+
         def self.a( (ctx, flow_options), **)
           ctx[:seq] << :a
 
@@ -44,11 +56,7 @@ class WrapTest < Minitest::Spec
       end
 
 
-      event, (options, _) = activity.( [ {seq: []}, {} ],
-        wrap_static:    activity.static_task_wrap,
-        runner:         Activity::Wrap::Runner,
-        wrap_runtime:   Hash.new([]),
-      )
+      event, (options, _) = activity.( *activity.arguments_for_call( [ {seq: []}, {} ] ) )
 
       options.must_equal(:seq=>["Hi from taskWrap!", :a])
     end
