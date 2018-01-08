@@ -90,24 +90,28 @@ module Trailblazer
 
           ends =
             adds(
-              "End.pass_fast", pass_fast_end,
+              pass_fast_end,
 
-              {}, # plus_poles
               Path::TaskPolarizations(builder_options.merge( type: :End )),
 
               {},
               { group: :end },
-              [:pass_fast]
+
+              id:           "End.pass_fast",
+              magnetic_to:  [:pass_fast],
+              plus_poles:   {},
             )+
             adds(
-              "End.fail_fast", fail_fast_end,
+              fail_fast_end,
 
-              {}, # plus_poles
               Path::TaskPolarizations(builder_options.merge( type: :End )),
 
               {},
               { group: :end },
-              [:fail_fast]
+
+              magnetic_to:  [:fail_fast],
+              id:           "End.fail_fast",
+              plus_poles:   {},
             )
 
           path_adds + ends

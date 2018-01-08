@@ -37,22 +37,27 @@ module Trailblazer
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
           start_adds = adds(
-            "Start.default", Activity::Start.new(:default),
+            Activity::Start.new(:default),
 
-            default_plus_poles,
             TaskPolarizations(builder_options),
 
             {}, { group: :start },
-            [] # magnetic_to
+
+            id:           "Start.default",
+            magnetic_to:  [],
+            plus_poles:   default_plus_poles
           )
 
           end_adds = adds(
-            "End.#{track_color}", track_end,
+            track_end,
 
-            {}, # plus_poles
             TaskPolarizations(builder_options.merge( type: :End )),
 
-            {}, { group: :end }
+            {}, { group: :end },
+
+            id:         "End.#{track_color}",
+            plus_poles: {},
+            magnetic_to: nil,
           )
 
           start_adds + end_adds

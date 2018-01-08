@@ -39,14 +39,16 @@ module Trailblazer
           path_adds = Path.InitialAdds(**builder_options)
 
           end_adds = adds(
-            "End.#{failure_color}", failure_end,
+            failure_end,
 
-            {}, # plus_poles
             Path::TaskPolarizations(builder_options.merge( type: :End )),
 
             {},
             { group: :end },
-            [failure_color]
+
+            magnetic_to:  [failure_color],
+            id:           "End.#{failure_color}",
+            plus_poles:   {},
           )
 
           path_adds + end_adds

@@ -90,16 +90,14 @@ module Trailblazer
         # here, the user can hook in, currently.
         task, local_options, options, sequence_options = normalizer.(task, local_options, options, sequence_options)
 
-        initial_plus_poles = local_options[:plus_poles]
-        magnetic_to        = local_options[:magnetic_to]
-        adds               = local_options[:adds] || []
-
         # go through all wiring options such as Output()=>:color.
-        polarizations_from_user_options, additional_adds = DSL::ProcessOptions.(local_options[:id], options, initial_plus_poles, &block)
+        polarizations_from_user_options, additional_adds = process_dsl_options(options, local_options, &block)
 
-        result = adds(local_options[:id], task, initial_plus_poles, polarizations + polarizations_from_user_options, local_options, sequence_options, magnetic_to)
+        polarizations = polarizations + polarizations_from_user_options
 
-        return result + adds + additional_adds, task, local_options, options, sequence_options
+        result = adds(task, polarizations, local_options, sequence_options, local_options)
+
+        return result + (local_options[:adds] || []) + additional_adds, task, local_options, options, sequence_options
       end
 
       # @private
@@ -118,13 +116,17 @@ module Trailblazer
         options.keys - options.keys.find_all { |k| connection_classes.include?( k.class ) }
       end
 
+      def self.process_dsl_options(options, id:nil, plus_poles:, **, &block)
+        DSL::ProcessOptions.(id, options, plus_poles, &block)
+      end
+
       # Low-level interface for DSL calls (e.g. Start, where "you know what you're doing")
       # @private
-      def self.adds(id, task, initial_plus_poles, polarizations, options, sequence_options, magnetic_to = nil)
+      def self.adds(task, polarizations, options, sequence_options, magnetic_to:nil, id:nil, plus_poles:, **) # DISCUSS: no :id ?
         magnetic_to, plus_poles = apply_polarizations(
           polarizations,
           magnetic_to,
-          initial_plus_poles,
+          plus_poles,
           options
         )
 
