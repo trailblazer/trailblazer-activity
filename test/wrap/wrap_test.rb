@@ -4,7 +4,7 @@ class WrapTest < Minitest::Spec
   Circuit          = Trailblazer::Circuit
   Activity         = Trailblazer::Activity
   SpecialDirection = Class.new
-  Wrap             = Activity::Wrap
+  Wrap             = Activity::TaskWrap
 
   Model     = ->((options, *args), **circuit_options) { options = options.merge("model" => String); [ Activity::Right, [options, *args], **circuit_options] }
   Uuid      = ->((options, *args), **circuit_options) { options = options.merge("uuid" => 999);     [ SpecialDirection, [options, *args], **circuit_options] }
@@ -31,7 +31,7 @@ class WrapTest < Minitest::Spec
 
       activity = Class.new(Activity) do
         def self.static_task_wrap
-          @static_task_wrap ||= ::Hash.new(Activity::Wrap.initial_activity)
+          @static_task_wrap ||= ::Hash.new(Activity::TaskWrap.initial_activity)
         end
 
         def self.arguments_for_call(args, **circuit_options)
@@ -41,7 +41,7 @@ class WrapTest < Minitest::Spec
 
           return args, circuit_options.merge(
             wrap_static:    self.static_task_wrap, # TODO: all wrap_statics from graph.
-            runner:         Activity::Wrap::Runner,
+            runner:         Activity::TaskWrap::Runner,
             wrap_runtime:   Hash.new([]),
           )
         end
@@ -116,7 +116,7 @@ class WrapTest < Minitest::Spec
 
         wrap_runtime: Hash.new([]), # dynamic additions from the outside (e.g. tracing), also per task.
         runner: Wrap::Runner,
-        wrap_static: Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
+        wrap_static: Hash.new( Wrap.initial_activity ), # per activity?
       )
 
       signal.must_equal activity.outputs[:success].signal # the actual activity's End signal.
@@ -129,8 +129,8 @@ class WrapTest < Minitest::Spec
     describe "Wrap::Runner#call with :wrap_runtime" do
       let(:wrap_alterations) do
         Activity::Magnetic::Builder::Path.plan do
-          task Activity::Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
-          task Activity::Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
+          task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
+          task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
         end
       end
 
@@ -156,8 +156,8 @@ class WrapTest < Minitest::Spec
           task only_for_wrap, id: "task_wrap.upload", before: "task_wrap.call_task"
         end
 
-        wrap_static         = Hash.new( Trailblazer::Activity::Wrap.initial_activity )
-        wrap_static[Upload] = Trailblazer::Activity::Magnetic::Builder.merge( Trailblazer::Activity::Wrap.initial_activity, upload_wrap )
+        wrap_static         = Hash.new( Wrap.initial_activity )
+        wrap_static[Upload] = Trailblazer::Activity::Magnetic::Builder.merge( Wrap.initial_activity, upload_wrap )
 
         signal, (options, flow_options, *ret) = more_nested.(
           [
@@ -190,8 +190,8 @@ class WrapTest < Minitest::Spec
     #- Tracing
     it "trail" do
       wrap_alterations = Activity::Magnetic::Builder::Path.plan do
-        task Activity::Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
-        task Activity::Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
+        task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
+        task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
       end
 
       signal, (options, flow_options) = activity.(
@@ -204,7 +204,7 @@ class WrapTest < Minitest::Spec
         ],
 
         # wrap_static
-        wrap_static:  Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # per activity?
+        wrap_static:  Hash.new( Wrap.initial_activity ), # per activity?
         wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
         runner:       Wrap::Runner,
         introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } }, # optional, eg. per Activity.

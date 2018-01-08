@@ -1,5 +1,5 @@
 class Trailblazer::Activity
-  module Wrap
+  module TaskWrap
     # TaskWrap tasks for tracing.
     module Trace
       # def self.capture_args(direction, options, flow_options, wrap_config, original_flow_options)

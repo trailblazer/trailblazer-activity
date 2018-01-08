@@ -14,9 +14,9 @@ module Trailblazer
         }
 
         tracing_circuit_options = {
-          runner:        Wrap::Runner,
+          runner:        TaskWrap::Runner,
           wrap_runtime:  ::Hash.new(Trace.wirings), # FIXME: this still overrides existing wrap_runtimes.
-          wrap_static:   ::Hash.new( Trailblazer::Activity::Wrap.initial_activity ), # FIXME
+          wrap_static:   ::Hash.new( Trailblazer::Activity::TaskWrap.initial_activity ), # FIXME
           introspection: compute_debug(activity), # FIXME: this is still also set in Activity::call
         }
 
@@ -46,11 +46,11 @@ module Trailblazer
       # Insertions for the trace tasks that capture the arguments just before calling the task,
       # and before the TaskWrap is finished.
       #
-      # Note that the TaskWrap steps are implemented in Activity::Wrap::Trace.
+      # Note that the TaskWrap steps are implemented in Activity::TaskWrap::Trace.
       def self.wirings
         Activity::Magnetic::Builder::Path.plan do
-          task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
-          task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
+          task TaskWrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
+          task TaskWrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
         end
       end
 

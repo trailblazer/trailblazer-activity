@@ -1,5 +1,5 @@
 class Trailblazer::Activity
-  module Wrap
+  module TaskWrap
     # TaskWrap step that calls the actual wrapped task and passes all `original_args` to it.
     #
     # It writes to wrap_ctx[:return_signal], wrap_ctx[:return_args]

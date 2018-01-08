@@ -1,5 +1,5 @@
 class Trailblazer::Activity
-  module Wrap
+  module TaskWrap
     # Wrap::Activity is the actual circuit that implements the Task wrap. This circuit is
     # also known as `task_wrap`.
     #
@@ -15,7 +15,7 @@ class Trailblazer::Activity
     def self.initial_activity
       Magnetic::Builder::Path.plan do
         # Wrap.call_task is defined in wrap/call_task.
-        task Wrap.method(:call_task), id: "task_wrap.call_task"
+        task TaskWrap.method(:call_task), id: "task_wrap.call_task"
       end
     end
   end

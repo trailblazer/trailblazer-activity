@@ -19,11 +19,11 @@ module Trailblazer
 
     require "trailblazer/activity/subprocess"
 
-    require "trailblazer/activity/wrap"
-    require "trailblazer/wrap/call_task"
-    require "trailblazer/wrap/trace"
-    require "trailblazer/wrap/runner"
-    require "trailblazer/wrap/merge"
+    require "trailblazer/activity/task_wrap"
+    require "trailblazer/activity/task_wrap/call_task"
+    require "trailblazer/activity/task_wrap/trace"
+    require "trailblazer/activity/task_wrap/runner"
+    require "trailblazer/activity/task_wrap/merge"
 
     require "trailblazer/activity/trace"
     require "trailblazer/activity/present"
