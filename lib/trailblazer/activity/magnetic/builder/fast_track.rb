@@ -94,7 +94,6 @@ module Trailblazer
 
               {}, # plus_poles
               Path::TaskPolarizations(builder_options.merge( type: :End )),
-              [],
 
               {},
               { group: :end },
@@ -105,7 +104,6 @@ module Trailblazer
 
               {}, # plus_poles
               Path::TaskPolarizations(builder_options.merge( type: :End )),
-              [],
 
               {},
               { group: :end },

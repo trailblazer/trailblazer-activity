@@ -41,7 +41,6 @@ module Trailblazer
 
             default_plus_poles,
             TaskPolarizations(builder_options),
-            [],
 
             {}, { group: :start },
             [] # magnetic_to
@@ -52,7 +51,6 @@ module Trailblazer
 
             {}, # plus_poles
             TaskPolarizations(builder_options.merge( type: :End )),
-            [],
 
             {}, { group: :end }
           )

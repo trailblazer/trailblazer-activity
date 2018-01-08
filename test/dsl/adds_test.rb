@@ -28,7 +28,7 @@ class AddsTest < Minitest::Spec
     # path = Activity::Magnetic::Builder::Path.new(builder_options)
 
     polarizations = Activity::Magnetic::Builder::FastTrack.StepPolarizations(builder_options)
-    out = pp Activity::Magnetic::Builder.adds("A", String, binary_plus_poles, polarizations, [], { fast_track: true }, { group: :start })
+    out = pp Activity::Magnetic::Builder.adds("A", String, binary_plus_poles, polarizations, { fast_track: true }, { group: :start })
 
     out.inspect.must_equal %{[[:add, ["A", [[:green], String, [#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Right, semantic=:success>, color=:green>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Left, semantic=:failure>, color=:failure>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast, semantic=:fail_fast>, color=:fail_fast>, #<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast, semantic=:pass_fast>, color=:pass_fast>]], {:group=>:start}]]]}
 
@@ -41,7 +41,7 @@ class AddsTest < Minitest::Spec
     builder_options = { track_color: :green }
 
     polarizations = Activity::Magnetic::Builder::FastTrack.StepPolarizations(builder_options)
-    PP.pp Activity::Magnetic::Builder.adds("A", String, binary_plus_poles, polarizations, [], { }, { group: :main }), dump = ""
+    PP.pp Activity::Magnetic::Builder.adds("A", String, binary_plus_poles, polarizations, { }, { group: :main }), dump = ""
 
     dump.must_equal %{[[:add,
   ["A",
@@ -67,7 +67,7 @@ class AddsTest < Minitest::Spec
     builder_options = { track_color: :green }
 
     polarizations = Activity::Magnetic::Builder::FastTrack.StepPolarizations(builder_options)
-    PP.pp Activity::Magnetic::Builder.adds("A", String, binary_plus_poles, polarizations, [], { pass_fast: true }, { group: :main }), dump = ""
+    PP.pp Activity::Magnetic::Builder.adds("A", String, binary_plus_poles, polarizations, { pass_fast: true }, { group: :main }), dump = ""
 
     dump.must_equal %{[[:add,
   ["A",

@@ -29,6 +29,10 @@ module Trailblazer
       def debug
         @activity.debug
       end
+
+      def to_s
+        %{#<Trailblazer::Activity::Subprocess activity=#{@activity}>}
+      end
     end
   end
 end

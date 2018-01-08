@@ -30,7 +30,7 @@ module Trailblazer
       # #task, #step, etc. are called via the immutable builder.
       def capture_adds(name, *args, &block)
         adds, *returned_options = @builder.send(name, *args, &block)
-        @adds += adds
+        @adds += adds # FIXME: we need to capture returned_options, too!
       end
     end
   end
