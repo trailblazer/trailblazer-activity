@@ -14,6 +14,7 @@ class WrapTest < Minitest::Spec
 
   MyInject  = ->((options)) { [ Activity::Right, options.merge( current_user: Module ) ] }
 
+
   describe "DSL: storing taskWrap configurations via :extension API" do
     # {TaskWrap API} extension task
     TaskWrap_Extension_task = ->( (wrap_config, original_args), **circuit_options ) do
@@ -34,18 +35,6 @@ class WrapTest < Minitest::Spec
           @static_task_wrap ||= ::Hash.new(Activity::TaskWrap.initial_activity)
         end
 
-        def self.arguments_for_call(args, **circuit_options)
-          activity = self
-
-
-
-          return args, circuit_options.merge(
-            wrap_static:    self.static_task_wrap, # TODO: all wrap_statics from graph.
-            runner:         Activity::TaskWrap::Runner,
-            wrap_runtime:   Hash.new([]),
-          )
-        end
-
         def self.a( (ctx, flow_options), **)
           ctx[:seq] << :a
 
@@ -55,8 +44,10 @@ class WrapTest < Minitest::Spec
         task method(:a), extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
       end
 
+      args = [ {seq: []}, {} ]
 
-      event, (options, _) = activity.( *activity.arguments_for_call( [ {seq: []}, {} ] ) )
+      # event, (options, _) = activity.( *Wrap.arguments_for_call( activity, args ) )
+      event, (options, _) = activity.( args, argumenter: [ Wrap.method(:arguments_for_call) ] )
 
       options.must_equal(:seq=>["Hi from taskWrap!", :a])
     end

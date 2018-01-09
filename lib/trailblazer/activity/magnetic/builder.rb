@@ -44,6 +44,8 @@ module Trailblazer
       end
 
       module DSLMethods
+        module_function
+
         #   Output( Left, :failure )
         #   Output( :failure ) #=> Output::Semantic
         def Output(signal, semantic=nil)
@@ -64,7 +66,7 @@ module Trailblazer
         end
       end
 
-      include DSLMethods
+      include DSLMethods # FIXME: do we need this?
 
       private
 
