@@ -8,7 +8,7 @@ class Trailblazer::Activity
 
         original_flow_options[:stack].indent!
 
-        original_flow_options[:stack] << Trailblazer::Activity::Trace::Entity.new( wrap_config[:task], :args, nil, {}, original_circuit_options[:introspection] )
+        original_flow_options[:stack] << Trailblazer::Activity::Trace::Entity.new( wrap_config[:task], :args, nil, {}, original_circuit_options[:introspect] )
 
         [ Trailblazer::Activity::Right, [wrap_config, original_args], **circuit_options ]
       end

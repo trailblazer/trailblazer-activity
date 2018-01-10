@@ -8,40 +8,34 @@ module Trailblazer
     #
     # Hooks into the TaskWrap.
     module Trace
-      def self.call(activity, (options), *args, &block)
+      # {:argumenter} API
+      # FIXME: needs Introspect.arguments_for_call
+      # FIXME: needs TaskWrap.arguments_for_call
+      def self.arguments_for_call(activity, (options, flow_options), **circuit_options)
         tracing_flow_options = {
           stack:         Trace::Stack.new,
         }
 
         tracing_circuit_options = {
-          runner:        TaskWrap::Runner,
-          wrap_runtime:  ::Hash.new(Trace.wirings), # FIXME: this still overrides existing wrap_runtimes.
-          wrap_static:   ::Hash.new( Trailblazer::Activity::TaskWrap.initial_activity ), # FIXME
-          introspection: compute_debug(activity), # FIXME: this is still also set in Activity::call
+          wrap_runtime:  ::Hash.new(Trace.wirings), # FIXME: this still overrides existing :wrap_runtime.
         }
 
-        last_signal, (options, flow_options) = call_activity( activity, [ options, tracing_flow_options ], tracing_circuit_options, &block )
-          # tracing_flow_options.merge(flow_options),
+        return activity, [ options, flow_options.merge(tracing_flow_options) ], circuit_options.merge(tracing_circuit_options)
+      end
+
+      def self.call(activity, (options), *args, &block)
+        activity, (options, flow_options), circuit_options = Trace.arguments_for_call( activity, [options, {}], {} ) # only run once for the entire circuit!
+
+        last_signal, (options, flow_options) =
+          activity.(
+            [options, flow_options],
+            circuit_options.merge({ argumenter: [ Introspect.method(:arguments_for_call), TaskWrap.method(:arguments_for_call) ] })
+          )
 
         return flow_options[:stack].to_a, last_signal, options, flow_options
       end
 
       private
-
-      # TODO: test alterations with any wrap_circuit.
-      def self.call_activity(activity, *args, &block)
-        return activity.(*args) unless block
-        block.(activity, *args)
-      end
-
-      # TODO: this is experimental.
-      # Go through all nested Activities and grab their `Activity.debug` field. This gets all merged into
-      # one big debugging hash, instead of computing it overly complex at runtime and while executing the circuit.
-      def self.compute_debug(activity)
-        arrs = Introspect.collect( activity, recursive: true ) { |task, _| task }.find_all { |task| task.is_a?(Interface) }.collect { |task| task.debug }.flatten(1).compact
-
-        arrs.inject( activity.debug ) { |memo, debug| memo.merge(debug) }
-      end
 
       # Insertions for the trace tasks that capture the arguments just before calling the task,
       # and before the TaskWrap is finished.

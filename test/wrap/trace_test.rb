@@ -9,6 +9,8 @@ class TraceTest < Minitest::Spec
   let(:activity) do
     nested = bc
     activity, _ = Activity.build do
+      include Trailblazer::Activity::TaskWrap
+
       task A, id: "A"
       task nested, nested.outputs[:success] => :success, id: "<Nested>"
       task D, id: "D"
@@ -18,6 +20,8 @@ class TraceTest < Minitest::Spec
 
   let(:bc) do
     activity, _ = Activity.build do
+      include Trailblazer::Activity::TaskWrap
+
       task B, id: "B"
       task C, id: "C"
     end

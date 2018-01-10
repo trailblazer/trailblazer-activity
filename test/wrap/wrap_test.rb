@@ -56,42 +56,28 @@ class WrapTest < Minitest::Spec
 
   describe "nested trailing" do
     let (:more_nested) do
-      Trailblazer::Activity.build do #|start, _end|
-        task Upload#  => { Activity::Right => Upload },
-          # Upload => { Activity::Right => _end }
-        # }
+      Trailblazer::Activity.build do
+        task Upload
       end
     end
 
     let (:nested) do
       _more_nested = more_nested
 
-      Trailblazer::Activity.build do# |start, _end|
+      Trailblazer::Activity.build do
         task Save
         task _more_nested, _more_nested.outputs[:success] => :success
         task Cleanup
-        # {
-        #   start => { Activity::Right    => Save },
-        #   Save        => { Activity::Right  => more_nested },
-        #   more_nested => { more_nested.outputs[:success] => Cleanup },
-        #   Cleanup     => { Activity::Right => _end }
-        # }
       end
     end
 
     let (:activity) do
       _nested = nested
 
-      Trailblazer::Activity.build do# |start, _end|
+      Trailblazer::Activity.build do
         task Model
         task _nested, _nested.outputs[:success] => :success, id: "A"
         task Uuid, Output(SpecialDirection, :success) => :success
-        # {
-        #   start     => { Activity::Right => Model },
-        #   Model     => { Activity::Right => nested  },
-        #   nested    => { nested.outputs[:success] => Uuid },
-        #   Uuid      => { SpecialDirection => _end }
-        # }
       end
     end
 
@@ -160,7 +146,9 @@ class WrapTest < Minitest::Spec
           runner:        Wrap::Runner,
           wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
           wrap_static:   wrap_static,
-          introspection: { } # TODO: crashes without :debug.
+          # introspection: { } # TODO: crashes without :debug.
+
+          argumenter: [ Activity::Introspect.method(:arguments_for_call) ]
         )
 
         # upload should contain only one 1.
@@ -196,13 +184,13 @@ class WrapTest < Minitest::Spec
         wrap_static:  Hash.new( Wrap.initial_activity ), # per activity?
         wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
         runner:       Wrap::Runner,
-        introspection:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } }, # optional, eg. per Activity.
+        introspect:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } }, # optional, eg. per Activity.
       )
 
       signal.must_equal activity.outputs[:success].signal # the actual activity's End signal.
       options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
-
+pp flow_options
       puts tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start:>
