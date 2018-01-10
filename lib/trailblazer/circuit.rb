@@ -51,8 +51,8 @@ module Trailblazer
     end
 
     # Returns the circuit's components.
-    def to_fields
-      [ @map, @stop_events ]
+    def decompose
+      return @map, @stop_events
     end
 
   private

@@ -12,9 +12,9 @@ module Trailblazer
         # FIXME: clean up that shit below.
 
       def self.collect(activity, options={}, &block)
-        process, _ = activity.decompose
-        circuit, _ = process.decompose
-        circuit_hash = circuit.instance_variable_get(:@map)
+        process, _      = activity.decompose
+        circuit, _      = process.decompose
+        circuit_hash, _ = circuit.decompose
 
         locals = circuit_hash.collect do |task, connections|
           [
@@ -27,7 +27,7 @@ module Trailblazer
 
 # render
       def self.Cct(process, **options)
-        circuit_hash( process.instance_variable_get(:@circuit).to_fields[0], **options )
+        circuit_hash( process.instance_variable_get(:@circuit).decompose[0], **options )
       end
 
       def self.circuit_hash(circuit_hash, show_ids:false)
@@ -47,7 +47,7 @@ module Trailblazer
       end
 
       def self.Ends(process)
-        end_events = process.instance_variable_get(:@circuit).to_fields[1]
+        end_events = process.instance_variable_get(:@circuit).decompose[1]
         ends = end_events.collect { |evt| Task(evt) }.join(",")
         "[#{ends}]".gsub(/\d\d+/, "")
       end
