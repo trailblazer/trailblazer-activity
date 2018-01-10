@@ -10,6 +10,10 @@ module Trailblazer
       def debug # TODO: TEST ME
         @debug
       end
+
+      def outputs
+        @outputs
+      end
     end
 
     extend Interface
@@ -39,6 +43,13 @@ module Trailblazer
 
     require "trailblazer/activity/state"
 
+    # {Extension} API
+    def self.add_introspection(activity, adds, task, local_options, *returned_options)
+      activity.debug[task] = { id: local_options[:id] }.freeze
+    end
+
+
+
 
     def self.call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
       _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
@@ -55,10 +66,6 @@ module Trailblazer
       @process.instance_variable_get(:@circuit).instance_variable_get(:@map).find(&block)
     end
 
-    def self.outputs
-      @outputs
-    end
-
     #- DSL part
 
     def self.build(&block)
@@ -70,13 +77,8 @@ module Trailblazer
     def self.config
       return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(
         plus_poles: Magnetic::Builder::Path.default_plus_poles,
-        extension:  [method(:add_introspection)],
+        extension:  [ method(:add_introspection) ],
       )
-    end
-
-    # {Extension} API
-    def self.add_introspection(activity, adds, task, local_options, *returned_options)
-      activity.debug[task] = { id: local_options[:id] }.freeze
     end
 
     module ClassMethods
@@ -136,7 +138,6 @@ module Trailblazer
         return Magnetic::Builder::Railway, Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles)
       end
 
-      extend DSL
       extend DSL.def_dsl!(:step)
       extend DSL.def_dsl!(:fail)
       extend DSL.def_dsl!(:pass)
