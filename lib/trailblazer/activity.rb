@@ -43,14 +43,6 @@ module Trailblazer
 
     require "trailblazer/activity/state"
 
-    # {Extension} API
-    def self.add_introspection(activity, adds, task, local_options, *returned_options)
-      activity.debug[task] = { id: local_options[:id] }.freeze
-    end
-
-
-
-
     def self.call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
       _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
 
@@ -77,7 +69,7 @@ module Trailblazer
     def self.config
       return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(
         plus_poles: Magnetic::Builder::Path.default_plus_poles,
-        extension:  [ method(:add_introspection) ],
+        extension:  [ Introspect.method(:add_introspection) ],
       )
     end
 

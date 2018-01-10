@@ -3,6 +3,14 @@ module Trailblazer
     # Introspection is not used at run-time except for rendering diagrams, tracing, and the like.
     module Introspect
 
+      # {Extension} API
+      def self.add_introspection(activity, adds, task, local_options, *returned_options)
+        activity.debug[task] = { id: local_options[:id] }.freeze
+      end
+
+
+        # FIXME: clean up that shit below.
+
       def self.collect(activity, options={}, &block)
         circuit_hash, _ = activity.decompose
 
