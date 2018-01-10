@@ -38,6 +38,7 @@ module Trailblazer
     require "trailblazer/activity/heritage"
 
     # @private
+    # Goal: abstract away as much as possible for DSL into immutable object.
     module Builder
       Cfg = Struct.new(:builder, :adds, :dsl_methods)
 
@@ -52,14 +53,7 @@ module Trailblazer
 
         adds = cfg.adds + adds
 
-        task, local_options, _ = returned_options
-        # {Extension API} call all extensions.
-        local_options[:extension].collect { |ext| ext.(self, adds, *returned_options) } if local_options[:extension]
-
-        # add_introspection!(adds, *returned_options) # DISCUSS: should we use the :extension API here, too?
-
-
-        return Cfg.new(cfg.builder, adds), *recompile_process(adds)
+        return Cfg.new(cfg.builder, adds), *recompile_process(adds), returned_options
       end
 
       private
@@ -69,10 +63,6 @@ module Trailblazer
 
         Cfg.new(builder, adds, dsl_methods).freeze
       end
-
-      # def add_introspection!(adds, task, local_options, *)
-      #   @debug[task] = { id: local_options[:id] }.freeze
-      # end
 
       def self.recompile_process(adds)
         process, outputs = Recompile.( adds )
@@ -130,20 +120,34 @@ module Trailblazer
 
     private
 
-    def self.inherited(subclass)
-      super
-      subclass.initialize!(*subclass.config)
-      heritage.(subclass)
+    def self.config
+      return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(
+        plus_poles: Magnetic::Builder::Path.default_plus_poles,
+        extension:  [method(:add_introspection)],
+      )
     end
 
-    def self.initialize!(builder_class, normalizer)
-      @state, @process, @outputs = Builder.build(builder_class, normalizer)
-      @builder = @state.builder # won't change.
+    # {Extension} API
+    def self.add_introspection(activity, adds, task, local_options, *returned_options)
+      activity.debug[task] = { id: local_options[:id] }.freeze
     end
 
-    def self.config # FIXME: the normalizer is the same we have in Builder::plan.
-      return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Path.default_plus_poles)
+    module ClassMethods
+      def inherited(subclass)
+        super
+        subclass.initialize!(*subclass.config)
+        heritage.(subclass)
+      end
+
+      def initialize!(builder_class, normalizer)
+        @state, @process, @outputs = Builder.build(builder_class, normalizer)
+        @builder = @state.builder # won't change.
+
+        @debug = {}
+      end
     end
+
+    extend ClassMethods
 
     # DSL part
 
@@ -155,8 +159,14 @@ module Trailblazer
       # This approach assumes you maintain a @adds and a @debug instance variable. and #heritage
       def self.def_dsl!(_name)
         Module.new do
-          define_method(_name) do |*args, &block|
-            @state, @process, @outputs = Builder.add(@state, _name, *args, &block)  # TODO: similar to Block.
+          define_method(_name) do |task, options={}, &block|
+            options[:extension] ||= []
+
+            @state, @process, @outputs, options = Builder.add(@state, _name, task, options, &block)  # TODO: similar to Block.
+
+            task, local_options, _ = options
+            # {Extension API} call all extensions.
+            local_options[:extension].collect { |ext| ext.(self, @state, *options) } if local_options[:extension]
           end
         end
       end

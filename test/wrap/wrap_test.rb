@@ -31,9 +31,7 @@ class WrapTest < Minitest::Spec
       end
 
       activity = Class.new(Activity) do
-        def self.static_task_wrap
-          @static_task_wrap ||= ::Hash.new(Activity::TaskWrap.initial_activity)
-        end
+        include Activity::TaskWrap
 
         def self.a( (ctx, flow_options), **)
           ctx[:seq] << :a
@@ -47,7 +45,7 @@ class WrapTest < Minitest::Spec
       args = [ {seq: []}, {} ]
 
       # event, (options, _) = activity.( *Wrap.arguments_for_call( activity, args ) )
-      event, (options, _) = activity.( args, argumenter: [ Wrap.method(:arguments_for_call) ] )
+      event, (options, _) = activity.( args, argumenter: [ Activity::TaskWrap.method(:arguments_for_call) ] )
 
       options.must_equal(:seq=>["Hi from taskWrap!", :a])
     end

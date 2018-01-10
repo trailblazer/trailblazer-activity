@@ -5,6 +5,7 @@ class TaskWrapMacroTest < Minitest::Spec
   Builder  = Trailblazer::Activity::Magnetic::Builder
 
   # Sample {Extension}
+  # We test if we can change `activity` here.
   SampleExtension = ->(activity, adds, task, local_options, *returned_options) do
     activity.task activity.method(:b), id: "add_another_1", before: local_options[:id]
   end
@@ -33,4 +34,7 @@ class TaskWrapMacroTest < Minitest::Spec
     options.must_equal( {:seq=>[:b, :a]} )
   end
 
+  describe "add_introspection" do
+    it { Create.debug.inspect.must_equal %{{#<Method: TaskWrapMacroTest::Create.a>=>{:id=>"a"}, #<Method: TaskWrapMacroTest::Create.b>=>{:id=>"add_another_1"}}} }
+  end
 end

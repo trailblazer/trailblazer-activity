@@ -14,8 +14,7 @@ class Trailblazer::Activity
 
     def self.initial_activity
       Magnetic::Builder::Path.plan do
-        # Wrap.call_task is defined in wrap/call_task.
-        task TaskWrap.method(:call_task), id: "task_wrap.call_task"
+        task TaskWrap.method(:call_task), id: "task_wrap.call_task" # ::call_task is defined in task_wrap/call_task.
       end
     end
 
@@ -29,8 +28,30 @@ class Trailblazer::Activity
         wrap_static:  wrap_static,
       )
 
-      return [ options, flow_options ], circuit_args
+      return activity, [ options, flow_options ], circuit_args
     end
 
+    def self.included(includer)
+      includer.extend(ClassMethods)
+      includer.initialize_static_task_wrap!
+    end
+
+    # better: MyClass < Activity(TaskWrap, ...)
+
+    module ClassMethods
+      def initialize!(builder_class, normalizer)
+        super # TODO: use Activity for that.
+
+        initialize_static_task_wrap! # TODO: this sucks so much.
+      end
+
+      def static_task_wrap
+        @static_task_wrap
+      end
+
+      def initialize_static_task_wrap!
+        @static_task_wrap = ::Hash.new(TaskWrap.initial_activity)
+      end
+    end
   end
 end
