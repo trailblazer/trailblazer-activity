@@ -37,60 +37,7 @@ module Trailblazer
 
     require "trailblazer/activity/heritage"
 
-    # @private
-    # Goal: abstract away as much as possible for DSL into immutable object.
-    module Builder
-      Cfg = Struct.new(:builder, :adds, :dsl_methods)
-
-      def self.build(builder_class, normalizer, dsl_methods = [:task])
-        cfg = init(builder_class, normalizer, dsl_methods)
-
-        return cfg, *recompile_process(cfg.adds)
-      end
-
-      def self.add(cfg, name, *args, &block)
-        adds, *returned_options = cfg.builder.send(name, *args, &block)
-
-        adds = cfg.adds + adds
-
-        return Cfg.new(cfg.builder, adds), *recompile_process(adds), returned_options
-      end
-
-      private
-
-      def self.init(builder_class, normalizer, dsl_methods = [:task])
-        builder, adds = builder_class.for( normalizer ) # e.g. Path.for(...) which creates a Builder::Path instance.
-
-        Cfg.new(builder, adds, dsl_methods).freeze
-      end
-
-      def self.recompile_process(adds)
-        process, outputs = Recompile.( adds )
-      end
-
-      module Recompile
-        # Recompile the process and outputs from the {ADDS} instance that collects circuit tasks and connections.
-        def self.call(adds)
-          process, end_events = Magnetic::Builder::Finalizer.(adds)
-          outputs             = recompile_outputs(end_events)
-
-          return process, outputs
-        end
-
-        private
-
-        def self.recompile_outputs(end_events)
-          ary = end_events.collect do |evt|
-            [
-              semantic = evt.instance_variable_get(:@options)[:semantic], # DISCUSS: better API here?
-              Activity::Output(evt, semantic)
-            ]
-          end
-
-          ::Hash[ ary ]
-        end
-      end # Recompile
-    end
+    require "trailblazer/activity/state"
 
 
     def self.call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
@@ -140,8 +87,7 @@ module Trailblazer
       end
 
       def initialize!(builder_class, normalizer)
-        @state, @process, @outputs = Builder.build(builder_class, normalizer)
-        @builder = @state.builder # won't change.
+        @builder, @adds, @process, @outputs = State.build(builder_class, normalizer)
 
         @debug = {}
       end
@@ -162,7 +108,7 @@ module Trailblazer
           define_method(_name) do |task, options={}, &block|
             options[:extension] ||= []
 
-            @state, @process, @outputs, options = Builder.add(@state, _name, task, options, &block)  # TODO: similar to Block.
+            @builder, @adds, @process, @outputs, options = State.add(@builder, @adds, _name, task, options, &block)  # TODO: similar to Block.
 
             task, local_options, _ = options
             # {Extension API} call all extensions.
