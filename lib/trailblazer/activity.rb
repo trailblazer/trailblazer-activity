@@ -4,7 +4,7 @@ module Trailblazer
   class Activity
     module Interface
       def decompose # TODO: test me
-        @process.instance_variable_get(:@circuit).to_fields
+        return @process, @outputs
       end
 
       def debug # TODO: TEST ME

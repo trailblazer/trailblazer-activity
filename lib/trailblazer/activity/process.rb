@@ -12,5 +12,9 @@ module Trailblazer
         circuit_options.merge( task: task ) , # this passes :runner to the {Circuit}.
       )
     end
+
+    def decompose
+      return @circuit, @default_start_event
+    end
   end
 end

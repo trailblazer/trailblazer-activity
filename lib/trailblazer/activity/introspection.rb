@@ -12,7 +12,9 @@ module Trailblazer
         # FIXME: clean up that shit below.
 
       def self.collect(activity, options={}, &block)
-        circuit_hash, _ = activity.decompose
+        process, _ = activity.decompose
+        circuit, _ = process.decompose
+        circuit_hash = circuit.instance_variable_get(:@map)
 
         locals = circuit_hash.collect do |task, connections|
           [
