@@ -85,6 +85,10 @@ module Trailblazer
 
         @debug = {}
       end
+
+      def add_task!(name, task, options, &block)
+        @builder, @adds, @process, @outputs, options = State.add(@builder, @adds, name, task, options, &block)
+      end
     end
 
     extend ClassMethods
@@ -102,11 +106,11 @@ module Trailblazer
           define_method(_name) do |task, options={}, &block|
             options[:extension] ||= []
 
-            @builder, @adds, @process, @outputs, options = State.add(@builder, @adds, _name, task, options, &block)  # TODO: similar to Block.
+            builder, adds, process, outputs, options = add_task!(_name, task, options, &block)  # TODO: similar to Block.
 
             task, local_options, _ = options
             # {Extension API} call all extensions.
-            local_options[:extension].collect { |ext| ext.(self, @state, *options) } if local_options[:extension]
+            local_options[:extension].collect { |ext| ext.(self, *options) } if local_options[:extension]
           end
         end
       end

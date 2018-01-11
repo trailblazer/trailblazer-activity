@@ -8,7 +8,7 @@ module Trailblazer
       end
 
       # {:extension API}
-      def call(activity, adds, task, local_options, *returned_options)
+      def call(activity, task, local_options, *returned_options)
         static_wrap = activity.static_task_wrap[task]
 
         # # macro might want to apply changes to the static task_wrap (e.g. Inject)

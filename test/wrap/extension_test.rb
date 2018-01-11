@@ -6,7 +6,7 @@ class TaskWrapMacroTest < Minitest::Spec
 
   # Sample {Extension}
   # We test if we can change `activity` here.
-  SampleExtension = ->(activity, adds, task, local_options, *returned_options) do
+  SampleExtension = ->(activity, task, local_options, *returned_options) do
     activity.task activity.method(:b), id: "add_another_1", before: local_options[:id]
   end
 
