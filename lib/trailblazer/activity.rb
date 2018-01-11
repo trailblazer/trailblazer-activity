@@ -95,11 +95,11 @@ module Trailblazer
     module AddTask
       module ExtensionAPI
         def add_task!(name, task, options, &block)
-          options[:extension] ||= []
+          options[:extension] ||= [] # FIXME: mutant!
 
           builder, adds, process, outputs, options = super
-
           task, local_options, _ = options
+
           # {Extension API} call all extensions.
           local_options[:extension].collect { |ext| ext.(self, *options) } if local_options[:extension]
         end
