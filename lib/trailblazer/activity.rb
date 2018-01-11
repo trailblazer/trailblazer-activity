@@ -91,7 +91,31 @@ module Trailblazer
       end
     end
 
+    # TODO: use an Activity here and not super!
+    module AddTask
+      module ExtensionAPI
+        def add_task!(name, task, options, &block)
+          options[:extension] ||= []
+
+          builder, adds, process, outputs, options = super
+
+          task, local_options, _ = options
+          # {Extension API} call all extensions.
+          local_options[:extension].collect { |ext| ext.(self, *options) } if local_options[:extension]
+        end
+      end
+
+      module Heritage
+        def add_task!(name, task, options, &block)
+          heritage.record(name, task, options, &block)
+          super
+        end
+      end
+    end
+
     extend ClassMethods
+    extend AddTask::ExtensionAPI
+    extend AddTask::Heritage
 
     # DSL part
 
@@ -104,13 +128,7 @@ module Trailblazer
       def self.def_dsl!(_name)
         Module.new do
           define_method(_name) do |task, options={}, &block|
-            options[:extension] ||= []
-
             builder, adds, process, outputs, options = add_task!(_name, task, options, &block)  # TODO: similar to Block.
-
-            task, local_options, _ = options
-            # {Extension API} call all extensions.
-            local_options[:extension].collect { |ext| ext.(self, *options) } if local_options[:extension]
           end
         end
       end
