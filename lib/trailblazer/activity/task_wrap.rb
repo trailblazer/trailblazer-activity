@@ -48,7 +48,7 @@ class Trailblazer::Activity
     # better: MyClass < Activity(TaskWrap, ...)
 
     module ClassMethods
-      def initialize!(builder_class, normalizer)
+      def initialize!(*)
         super # TODO: use Activity for that.
 
         initialize_static_task_wrap! # TODO: this sucks so much.

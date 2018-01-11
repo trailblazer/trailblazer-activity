@@ -37,7 +37,7 @@ module Trailblazer
     require "trailblazer/activity/schema/sequence"
 
     require "trailblazer/activity/process"
-    require "trailblazer/activity/introspection"
+    require "trailblazer/activity/introspect"
 
     require "trailblazer/activity/heritage"
 
@@ -80,8 +80,8 @@ module Trailblazer
         heritage.(subclass)
       end
 
-      def initialize!(builder_class, normalizer)
-        @builder, @adds, @process, @outputs = State.build(builder_class, normalizer)
+      def initialize!(builder_class, normalizer, builder_options={})
+        @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, builder_options)
 
         @debug = {}
       end

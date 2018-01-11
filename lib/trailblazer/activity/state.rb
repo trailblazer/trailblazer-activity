@@ -3,8 +3,8 @@ module Trailblazer
     # @private
     # Maintain Builder/Adds/Process/Outputs as immutable objects.
     module State
-      def self.build(builder_class, normalizer)
-        builder, adds = builder_class.for( normalizer ) # e.g. Path.for(...) which creates a Builder::Path instance.
+      def self.build(builder_class, normalizer, builder_options)
+        builder, adds = builder_class.for(normalizer, builder_options) # e.g. Path.for(...) which creates a Builder::Path instance.
 
         recompile(builder.freeze, adds.freeze)
       end
