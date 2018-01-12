@@ -33,11 +33,16 @@ class TraceTest < Minitest::Spec
   end
 
   it "traces flat activity" do
-    stack, _ = Trailblazer::Activity::Trace.( bc,
+    stack, signal, (options, flow_options), _ = Trailblazer::Activity::Trace.( bc,
       [
-        { content: "Let's start writing" }
+        { content: "Let's start writing" },
+        { flow: true }
       ]
     )
+
+    signal.class.inspect.must_equal %{Trailblazer::Activity::End}
+    options.inspect.must_equal %{{:content=>\"Let's start writing\"}}
+    flow_options[:flow].inspect.must_equal %{true}
 
     output = Trailblazer::Activity::Trace::Present.tree(stack)
 
@@ -52,7 +57,8 @@ class TraceTest < Minitest::Spec
   it do
     stack, _ = Trailblazer::Activity::Trace.( activity,
       [
-        { content: "Let's start writing" }
+        { content: "Let's start writing" },
+        {}
       ]
     )
 # pp stack
