@@ -49,13 +49,6 @@ module Trailblazer
 
     #- modelling
 
-    # @private
-    # DISCUSS: #each instead?
-    # FIXME: move to Introspection
-    def self.find(&block)
-      @process.instance_variable_get(:@circuit).instance_variable_get(:@map).find(&block)
-    end
-
     #- DSL part
 
     def self.build(&block)
