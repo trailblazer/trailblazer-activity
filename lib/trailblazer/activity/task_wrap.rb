@@ -1,4 +1,4 @@
-class Trailblazer::Activity
+module Trailblazer::Activity
   module TaskWrap
     # Wrap::Activity is the actual circuit that implements the Task wrap. This circuit is
     # also known as `task_wrap`.

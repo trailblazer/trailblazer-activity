@@ -88,7 +88,9 @@ class ActivityTest < Minitest::Spec
   end
 
   let(:activity) do
-    activity = Activity.build do
+    activity = Module.new do
+      include Activity[:Path]
+
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
         task B.new(:resume_for_correct, semantic: :resume_1), id: "resume_for_correct", type: :End

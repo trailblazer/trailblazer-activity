@@ -1,7 +1,6 @@
 module Trailblazer
   # This is copied from the Declarative gem. This might get removed in favor of a real heritage gem.
-  class Activity
-    class Heritage < Array
+  module Activity    class Heritage < Array
       # Record inheritable assignments for replay in an inheriting class.
       def record(method, *args, &block)
         self << { method: method, args: args, block: block }

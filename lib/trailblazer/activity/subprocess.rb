@@ -1,6 +1,5 @@
 module Trailblazer
-  class Activity
-     # A {Subprocess} is an instance of an abstract {Activity} that can be `call`ed.
+  module Activity     # A {Subprocess} is an instance of an abstract {Activity} that can be `call`ed.
      # It is the runtime instance that runs from a specific start event.
     def self.Subprocess(*args)
       Subprocess.new(*args)

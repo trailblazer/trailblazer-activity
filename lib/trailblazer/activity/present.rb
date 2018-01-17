@@ -1,8 +1,7 @@
 require "hirb"
 
 module Trailblazer
-  class Activity
-    module Trace
+  module Activity    module Trace
       # TODO: make this simpler.
       module Present
         module_function

@@ -1,6 +1,5 @@
 module Trailblazer
-  class Activity
-    # @private
+  module Activity    # @private
     # Maintain Builder/Adds/Process/Outputs as immutable objects.
     module State
       def self.build(builder_class, normalizer, builder_options)

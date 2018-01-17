@@ -1,7 +1,30 @@
 require "trailblazer/circuit"
 
+require "trailblazer/activity/version"
+require "trailblazer/activity/structures"
+
+# require "trailblazer/activity/subprocess"
+
+require "trailblazer/activity/task_wrap"
+require "trailblazer/activity/task_wrap/call_task"
+require "trailblazer/activity/task_wrap/trace"
+require "trailblazer/activity/task_wrap/runner"
+require "trailblazer/activity/task_wrap/merge"
+
+require "trailblazer/activity/trace"
+require "trailblazer/activity/present"
+
+require "trailblazer/activity/process"
+require "trailblazer/activity/introspect"
+
+require "trailblazer/activity/heritage"
+
+require "trailblazer/activity/state"
+require "trailblazer/activity/magnetic" # the "magnetic" DSL
+require "trailblazer/activity/schema/sequence"
+
 module Trailblazer
-  class Activity
+  module Activity
     module Interface
       def decompose # TODO: test me
         return @process, @outputs
@@ -16,95 +39,7 @@ module Trailblazer
       end
     end
 
-    extend Interface
-
-    require "trailblazer/activity/version"
-    require "trailblazer/activity/structures"
-
-    require "trailblazer/activity/subprocess"
-
-    require "trailblazer/activity/task_wrap"
-    require "trailblazer/activity/task_wrap/call_task"
-    require "trailblazer/activity/task_wrap/trace"
-    require "trailblazer/activity/task_wrap/runner"
-    require "trailblazer/activity/task_wrap/merge"
-
-    require "trailblazer/activity/trace"
-    require "trailblazer/activity/present"
-
-    require "trailblazer/activity/process"
-    require "trailblazer/activity/introspect"
-
-    require "trailblazer/activity/heritage"
-
-    require "trailblazer/activity/state"
-    require "trailblazer/activity/magnetic" # the "magnetic" DSL
-    require "trailblazer/activity/schema/sequence"
-
-    def self.call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
-      _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
-
-      @process.( args, circuit_options.merge(argumenter: argumenter) )
-    end
-
-    private
-
-    # inheriting a class means instantiate an object
-    # Object.new( .. ) allows variables
-    # Class.new doesn't, why is this? sucks
-    def self.config
-      return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(
-        plus_poles: Magnetic::Builder::Path.default_plus_poles,
-        extension:  [ Introspect.method(:add_introspection) ],
-      )
-    end
-
-    module ClassMethods
-      def inherited(subclass)
-        super
-        subclass.initialize!(*subclass.config)
-        heritage.(subclass)
-      end
-
-      # def initialize!(builder_class, normalizer, builder_options={}, name=nil)
-      def initialize!(builder_class, normalizer, builder_options={})
-        @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, builder_options)
-
-        @debug = {}
-      end
-
-      def add_task!(name, task, options, &block)
-        @builder, @adds, @process, @outputs, options = State.add(@builder, @adds, name, task, options, &block)
-      end
-    end
-
-    # TODO: use an Activity here and not super!
-    module AddTask
-      module ExtensionAPI
-        def add_task!(name, task, options, &block)
-          options[:extension] ||= [] # FIXME: mutant!
-
-          builder, adds, process, outputs, options = super
-          task, local_options, _ = options
-
-          # {Extension API} call all extensions.
-          local_options[:extension].collect { |ext| ext.(self, *options) } if local_options[:extension]
-        end
-      end
-
-      module Heritage
-        def add_task!(name, task, options, &block)
-          heritage.record(name, task, options, &block)
-          super
-        end
-      end
-    end
-
-    extend ClassMethods
-    extend AddTask::ExtensionAPI
-    extend AddTask::Heritage
-
-    # DSL part
+      # DSL part
 
     # DISCUSS: make this functions and don't include?
     module DSL
@@ -121,19 +56,103 @@ module Trailblazer
       end
     end
 
-    # delegate as much as possible to Builder
-    # let us process options and e.g. do :id
-    class << self
-      extend Forwardable # TODO: test those helpers
-      def_delegators :@builder, :Path#, :task
+    module Path
+      def self.config
+        # FIXME.
+        return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(
+          plus_poles: Magnetic::Builder::Path.default_plus_poles,
+          extension:  [ Introspect.method(:add_introspection) ],
+        )
+      end
+
+      include DSL.def_dsl!(:task)  # define Path::task.
     end
 
-    extend DSL.def_dsl!(:task)  # define Activity::task.
-
-    extend Heritage::Accessor
 
 
-require "trailblazer/activity/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)
+
+
+
+
+
+
+    def self.[](*args)
+      # This module would be unnecessary if we had better included/inherited
+      # mechanics: https://twitter.com/apotonick/status/953520912682422272
+      Module.new do
+        def self.included(includer)
+          super
+
+          includer.extend Activity::Initialize
+          includer.extend Activity::Call
+          includer.extend Activity::AddTask
+
+          includer.extend Activity::Interface # DISCUSS
+
+          includer.extend Path
+
+          includer.initialize_activity!(*Path.config)
+
+          includer.extend DSLDelegates # DISCUSS
+
+        end
+      end
+    end
+
+    module Call
+      def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
+        _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
+
+        @process.( args, circuit_options.merge(argumenter: argumenter) )
+      end
+    end
+
+    module Initialize
+      # def initialize!(builder_class, normalizer, builder_options={}, name=nil)
+      def initialize_activity!(builder_class, normalizer, builder_options={})
+        @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, builder_options)
+
+        @debug = {}
+      end
+
+    end
+
+    module AddTask
+      def add_task!(name, task, options, &block)
+        @builder, @adds, @process, @outputs, options = State.add(@builder, @adds, name, task, options, &block)
+      end
+    end
+
+
+
+    # TODO: use an Activity here and not super!
+    module AddTask
+      module ExtensionAPI
+        def add_task!(name, task, options, &block)
+          options[:extension] ||= [] # FIXME: mutant!
+
+          builder, adds, process, outputs, options = super
+          task, local_options, _ = options
+
+          # {Extension API} call all extensions.
+          local_options[:extension].collect { |ext| ext.(self, *options) } if local_options[:extension]
+        end
+      end
+    end
+
+    # extend AddTask::ExtensionAPI
+
+
+
+    # delegate as much as possible to Builder
+    # let us process options and e.g. do :id
+    module DSLDelegates
+      extend Forwardable # TODO: test those helpers
+      def_delegators :@builder, :Path, :Output#, :task
+    end
+
+
+# require "trailblazer/activity/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)
 
     # TODO: hm
   #   class Railway < Activity

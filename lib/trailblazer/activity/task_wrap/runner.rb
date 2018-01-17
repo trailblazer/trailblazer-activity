@@ -1,4 +1,4 @@
-class Trailblazer::Activity
+module Trailblazer::Activity
   module TaskWrap
     # The runner is passed into Activity#call( runner: Runner ) and is called for every task in the circuit.
     # It runs the TaskWrap per task.
