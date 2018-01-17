@@ -32,16 +32,14 @@ module Trailblazer
     require "trailblazer/activity/trace"
     require "trailblazer/activity/present"
 
-
-    require "trailblazer/activity/magnetic" # the "magnetic" DSL
-    require "trailblazer/activity/schema/sequence"
-
     require "trailblazer/activity/process"
     require "trailblazer/activity/introspect"
 
     require "trailblazer/activity/heritage"
 
     require "trailblazer/activity/state"
+    require "trailblazer/activity/magnetic" # the "magnetic" DSL
+    require "trailblazer/activity/schema/sequence"
 
     def self.call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
       _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
@@ -66,6 +64,9 @@ module Trailblazer
 
     private
 
+    # inheriting a class means instantiate an object
+    # Object.new( .. ) allows variables
+    # Class.new doesn't, why is this? sucks
     def self.config
       return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(
         plus_poles: Magnetic::Builder::Path.default_plus_poles,
@@ -80,6 +81,7 @@ module Trailblazer
         heritage.(subclass)
       end
 
+      # def initialize!(builder_class, normalizer, builder_options={}, name=nil)
       def initialize!(builder_class, normalizer, builder_options={})
         @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, builder_options)
 
@@ -146,15 +148,22 @@ module Trailblazer
     extend Heritage::Accessor
 
 
-    # TODO: hm
-    class Railway < Activity
-      def self.config # FIXME: the normalizer is the same we have in Builder::plan.
-        return Magnetic::Builder::Railway, Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles)
-      end
+require "trailblazer/activity/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)
 
-      extend DSL.def_dsl!(:step)
-      extend DSL.def_dsl!(:fail)
-      extend DSL.def_dsl!(:pass)
+    # TODO: hm
+  #   class Railway < Activity
+  #     def self.config # FIXME: the normalizer is the same we have in Builder::plan.
+  #       return Magnetic::Builder::Railway, Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles)
+  #     end
+
+  #     extend DSL.def_dsl!(:step)
+  #     extend DSL.def_dsl!(:fail)
+  #     extend DSL.def_dsl!(:pass)
+  #   end
+
+    def self.to_s
+      "#<Trailblazer::Activity #{@name} #{object_id}>"
     end
   end
 end
+
