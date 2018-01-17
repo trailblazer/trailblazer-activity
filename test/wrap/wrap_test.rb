@@ -56,7 +56,7 @@ class WrapTest < Minitest::Spec
 
   describe "nested trailing" do
     let (:more_nested) do
-      Trailblazer::Activity.build do
+      Activity.build do
         task Upload
       end
     end
@@ -64,7 +64,7 @@ class WrapTest < Minitest::Spec
     let (:nested) do
       _more_nested = more_nested
 
-      Trailblazer::Activity.build do
+      Activity.build do
         task Save
         task _more_nested, _more_nested.outputs[:success] => :success
         task Cleanup
@@ -74,7 +74,7 @@ class WrapTest < Minitest::Spec
     let (:activity) do
       _nested = nested
 
-      Trailblazer::Activity.build do
+      Activity.build do
         task Model
         task _nested, _nested.outputs[:success] => :success, id: "A"
         task Uuid, Output(SpecialDirection, :success) => :success

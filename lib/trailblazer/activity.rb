@@ -47,14 +47,6 @@ module Trailblazer
       @process.( args, circuit_options.merge(argumenter: argumenter) )
     end
 
-    #- modelling
-
-    #- DSL part
-
-    def self.build(&block)
-      Class.new(self, &block)
-    end
-
     private
 
     # inheriting a class means instantiate an object
