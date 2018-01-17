@@ -72,31 +72,40 @@ module Trailblazer
 
 
 
+    # module doesn't allow inheritance ==> Activity.merge instead (composition)
+    # module doesn't allow state       ==> write to ctx object
+    # module allows to say "when" "inheritance" is done
 
 
 
 
-    def self.[](*args)
+    def self.[](implementation, options={})
       # This module would be unnecessary if we had better included/inherited
       # mechanics: https://twitter.com/apotonick/status/953520912682422272
-      Module.new do
-        def self.included(includer)
+      mod = Module.new do
+        def self.extended(extended)
           super
-
-          includer.extend Activity::Initialize
-          includer.extend Activity::Call
-          includer.extend Activity::AddTask
-
-          includer.extend Activity::Interface # DISCUSS
-
-          includer.extend Path
-
-          includer.initialize_activity!(*Path.config)
-
-          includer.extend DSLDelegates # DISCUSS
-
+          extended.initialize_activity!(*extended.config)
         end
+
+        include Activity::Initialize
+        include Activity::Call
+        include Activity::AddTask
+
+        include Activity::Interface # DISCUSS
+
+        include Activity::Path
+
+
+        include Activity::DSLDelegates # DISCUSS
+
+        include Activity::Inspect # DISCUSS
+
       end
+
+      mod.define_method( :config ){ [options, *Activity::Path.config] }
+
+      mod
     end
 
     module Call
@@ -109,10 +118,11 @@ module Trailblazer
 
     module Initialize
       # def initialize!(builder_class, normalizer, builder_options={}, name=nil)
-      def initialize_activity!(builder_class, normalizer, builder_options={})
+      def initialize_activity!(options, builder_class, normalizer, builder_options={})
         @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, builder_options)
 
         @debug = {}
+        @options = options
       end
 
     end
@@ -165,9 +175,11 @@ module Trailblazer
   #     extend DSL.def_dsl!(:pass)
   #   end
 
-    def self.to_s
-      "#<Trailblazer::Activity #{@name} #{object_id}>"
+  module Inspect
+    def inspect
+      "#<Trailblazer::Activity: {#{name || @options[:name]}}>"
     end
   end
+end
 end
 

@@ -89,7 +89,8 @@ class ActivityTest < Minitest::Spec
 
   let(:activity) do
     activity = Module.new do
-      include Activity[:Path]
+      puts self
+      extend Activity[:Path, name: "Test::Create"]
 
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
@@ -176,6 +177,12 @@ ActivityTest::L
     options.inspect.must_equal %{{:c_return=>Trailblazer::Activity::Right, :a_return=>Trailblazer::Activity::Right, :g_return=>Trailblazer::Activity::Right, :i_return=>Trailblazer::Activity::Left, :C=>1, :A=>1, :G=>1, :I=>1, :J=>1, :K=>1}}
 
     # activity.draft #=> mergeable, inheritance.
+  end
+
+  describe "#inspect" do
+    it "shows name of anonymous module" do
+      activity.inspect.must_equal %{}
+    end
   end
 
   it "can start with any task" do
