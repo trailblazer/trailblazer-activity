@@ -86,7 +86,6 @@ module Trailblazer
         singleton_class.define_method(:config){ options } # this sucks so much, why does Ruby make it so hard?
 
         include implementation # ::task or ::step, etc
-        include AddTask::ExtensionAPI
 
         def self.extended(extended)
           super
@@ -97,7 +96,9 @@ module Trailblazer
         # via extend.
         include Activity::Initialize
         include Activity::Call
+
         include Activity::AddTask
+        include AddTask::ExtensionAPI
 
         include Activity::Interface # DISCUSS
 
@@ -139,8 +140,6 @@ module Trailblazer
     module AddTask
       module ExtensionAPI
         def add_task!(name, task, options, &block)
-          options[:extension] ||= [] # FIXME: mutant!
-raise options.inspect
           builder, adds, process, outputs, options = super
           task, local_options, _ = options
 
