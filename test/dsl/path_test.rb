@@ -1,6 +1,6 @@
 require "test_helper"
 
-module Trailblazer::Activity::Magnetic::Builder::Path
+class Trailblazer::Activity::Magnetic::Builder::Path
         # TODO: remove, only for testing.
       # @return Tripletts
       def self.draft(*args, &block)
