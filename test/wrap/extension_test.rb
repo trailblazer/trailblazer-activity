@@ -12,7 +12,9 @@ class TaskWrapMacroTest < Minitest::Spec
 
   #
   # Actual {Activity} using :extension
-  class Create < Trailblazer::Activity
+  module Create
+    extend Trailblazer::Activity[]
+
     def self.a( (ctx, flow_options), **)
       ctx[:seq] << :a
 
