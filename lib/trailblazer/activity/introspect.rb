@@ -14,7 +14,13 @@ module Trailblazer
       end
 
 
-        # FIXME: clean up that shit below.
+      # @api private
+      def self.find(activity, &block)
+        process, _ = activity.decompose
+
+        process.instance_variable_get(:@circuit).instance_variable_get(:@map).find(&block)
+      end
+
 
       def self.collect(activity, options={}, &block)
         process, _      = activity.decompose
@@ -29,13 +35,8 @@ module Trailblazer
         end.flatten(1)
       end
 
-      # @private
-      # DISCUSS: #each instead?
-      # FIXME: move to Introspection
-      def self.find(&block)
-        @process.instance_variable_get(:@circuit).instance_variable_get(:@map).find(&block)
-      end
 
+        # FIXME: clean up that shit below.
 
 # render
       def self.Cct(process, **options)
