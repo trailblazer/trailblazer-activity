@@ -105,6 +105,8 @@ module Trailblazer
         include Activity::DSLDelegates # DISCUSS
 
         include Activity::Inspect # DISCUSS
+
+        include     Magnetic::Merge
       end
     end
 
@@ -160,7 +162,6 @@ module Trailblazer
     end
 
 
-
   module Inspect
     def inspect
       "#<Trailblazer::Activity: {#{name || @options[:name]}}>"
@@ -186,5 +187,6 @@ require "trailblazer/activity/heritage"
 require "trailblazer/activity/state"
 require "trailblazer/activity/magnetic" # the "magnetic" DSL
 require "trailblazer/activity/schema/sequence"
+    require "trailblazer/activity/magnetic/merge"
 
 require "trailblazer/activity/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)

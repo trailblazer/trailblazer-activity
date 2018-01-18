@@ -37,10 +37,10 @@ module Trailblazer
         @normalizer, @builder_options = normalizer, builder_options
       end
 
-      def self.merge(activity, merged)
-        merged = merged[2..-1] || []
+      def self.merge(activity_adds, merged_adds)
+        merged_adds = merged_adds[2..-1] || []
 
-        activity + merged
+        activity_adds + merged_adds
       end
 
       module DSLMethods

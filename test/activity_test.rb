@@ -265,8 +265,39 @@ ActivityTest::C
     # normalizer
   end
 
+  describe "#merge" do
+    it "what" do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+        task task: A
+        task task: B
+      end
+
+      merging = Module.new do
+        extend Activity[ Activity::Path ]
+        task task: C
+        merge! activity
+      end
+
+      Cct(merging.instance_variable_get(:@process)).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => ActivityTest::C
+ActivityTest::C
+ {Trailblazer::Activity::Right} => ActivityTest::A
+ActivityTest::A
+ {Trailblazer::Activity::Right} => ActivityTest::B
+ActivityTest::B
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+    end
+
+    # TODO: merge task_wrap, etc.
+  end
+
   describe "inheritance" do
     it "creates a fresh Activity" do
+      skip
       activity = Class.new(Activity) do
         task A
         task B
