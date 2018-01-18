@@ -53,11 +53,11 @@ module Trailblazer
 
     # Implementation module that can be passed to `Activity[]`.
     module Railway
-      def self.config # FIXME: the normalizer is the same we have in Builder::plan.
-        {
-          builder_class: Magnetic::Builder::Railway,
-          normalizer:    Magnetic::Normalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles),extension:  [ Introspect.method(:add_introspection) ], # FIXME
-        }
+      def self.config
+        Path.config.merge(
+          builder_class:  Magnetic::Builder::Railway,
+          plus_poles:     Magnetic::Builder::Railway.default_plus_poles
+        )
       end
 
       include DSL.def_dsl(:step)
