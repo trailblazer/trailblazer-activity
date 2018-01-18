@@ -221,6 +221,25 @@ ActivityTest::L
     # activity.draft #=> mergeable, inheritance.
   end
 
+  describe "::task with macro style" do
+    it "accepts sequence_options" do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: A, id: "a"
+        task task: B, before: "a", id: "b"
+      end
+
+      assert_path activity, %{
+ {Trailblazer::Activity::Right} => ActivityTest::B
+ActivityTest::B
+ {Trailblazer::Activity::Right} => ActivityTest::A
+ActivityTest::A
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+}
+    end
+  end
+
   describe "#inspect" do
     it "shows name of anonymous module" do
       activity.inspect.must_equal %{#<Trailblazer::Activity: {Test::Create}>}
@@ -237,7 +256,7 @@ ActivityTest::L
   describe ":Railway" do
     it "accepts Railway as a builder" do
       activity = Module.new do
-        extend Activity[Activity::Railway]
+        extend Activity[ Activity::Railway ]
         step task: A
         step task: B
         fail task: C

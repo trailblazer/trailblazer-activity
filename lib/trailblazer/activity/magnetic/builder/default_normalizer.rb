@@ -1,5 +1,8 @@
 module Trailblazer
   module Activity::Magnetic
+    # This normalizer only processes basic input and is meant for bootstrapping.
+    #
+    #   task Callable, id: "success"
     class DefaultNormalizer
       # Declarative::Variables
       def self.build(plus_poles:, extension:[], **options)
@@ -10,13 +13,11 @@ module Trailblazer
         @default_options = default_options
       end
 
-      # called for every ::task, ::step call etc to defaultize the `local_options`.
-      def call(task, local_options, options, sequence_options)
-        local_options = local_options.merge(extension: @default_options[:extension]+(local_options[:extension]||[]) ) # FIXME.
+      # Processes the user arguments from the DSL
+      def call(task, options)
+        local_options = @default_options.merge(options) # here, we merge default :plus_poles.
 
-        local_options = @default_options.merge(local_options) # here, we merge default :plus_poles.
-
-        return task, local_options, options, sequence_options
+        return task, local_options, {}, {}
       end
     end
   end

@@ -22,6 +22,15 @@ Minitest::Spec.class_eval do
 
     Trailblazer::Activity::Magnetic::DSL::PlusPoles.new.merge(::Hash[ary])
   end
+
+  def assert_path(activity, content)
+    process = activity.decompose[0]
+    Cct(process).must_equal %{
+#<Start:default/nil>#{content.chomp}
+#<End:success/:success>
+}
+  end
+
 end
 
 Trailblazer::Activity.module_eval do

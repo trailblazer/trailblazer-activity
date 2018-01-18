@@ -23,16 +23,16 @@ module Trailblazer
         @default_plus_poles = default_plus_poles
       end
 
-      def call(task, options, unknown_options, sequence_options)
+      def call(task, options)
         ctx = {
-          task: task, options: options, unknown_options: unknown_options, sequence_options: sequence_options,
+          task: task, options: options,
           task_builder:       @task_builder,
           default_plus_poles: @default_plus_poles,
         }
 
         signal, (ctx, ) = Pipeline.( [ctx] )
 
-        return ctx[:options][:task], ctx[:options], ctx[:unknown_options], ctx[:sequence_options]
+        return ctx[:options][:task], ctx[:local_options], ctx[:connection_options], ctx[:sequence_options]
       end
 
       # needs the basic Normalizer
@@ -41,8 +41,29 @@ module Trailblazer
       module Pipeline
         extend Activity[ Activity::Path, normalizer_class: DefaultNormalizer, plus_poles: Builder::Path.default_plus_poles ]
 
-        def self.normalize_extension_option( ctx, options:, ** )
-          ctx[:options][:extension] = (options[:extension]||[]) + [ Activity::Introspect.method(:add_introspection) ] # fixme: this sucks
+        def self.split_options( ctx, task:, options:, ** )
+          keywords = extract_dsl_keywords(options)
+
+           # sort through the "original" user DSL options.
+          options, local_options          = Options.normalize( options, keywords ) # DISCUSS:
+          local_options, sequence_options = Options.normalize( local_options, sequence_keywords )
+
+          ctx[:local_options],
+          ctx[:connection_options],
+          ctx[:sequence_options] = local_options, options, sequence_options
+        end
+
+        def self.sequence_keywords
+          [ :group, :before, :after, :replace, :delete ] # hard-wires Builder to Sequence/Alterations.
+        end
+
+        # Filter out connections, e.g. `Output(:fail_fast) => :success` and return only the keywords like `:id` or `:replace`.
+        def self.extract_dsl_keywords(options, connection_classes = [Activity::Output, DSL::Output::Semantic])
+          options.keys - options.keys.find_all { |k| connection_classes.include?( k.class ) }
+        end
+
+        def self.normalize_extension_option( ctx, local_options:, ** )
+          ctx[:options][:extension] = (local_options[:extension]||[]) + [ Activity::Introspect.method(:add_introspection) ] # fixme: this sucks
         end
 
         def self.normalize_for_macro( ctx, task:, options:, task_builder:, ** )
@@ -59,16 +80,17 @@ module Trailblazer
         end
 
         # Merge user options over defaults.
-        def self.defaultize( ctx, options:, default_plus_poles:, ** ) # TODO: test :default_plus_poles
-          ctx[:options] =
+        def self.defaultize( ctx, local_options:, default_plus_poles:, ** ) # TODO: test :default_plus_poles
+          ctx[:local_options] =
             {
               plus_poles: default_plus_poles,
             }
-            .merge(options)
+            .merge(local_options)
         end
 
-        task Activity::TaskBuilder::Binary.( method(:normalize_extension_option) ), id: "normalize_extension_option"
         task Activity::TaskBuilder::Binary.( method(:normalize_for_macro) ),        id: "normalize_for_macro"
+        task Activity::TaskBuilder::Binary.( method(:split_options) ),              id: "split_options"
+        task Activity::TaskBuilder::Binary.( method(:normalize_extension_option) ), id: "normalize_extension_option"
         task Activity::TaskBuilder::Binary.( method(:defaultize) ),                 id: "defaultize"
       end
     end # Normalizer
