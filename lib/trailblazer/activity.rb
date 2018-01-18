@@ -41,11 +41,10 @@ module Trailblazer
     module Path
       def self.config
         {
-          builder_class:  Magnetic::Builder::Path,
-          normalizer:     Magnetic::Normalizer.new( # we use the Activity-based Normalizer
-                            plus_poles: Magnetic::Builder::Path.default_plus_poles,
-                            extension:  [ Introspect.method(:add_introspection) ],
-                          ),
+          builder_class:    Magnetic::Builder::Path, # we use the Activity-based Normalizer
+          normalizer_class: Magnetic::Normalizer,
+          plus_poles:       Magnetic::Builder::Path.default_plus_poles,
+          extension:        [ Introspect.method(:add_introspection) ],
         }
       end
 
@@ -57,7 +56,7 @@ module Trailblazer
       def self.config # FIXME: the normalizer is the same we have in Builder::plan.
         {
           builder_class: Magnetic::Builder::Railway,
-          normalizer:    Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles),
+          normalizer:    Magnetic::Normalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles),extension:  [ Introspect.method(:add_introspection) ], # FIXME
         }
       end
 
@@ -82,7 +81,8 @@ module Trailblazer
       # mechanics: https://twitter.com/apotonick/status/953520912682422272
       mod = Module.new do
         # we need this method to inject data from here.
-        options = implementation.config.merge(options)
+        options = implementation.config.merge(options) # TODO: use Variables::Merge() here.
+
         singleton_class.define_method(:config){ options } # this sucks so much, why does Ruby make it so hard?
 
         include implementation # ::task or ::step, etc
@@ -117,7 +117,9 @@ module Trailblazer
 
     module Initialize
       # Set all necessary state in the module.
-      def initialize_activity!(builder_class:, normalizer:, builder_options: {}, **options)
+      def initialize_activity!(builder_class:, builder_options: {}, normalizer_class:, **options) # DISCUSS: allow :normalizer here?
+        normalizer, options = normalizer_class.build( options )
+
         @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, builder_options)
 
         @debug    = {}

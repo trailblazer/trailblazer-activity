@@ -1,6 +1,49 @@
 require "test_helper"
 
 class ActivityTest < Minitest::Spec
+  describe ":task_builder" do
+    # ---
+    # - don't wrap task argument.
+    let(:activity) do
+      activity = Module.new do
+        extend Activity[ Activity::Path, task_builder: ->(task, *){task} ]
+
+        module_function
+
+        def a( (ctx, flow_options), ** )
+          ctx[:a] = 1
+          return Activity::Right, [ctx, flow_options]
+        end
+
+        def b( (ctx, flow_options), ** )
+          ctx[:b] = ctx[:a] - 1
+          return Activity::Right, [ctx, flow_options]
+        end
+
+        task method(:a)
+        task method(:b), id: "b"
+      end
+    end
+
+    it do
+      Cct(activity.decompose.first).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Trailblazer::Activity: {}>.a>
+#<Method: #<Trailblazer::Activity: {}>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Trailblazer::Activity: {}>.b>
+#<Method: #<Trailblazer::Activity: {}>.b>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+    end
+
+    it do
+      signal, (ctx, _) = activity.( [{}, {}] )
+      ctx.inspect.must_equal %{{:a=>1, :b=>0}}
+    end
+  end
+
+
   class A
     def self.call((options, flow_options), *)
       options[:A] = 1
@@ -89,7 +132,7 @@ class ActivityTest < Minitest::Spec
 
   let(:activity) do
     activity = Module.new do
-      extend Activity[Activity::Path, name: "Test::Create"]
+      extend Activity[Activity::Path, name: "Test::Create", task_builder: ->(task, *){task} ]
 
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
@@ -195,9 +238,9 @@ ActivityTest::L
     it "accepts Railway as a builder" do
       activity = Module.new do
         extend Activity[Activity::Railway]
-        step A
-        step B
-        fail C
+        step task: A
+        step task: B
+        fail task: C
       end
 
       Cct(activity.decompose.first).must_equal %{

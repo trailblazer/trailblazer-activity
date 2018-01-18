@@ -6,6 +6,9 @@ module Trailblazer
     #
     # The Normalizer sits in the `@builder`, which receives all DSL calls from the Operation subclass.
     class Normalizer
+      def self.build(task_builder: Activity::TaskBuilder::Binary, default_plus_poles: Normalizer.InitialPlusPoles(), activity: Pipeline, extension:[], **options)
+        return new(default_plus_poles: default_plus_poles, extension: extension, task_builder: task_builder, activity: activity, ), options
+      end
 
       # @private Might be removed.
       def self.InitialPlusPoles
@@ -15,7 +18,7 @@ module Trailblazer
         )
       end
 
-      def initialize(task_builder: Activity::TaskBuilder::Binary, default_plus_poles: Normalizer.InitialPlusPoles(), activity: Pipeline, **options)
+      def initialize(task_builder:, default_plus_poles:, activity:, **options)
         @task_builder       = task_builder
         @default_plus_poles = default_plus_poles
       end
@@ -36,7 +39,7 @@ module Trailblazer
 
       # :default_plus_poles is an injectable option.
       module Pipeline
-        extend Activity[ Activity::Path, normalizer: Builder::DefaultNormalizer.new(plus_poles: Builder::Path.default_plus_poles) ]
+        extend Activity[ Activity::Path, normalizer_class: DefaultNormalizer, plus_poles: Builder::Path.default_plus_poles ]
 
         def self.normalize_extension_option( ctx, options:, ** )
           ctx[:options][:extension] = (options[:extension]||[]) + [ Activity::Introspect.method(:add_introspection) ] # fixme: this sucks
@@ -64,9 +67,9 @@ module Trailblazer
             .merge(options)
         end
 
-        task Activity::TaskBuilder::Binary.( method(:normalize_extension_option) )
-        task Activity::TaskBuilder::Binary.( method(:normalize_for_macro) )
-        task Activity::TaskBuilder::Binary.( method(:defaultize) )
+        task Activity::TaskBuilder::Binary.( method(:normalize_extension_option) ), id: "normalize_extension_option"
+        task Activity::TaskBuilder::Binary.( method(:normalize_for_macro) ),        id: "normalize_for_macro"
+        task Activity::TaskBuilder::Binary.( method(:defaultize) ),                 id: "defaultize"
       end
     end # Normalizer
 
