@@ -26,7 +26,10 @@ end
 
 Trailblazer::Activity.module_eval do
   def self.build(&block)
-    Class.new(Trailblazer::Activity, &block)
+    Module.new do
+      extend Trailblazer::Activity[]
+      yield
+    end
   end
 end
 

@@ -27,7 +27,7 @@ module Trailblazer
   module Activity
     module Interface
       def decompose # TODO: test me
-        return @process, @outputs
+        return @process, outputs
       end
 
       def debug # TODO: TEST ME
@@ -39,15 +39,12 @@ module Trailblazer
       end
     end
 
-      # DSL part
-
-    # DISCUSS: make this functions and don't include?
     module DSL
       # Create a new method (e.g. Activity::step) that delegates to its builder, recompiles
       # the process, etc. Method comes in a module so it can be overridden via modules.
       #
-      # This approach assumes you maintain a @adds and a @debug instance variable. and #heritage
-      def self.def_dsl!(_name)
+      # This approach assumes you maintain a {#add_task!} method.
+      def self.def_dsl(_name)
         Module.new do
           define_method(_name) do |task, options={}, &block|
             builder, adds, process, outputs, options = add_task!(_name, task, options, &block)  # TODO: similar to Block.
@@ -56,16 +53,33 @@ module Trailblazer
       end
     end
 
+    # Implementation module that can be passed to `Activity[]`.
     module Path
       def self.config
-        # FIXME.
-        return Magnetic::Builder::Path, Magnetic::Builder::DefaultNormalizer.new(
-          plus_poles: Magnetic::Builder::Path.default_plus_poles,
-          extension:  [ Introspect.method(:add_introspection) ],
-        )
+        {
+          builder_class:  Magnetic::Builder::Path,
+          normalizer:     Magnetic::Builder::DefaultNormalizer.new(
+                            plus_poles: Magnetic::Builder::Path.default_plus_poles,
+                            extension:  [ Introspect.method(:add_introspection) ],
+                          ),
+        }
       end
 
-      include DSL.def_dsl!(:task)  # define Path::task.
+      include DSL.def_dsl(:task)  # define Path::task.
+    end
+
+    # Implementation module that can be passed to `Activity[]`.
+    module Railway
+      def self.config # FIXME: the normalizer is the same we have in Builder::plan.
+        {
+          builder_class: Magnetic::Builder::Railway,
+          normalizer:    Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles),
+        }
+      end
+
+      include DSL.def_dsl(:step)
+      include DSL.def_dsl(:fail)
+      include DSL.def_dsl(:pass)
     end
 
 
@@ -79,33 +93,33 @@ module Trailblazer
 
 
 
-    def self.[](implementation, options={})
+    def self.[](implementation=Activity::Path, options={})
       # This module would be unnecessary if we had better included/inherited
       # mechanics: https://twitter.com/apotonick/status/953520912682422272
       mod = Module.new do
+        # we need this method to inject data from here.
+        options = implementation.config.merge(options)
+        singleton_class.define_method(:config){ options } # this sucks so much, why does Ruby make it so hard?
+
+        include implementation # ::task or ::step, etc
+
         def self.extended(extended)
           super
-          extended.initialize_activity!(*extended.config)
+          extended.initialize_activity!(config) # config is from singleton_class.config.
         end
 
+        # Include all DSL methods here as instance method, these get imported
+        # via extend.
         include Activity::Initialize
         include Activity::Call
         include Activity::AddTask
 
         include Activity::Interface # DISCUSS
 
-        include Activity::Path
-
-
         include Activity::DSLDelegates # DISCUSS
 
         include Activity::Inspect # DISCUSS
-
       end
-
-      mod.define_method( :config ){ [options, *Activity::Path.config] }
-
-      mod
     end
 
     module Call
@@ -117,19 +131,18 @@ module Trailblazer
     end
 
     module Initialize
-      # def initialize!(builder_class, normalizer, builder_options={}, name=nil)
-      def initialize_activity!(options, builder_class, normalizer, builder_options={})
+      # Set all necessary state in the module.
+      def initialize_activity!(builder_class:, normalizer:, builder_options: {}, **options)
         @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, builder_options)
 
-        @debug = {}
-        @options = options
+        @debug    = {}
+        @options  = options
       end
-
     end
 
     module AddTask
       def add_task!(name, task, options, &block)
-        @builder, @adds, @process, @outputs, options = State.add(@builder, @adds, name, task, options, &block)
+        builder, @adds, @process, @outputs, options = State.add(@builder, @adds, name, task, options, &block)
       end
     end
 
@@ -163,17 +176,6 @@ module Trailblazer
 
 
 # require "trailblazer/activity/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)
-
-    # TODO: hm
-  #   class Railway < Activity
-  #     def self.config # FIXME: the normalizer is the same we have in Builder::plan.
-  #       return Magnetic::Builder::Railway, Magnetic::Builder::DefaultNormalizer.new(plus_poles: Magnetic::Builder::Railway.default_plus_poles)
-  #     end
-
-  #     extend DSL.def_dsl!(:step)
-  #     extend DSL.def_dsl!(:fail)
-  #     extend DSL.def_dsl!(:pass)
-  #   end
 
   module Inspect
     def inspect

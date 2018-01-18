@@ -89,8 +89,7 @@ class ActivityTest < Minitest::Spec
 
   let(:activity) do
     activity = Module.new do
-      puts self
-      extend Activity[:Path, name: "Test::Create"]
+      extend Activity[Activity::Path, name: "Test::Create"]
 
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
@@ -113,7 +112,7 @@ class ActivityTest < Minitest::Spec
 success=> (#<Trailblazer::Activity::End:>, success)
 invalid_result=> (#<Trailblazer::Activity::End:>, invalid_result)}
 
-    Cct(activity.instance_variable_get(:@process)).must_equal %{
+    Cct(activity.decompose.first).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
@@ -181,7 +180,7 @@ ActivityTest::L
 
   describe "#inspect" do
     it "shows name of anonymous module" do
-      activity.inspect.must_equal %{}
+      activity.inspect.must_equal %{#<Trailblazer::Activity: {Test::Create}>}
     end
   end
 
@@ -190,6 +189,18 @@ ActivityTest::L
 
     signal.must_equal activity.outputs[:success].signal
     options.inspect.must_equal %{{:L=>1}}
+  end
+
+  describe ":Railway" do
+    it "accepts Railway as a builder" do
+      activity = Module.new do
+        extend Activity[Activity::Railway]
+        step A
+        step B
+      end
+    end
+
+    # normalizer
   end
 
   describe "inheritance" do
