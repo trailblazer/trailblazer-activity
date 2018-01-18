@@ -5,23 +5,7 @@ require "trailblazer/activity/structures"
 
 # require "trailblazer/activity/subprocess"
 
-require "trailblazer/activity/task_wrap"
-require "trailblazer/activity/task_wrap/call_task"
-require "trailblazer/activity/task_wrap/trace"
-require "trailblazer/activity/task_wrap/runner"
-require "trailblazer/activity/task_wrap/merge"
 
-require "trailblazer/activity/trace"
-require "trailblazer/activity/present"
-
-require "trailblazer/activity/process"
-require "trailblazer/activity/introspect"
-
-require "trailblazer/activity/heritage"
-
-require "trailblazer/activity/state"
-require "trailblazer/activity/magnetic" # the "magnetic" DSL
-require "trailblazer/activity/schema/sequence"
 
 module Trailblazer
   module Activity
@@ -58,7 +42,7 @@ module Trailblazer
       def self.config
         {
           builder_class:  Magnetic::Builder::Path,
-          normalizer:     Magnetic::Builder::DefaultNormalizer.new(
+          normalizer:     Magnetic::Normalizer.new( # we use the Activity-based Normalizer
                             plus_poles: Magnetic::Builder::Path.default_plus_poles,
                             extension:  [ Introspect.method(:add_introspection) ],
                           ),
@@ -102,6 +86,7 @@ module Trailblazer
         singleton_class.define_method(:config){ options } # this sucks so much, why does Ruby make it so hard?
 
         include implementation # ::task or ::step, etc
+        include AddTask::ExtensionAPI
 
         def self.extended(extended)
           super
@@ -153,7 +138,7 @@ module Trailblazer
       module ExtensionAPI
         def add_task!(name, task, options, &block)
           options[:extension] ||= [] # FIXME: mutant!
-
+raise options.inspect
           builder, adds, process, outputs, options = super
           task, local_options, _ = options
 
@@ -163,7 +148,6 @@ module Trailblazer
       end
     end
 
-    # extend AddTask::ExtensionAPI
 
 
 
@@ -175,7 +159,6 @@ module Trailblazer
     end
 
 
-# require "trailblazer/activity/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)
 
   module Inspect
     def inspect
@@ -185,3 +168,22 @@ module Trailblazer
 end
 end
 
+require "trailblazer/activity/task_wrap"
+require "trailblazer/activity/task_wrap/call_task"
+require "trailblazer/activity/task_wrap/trace"
+require "trailblazer/activity/task_wrap/runner"
+require "trailblazer/activity/task_wrap/merge"
+
+require "trailblazer/activity/trace"
+require "trailblazer/activity/present"
+
+require "trailblazer/activity/process"
+require "trailblazer/activity/introspect"
+
+require "trailblazer/activity/heritage"
+
+require "trailblazer/activity/state"
+require "trailblazer/activity/magnetic" # the "magnetic" DSL
+require "trailblazer/activity/schema/sequence"
+
+require "trailblazer/activity/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)
