@@ -1,7 +1,27 @@
 require "test_helper"
 
 class PathTest < Minitest::Spec
+  describe "#task standard interface" do
+    it "standard path ends in End.success/:success" do
+      activity = Module.new do
+      extend Activity[ Activity::Path ]
+        task task: T.def_task(:a)
+        task task: T.def_task(:b)
+      end
 
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+    end
+  end
 
    # Activity.plan( track_color: :pink )
   it "accepts :track_color" do
@@ -147,6 +167,103 @@ class PathTest < Minitest::Spec
 
 #<End:left/:left>
 }
+  end
+
+  describe ":normalizer" do
+    it "allows injecting a normalizer on #task" do
+      skip
+      normalizer = ->(task, options) { [task.inspect, options, {}, {}] }
+
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+        task task: T.def_task(:a), normalizer: normalizer
+        task task: T.def_task(:b)
+      end
+
+      process, outputs, adds = activity.decompose
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+   {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+  }
+    end
+  end
+
+  describe "sequence_options" do
+    it "accepts :before and :group" do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: T.def_task(:a), id: "a"
+        task task: T.def_task(:b), before: "a"
+        task task: T.def_task(:c), group:  :start
+      end
+
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.c>
+#<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+    end
+  end
+
+  describe ":track_end" do
+    it "allows to define a custom End instance" do
+      class MyEnd; end
+
+      activity = Module.new do
+        extend Activity[ Activity::Path, track_end: MyEnd ]
+        task task: T.def_task(:a)
+    end
+
+      process, outputs, adds = activity.decompose
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => PathTest::MyEnd
+PathTest::MyEnd
+}
+    end
+  end
+
+  describe ":plus_poles" do
+    it "allows overriding existing outputs via semantic=>:new_color" do
+      plus_poles =
+        Activity::Magnetic::DSL::PlusPoles.new.merge(
+          Activity.Output(Activity::Right, :success) => :success,
+          Activity.Output(Activity::Left,  :failure) => :failure,
+        )
+
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+        task task: T.def_task(:a), plus_poles: plus_poles, Output(:failure) => :something_completely_different
+      end
+
+      process, outputs, adds = activity.decompose
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+    end
   end
 
   describe "Path()" do
@@ -337,6 +454,32 @@ class PathTest < Minitest::Spec
 #<End:track_9/:success>
 
 #<End:End.invalid_result/:invalid_result>
+}
+    end
+
+    it "can build fake Railway using Output(Left)s" do
+      activity = Module.new do
+        extend Activity[ Activity::Path, track_color: :"track_9" ]
+        task task: T.def_task(:a), Output(Activity::Left, :failure) => End("End.extract.key_not_found", :key_not_found)
+        task task: T.def_task(:b), Output(Activity::Left, :failure) => End("End.invalid", :invalid)
+      end
+
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Right} => #<End:track_9/:success>
+ {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
+#<End:track_9/:success>
+
+#<End:End.extract.key_not_found/:key_not_found>
+
+#<End:End.invalid/:invalid>
 }
     end
   end
