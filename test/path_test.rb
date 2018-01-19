@@ -106,6 +106,49 @@ class PathTest < Minitest::Spec
 }
   end
 
+  it "accepts :normalizer" do
+    binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity.Output(Activity::Right, :success) => nil,
+      Activity.Output(Activity::Left, :failure) => nil )
+
+    normalizer = ->(task, options) { [ task, { plus_poles: binary_plus_poles }, options, {} ] }
+
+    activity = Module.new do
+      extend Activity[ Activity::Path, normalizer: normalizer ]
+
+      task T.def_task(:a)
+      task T.def_task(:b), Output(:failure) => Path(end_semantic: :invalid) do
+        task T.def_task(:c), Output(:failure) => End(:left, :left)
+        task T.def_task(:k)#, Output(:success) => End("End.invalid_result", :invalid_result)
+      end
+      task T.def_task(:d) # no :id.
+    end
+
+    process, outputs, adds = activity.decompose
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+#<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.k>
+ {Trailblazer::Activity::Left} => #<End:left/:left>
+#<Method: #<Module:0x>.k>
+ {Trailblazer::Activity::Right} => #<End:track_0./:invalid>
+#<Method: #<Module:0x>.d>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+
+#<End:track_0./:invalid>
+
+#<End:left/:left>
+}
+  end
+
   describe "Path()" do
     it "accepts Path()" do
       activity = Module.new do

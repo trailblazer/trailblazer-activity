@@ -6,7 +6,7 @@ module Trailblazer
     #   Output( Left, :failure )
     #   Output( :failure ) #=> Output::Semantic
     def Output(signal, semantic=nil)
-      return DSL::Output::Semantic.new(signal) if semantic.nil?
+      return Activity::Magnetic::DSL::Output::Semantic.new(signal) if semantic.nil?
 
       Activity.Output(signal, semantic)
     end
