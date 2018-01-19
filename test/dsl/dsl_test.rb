@@ -74,93 +74,34 @@ ActivityBuildTest::K
 }
   end
 
-  # straight path with different name for :success.
+  # Activity with 2 predefined outputs, direct 2nd one to new end
   it do
     activity = Module.new do
       extend Activity[ Activity::Path, track_color: :"track_9" ]
 
-      task task: J, id: "first"
-      task K, id: "last"
-    end
-
-    Seq(seq = Finalizer.adds_to_tripletts(adds)).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::J
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::K
- (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9/:success>
- []
-}
-  end
-
-  # some new Output
-  it do
-    adds = Activity::Magnetic::Builder::Path.plan(track_color: :"track_9") do
-      task J, id: "confused", Output(Left, :failure) => :success__
-      task K, id: "normal"
-    end
-
-# puts Seq(seq)
-    Seq(seq = Finalizer.adds_to_tripletts(adds)).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::J
- (success)/Right ==> :track_9
- (failure)/Left ==> :success__
-[:track_9] ==> ActivityBuildTest::K
- (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9/:success>
- []
-}
-  end
-
-  it "Output(Left, :failure) allows to skip the additional :plus_poles definition" do
-    adds = Activity::Magnetic::Builder::Path.plan(track_color: :"track_9") do
-      task J, id: "confused", Output(Left, :failure) => :"track_9"
-      task K, id: "normal"
-    end
-
-# puts Seq(seq)
-    Seq(seq = Finalizer.adds_to_tripletts(adds)).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::J
- (success)/Right ==> :track_9
- (failure)/Left ==> :track_9
-[:track_9] ==> ActivityBuildTest::K
- (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9/:success>
- []
-}
-  end
-
-  # Activity with 2 predefined outputs, direct 2nd one to new end
-  it do
-    adds = Activity::Magnetic::Builder::Path.plan(track_color: :"track_9") do
-      task J, id: "confused",
+      task task: J,
         Output(Left, :trigger) => End("End.trigger", :triggered),
         # this comes from the Operation DSL since it knows {Activity}J
         plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
           Activity.Output(Activity::Left,  :trigger) => nil,
           Activity.Output(Activity::Right, :success) => nil,
         ).freeze
-      task K, id: "normal"
+      task task: K
     end
 
-    Seq(seq = Finalizer.adds_to_tripletts(adds)).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::J
- (trigger)/Left ==> "confused-Trailblazer::Activity::Left"
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::K
- (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9/:success>
- []
-["confused-Trailblazer::Activity::Left"] ==> #<End:End.trigger/:triggered>
- []
+    process, outputs, adds = activity.decompose
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => ActivityBuildTest::J
+ActivityBuildTest::J
+ {Trailblazer::Activity::Right} => ActivityBuildTest::K
+ {Trailblazer::Activity::Left} => #<End:End.trigger/:triggered>
+ActivityBuildTest::K
+ {Trailblazer::Activity::Right} => #<End:track_9/:success>
+#<End:track_9/:success>
+
+#<End:End.trigger/:triggered>
 }
   end
 
