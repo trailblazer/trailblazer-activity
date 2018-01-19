@@ -8,38 +8,24 @@ class ActivityTest < Minitest::Spec
       activity = Module.new do
         extend Activity[ Activity::Path, task_builder: ->(task, *){task} ]
 
-        module_function
-
-        def a( (ctx, flow_options), ** )
-          ctx[:a] = 1
-          return Activity::Right, [ctx, flow_options]
-        end
-
-        def b( (ctx, flow_options), ** )
-          ctx[:b] = ctx[:a] - 1
-          return Activity::Right, [ctx, flow_options]
-        end
-
-        task method(:a)
-        task method(:b), id: "b"
+        task T.def_task(:a)
+        task T.def_task(:b), id: "b"
       end
     end
 
     it do
-      Cct(activity.decompose.first).must_equal %{
-#<Start:default/nil>
- {Trailblazer::Activity::Right} => #<Method: #<Trailblazer::Activity: {}>.a>
-#<Method: #<Trailblazer::Activity: {}>.a>
- {Trailblazer::Activity::Right} => #<Method: #<Trailblazer::Activity: {}>.b>
-#<Method: #<Trailblazer::Activity: {}>.b>
+      assert_path activity, %{
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
 }
     end
 
     it do
-      signal, (ctx, _) = activity.( [{}, {}] )
-      ctx.inspect.must_equal %{{:a=>1, :b=>0}}
+      signal, (ctx, _) = activity.( [{seq: []}, {}] )
+      ctx.inspect.must_equal %{{:seq=>[:a,:b]}}
     end
   end
 

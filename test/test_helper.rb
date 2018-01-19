@@ -42,3 +42,13 @@ Trailblazer::Activity.module_eval do
   end
 end
 
+module T
+  def self.def_task(name)
+    Module.new do
+      define_singleton_method(name) do | (ctx, flow_options), ** |
+        ctx[:seq] << name
+        return Activity::Right, [ctx, flow_options]
+      end
+    end.method(name)
+  end
+end
