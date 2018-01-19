@@ -14,69 +14,72 @@ class ActivityBuildTest < Minitest::Spec
   class L; end
 
 
-  describe ":adds" do
-    let(:adds) do
-      [
-        [ :add, [ "my.id", [ [:success], "MyTask", [] ], group: :end ]]
-      ]
-    end
+#   describe ":adds" do
+#     let(:adds) do
+#       [
+#         [ :add, [ "my.id", [ [:success], "MyTask", [] ], group: :end ]]
+#       ]
+#     end
 
-    it do
-      _adds = adds
+#     it do
+#       _adds = adds
 
-      adds = Activity::Magnetic::Builder::Path.plan do
-        task J, id: "extract", adds: _adds
-      end
+#       adds = Activity::Magnetic::Builder::Path.plan do
+#         task J, id: "extract", adds: _adds
+#       end
 
-      seq = Finalizer.adds_to_tripletts(adds)
+#       seq = Finalizer.adds_to_tripletts(adds)
 
-   # puts Seq(seq)
-      Seq(seq).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :success
-[:success] ==> ActivityBuildTest::J
- (success)/Right ==> :success
-[:success] ==> #<End:success/:success>
- []
-[:success] ==> \"MyTask\"
- []
-}
-    end
-  end
+#    # puts Seq(seq)
+#       Seq(seq).must_equal %{
+# [] ==> #<Start:default/nil>
+#  (success)/Right ==> :success
+# [:success] ==> ActivityBuildTest::J
+#  (success)/Right ==> :success
+# [:success] ==> #<End:success/:success>
+#  []
+# [:success] ==> \"MyTask\"
+#  []
+# }
+#     end
+#   end
 
   #---
   # wiring options
 
   # 3 ends, 1 of 'em default.
   it do
-    adds = Activity::Magnetic::Builder::Path.plan(track_color: :"track_9") do
-      task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
-      task K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
+    activity = Module.new do
+      extend Activity[ Activity::Path, track_color: :"track_9" ]
+      task task: J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
+      task task: K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
     end
 
-# puts Seq(seq)
-    Seq(seq = Finalizer.adds_to_tripletts(adds)).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::J
- (success)/Right ==> :track_9
- (failure)/Left ==> "extract-Trailblazer::Activity::Left"
-[:track_9] ==> ActivityBuildTest::K
- (success)/Right ==> :track_9
- (failure)/Left ==> "validate-Trailblazer::Activity::Left"
-[:track_9] ==> #<End:track_9/:success>
- []
-["extract-Trailblazer::Activity::Left"] ==> #<End:End.extract.key_not_found/:key_not_found>
- []
-["validate-Trailblazer::Activity::Left"] ==> #<End:End.invalid/:invalid>
- []
+    process, outputs, adds = activity.decompose
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => ActivityBuildTest::J
+ActivityBuildTest::J
+ {Trailblazer::Activity::Right} => ActivityBuildTest::K
+ {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
+ActivityBuildTest::K
+ {Trailblazer::Activity::Right} => #<End:track_9/:success>
+ {Trailblazer::Activity::Left} => #<End:End.invalid/:invalid>
+#<End:track_9/:success>
+
+#<End:End.extract.key_not_found/:key_not_found>
+
+#<End:End.invalid/:invalid>
 }
   end
 
   # straight path with different name for :success.
   it do
-    adds = Activity::Magnetic::Builder::Path.plan(track_color: :"track_9") do
-      task J, id: "first"
+    activity = Module.new do
+      extend Activity[ Activity::Path, track_color: :"track_9" ]
+
+      task task: J, id: "first"
       task K, id: "last"
     end
 

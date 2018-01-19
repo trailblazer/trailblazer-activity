@@ -58,6 +58,27 @@ class PathTest < Minitest::Spec
 }
   end
 
+  it "accepts :track_color" do
+    activity = Module.new do
+      extend Activity[ Activity::Path, track_color: :"track_9" ]
+
+      task task: T.def_task(:a)
+      task task: T.def_task(:b)
+    end
+
+    process, outputs, adds = activity.decompose
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Right} => #<End:track_9/:success>
+#<End:track_9/:success>
+}
+  end
+
   it "accepts :track_color and an explicit End" do
     activity = Module.new do
       extend Activity[ Activity::Path, track_color: :"track_9" ]
