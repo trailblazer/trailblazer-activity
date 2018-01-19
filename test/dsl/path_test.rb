@@ -411,33 +411,6 @@ DSLPathTest::D
 }
     end
 
-    it "multiple type: :End with magnetic_to:" do
-      seq, adds = Builder::Path.draft do
-        task A, id: "A"
-        task B, id: "B", type: :End
-        task D, id: "D", magnetic_to: [] # start event
-        task I, id: "I", type: :End
-        task G, id: "G", magnetic_to: [] # start event
-      end
-
-      Cct( Finalizer.(adds).first ).must_equal %{
-#<Start:default/nil>
- {Trailblazer::Activity::Right} => DSLPathTest::A
-DSLPathTest::A
- {Trailblazer::Activity::Right} => DSLPathTest::B
-DSLPathTest::B
-
-DSLPathTest::D
- {Trailblazer::Activity::Right} => DSLPathTest::I
-DSLPathTest::I
-
-DSLPathTest::G
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
-}
-    end
-  end
-
 
   describe "Procedural interface" do
     let(:initial_plus_poles) do
@@ -448,11 +421,13 @@ DSLPathTest::G
 
     # with all options.
     it do
-      builder, adds = Builder::Path.for( Activity::Magnetic::Normalizer.new(plus_poles: Builder::Path.default_plus_poles), {track_color: :pink} )
+      normalizer, _ = Activity::Magnetic::Normalizer.build(plus_poles: Builder::Path.default_plus_poles)
 
-      _adds, _ = builder.task( G, id: G, plus_poles: initial_plus_poles, Activity.Output("Exception", :exception) => Activity.End(:exception) )
+      builder, adds = Builder::Path.for( normalizer, {track_color: :pink} )
+
+      _adds, _ = builder.task( task: G, id: G, plus_poles: initial_plus_poles, Activity.Output("Exception", :exception) => Activity.End(:exception) )
       adds += _adds
-      _adds, _ = builder.task( I, id: I, plus_poles: initial_plus_poles, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
+      _adds, _ = builder.task( task: I, id: I, plus_poles: initial_plus_poles, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
       adds += _adds
 
       sequence = Finalizer.adds_to_tripletts(adds)
@@ -480,11 +455,13 @@ DSLPathTest::G
 
     # with plus_poles.
     it do
-      builder, adds = Builder::Path.for( Builder::DefaultNormalizer.new(plus_poles: Builder::Path.default_plus_poles), {plus_poles: initial_plus_poles} )
+      normalizer, _ = Activity::Magnetic::Normalizer.build(plus_poles: Builder::Path.default_plus_poles)
 
-      _adds, _ = builder.task G, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception)
+      builder, adds = Builder::Path.for( normalizer, {plus_poles: initial_plus_poles} )
+
+      _adds, _ = builder.task task: G, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception)
       adds += _adds
-      _adds, _ = builder.task I, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure)
+      _adds, _ = builder.task task: I, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure)
       adds += _adds
 
       sequence = Finalizer.adds_to_tripletts(adds)
@@ -494,6 +471,7 @@ DSLPathTest::G
  (success)/Right ==> :success
 [:success] ==> DSLPathTest::G
  (success)/Right ==> :success
+ (failure)/Left ==> nil
  (exception)/Exception ==> "DSLPathTest::G-Exception"
 [:success] ==> DSLPathTest::I
  (success)/Right ==> :success

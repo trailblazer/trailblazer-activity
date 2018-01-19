@@ -76,6 +76,36 @@ class PathTest < Minitest::Spec
 }
   end
 
+  it "accepts :type and :magnetic_to" do
+    activity = Module.new do
+      extend Activity[ Activity::Path ]
+
+      task task: T.def_task(:a), id: "A"
+      task task: T.def_task(:b), id: "B", type: :End
+      task task: T.def_task(:c), id: "D", magnetic_to: [] # start event
+      task task: T.def_task(:d), id: "I", type: :End
+      task task: T.def_task(:e), id: "G", magnetic_to: [] # start event
+    end
+
+    process, outputs, adds = activity.decompose
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
+
+#<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+#<Method: #<Module:0x>.d>
+
+#<Method: #<Module:0x>.e>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+}
+  end
+
   describe "Path()" do
     it "accepts Path()" do
       activity = Module.new do

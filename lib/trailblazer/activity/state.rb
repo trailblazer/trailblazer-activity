@@ -9,7 +9,7 @@ module Trailblazer
       end
 
       def self.add(builder, adds, name, *args, &block)
-        new_adds, *returned_options = builder.send(name, *args, &block) # builder.task
+        new_adds, *returned_options = builder.insert(name, *args, &block) # builder.task
 
         adds = adds + new_adds
 

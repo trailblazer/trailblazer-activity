@@ -14,14 +14,10 @@ module Trailblazer
           )
         end
 
-        # def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
-        #   plan_for( *Path.for(normalizer, options), &block )
-        # end
-
         def task(task, options={}, &block)
           polarizations = Path.TaskPolarizations( @builder_options.merge( type: options[:type] ) ) # DISCUSS: handle :type here? Really?
 
-          insert_element( Path, polarizations, task, options, &block )
+          return Path, polarizations, task, options, block
         end
 
 
@@ -32,7 +28,7 @@ module Trailblazer
         end
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:raise, end_semantic:raise, default_plus_poles: self.default_plus_poles, track_end: Activity.End(track_color, end_semantic), **o)
+        def self.InitialAdds(track_color:raise, end_semantic:raise, default_plus_poles: self.default_plus_poles, track_end: Activity.End(track_color, end_semantic), **)
 
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
@@ -63,7 +59,7 @@ module Trailblazer
           start_adds + end_adds
         end
 
-        def self.TaskPolarizations(track_color:raise, type: :task, **o)
+        def self.TaskPolarizations(track_color:raise, type: :task, **)
           return [EndPolarization.new( track_color: track_color )] if type == :End # DISCUSS: should this dispatch be here?
 
           [TaskPolarization.new( track_color: track_color )]

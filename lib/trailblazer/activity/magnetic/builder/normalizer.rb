@@ -66,6 +66,7 @@ module Trailblazer
           ctx[:options][:extension] = (local_options[:extension]||[]) + [ Activity::Introspect.method(:add_introspection) ] # fixme: this sucks
         end
 
+        # Normalizes ctx[:options]
         def self.normalize_for_macro( ctx, task:, options:, task_builder:, ** )
           ctx[:options] =
             if task.is_a?(::Hash) # macro.
@@ -92,6 +93,7 @@ module Trailblazer
         task Activity::TaskBuilder::Binary.( method(:split_options) ),              id: "split_options"
         task Activity::TaskBuilder::Binary.( method(:normalize_extension_option) ), id: "normalize_extension_option"
         task Activity::TaskBuilder::Binary.( method(:defaultize) ),                 id: "defaultize"
+        # task ->((ctx, _), **) { pp ctx; [Activity::Right, [ctx, _]] }
       end
     end # Normalizer
 
