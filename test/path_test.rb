@@ -260,6 +260,43 @@ class PathTest < Minitest::Spec
 #<End:track_0./:invalid>
 }
     end
+
+    it "allows circular in the nested block" do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: T.def_task(:a), id: "extract",  Output(Activity::Left, :failure) => End("End.extract.key_not_found", :key_not_found)
+        task task: T.def_task(:b), id: "validate", Output(Activity::Left, :failure) => Path() do
+          task task: T.def_task(:c)
+          task task: T.def_task(:d), Output(:success) => "extract" # go back to J{extract}.
+        end
+        task task: T.def_task(:e)
+      end
+
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.e>
+#<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+#<Method: #<Module:0x>.d>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.e>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+
+#<End:End.extract.key_not_found/:key_not_found>
+
+#<End:track_0./:success>
+}
+    end
   end
 
   describe "Output()" do
@@ -268,6 +305,26 @@ class PathTest < Minitest::Spec
         extend Activity[ Activity::Path, track_color: :"track_9" ]
 
         task task: T.def_task(:a), Output(Activity::Right, :success) => End("End.invalid_result", :invalid_result)
+      end
+
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<End:End.invalid_result/:invalid_result>
+#<End:track_9/:success>
+
+#<End:End.invalid_result/:invalid_result>
+}
+    end
+
+    it "finds the correct Output when it's only Output(:semantic)" do
+      activity = Module.new do
+        extend Activity[ Activity::Path, track_color: :"track_9" ]
+
+        task task: T.def_task(:a), Output(:success) => End("End.invalid_result", :invalid_result)
       end
 
       process, outputs, adds = activity.decompose

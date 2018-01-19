@@ -200,63 +200,6 @@ end
     Ends(process).must_equal %{[#<End:track_9/:success>,#<End:End.extract.key_not_found/:key_not_found>,#<End:End.invalid/:invalid>]}
   end
 
-  it "with nesting and circular" do
-    seq, adds = Activity::Process.draft do
-      task J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
-      task K, id: "validate", Output(Left, :failure) => Path() do
-        task A, id: "A"
-        task B, id: "B", Output(:success) => "extract" # go back to J{extract}.
-      end
-      task L, id: "L"
-    end
-
-    # puts Seq(seq)
-
-    process, _ = Finalizer.( adds )
-
-    Cct(process).must_equal %{
-#<Start:default/nil>
- {Trailblazer::Activity::Right} => DSLPathTest::J
-DSLPathTest::J
- {Trailblazer::Activity::Right} => DSLPathTest::K
- {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
-DSLPathTest::K
- {Trailblazer::Activity::Left} => DSLPathTest::A
- {Trailblazer::Activity::Right} => DSLPathTest::L
-DSLPathTest::A
- {Trailblazer::Activity::Right} => DSLPathTest::B
-DSLPathTest::B
- {Trailblazer::Activity::Right} => DSLPathTest::J
-DSLPathTest::L
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
-
-#<End:End.extract.key_not_found/:key_not_found>
-
-#<End:track_0./:success>
-}
-    Ends(process).must_equal %{[#<End:success/:success>,#<End:End.extract.key_not_found/:key_not_found>]}
-  end
-
-  it "Output(:success) finds the correct Output" do
-    seq, adds = Builder::Path.draft( track_color: :"track_9" ) do
-      task J, id: "report_invalid_result"
-      task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
-    end
-
-    Seq(seq).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :track_9
-[:track_9] ==> DSLPathTest::J
- (success)/Right ==> :track_9
-[:track_9] ==> DSLPathTest::K
- (success)/Right ==> "log_invalid_result-Trailblazer::Activity::Right"
-[:track_9] ==> #<End:track_9/:success>
- []
-["log_invalid_result-Trailblazer::Activity::Right"] ==> #<End:End.invalid_result/:invalid_result>
- []
-}
-  end
 
   # Activity.plan( track_color: :pink )
 
