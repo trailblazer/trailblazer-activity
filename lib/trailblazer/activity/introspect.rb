@@ -56,7 +56,7 @@ module Trailblazer
           content = content.join("\n")
 
           return "\n#{content}" if show_ids
-          return "\n#{content}".gsub(/\d\d+/, "")
+          return "\n#{content}".gsub(/0x\w+/, "0x")
       end
 
       def self.Ends(process)

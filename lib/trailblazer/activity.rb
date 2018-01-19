@@ -151,6 +151,9 @@ module Trailblazer
       end
     end
 
+    # functional API should be like
+    # Activity( builder.task ... ,builder.step, .. )
+
 
 
 
