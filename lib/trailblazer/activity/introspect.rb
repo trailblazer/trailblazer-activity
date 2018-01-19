@@ -56,7 +56,7 @@ module Trailblazer
           content = content.join("\n")
 
           return "\n#{content}" if show_ids
-          return "\n#{content}".gsub(/0x\w+/, "0x")
+          return "\n#{content}".gsub(/0x\w+/, "0x").gsub(/0.\d+/, "0.")
       end
 
       def self.Ends(process)
@@ -113,7 +113,7 @@ module Trailblazer
 #{pluses.empty? ? " []" : pluses.join("\n")}}
           end.join("\n")
 
-    "\n#{content}\n".gsub(/\d\d+/, "")
+    "\n#{content}\n".gsub(/\d\d+/, "").gsub(/0x\w+/, "0x")
       end
 
       def self.PlusPole(plus_pole)

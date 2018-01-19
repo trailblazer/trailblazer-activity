@@ -22,9 +22,9 @@ module Trailblazer
     end
 
     class Builder
-      def self.plan_for(builder, adds, &block)
-        adds += Block.new(builder).(&block) # returns ADDS
-      end
+      # def self.plan_for(builder, adds, &block)
+      #   adds += Block.new(builder).(&block) # returns ADDS
+      # end
 
       def initialize(normalizer, builder_options)
         @normalizer, @builder_options = normalizer, builder_options
@@ -36,33 +36,10 @@ module Trailblazer
         activity_adds + merged_adds
       end
 
-      module DSLMethods
-        module_function
-
-        #   Output( Left, :failure )
-        #   Output( :failure ) #=> Output::Semantic
-        def Output(signal, semantic=nil)
-          return DSL::Output::Semantic.new(signal) if semantic.nil?
-
-          Activity.Output(signal, semantic)
-        end
-
-        def End(name, semantic)
-          Activity.End(name, semantic)
-        end
-
-        def Path(track_color: "track_#{rand}", end_semantic: :success, **options)
-          options = options.merge(track_color: track_color, end_semantic: end_semantic)
-
-          # this block is called in DSL::ProcessTuples.
-          path = Module.new do
-            extend Activity[ Activity::Path, options.merge( normalizer: @normalizer ) ]
-          end
-          ->(block) { [ track_color, Builder::Path.plan( options, @normalizer, &block ) ] }
-        end
+      # Stateful helper.
+      def Path(*args)
+        DSLHelper.Path(@normalizer, *args)
       end
-
-      include DSLMethods # FIXME: do we need this?
 
       private
 

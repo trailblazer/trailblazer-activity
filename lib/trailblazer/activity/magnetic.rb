@@ -23,6 +23,9 @@ require "trailblazer/activity/schema/dependencies"
 
 require "trailblazer/activity/magnetic"
 require "trailblazer/activity/magnetic/builder"
+require "trailblazer/activity/magnetic/builder/dsl_helper"
+require "trailblazer/activity/magnetic/dsl_helper"
+
 require "trailblazer/option"
 require "trailblazer/activity/task_builder"
 require "trailblazer/activity/magnetic/builder/default_normalizer"

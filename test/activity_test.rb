@@ -163,9 +163,9 @@ class ActivityTest < Minitest::Spec
   end
 
   it do
-    Outputs(activity.outputs).must_equal %{resume_1=> (#<ActivityTest::B:>, resume_1)
-success=> (#<Trailblazer::Activity::End:>, success)
-invalid_result=> (#<Trailblazer::Activity::End:>, invalid_result)}
+#     Outputs(activity.outputs).must_equal %{resume_1=> (#<ActivityTest::B:>, resume_1)
+# success=> (#<Trailblazer::Activity::End:>, success)
+# invalid_result=> (#<Trailblazer::Activity::End:>, invalid_result)}
 
     Cct(activity.decompose.first).must_equal %{
 #<Start:default/nil>

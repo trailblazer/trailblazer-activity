@@ -10,8 +10,9 @@ require "trailblazer/activity/structures"
 module Trailblazer
   module Activity
     module Interface
+      # @return [Process, Hash, Adds] Adds is private and should not be used in your application as it might get removed.
       def decompose # TODO: test me
-        return @process, outputs
+        return @process, outputs, @adds
       end
 
       def debug # TODO: TEST ME
@@ -102,7 +103,7 @@ module Trailblazer
 
         include Activity::Interface # DISCUSS
 
-        include Activity::DSLDelegates # DISCUSS
+        include Activity::Magnetic::DSLHelper # DISCUSS
 
         include Activity::Inspect # DISCUSS
 
@@ -129,7 +130,7 @@ module Trailblazer
       def initialize_activity!(builder_class:, builder_options: {}, normalizer_class:, normalizer: false, **options)
         normalizer, options = normalizer_class.build( options ) unless normalizer
 
-        @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, builder_options)
+        @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, options.merge(builder_options))
 
         @debug    = {}
         @options  = options
@@ -159,16 +160,6 @@ module Trailblazer
 
     # functional API should be like
     # Activity( builder.task ... ,builder.step, .. )
-
-
-
-
-    # delegate as much as possible to Builder
-    # let us process options and e.g. do :id
-    module DSLDelegates
-      extend Forwardable # TODO: test those helpers
-      def_delegators :@builder, :Path, :Output#, :task
-    end
 
 
   module Inspect

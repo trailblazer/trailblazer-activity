@@ -14,9 +14,9 @@ module Trailblazer
           )
         end
 
-        def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
-          plan_for( *Path.for(normalizer, options), &block )
-        end
+        # def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
+        #   plan_for( *Path.for(normalizer, options), &block )
+        # end
 
         def task(task, options={}, &block)
           polarizations = Path.TaskPolarizations( @builder_options.merge( type: options[:type] ) ) # DISCUSS: handle :type here? Really?

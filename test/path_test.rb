@@ -77,7 +77,7 @@ class PathTest < Minitest::Spec
   end
 
   describe "Path()" do
-    it do
+    it "accepts Path()" do
       activity = Module.new do
         extend Activity[ Activity::Path ]
 
@@ -126,6 +126,37 @@ class PathTest < Minitest::Spec
  []
 ["track_0."] ==> #<End:track_0./:success>
  []
+}
+    end
+
+    it "accepts :task_builder in Path()" do
+      activity = Module.new do
+        extend Activity[ Activity::Path, task_builder: ->(task) {task} ]
+
+        task T.def_task(:a)
+        task T.def_task(:b), id: "//b", Output(Activity::Left, :failure) => Path() do
+          task T.def_task(:c)
+          task T.def_task(:d)
+        end
+      end
+
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+#<Method: #<Module:0x>.d>
+ {Trailblazer::Activity::Right} => #<End:track_0./:success>
+#<End:success/:success>
+
+#<End:track_0./:success>
 }
     end
   end
