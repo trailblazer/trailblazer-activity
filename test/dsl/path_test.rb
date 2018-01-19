@@ -2,6 +2,11 @@ require "test_helper"
 
 # Low-level API tests for Builder::Path.
 class DSLPathTest < Minitest::Spec
+  Builder = Trailblazer::Activity::Magnetic::Builder
+
+  class G; end
+  class I; end
+
   describe "Procedural interface" do
     let(:initial_plus_poles) do
       Activity::Magnetic::DSL::PlusPoles.new.merge(
@@ -15,12 +20,12 @@ class DSLPathTest < Minitest::Spec
 
       builder, adds = Builder::Path.for( normalizer, {track_color: :pink} )
 
-      _adds, _ = builder.task( task: G, id: G, plus_poles: initial_plus_poles, Activity.Output("Exception", :exception) => Activity.End(:exception) )
+      _adds, _ = builder.insert( :task, {task: G}, id: G, plus_poles: initial_plus_poles, Activity.Output("Exception", :exception) => Activity.End(:exception) )
       adds += _adds
-      _adds, _ = builder.task( task: I, id: I, plus_poles: initial_plus_poles, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
+      _adds, _ = builder.insert( :task, {task: I}, id: I, plus_poles: initial_plus_poles, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
       adds += _adds
 
-      sequence = Finalizer.adds_to_tripletts(adds)
+      sequence = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
 
       Seq(sequence).must_equal %{
 [] ==> #<Start:default/nil>
@@ -38,9 +43,6 @@ class DSLPathTest < Minitest::Spec
 ["DSLPathTest::I-Trailblazer::Activity::Left"] ==> #<End:failure/:failure>
  []
 }
-
-      process, _ = Finalizer.(adds)
-      Ends(process).must_equal %{[#<End:pink/:success>,#<End:exception/:exception>,#<End:failure/:failure>]}
     end
 
     # with plus_poles.
@@ -49,12 +51,12 @@ class DSLPathTest < Minitest::Spec
 
       builder, adds = Builder::Path.for( normalizer, {plus_poles: initial_plus_poles} )
 
-      _adds, _ = builder.task task: G, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception)
+      _adds, _ = builder.insert( :task, {task: G}, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception) )
       adds += _adds
-      _adds, _ = builder.task task: I, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure)
+      _adds, _ = builder.insert( :task, {task: I}, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
       adds += _adds
 
-      sequence = Finalizer.adds_to_tripletts(adds)
+      sequence = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
 
       Seq(sequence).must_equal %{
 [] ==> #<Start:default/nil>
@@ -73,8 +75,6 @@ class DSLPathTest < Minitest::Spec
 ["DSLPathTest::I-Trailblazer::Activity::Left"] ==> #<End:failure/:failure>
  []
 }
-      process, _ = Finalizer.(adds)
-      Ends(process).must_equal %{[#<End:success/:success>,#<End:exception/:exception>,#<End:failure/:failure>]}
     end
   end
 end
