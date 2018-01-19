@@ -76,5 +76,58 @@ class PathTest < Minitest::Spec
 }
   end
 
+  describe "Path()" do
+    it do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: T.def_task(:a)
+        task task: T.def_task(:b), id: "//b", Output(Activity::Left, :failure) => Path() do
+          task task: T.def_task(:c)
+          task task: T.def_task(:d)
+        end
+      end
+
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+#<Method: #<Module:0x>.d>
+ {Trailblazer::Activity::Right} => #<End:track_0./:success>
+#<End:success/:success>
+
+#<End:track_0./:success>
+}
+
+      SEQ(adds).must_equal %{
+[] ==> #<Start:default/nil>
+ (success)/Right ==> :success
+[:success] ==> #<Method: #<Module:0x>.a>
+ (success)/Right ==> :success
+ (failure)/Left ==> nil
+[:success] ==> #<Method: #<Module:0x>.b>
+ (success)/Right ==> :success
+ (failure)/Left ==> \"track_0.\"
+["track_0."] ==> #<Method: #<Module:0x>.c>
+ (success)/Right ==> "track_0."
+ (failure)/Left ==> nil
+["track_0."] ==> #<Method: #<Module:0x>.d>
+ (success)/Right ==> "track_0."
+ (failure)/Left ==> nil
+[:success] ==> #<End:success/:success>
+ []
+["track_0."] ==> #<End:track_0./:success>
+ []
+}
+    end
+  end
 
 end
