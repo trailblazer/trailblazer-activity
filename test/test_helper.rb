@@ -47,7 +47,7 @@ module T
     Module.new do
       define_singleton_method(name) do | (ctx, flow_options), ** |
         ctx[:seq] << name
-        return Activity::Right, [ctx, flow_options]
+        return Trailblazer::Activity::Right, [ctx, flow_options]
       end
     end.method(name)
   end
