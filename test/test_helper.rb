@@ -31,6 +31,12 @@ Minitest::Spec.class_eval do
 }
   end
 
+  def SEQ(adds)
+    tripletts = Trailblazer::Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
+
+    Seq(tripletts)
+  end
+
 end
 
 Trailblazer::Activity.module_eval do
