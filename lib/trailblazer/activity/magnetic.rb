@@ -12,21 +12,6 @@ module Trailblazer
         end
       end # PlusPole
     end
-
-    class Process
-      def self.plan(options={}, &block)
-        Magnetic::Builder::Path.plan(options, &block)
-      end
-
-      def self.build(options={}, &block)
-        Magnetic::Builder::Path.build(options, &block)
-      end
-
-      def self.draft(options={}, &block) # TODO: remove me!
-        Magnetic::Builder::Path.draft(options, &block)
-      end
-    end
-
   end
 end
 

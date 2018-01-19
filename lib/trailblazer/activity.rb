@@ -120,6 +120,12 @@ module Trailblazer
 
     module Initialize
       # Set all necessary state in the module.
+      #
+      # 1. Build the normalizer (unless passed with :normalizer)
+      # 2. Build the builder (in State)
+      # 3. Let State compute all state variables (that implies recompiling the Process)
+      #
+      # @api private
       def initialize_activity!(builder_class:, builder_options: {}, normalizer_class:, normalizer: false, **options)
         normalizer, options = normalizer_class.build( options ) unless normalizer
 

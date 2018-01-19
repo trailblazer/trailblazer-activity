@@ -18,6 +18,13 @@ module Trailblazer
 
       private
 
+
+# def Builder.build(options={}, &block)
+#   adds = plan( options, &block )
+
+#   Finalizer.(adds)
+# end
+
       # @return {builder, Adds, Process, outputs}, returned_options
       def self.recompile(builder, adds, *args)
         return builder, adds, *recompile_process(adds), *args
@@ -29,6 +36,8 @@ module Trailblazer
 
       module Recompile
         # Recompile the process and outputs from the {ADDS} instance that collects circuit tasks and connections.
+        #
+        # @return [Process, Hash] The {Process} instance and its outputs hash.
         def self.call(adds)
           process, end_events = Magnetic::Builder::Finalizer.(adds)
           outputs             = recompile_outputs(end_events)

@@ -22,15 +22,8 @@ module Trailblazer
     end
 
     class Builder
-
       def self.plan_for(builder, adds, &block)
         adds += Block.new(builder).(&block) # returns ADDS
-      end
-
-      def self.build(options={}, &block)
-        adds = plan( options, &block )
-
-        Finalizer.(adds)
       end
 
       def initialize(normalizer, builder_options)
@@ -62,6 +55,9 @@ module Trailblazer
           options = options.merge(track_color: track_color, end_semantic: end_semantic)
 
           # this block is called in DSL::ProcessTuples.
+          path = Module.new do
+            extend Activity[ Activity::Path, options.merge( normalizer: @normalizer ) ]
+          end
           ->(block) { [ track_color, Builder::Path.plan( options, @normalizer, &block ) ] }
         end
       end
