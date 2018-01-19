@@ -262,4 +262,26 @@ class PathTest < Minitest::Spec
     end
   end
 
+  describe "Output()" do
+    it "creates an output when passed a tuple" do
+      activity = Module.new do
+        extend Activity[ Activity::Path, track_color: :"track_9" ]
+
+        task task: T.def_task(:a), Output(Activity::Right, :success) => End("End.invalid_result", :invalid_result)
+      end
+
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<End:End.invalid_result/:invalid_result>
+#<End:track_9/:success>
+
+#<End:End.invalid_result/:invalid_result>
+}
+    end
+  end
+
 end

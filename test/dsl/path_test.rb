@@ -259,27 +259,7 @@ DSLPathTest::L
   end
 
   # Activity.plan( track_color: :pink )
-  it "Output(Right, :success) => End adds new End.invalid_result" do
-    seq, adds = Builder::Path.draft( track_color: :"track_9" ) do
-      task J, id: "report_invalid_result"
-      task K, id: "log_invalid_result", Output(Right, :success) => End("End.invalid_result", :invalid_result)
-    end
 
-    Seq(seq).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :track_9
-[:track_9] ==> DSLPathTest::J
- (success)/Right ==> :track_9
-[:track_9] ==> DSLPathTest::K
- (success)/Right ==> "log_invalid_result-Trailblazer::Activity::Right"
-[:track_9] ==> #<End:track_9/:success>
- []
-["log_invalid_result-Trailblazer::Activity::Right"] ==> #<End:End.invalid_result/:invalid_result>
- []
-}
-    process, _ = Finalizer.( adds )
-    Ends(process).must_equal %{[#<End:End.invalid_result/:invalid_result>]}
-  end
 
   describe "Procedural interface" do
     let(:initial_plus_poles) do
