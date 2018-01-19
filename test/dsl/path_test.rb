@@ -281,69 +281,6 @@ DSLPathTest::L
     Ends(process).must_equal %{[#<End:End.invalid_result/:invalid_result>]}
   end
 
-
-  #---
-  #- nested blocks
-  it "nested PATH ends in End.invalid" do
-    # binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-    #   Activity.Output(Activity::Right, :success) => nil,
-    #   Activity.Output(Activity::Left, :failure) => nil )
-
-    adds = Builder::Path.plan do
-      task A, id: "A"
-      task B, id: "B", Output(Left, :failure) => Path(end_semantic: :invalid) do
-        task C, id: "C"
-        task K, id: "K"#, Output(:success) => End("End.invalid_result", :invalid_result)
-      end
-      task D, id: "D"
-    end
-
-    seq = Finalizer.adds_to_tripletts(adds)
-
-Seq(seq).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :success
-[:success] ==> DSLPathTest::A
- (success)/Right ==> :success
-[:success] ==> DSLPathTest::B
- (success)/Right ==> :success
- (failure)/Left ==> "track_0."
-["track_0."] ==> DSLPathTest::C
- (success)/Right ==> "track_0."
-["track_0."] ==> DSLPathTest::K
- (success)/Right ==> "track_0."
-[:success] ==> DSLPathTest::D
- (success)/Right ==> :success
-[:success] ==> #<End:success/:success>
- []
-["track_0."] ==> #<End:track_0./:invalid>
- []
-}
-
-
-    process, _ = Finalizer.( adds )
-    Ends(process).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid>]}
-
-    Cct(process).must_equal %{
-#<Start:default/nil>
- {Trailblazer::Activity::Right} => DSLPathTest::A
-DSLPathTest::A
- {Trailblazer::Activity::Right} => DSLPathTest::B
-DSLPathTest::B
- {Trailblazer::Activity::Left} => DSLPathTest::C
- {Trailblazer::Activity::Right} => DSLPathTest::D
-DSLPathTest::C
- {Trailblazer::Activity::Right} => DSLPathTest::K
-DSLPathTest::K
- {Trailblazer::Activity::Right} => #<End:track_0./:invalid>
-DSLPathTest::D
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
-
-#<End:track_0./:invalid>
-}
-  end
-
   describe "Procedural interface" do
     let(:initial_plus_poles) do
       Activity::Magnetic::DSL::PlusPoles.new.merge(

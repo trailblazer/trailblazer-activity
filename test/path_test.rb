@@ -232,6 +232,34 @@ class PathTest < Minitest::Spec
 #<End:track_0./:success>
 }
     end
+
+    it "accepts :end_semantic" do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: T.def_task(:b), Output(Activity::Left, :failure) => Path(end_semantic: :invalid) do
+          task task: T.def_task(:c)
+        end
+        task task: T.def_task(:d)
+      end
+
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+#<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<End:track_0./:invalid>
+#<Method: #<Module:0x>.d>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<End:success/:success>
+
+#<End:track_0./:invalid>
+}
+    end
   end
 
 end
