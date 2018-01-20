@@ -10,20 +10,16 @@ module Trailblazer
           )
         end
 
-        def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
-          plan_for( *Railway.for(normalizer, options), &block )
-        end
-
         def step(task, options={}, &block)
-          insert_element( Railway, Railway.StepPolarizations(@builder_options), task, options, &block )
+          return Railway, Railway.StepPolarizations(@builder_options), task, options, block
         end
 
         def fail(task, options={}, &block)
-          insert_element( Railway, Railway.FailPolarizations(@builder_options), task, options, &block )
+          return Railway, Railway.FailPolarizations(@builder_options), task, options, block
         end
 
         def pass(task, options={}, &block)
-          insert_element( Railway, Railway.PassPolarizations(@builder_options), task, options, &block )
+          return Railway, Railway.PassPolarizations(@builder_options), task, options, block
         end
 
         def self.default_plus_poles
