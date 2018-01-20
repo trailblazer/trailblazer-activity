@@ -478,6 +478,31 @@ PathTest::MyEnd
 }
     end
 
+    it "finds the correct Output with Output(:semantic) and custom plus_poles" do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: T.def_task(:a), Output(:trigger) => End("End.something_triggered", :something_triggered),
+          plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
+                        Activity.Output("trigger!",      :trigger) => nil,
+                        Activity.Output(Activity::Right, :success) => nil,
+                      ).freeze
+      end
+
+      process, outputs, adds = activity.decompose
+
+      Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+ {trigger!} => #<End:End.something_triggered/:something_triggered>
+#<End:success/:success>
+
+#<End:End.something_triggered/:something_triggered>
+}
+    end
+
     it "can build fake Railway using Output(Left)s" do
       activity = Module.new do
         extend Activity[ Activity::Path, track_color: :"track_9" ]

@@ -105,38 +105,12 @@ ActivityBuildTest::K
 }
   end
 
-  # test Output(:semantic)
-  # Activity with 2 predefined outputs, direct 2nd one to new end without Output
-  it do
-    adds = Activity::Magnetic::Builder::Path.plan(track_color: :"track_9") do
-      task J, id: "confused",
-        Output(:trigger) => End("End.trigger", :triggered),
-        # this comes from the Operation DSL since it knows {Activity}J
-        plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
-          Activity.Output(Activity::Left,  :trigger) => nil,
-          Activity.Output(Activity::Right, :success) => nil,
-        ).freeze
-      task K, id: "normal"
-    end
-
-    Seq(seq = Finalizer.adds_to_tripletts(adds)).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::J
- (trigger)/Left ==> "confused-Trailblazer::Activity::Left"
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::K
- (success)/Right ==> :track_9
-[:track_9] ==> #<End:track_9/:success>
- []
-["confused-Trailblazer::Activity::Left"] ==> #<End:End.trigger/:triggered>
- []
-}
-  end
 
   it "raises exception when referencing non-existant semantic" do
     exception = assert_raises do
-      Activity::Magnetic::Builder::Path.plan do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+
         task J,
           Output(:does_absolutely_not_exist) => End("End.trigger", :triggered)
       end
@@ -146,51 +120,49 @@ ActivityBuildTest::K
   end
 
   # only PlusPole goes straight to IDed end.
-  it do
-    adds = Activity::Magnetic::Builder::Path.plan(track_color: :"track_9") do
-      task J, id: "confused", Output(Right, :success) => "End.track_9"
-      task K, id: "normal"
+  it "connects task to End" do
+    activity = Module.new do
+      extend Activity[ Activity::Path, track_color: :"track_9" ]
+      task task: J, id: "confused", Output(Right, :success) => "End.track_9"
+      task task: K, id: "normal"
     end
 
-# puts Seq(seq)
-    Seq(seq = Finalizer.adds_to_tripletts(adds)).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :track_9
-[:track_9] ==> ActivityBuildTest::J
- (success)/Right ==> "Trailblazer::Activity::Right-End.track_9"
-[:track_9] ==> ActivityBuildTest::K
- (success)/Right ==> :track_9
-[:track_9, "Trailblazer::Activity::Right-End.track_9"] ==> #<End:track_9/:success>
- []
+process, outputs, adds = activity.decompose
+
+    Cct(process).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => ActivityBuildTest::J
+ActivityBuildTest::J
+ {Trailblazer::Activity::Right} => #<End:track_9/:success>
+ActivityBuildTest::K
+ {Trailblazer::Activity::Right} => ActivityBuildTest::K
+#<End:track_9/:success>
 }
   end
 
 
   # circulars, etc.
   it do
-    binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity.Output(Activity::Right, :success) => nil,
-      Activity.Output(Activity::Left, :failure) => nil )
+    activity = Module.new do
+      extend Activity[ Activity::Path ]
 
-    adds = Activity::Magnetic::Builder::Path.plan do
       # circular
-      task A, id: "inquiry_create", Output(Left, :failure) => Path() do
-        task B, id: "suspend_for_correct", Output(:success) => "inquiry_create"#, plus_poles: binary_plus_poles
+      task task: A, id: "inquiry_create", Output(Activity::Left, :failure) => Path() do
+        task task: B, id: "suspend_for_correct", Output(:success) => "inquiry_create"#, plus_poles: binary_plus_poles
       end
 
-      task G, id: "receive_process_id"
-      # task Task(), id: :suspend_wait_for_result
+      task task: G, id: "receive_process_id"
+      # task task: Task(), id: :suspend_wait_for_result
 
-      task I, id: :process_result, Output(Left, :failure) => Path(end_semantic: :invalid_result) do
-        task J, id: "report_invalid_result"
-        # task K, id: "log_invalid_result", Output(:success) => color
-        task K, id: "log_invalid_result"#, Output(:success) => End("End.invalid_result", :invalid_result)
+      task task: I, id: :process_result, Output(Activity::Left, :failure) => Path(end_semantic: :invalid_result) do
+        task task: J, id: "report_invalid_result"
+        task task: K, id: "log_invalid_result"#, Output(:success) => End("End.invalid_result", :invalid_result)
       end
 
-      task L, id: :notify_clerk#, Output(Right, :success) => :success
+      task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    process, _ = Finalizer.( adds )
+    process, outputs, adds = activity.decompose
 
     Cct(process).must_equal %{
 #<Start:default/nil>
@@ -222,27 +194,24 @@ ActivityBuildTest::L
   end
 
   it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do # FIXME: what were we (or I, haha) testing in here?
-    binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity.Output(Activity::Right, :success) => nil,
-      Activity.Output(Activity::Left, :failure) => nil )
+    activity = Module.new do
+      extend Activity[ Activity::Path ]
 
-    adds = Activity::Magnetic::Builder::Path.plan do
-      task A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", Output(:success) => "receive_process_id"
-      task B, id: "suspend_for_correct", Output(:failure) => "inquiry_create", plus_poles: binary_plus_poles
+      task task: A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", Output(:success) => "receive_process_id"
+      task task: B, id: "suspend_for_correct", Output(:failure) => "inquiry_create"
 
-      task G, id: "receive_process_id"
-      # task Task(), id: :suspend_wait_for_result
+      task task: G, id: "receive_process_id", magnetic_to: []
 
-      task I, id: :process_result, Output(Left, :failure) => Path(end_semantic: :invalid_resulto) do
-        task J, id: "report_invalid_result"
-        # task K, id: "log_invalid_result", Output(:success) => color
-        task K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
+      task task: I, id: :process_result, Output(Left, :failure) => Path(end_semantic: :invalid_resulto) do
+        task task: J, id: "report_invalid_result"
+        # task task: K, id: "log_invalid_result", Output(:success) => color
+        task task: K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
       end
 
-      task L, id: :notify_clerk#, Output(Right, :success) => :success
+      task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    process, _ = Activity::Magnetic::Builder::Finalizer.( adds )
+    process, outputs, adds = activity.decompose
 
     Cct(process).must_equal %{
 #<Start:default/nil>
@@ -254,16 +223,16 @@ ActivityBuildTest::B
  {Trailblazer::Activity::Right} => ActivityBuildTest::B
  {Trailblazer::Activity::Left} => ActivityBuildTest::A
 ActivityBuildTest::G
- {Trailblazer::Activity::Right} => ActivityBuildTest::G
-ActivityBuildTest::I
  {Trailblazer::Activity::Right} => ActivityBuildTest::I
+ActivityBuildTest::I
  {Trailblazer::Activity::Left} => ActivityBuildTest::J
+ {Trailblazer::Activity::Right} => ActivityBuildTest::L
 ActivityBuildTest::J
  {Trailblazer::Activity::Right} => ActivityBuildTest::K
 ActivityBuildTest::K
  {Trailblazer::Activity::Right} => #<End:End.invalid_result/:invalid_result>
 ActivityBuildTest::L
- {Trailblazer::Activity::Right} => ActivityBuildTest::L
+ {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
 
 #<End:track_0./:invalid_resulto>
