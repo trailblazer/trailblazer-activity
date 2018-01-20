@@ -12,10 +12,6 @@ module Trailblazer
           )
         end
 
-        def self.plan(options={}, normalizer=DefaultNormalizer.new(plus_poles: default_plus_poles), &block)
-          plan_for( *FastTrack.for(normalizer, options), &block )
-        end
-
         def self.StepPolarizations(**options)
           [
             *Railway.StepPolarizations(options),
@@ -122,15 +118,15 @@ module Trailblazer
         PassFast = Class.new(Activity::Signal)
 
         def step(task, options={}, &block)
-          insert_element( FastTrack, FastTrack.StepPolarizations(@builder_options), task, options, &block )
+          return FastTrack, FastTrack.StepPolarizations(@builder_options), task, options, block
         end
 
         def fail(task, options={}, &block)
-          insert_element( FastTrack, FastTrack.FailPolarizations(@builder_options), task, options, &block )
+          return FastTrack, FastTrack.FailPolarizations(@builder_options), task, options, block
         end
 
         def pass(task, options={}, &block)
-          insert_element( FastTrack, FastTrack.PassPolarizations(@builder_options), task, options, &block )
+          return FastTrack, FastTrack.PassPolarizations(@builder_options), task, options, block
         end
       end
     end

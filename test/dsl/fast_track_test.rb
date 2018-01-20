@@ -1,30 +1,6 @@
 require "test_helper"
 
 class DSLFastTrackTest < Minitest::Spec
-  Left = Trailblazer::Activity::Left
-  Right = Trailblazer::Activity::Right
-
-  class A; end
-  class B; end
-  class C; end
-  class D; end
-  class G; end
-  class I; end
-  class J; end
-  class K; end
-  class L; end
-
-  Builder   = Activity::Magnetic::Builder
-  Finalizer = Activity::Magnetic::Builder::Finalizer
-  PlusPoles = Activity::Magnetic::DSL::PlusPoles
-
-  let(:initial_plus_poles) do
-    Activity::Magnetic::DSL::PlusPoles.new.merge(
-      Activity.Output(Activity::Right, :success) => :success,
-      # Activity.Output("Signal A", :exception)  => :exception,
-      Activity.Output(Activity::Left, :failure) => :failure
-    )
-  end
 
   def assert_main(sequence, expected)
     Seq(sequence).must_equal %{
@@ -40,48 +16,6 @@ class DSLFastTrackTest < Minitest::Spec
 }
   end
 
-  it "builder API, what we use in Operation" do
-    initial_plus_poles = self.initial_plus_poles
-
-    # this is what happens in Operation.
-    adds = Builder::FastTrack.plan( track_color: :pink, failure_color: :black ) do
-      step G, id: :G, plus_poles: initial_plus_poles, fail_fast: true # these options we WANT built by Operation (task, id, plus_poles)
-      step I, id: :I, plus_poles: initial_plus_poles
-      fail J, id: :J, plus_poles: initial_plus_poles
-      pass K, id: :K, plus_poles: initial_plus_poles
-    end
-
-    seq = Finalizer.adds_to_tripletts(adds)
-
-    Seq(seq).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :pink
-[:pink] ==> DSLFastTrackTest::G
- (success)/Right ==> :pink
- (failure)/Left ==> :fail_fast
-[:pink] ==> DSLFastTrackTest::I
- (success)/Right ==> :pink
- (failure)/Left ==> :black
-[:black] ==> DSLFastTrackTest::J
- (success)/Right ==> :black
- (failure)/Left ==> :black
-[:pink] ==> DSLFastTrackTest::K
- (success)/Right ==> :pink
- (failure)/Left ==> :pink
-[:pink] ==> #<End:pink/:success>
- []
-[:black] ==> #<End:black/:failure>
- []
-[:pass_fast] ==> #<End:pass_fast/:pass_fast>
- []
-[:fail_fast] ==> #<End:fail_fast/:fail_fast>
- []
-}
-
-    process = Finalizer.(adds)
-
-    # pp activity
-  end
 
   #---
   #- test options

@@ -66,14 +66,18 @@ module Trailblazer
       include DSL.def_dsl(:pass)
     end
 
+    # Implementation module that can be passed to `Activity[]`.
+    module FastTrack
+      def self.config
+        Railway.config.merge(
+          builder_class:  Magnetic::Builder::FastTrack,
+        )
+      end
 
-
-
-
-    # module doesn't allow inheritance ==> Activity.merge instead (composition)
-    # module doesn't allow state       ==> write to ctx object
-    # module allows to say "when" "inheritance" is done
-
+      include DSL.def_dsl(:step)
+      include DSL.def_dsl(:fail)
+      include DSL.def_dsl(:pass)
+    end
 
 
 
