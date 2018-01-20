@@ -22,14 +22,11 @@ module Trailblazer::Activity
         wrap_end_signal, ( wrap_ctx, _ ) = task_wrap_activity.(
           [ wrap_ctx, original_args ] # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
         )
-pp wrap_ctx
-
-pp task_wrap_activity.decompose
 
         # don't return the wrap's end signal, but the one from call_task.
         # return all original_args for the next "real" task in the circuit (this includes circuit_options).
 
-        [ wrap_ctx[:return_signal], wrap_ctx[:return_args] ]
+        return wrap_ctx[:return_signal], wrap_ctx[:return_args]
       end
 
       private
