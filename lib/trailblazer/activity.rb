@@ -1,11 +1,6 @@
 require "trailblazer/circuit"
-
 require "trailblazer/activity/version"
 require "trailblazer/activity/structures"
-
-# require "trailblazer/activity/subprocess"
-
-
 
 module Trailblazer
   module Activity
@@ -50,6 +45,22 @@ module Trailblazer
       end
 
       include DSL.def_dsl(:task)  # define Path::task.
+
+      module Plan
+        def self.extended(extended)
+          extended.singleton_class.attr_accessor :record
+          extended.record = []
+        end
+
+        def task(*args, &block)
+          record << [:task, args, block]
+        end
+
+        def self.merge!(activity, merged)
+          merged.record.each { |(dsl_method, args, block)| activity.send(dsl_method, *args, &block)  }
+          activity
+        end
+      end
     end
 
     # Implementation module that can be passed to `Activity[]`.
@@ -88,7 +99,7 @@ module Trailblazer
         # we need this method to inject data from here.
         options = implementation.config.merge(options) # TODO: use Variables::Merge() here.
 
-        singleton_class.define_method(:config){ options } # this sucks so much, why does Ruby make it so hard?
+        singleton_class.define_method(:config){ options } # this sucks so much.
 
         include implementation # ::task or ::step, etc
 

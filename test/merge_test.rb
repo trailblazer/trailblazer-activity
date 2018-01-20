@@ -4,21 +4,26 @@ class MergeTest < Minitest::Spec
   Activity = Trailblazer::Activity
 
   it do
-    activity = Activity::Magnetic::Builder::Path.plan do
-      task :a, id: :a
+    activity = Module.new do
+      extend Activity[ Activity::Path ]
+
+      task task: :a, id: "a"
     end
 
-    merged = Activity::Magnetic::Builder::Path.plan do
-      task :b, before: :a
-      task :c
+    merged = Module.new do
+      extend Activity::Path::Plan
+
+      task task: :b, before: "a"
+      task task: :c
     end
 
     # pp activity+merged
-    adds = Activity::Magnetic::Builder.merge(activity, merged)
+    _activity = Activity::Path::Plan.merge!(activity, merged)
 
-    process, outputs = Activity::Magnetic::Builder::Finalizer.(adds)
+    # the existing activity gets extended.
+    activity.must_equal _activity
 
-    Cct(process).must_equal %{
+    Cct(activity.decompose.first).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => :b
 :b

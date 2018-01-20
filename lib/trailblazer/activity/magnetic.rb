@@ -29,7 +29,6 @@ require "trailblazer/activity/magnetic/dsl_helper"
 require "trailblazer/option"
 require "trailblazer/activity/task_builder"
 require "trailblazer/activity/magnetic/builder/default_normalizer"
-require "trailblazer/activity/magnetic/builder/block"
 require "trailblazer/activity/magnetic/builder/path"
 require "trailblazer/activity/magnetic/builder/railway"
 require "trailblazer/activity/magnetic/builder/fast_track" # TODO: move to Operation gem.
