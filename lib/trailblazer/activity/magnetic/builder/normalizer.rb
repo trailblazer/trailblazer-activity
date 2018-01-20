@@ -46,15 +46,11 @@ module Trailblazer
 
            # sort through the "original" user DSL options.
           options, local_options          = Options.normalize( options, keywords ) # DISCUSS:
-          local_options, sequence_options = Options.normalize( local_options, sequence_keywords )
+          local_options, sequence_options = Options.normalize( local_options, Activity::Schema::Dependencies.sequence_keywords )
 
           ctx[:local_options],
           ctx[:connection_options],
           ctx[:sequence_options] = local_options, options, sequence_options
-        end
-
-        def self.sequence_keywords
-          [ :group, :before, :after, :replace, :delete ] # hard-wires Builder to Sequence/Alterations.
         end
 
         # Filter out connections, e.g. `Output(:fail_fast) => :success` and return only the keywords like `:id` or `:replace`.

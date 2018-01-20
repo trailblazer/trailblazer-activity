@@ -29,12 +29,17 @@ module Trailblazer
         @order.collect{ |name| @groups[name].to_a }.flatten(1)
       end
 
-      # private
+      # @api private
       def find(id)
         @groups.find do |name, group|
           index = group.send( :find_index, id )
           return group, index if index
         end
+      end
+
+      # @api private
+      def self.sequence_keywords
+        [ :group, :before, :after, :replace, :delete ]
       end
     end
   end
