@@ -7,7 +7,7 @@ class TaskWrapMacroTest < Minitest::Spec
   # Sample {Extension}
   # We test if we can change `activity` here.
   SampleExtension = ->(activity, task, local_options, *returned_options) do
-    activity.task activity.method(:b), id: "add_another_1", before: local_options[:id]
+    activity.task task: activity.method(:b), id: "add_another_1", before: local_options[:id]
   end
 
   #
@@ -18,16 +18,16 @@ class TaskWrapMacroTest < Minitest::Spec
     def self.a( (ctx, flow_options), **)
       ctx[:seq] << :a
 
-      return Right, [ ctx, flow_options ]
+      return Trailblazer::Activity::Right, [ ctx, flow_options ]
     end
 
     def self.b( (ctx, flow_options), **)
       ctx[:seq] << :b
 
-      return Right, [ ctx, flow_options ]
+      return Trailblazer::Activity::Right, [ ctx, flow_options ]
     end
 
-    task method(:a), extension: [ SampleExtension ], id: "a"
+    task task: method(:a), extension: [ SampleExtension ], id: "a"
   end
 
   it "runs two tasks" do
@@ -37,6 +37,6 @@ class TaskWrapMacroTest < Minitest::Spec
   end
 
   describe "add_introspection" do
-    it { Create.debug.inspect.must_equal %{{#<Method: TaskWrapMacroTest::Create.a>=>{:id=>"a"}, #<Method: TaskWrapMacroTest::Create.b>=>{:id=>"add_another_1"}}} }
+    it { Create.debug.inspect.must_equal %{{#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.b>=>{:id=>\"add_another_1\"}, #<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.a>=>{:id=>\"a\"}}} }
   end
 end

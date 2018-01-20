@@ -7,7 +7,12 @@ module Trailblazer
     # The Normalizer sits in the `@builder`, which receives all DSL calls from the Operation subclass.
     class Normalizer
       def self.build(task_builder: Activity::TaskBuilder::Binary, default_plus_poles: Normalizer.InitialPlusPoles(), activity: Pipeline, extension:[], **options)
-        return new(default_plus_poles: default_plus_poles, extension: extension, task_builder: task_builder, activity: activity, ), options
+        return new(
+          default_plus_poles: default_plus_poles,
+          extension:          extension,
+          task_builder:       task_builder,
+          activity:           activity,
+        ), options
       end
 
       # @private Might be removed.
@@ -58,8 +63,9 @@ module Trailblazer
           options.keys - options.keys.find_all { |k| connection_classes.include?( k.class ) }
         end
 
+        # FIXME; why don't we use the extensions passed into the initializer?
         def self.normalize_extension_option( ctx, local_options:, ** )
-          ctx[:options][:extension] = (local_options[:extension]||[]) + [ Activity::Introspect.method(:add_introspection) ] # fixme: this sucks
+          local_options[:extension] = (local_options[:extension]||[]) + [ Activity::Introspect.method(:add_introspection) ] # fixme: this sucks
         end
 
         # Normalizes ctx[:options]
