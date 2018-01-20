@@ -108,7 +108,7 @@ module Trailblazer
         # we need this method to inject data from here.
         options = implementation.config.merge(options) # TODO: use Variables::Merge() here.
 
-        singleton_class.define_method(:config){ options } # this sucks so much, but is needed to inject state into the module.
+        define_singleton_method(:config){ options } # this sucks so much, but is needed to inject state into the module.
 
         include implementation # ::task or ::step, etc
 
