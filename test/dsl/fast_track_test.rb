@@ -2,53 +2,15 @@ require "test_helper"
 
 class DSLFastTrackTest < Minitest::Spec
 
-  def assert_main(sequence, expected)
-    Seq(sequence).must_equal %{
-[] ==> #<Start:default/nil>
- (success)/Right ==> :success#{expected}[:success] ==> #<End:success/:success>
- []
-[:failure] ==> #<End:failure/:failure>
- []
-[:pass_fast] ==> #<End:pass_fast/:pass_fast>
- []
-[:fail_fast] ==> #<End:fail_fast/:fail_fast>
- []
-}
-  end
+
 
 
   #---
   #- test options
 
-  it "adds :pass_fast pole" do
-    adds = Builder::FastTrack.plan do
-      step G, pass_fast: true
-    end
 
-    seq = Finalizer.adds_to_tripletts(adds)
 
-    assert_main seq, %{
-[:success] ==> DSLFastTrackTest::G
- (success)/Right ==> :pass_fast
- (failure)/Left ==> :failure
-}
-  end
 
-  it "does NOT add another :pass_fast pole when :plus_poles are given" do
-    plus_poles = plus_poles_for( Signal => :success, "Another" => :failure )
-
-    adds = Builder::FastTrack.plan do
-      step G, plus_poles: plus_poles, pass_fast: true
-    end
-
-    seq = Finalizer.adds_to_tripletts(adds)
-
-    assert_main seq, %{
-[:success] ==> DSLFastTrackTest::G
- (success)/Signal ==> :pass_fast
- (failure)/Another ==> :failure
-}
-  end
   # pass_fast: true simply means: color my :success Output with :pass_fast color
   it "does NOT override :pass_fast pole when :poles_poles are given, >>>>>>>>>>>>>>>>>>>>>" do
     plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
