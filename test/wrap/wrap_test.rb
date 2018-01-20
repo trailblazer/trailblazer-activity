@@ -71,28 +71,31 @@ class WrapTest < Minitest::Spec
 
   describe "nested trailing" do
     let (:more_nested) do
-      Activity.build do
-        task Upload
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+        task task: Upload
       end
     end
 
     let (:nested) do
       _more_nested = more_nested
 
-      Activity.build do
-        task Save
-        task _more_nested, _more_nested.outputs[:success] => :success
-        task Cleanup
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+        task task: Save
+        task task: _more_nested, _more_nested.outputs[:success] => :success
+        task task: Cleanup
       end
     end
 
     let (:activity) do
       _nested = nested
 
-      Activity.build do
-        task Model
-        task _nested, _nested.outputs[:success] => :success, id: "A"
-        task Uuid, Output(SpecialDirection, :success) => :success
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+        task task: Model
+        task task: _nested, _nested.outputs[:success] => :success, id: "A"
+        task task: Uuid, Output(SpecialDirection, :success) => :success
       end
     end
 
@@ -104,7 +107,7 @@ class WrapTest < Minitest::Spec
           {},
         ],
 
-        wrap_runtime: Hash.new([]), # dynamic additions from the outside (e.g. tracing), also per task.
+        wrap_runtime: Hash.new, # dynamic additions from the outside (e.g. tracing), also per task.
         runner: Wrap::Runner,
         wrap_static: Hash.new( Wrap.initial_activity ), # per activity?
       )
@@ -118,7 +121,9 @@ class WrapTest < Minitest::Spec
     #-
     describe "Wrap::Runner#call with :wrap_runtime" do
       let(:wrap_alterations) do
-        Activity::Magnetic::Builder::Path.plan do
+        Module.new do
+          extend Activity::Path::Plan
+
           task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
           task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
         end
@@ -128,8 +133,7 @@ class WrapTest < Minitest::Spec
       it "raises an exception when :wrap_runtime parameter is missing" do
         assert_raises do
           signal, *args = more_nested.( [ options = {}, { } ], runner: Wrap::Runner, wrap_static: {} )
-        # end.to_s.must_equal %{Please provide :wrap_runtime}
-        end.to_s.must_equal %{}
+        end.to_s.must_equal %{missing keyword: wrap_runtime}
       end
 
       # specific wrap for A, default for B.
@@ -142,12 +146,13 @@ class WrapTest < Minitest::Spec
           [ Activity::Right, [ cdfg, original_args], circuit_options ]
         end
 
-        upload_wrap  = Activity::Magnetic::Builder::Path.plan do
+        upload_wrap  = Module.new do
+          extend Activity::Path::Plan
           task only_for_wrap, id: "task_wrap.upload", before: "task_wrap.call_task"
         end
 
         wrap_static         = Hash.new( Wrap.initial_activity )
-        wrap_static[Upload] = Trailblazer::Activity::Magnetic::Builder.merge( Wrap.initial_activity, upload_wrap )
+        wrap_static[Upload] = Trailblazer::Activity::Path::Plan.merge( Wrap.initial_activity, upload_wrap )
 
         signal, (options, flow_options, *ret) = more_nested.(
           [
@@ -181,7 +186,8 @@ class WrapTest < Minitest::Spec
     #---
     #- Tracing
     it "trail" do
-      wrap_alterations = Activity::Magnetic::Builder::Path.plan do
+      wrap_alterations = Module.new do
+        extend Activity::Path::Plan
         task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
         task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
       end
@@ -210,10 +216,10 @@ pp flow_options
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start:>
 |-- outsideg.Model
-|-- #<Class:>
+|-- #<Module:>
 |   |-- #<Trailblazer::Activity::Start:>
 |   |-- #<Proc:.rb:11 (lambda)>
-|   |-- #<Class:>
+|   |-- #<Module:>
 |   |   |-- #<Trailblazer::Activity::Start:>
 |   |   |-- #<Proc:.rb:12 (lambda)>
 |   |   `-- #<Trailblazer::Activity::End:>

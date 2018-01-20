@@ -21,7 +21,7 @@ module Trailblazer::Activity
     def self.arguments_for_call(activity, (options, flow_options), **circuit_args)
       circuit_args = circuit_args.merge(
         runner:       TaskWrap::Runner,
-        wrap_runtime: circuit_args[:wrap_runtime] || ::Hash.new([]), # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
+        wrap_runtime: circuit_args[:wrap_runtime] || {}, # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
         wrap_static:  activity.static_task_wrap,
       )
 
@@ -32,7 +32,7 @@ module Trailblazer::Activity
       def self.arguments_for_call(activity, (options, flow_options), **circuit_args)
         circuit_args = circuit_args.merge(
           runner:       TaskWrap::Runner,
-          wrap_runtime: circuit_args[:wrap_runtime] || ::Hash.new([]), # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
+          wrap_runtime: circuit_args[:wrap_runtime] || {}, # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
           wrap_static:  ::Hash.new(TaskWrap.initial_activity), # add a default static wrap.
         )
 

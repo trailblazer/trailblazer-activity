@@ -41,7 +41,7 @@ module Trailblazer::Activity
 
         # Apply runtime alterations.
         # Grab the additional wirings for the particular `task` from `wrap_runtime` (returns default otherwise).
-        wrap_runtime[task].any? ? Trailblazer::Activity::Path::Plan.merge(wrap_activity, wrap_runtime[task]) : wrap_activity
+        wrap_runtime[task] ? Trailblazer::Activity::Path::Plan.merge(wrap_activity, wrap_runtime[task]) : wrap_activity
       end
     end # Runner
   end
