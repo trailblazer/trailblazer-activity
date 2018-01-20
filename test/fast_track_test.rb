@@ -67,6 +67,60 @@ class FastTrackTest < Minitest::Spec
     end
   end
 
+  describe ":fail_fast" do
+    it "adds pole" do
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+
+        step task: T.def_task(:a), fail_fast: true
+      end
+
+      assert_main activity, %{
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Left} => #<End:fail_fast/:fail_fast>
+}
+    end
+  end
+
+  describe ":fast_track" do
+    it "adds pole" do
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+
+        step task: T.def_task(:a), fast_track: true
+      end
+
+      assert_main activity, %{
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+ {Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast} => #<End:pass_fast/:pass_fast>
+ {Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast} => #<End:fail_fast/:fail_fast>
+}
+    end
+
+    it "allows additional signals via :plus_poles" do
+      plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
+
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+        step task: T.def_task(:a), plus_poles: plus_poles, fast_track: true
+      end
+
+      assert_main activity, %{
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Signal} => #<End:success/:success>
+ {Another} => #<End:failure/:failure>
+ {Pff} => #<End:pass_fast/:pass_fast>
+ {Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast} => #<End:fail_fast/:fail_fast>
+}
+    end
+  end
+
   describe ":plus_poles" do
     it "when :plus_poles are given, it uses the passed signals" do
       plus_poles = plus_poles_for( Signal => :success, "Another" => :failure )
@@ -81,6 +135,107 @@ class FastTrackTest < Minitest::Spec
 #<Method: #<Module:0x>.a>
  {Another} => #<End:failure/:failure>
  {Signal} => #<End:pass_fast/:pass_fast>
+}
+    end
+
+    it "allows additional signals via :plus_poles" do
+      plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
+
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+        step task: T.def_task(:a), plus_poles: plus_poles, pass_fast: true
+      end
+
+      assert_main activity, %{
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Another} => #<End:failure/:failure>
+ {Signal} => #<End:pass_fast/:pass_fast>
+ {Pff} => #<End:pass_fast/:pass_fast>
+}
+    end
+
+    it "allows additional signals via :plus_poles without :fast_track options" do
+      plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
+
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+        step task: T.def_task(:a), plus_poles: plus_poles
+      end
+
+      assert_main activity, %{
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Signal} => #<End:success/:success>
+ {Another} => #<End:failure/:failure>
+ {Pff} => #<End:pass_fast/:pass_fast>
+}
+    end
+  end
+
+  describe ":magnetic_to" do
+    it "allows overriding :magnetic_to" do
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+        step task: T.def_task(:a), magnetic_to: []
+      end
+
+      assert_main activity, %{
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+}
+    end
+  end
+
+  describe "Output()" do
+    it "allows reconnecting" do
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+        step task: T.def_task(:a), id: "a"
+        step task: T.def_task(:b), Output(:success) => "a"
+      end
+
+      assert_main activity, %{
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+}
+    end
+  end
+
+  describe "Output() => End()" do
+    it "allows reconnecting" do
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+        step task: T.def_task(:a), id: "a"
+        step task: T.def_task(:b), Output(:success) => "a", Output("Signal", :exception) => End(:exceptional, :exceptional)
+      end
+
+      Cct(activity.decompose.first).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+ {Signal} => #<End:exceptional/:exceptional>
+#<End:success/:success>
+
+#<End:failure/:failure>
+
+#<End:pass_fast/:pass_fast>
+
+#<End:fail_fast/:fail_fast>
+
+#<End:exceptional/:exceptional>
 }
     end
   end
