@@ -27,7 +27,9 @@ module Trailblazer
 
       # @return {builder, Adds, Process, outputs}, returned_options
       def self.recompile(builder, adds, *args)
-        return builder, adds, *recompile_process(adds), *args
+        process, outputs = recompile_process(adds)
+
+        return builder, adds, process.freeze, outputs.freeze, *args
       end
 
       def self.recompile_process(adds)

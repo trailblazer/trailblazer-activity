@@ -295,6 +295,35 @@ ActivityTest::B
     # TODO: merge task_wrap, etc.
   end
 
+  describe "internal state" do
+    it "a blank Activity exposes frozen objects, only" do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+      end
+
+      process, outputs, adds, builder = activity.decompose
+
+      assert process.frozen?
+      assert outputs.frozen?
+      assert adds.frozen?
+      assert builder.frozen?
+    end
+
+    it "exposes frozen objects, only" do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+        task A
+      end
+
+      process, outputs, adds, builder = activity.decompose
+
+      assert process.frozen?
+      assert outputs.frozen?
+      assert adds.frozen?
+      assert builder.frozen?
+    end
+  end
+
   describe "inheritance" do
     it "creates a fresh Activity" do
       skip

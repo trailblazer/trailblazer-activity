@@ -7,7 +7,7 @@ module Trailblazer
     module Interface
       # @return [Process, Hash, Adds] Adds is private and should not be used in your application as it might get removed.
       def decompose # TODO: test me
-        return @process, outputs, @adds
+        return @process, outputs, @adds, @builder
       end
 
       def debug # TODO: TEST ME
@@ -154,6 +154,9 @@ module Trailblazer
 
     module AddTask
       def add_task!(name, task, options, &block)
+        # The beautiful thing about State.add is it doesn't mutate anything.
+        # We're changing state here, on the outside, by overriding the ivars.
+        # That in turn means, the only mutated entity is this module.
         builder, @adds, @process, @outputs, options = State.add(@builder, @adds, name, task, options, &block)
       end
     end
