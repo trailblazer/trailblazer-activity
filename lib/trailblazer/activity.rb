@@ -56,9 +56,18 @@ module Trailblazer
           record << [:task, args, block]
         end
 
-        def self.merge!(activity, merged)
-          merged.record.each { |(dsl_method, args, block)| activity.send(dsl_method, *args, &block)  }
+        def self.merge!(activity, plan)
+          plan.record.each { |(dsl_method, args, block)| activity.send(dsl_method, *args, &block)  }
           activity
+        end
+
+        # Creates a copy of the {activity} module and merges the {Plan} into it.
+        #
+        # @params activity [Activity] The activity to extend
+        # @params plan [Plan] The plan providing additional steps
+        # @return [Activity] A new, merged activity
+        def self.merge(activity, plan)
+          merge!(activity.clone, plan)
         end
       end
     end
