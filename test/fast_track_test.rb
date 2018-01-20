@@ -171,6 +171,35 @@ class FastTrackTest < Minitest::Spec
  {Pff} => #<End:pass_fast/:pass_fast>
 }
     end
+
+    it "allows additional connections via :plus_poles" do
+      plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Exception!" => :exception )
+
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+        step task: T.def_task(:a), plus_poles: plus_poles, Output(:failure) => Activity.End(:failed), Output(:exception) => Activity.End(:exceptioned)
+      end
+
+      Cct(activity.decompose.first).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Signal} => #<End:success/:success>
+ {Another} => #<End:failed/:failed>
+ {Exception!} => #<End:exceptioned/:exceptioned>
+#<End:success/:success>
+
+#<End:failure/:failure>
+
+#<End:pass_fast/:pass_fast>
+
+#<End:fail_fast/:fail_fast>
+
+#<End:failed/:failed>
+
+#<End:exceptioned/:exceptioned>
+}
+    end
   end
 
   describe ":magnetic_to" do
@@ -236,6 +265,61 @@ class FastTrackTest < Minitest::Spec
 #<End:fail_fast/:fail_fast>
 
 #<End:exceptional/:exceptional>
+}
+    end
+  end
+
+  describe "pass_fast_end: and fail_fast_end:" do
+    class MyFail; end
+    class MySuccess; end
+    class MyPassFast; end
+    class MyFailFast; end
+
+    it "allows custom ends" do
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack, track_end: MySuccess, failure_end: MyFail, pass_fast_end: MyPassFast, fail_fast_end: MyFailFast ]
+
+        step task: T.def_task(:a)
+      end
+
+      Cct(activity.decompose.first).must_equal %{
+#<Start:default/nil>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => FastTrackTest::MySuccess
+ {Trailblazer::Activity::Left} => FastTrackTest::MyFail
+FastTrackTest::MySuccess
+
+FastTrackTest::MyFail
+
+FastTrackTest::MyPassFast
+
+FastTrackTest::MyFailFast
+}
+    end
+  end
+
+  describe "sequence_options" do
+    it "accepts :before and :group" do
+      activity = Module.new do
+        extend Activity[ Activity::FastTrack ]
+
+        step task: T.def_task(:a), id: "a"
+        step task: T.def_task(:b), before: "a"
+        step task: T.def_task(:c), group:  :start
+      end
+
+      assert_main activity, %{
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.c>
+#<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+#<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
+#<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Left} => #<End:failure/:failure>
 }
     end
   end
