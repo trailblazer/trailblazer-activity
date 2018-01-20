@@ -9,17 +9,19 @@ class IntrospectionTest < Minitest::Spec
   let(:activity) do
     nested = bc
 
-    Activity.build do
-      task A
-      task nested, Output(nested.outputs.keys.first, :success) => :success
-      task D, id: "D"
+    activity = Module.new do
+      extend Activity[]
+      task task: A
+      task task: nested, Output(nested.outputs.keys.first, :success) => :success
+      task task: D, id: "D"
     end
   end
 
   let(:bc) do
-    Activity.build do
-      task B
-      task C
+    activity = Module.new do
+      extend Activity[]
+      task task: B
+      task task: C
     end
   end
 
