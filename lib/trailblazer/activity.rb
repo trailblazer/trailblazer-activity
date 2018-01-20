@@ -48,7 +48,7 @@ module Trailblazer
 
       module Plan
         def self.extended(extended)
-          extended.singleton_class.attr_accessor :record
+          extended.singleton_class.send :attr_accessor, :record
           extended.record = []
         end
 
