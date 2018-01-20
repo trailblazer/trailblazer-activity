@@ -13,7 +13,7 @@ module Trailblazer::Activity
       # DISCUSS: do we want original_args here to be passed on, or the "effective" return_args which are different to original_args now?
       wrap_ctx = wrap_ctx.merge( return_signal: return_signal, return_args: return_args )
 
-      [ Right, [ wrap_ctx, original_args ], **circuit_options ]
+      return Right, [ wrap_ctx, original_args ]
     end
   end # Wrap
 end

@@ -14,8 +14,24 @@ class WrapTest < Minitest::Spec
 
   MyInject  = ->((options)) { [ Activity::Right, options.merge( current_user: Module ) ] }
 
+  describe "running with TaskWrap.arguments_for_call but no configured taskWrap" do
+    it "executes activity" do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
+        include Activity::TaskWrap
 
-  describe "DSL: storing taskWrap configurations via :extension API" do
+        task task: T.def_task(:a)#, extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
+      end
+
+      args = [ {seq: []}, {} ]
+
+      event, (options, _) = activity.( args, argumenter: [ Activity::TaskWrap.method(:arguments_for_call) ] )
+
+      options.must_equal(:seq=>[:a])
+    end
+  end
+
+  describe "storing TaskWrap::Merge via :extension API" do
     # {TaskWrap API} extension task
     TaskWrap_Extension_task = ->( (wrap_config, original_args), **circuit_options ) do
       (ctx, b), c = original_args
@@ -26,21 +42,20 @@ class WrapTest < Minitest::Spec
     end
 
     it do
-      extension_adds = Activity::Magnetic::Builder::Path.plan do
+      extension_adds = Module.new do
+        extend Activity::Path::Plan
+
         task TaskWrap_Extension_task, before: "task_wrap.call_task" # "Hi from taskWrap!"
       end
 
-      activity = Class.new(Activity) do
+      activity = Module.new do
+        extend Activity[ Activity::Path ]
         include Activity::TaskWrap
 
-        def self.a( (ctx, flow_options), **)
-          ctx[:seq] << :a
-
-          return Activity::Right, [ ctx, flow_options ]
-        end
-
-        task method(:a), extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
+        task task: T.def_task(:a), extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
       end
+
+      # pp activity.static_task_wrap.values.first.decompose
 
       args = [ {seq: []}, {} ]
 

@@ -321,6 +321,7 @@ ActivityTest::B
       assert outputs.frozen?
       assert adds.frozen?
       assert builder.frozen?
+      # TODO: test @options.frozen?
     end
   end
 

@@ -1,7 +1,4 @@
 module Trailblazer::Activity
-  module TaskWrap
-    # Wrap::Activity is the actual circuit that implements the Task wrap. This circuit is
-    # also known as `task_wrap`.
     #
     # Example with tracing:
     #
@@ -11,9 +8,12 @@ module Trailblazer::Activity
         #   |-- Call (call actual task) id: "task_wrap.call_task"
         #   |-- Trace.capture_return [optional]
         #   |-- Wrap::End
-
+  module TaskWrap
+    # The actual activity that implements the taskWrap.
     def self.initial_activity
-      Magnetic::Builder::Path.plan do
+      Module.new do
+        extend Trailblazer::Activity[ Path, name: "taskWrap", normalizer_class: Magnetic::DefaultNormalizer ]
+
         task TaskWrap.method(:call_task), id: "task_wrap.call_task" # ::call_task is defined in task_wrap/call_task.
       end
     end
@@ -48,12 +48,6 @@ module Trailblazer::Activity
     # better: MyClass < Activity(TaskWrap, ...)
 
     module ClassMethods
-      def initialize!(*)
-        super # TODO: use Activity for that.
-
-        initialize_static_task_wrap! # TODO: this sucks so much.
-      end
-
       def static_task_wrap
         @static_task_wrap
       end
