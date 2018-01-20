@@ -18,25 +18,23 @@ class SubprocessHelper < Minitest::Spec
   ###
   describe "circuit with 1 level of nesting" do # TODO: test this kind of configuration in dsl_tests somewhere.
     let(:blog) do
-      Activity.build do
-        task Blog::Read
-        task Blog::Next, Output(Activity::Right, :done) => "End.success", Output(Activity::Left, :success) => :success
-        task Blog::Comment
-        # {
-        #   start  => { Activity::Right => Blog::Read },
-        #   Blog::Read => { Activity::Right => Blog::Next },
-        #   Blog::Next => { Activity::Right => _end, Activity::Left => Blog::Comment },
-        #   Blog::Comment => { Activity::Right => _end }
-        # }
+      Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: Blog::Read
+        task task: Blog::Next, Output(Activity::Right, :done) => "End.success", Output(Activity::Left, :success) => :success
+        task task: Blog::Comment
       end
     end
 
     let(:user) do
       _blog = blog
 
-      Activity.build do
-        task _blog, _blog.outputs[:success] => :success
-        task User::Relax
+      Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: _blog, _blog.outputs[:success] => :success
+        task task: User::Relax
       end
     end
 
@@ -53,18 +51,22 @@ class SubprocessHelper < Minitest::Spec
   ###
   describe "circuit with 2 end events in the nested process" do
     let(:blog) do
-      Activity.build do
-        task Blog::Read
-        task Blog::Next, Output(Activity::Right, :success___) => :__success, Output(Activity::Left, :retry___) => _retry=End(:retry, :retry)
+      Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: Blog::Read
+        task task: Blog::Next, Output(Activity::Right, :success___) => :__success, Output(Activity::Left, :retry___) => _retry=End(:retry, :retry)
       end
     end
 
     let(:user) do
       _blog = blog
 
-      Activity.build do
-        task _blog, _blog.outputs[:success] => :success, _blog.outputs[:retry] => "End.success"
-        task User::Relax
+      Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: _blog, _blog.outputs[:success] => :success, _blog.outputs[:retry] => "End.success"
+        task task: User::Relax
       end
     end
 
@@ -91,9 +93,11 @@ class SubprocessHelper < Minitest::Spec
     let(:with_nested_and_start_at) do
       _blog = blog
 
-      Activity.build do
-        task Activity::Subprocess( _blog, task: Blog::Next ), _blog.outputs[:success] => :success
-        task User::Relax
+      Module.new do
+        extend Activity[ Activity::Path ]
+
+        task task: Activity::Subprocess( _blog, task: Blog::Next ), _blog.outputs[:success] => :success
+        task task: User::Relax
       end
     end
 
@@ -121,9 +125,11 @@ class SubprocessHelper < Minitest::Spec
 
         subprocess = Activity::Subprocess( Workout, call: :__call__ )
 
-        Activity.build do
-          task subprocess
-          task User::Relax
+        Module.new do
+        extend Activity[ Activity::Path ]
+
+          task task: subprocess
+          task task: User::Relax
         end
       end
 

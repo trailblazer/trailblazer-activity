@@ -186,7 +186,8 @@ require "trailblazer/activity/present"
 require "trailblazer/activity/process"
 require "trailblazer/activity/introspect"
 
-require "trailblazer/activity/heritage"
+# require "trailblazer/activity/heritage"
+require "trailblazer/activity/subprocess"
 
 require "trailblazer/activity/state"
 require "trailblazer/activity/magnetic" # the "magnetic" DSL

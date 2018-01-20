@@ -12,7 +12,7 @@ module Trailblazer
 
       def initialize(activity, call: :call, **options)
         @activity = activity
-        @options = options
+        @options  = options
         @call     = call
       end
 
