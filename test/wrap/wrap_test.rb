@@ -43,7 +43,7 @@ class WrapTest < Minitest::Spec
 
     it do
       extension_adds = Module.new do
-        extend Activity::Path::Plan
+        extend Activity[ Activity::Path::Plan ]
 
         task TaskWrap_Extension_task, before: "task_wrap.call_task" # "Hi from taskWrap!"
       end
@@ -122,7 +122,7 @@ class WrapTest < Minitest::Spec
     describe "Wrap::Runner#call with :wrap_runtime" do
       let(:wrap_alterations) do
         Module.new do
-          extend Activity::Path::Plan
+          extend Activity[ Activity::Path::Plan ]
 
           task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
           task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
@@ -147,7 +147,7 @@ class WrapTest < Minitest::Spec
         end
 
         upload_wrap  = Module.new do
-          extend Activity::Path::Plan
+          extend Activity[ Activity::Path::Plan ]
           task only_for_wrap, id: "task_wrap.upload", before: "task_wrap.call_task"
         end
 
@@ -187,7 +187,7 @@ class WrapTest < Minitest::Spec
     #- Tracing
     it "trail" do
       wrap_alterations = Module.new do
-        extend Activity::Path::Plan
+        extend Activity[ Activity::Path::Plan ]
         task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
         task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
       end

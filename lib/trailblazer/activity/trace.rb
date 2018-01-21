@@ -41,7 +41,7 @@ module Trailblazer
       # Note that the TaskWrap steps are implemented in Activity::TaskWrap::Trace.
       def self.wirings
         Module.new do
-          extend Trailblazer::Activity::Path::Plan
+          extend Activity[ Activity::Path::Plan ]
 
           task TaskWrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
           task TaskWrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end

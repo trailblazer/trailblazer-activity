@@ -22,18 +22,15 @@ module Trailblazer
       end
     end
 
-    # functional API should be like
-    # Activity( builder.task ... ,builder.step, .. )
-
     module Inspect
       def inspect
         "#<Trailblazer::Activity: {#{name || @options[:name]}}>"
       end
     end
 
-      # Helpers such as Path, Output, End to be included into {Activity}.
 
     require "trailblazer/activity/dsl/helper"
+    # Helpers such as Path, Output, End to be included into {Activity}.
     module DSLHelper
       extend Forwardable
       def_delegators :@builder, :Path

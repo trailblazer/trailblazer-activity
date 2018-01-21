@@ -20,9 +20,13 @@ module Trailblazer::Activity
     include DSL.def_dsl(:task)
 
     module Plan
-      def self.extended(extended)
-        extended.singleton_class.send :attr_accessor, :record
-        extended.record = []
+      def self.build_state_for(*)
+        {}
+      end
+
+      def initialize!(options)
+        singleton_class.send :attr_accessor, :record
+        @record = []
       end
 
       def task(*args, &block)

@@ -9,7 +9,7 @@ class MergeTest < Minitest::Spec
     end
 
     merged = Module.new do
-      extend Activity::Path::Plan
+      extend Activity[ Activity::Path::Plan ]
 
       task task: :b, before: "a"
       task task: :c
@@ -43,7 +43,7 @@ class MergeTest < Minitest::Spec
       end
 
       plan = Module.new do
-        extend Activity::Path::Plan
+        extend Activity[ Activity::Path::Plan ]
 
         task task: :b, before: "a"
         task task: :c
