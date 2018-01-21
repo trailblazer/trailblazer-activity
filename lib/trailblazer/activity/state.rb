@@ -18,13 +18,6 @@ module Trailblazer
 
       private
 
-
-# def Builder.build(options={}, &block)
-#   adds = plan( options, &block )
-
-#   Finalizer.(adds)
-# end
-
       # @return {builder, Adds, Process, outputs}, returned_options
       def self.recompile(builder, adds, *args)
         process, outputs = recompile_process(adds)

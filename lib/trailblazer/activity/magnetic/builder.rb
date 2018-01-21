@@ -22,10 +22,6 @@ module Trailblazer
     end
 
     class Builder
-      # def self.plan_for(builder, adds, &block)
-      #   adds += Block.new(builder).(&block) # returns ADDS
-      # end
-
       def initialize(normalizer, builder_options)
         @normalizer, @builder_options = normalizer, builder_options
       end
