@@ -56,15 +56,15 @@ module Trailblazer
 
       # Set all necessary state in the module.
       # @api private
-      def initialize!(builder, adds, process, outputs, options)
-        @builder, @adds, @process, @outputs, @options = builder, adds, process, outputs, options
+      def initialize!(builder, adds, circuit, outputs, options)
+        @builder, @adds, @circuit, @outputs, @options = builder, adds, circuit, outputs, options
         @debug                                        = {} # TODO: hmm.
       end
 
       def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
         _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
 
-        @process.( args, circuit_options.merge(argumenter: argumenter) )
+        @circuit.( args, circuit_options.merge(argumenter: argumenter) )
       end
     end
   end # Activity

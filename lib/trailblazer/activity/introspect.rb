@@ -16,9 +16,9 @@ module Trailblazer
 
       # @api private
       def self.find(activity, &block)
-        process, _ = activity.decompose
+        circuit, _ = activity.decompose
 
-        process.instance_variable_get(:@map).find(&block)
+        circuit.instance_variable_get(:@map).find(&block)
       end
 
 
@@ -38,9 +38,8 @@ module Trailblazer
         # FIXME: clean up that shit below.
 
 # render
-      def self.Cct(activity, **options)
-
-        circuit_hash( activity.decompose[0], **options )
+      def self.Cct(circuit, **options)
+        circuit_hash( circuit.decompose[0], **options )
       end
 
       def self.circuit_hash(circuit_hash, show_ids:false)
@@ -97,9 +96,9 @@ module Trailblazer
 
       def self.cct(builder)
         adds = builder.instance_variable_get(:@adds)
-        process, _ = Builder::Finalizer.(adds)
+        circuit, _ = Builder::Finalizer.(adds)
 
-        Cct(process)
+        Cct(circuit)
       end
 
       private

@@ -5,7 +5,7 @@ module Trailblazer::Activity
         # The beautiful thing about State.add is it doesn't mutate anything.
         # We're changing state here, on the outside, by overriding the ivars.
         # That in turn means, the only mutated entity is this module.
-        builder, @adds, @process, @outputs, options = State.add(@builder, @adds, name, task, options, &block) # this could be an extension itself.
+        builder, @adds, @circuit, @outputs, options = State.add(@builder, @adds, name, task, options, &block) # this could be an extension itself.
 
         task, local_options, _ = options
 

@@ -121,11 +121,12 @@ class ActivityTest < Minitest::Spec
   Right = Trailblazer::Activity::Right
 
   it "empty Activity" do
-    activity = Activity.build do
+    activity = Module.new do
+      extend Activity[]
     end
 
     # puts Cct(activity.instance_variable_get(:@process))
-    Cct(activity.instance_variable_get(:@process)).must_equal %{
+    Cct(activity.decompose[0]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
@@ -163,11 +164,7 @@ class ActivityTest < Minitest::Spec
   end
 
   it do
-#     Outputs(activity.outputs).must_equal %{resume_1=> (#<ActivityTest::B:>, resume_1)
-# success=> (#<Trailblazer::Activity::End:>, success)
-# invalid_result=> (#<Trailblazer::Activity::End:>, invalid_result)}
-
-    Cct(activity.decompose.first).must_equal %{
+    Cct(activity.decompose[0]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
@@ -196,7 +193,7 @@ ActivityTest::L
 }
 
 
-    Ends(activity.instance_variable_get(:@process)).must_equal %{[#<ActivityTest::B:resume_for_correct/:resume_1>,#<End:success/:success>,#<End:track_0./:invalid_result>]}
+    Ends(activity.decompose[0]).must_equal %{[#<ActivityTest::B:resume_for_correct/:resume_1>,#<End:success/:success>,#<End:track_0./:invalid_result>]}
 
     # A -> B -> End.suspend
     options, flow_options, circuit_options = {id: 1, a_return: Activity::Left, b_return: Activity::Right }, {}, {}
@@ -279,7 +276,7 @@ ActivityTest::A
         merge! activity
       end
 
-      Cct(merging.instance_variable_get(:@process)).must_equal %{
+      Cct(merging.decompose[0]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityTest::C
 ActivityTest::C
@@ -337,7 +334,7 @@ ActivityTest::B
         task C
       end
 
-      Cct(activity.instance_variable_get(:@process)).must_equal %{
+      Cct(activity).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
@@ -347,7 +344,7 @@ ActivityTest::B
 #<End:success/:success>
 }
 
-      Cct(subactivity.instance_variable_get(:@process)).must_equal %{
+      Cct(subactivity).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A

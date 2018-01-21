@@ -20,24 +20,24 @@ module Trailblazer
 
       # @return {builder, Adds, Process, outputs}, returned_options
       def self.recompile(builder, adds, *args)
-        process, outputs = recompile_process(adds)
+        circuit, outputs = recompile_circuit(adds)
 
-        return builder, adds, process.freeze, outputs.freeze, *args
+        return builder, adds, circuit.freeze, outputs.freeze, *args
       end
 
-      def self.recompile_process(adds)
-        process, outputs = Recompile.( adds )
+      def self.recompile_circuit(adds)
+        circuit, outputs = Recompile.( adds )
       end
 
       module Recompile
-        # Recompile the process and outputs from the {ADDS} instance that collects circuit tasks and connections.
+        # Recompile the circuit and outputs from the {ADDS} instance that collects circuit tasks and connections.
         #
         # @return [Process, Hash] The {Process} instance and its outputs hash.
         def self.call(adds)
-          process, end_events = Magnetic::Builder::Finalizer.(adds)
+          circuit, end_events = Magnetic::Builder::Finalizer.(adds)
           outputs             = recompile_outputs(end_events)
 
-          return process, outputs
+          return circuit, outputs
         end
 
         private

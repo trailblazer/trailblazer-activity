@@ -14,7 +14,7 @@ module Trailblazer::Activity
     def self.build_state_for(default_options, options)
       options                                  = default_options.merge(options) # TODO: use Variables::Merge() here.
       normalizer, options                      = build_normalizer(options)
-      builder, adds, process, outputs, options = build_state(normalizer, options)
+      builder, adds, circuit, outputs, options = build_state(normalizer, options)
     end
 
     # Builds the normalizer (to process options in DSL calls) unless {:normalizer} is already set.
@@ -27,9 +27,9 @@ module Trailblazer::Activity
     end
 
     def self.build_state(normalizer, builder_class:, builder_options: {}, **options)
-      builder, adds, process, outputs = State.build(builder_class, normalizer, options.merge(builder_options))
+      builder, adds, circuit, outputs = State.build(builder_class, normalizer, options.merge(builder_options))
 
-      return builder, adds, process, outputs, options
+      return builder, adds, circuit, outputs, options
     end
   end
 end
