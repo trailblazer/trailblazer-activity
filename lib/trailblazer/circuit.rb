@@ -12,10 +12,11 @@ module Trailblazer
   # @see Activity
   # @api semi-private
   class Circuit
-    def initialize(map, stop_events, name=nil)
+    def initialize(map, stop_events, name: nil, start_task: map.keys.first)
       @map         = map
       @stop_events = stop_events
       @name        = name
+      @start_task  = start_task
     end
 
     # @param args [Array] all arguments to be passed to the task's `call`
@@ -33,7 +34,7 @@ module Trailblazer
     # @return [last_signal, options, flow_options, *args]
     #
     # DISCUSS: returned circuit_options are ignored when calling the runner.
-    def call(args, task: raise, runner: Run, **circuit_options)
+    def call(args, task: @start_task, runner: Run, **circuit_options)
       loop do
         last_signal, args, _ignored_circuit_options = runner.(
           task,

@@ -34,7 +34,7 @@ module Trailblazer
         def self.circuit_hash_to_process(circuit_hash)
           end_events = end_events_for(circuit_hash)
 
-          return Activity::Process.new( circuit_hash, end_events ), end_events
+          return Circuit.new(circuit_hash, end_events), end_events
         end
 
         # Filters out unconnected ends, e.g. the standard end in nested tracks that weren't used.

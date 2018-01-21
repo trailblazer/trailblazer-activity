@@ -18,13 +18,12 @@ module Trailblazer
       def self.find(activity, &block)
         process, _ = activity.decompose
 
-        process.instance_variable_get(:@circuit).instance_variable_get(:@map).find(&block)
+        process.instance_variable_get(:@map).find(&block)
       end
 
 
       def self.collect(activity, options={}, &block)
-        process, _      = activity.decompose
-        circuit, _      = process.decompose
+        circuit, _      = activity.decompose
         circuit_hash, _ = circuit.decompose
 
         locals = circuit_hash.collect do |task, connections|
@@ -39,8 +38,9 @@ module Trailblazer
         # FIXME: clean up that shit below.
 
 # render
-      def self.Cct(process, **options)
-        circuit_hash( process.instance_variable_get(:@circuit).decompose[0], **options )
+      def self.Cct(activity, **options)
+
+        circuit_hash( activity.decompose[0], **options )
       end
 
       def self.circuit_hash(circuit_hash, show_ids:false)
@@ -59,8 +59,8 @@ module Trailblazer
           return "\n#{content}".gsub(/0x\w+/, "0x").gsub(/0.\d+/, "0.")
       end
 
-      def self.Ends(process)
-        end_events = process.instance_variable_get(:@circuit).decompose[1]
+      def self.Ends(activity)
+        end_events = activity.decompose[1]
         ends = end_events.collect { |evt| Task(evt) }.join(",")
         "[#{ends}]".gsub(/\d\d+/, "")
       end

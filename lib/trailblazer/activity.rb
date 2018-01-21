@@ -88,7 +88,6 @@ require "trailblazer/activity/task_wrap/merge"
 require "trailblazer/activity/trace"
 require "trailblazer/activity/present"
 
-require "trailblazer/activity/process"
 require "trailblazer/activity/introspect"
 
 # require "trailblazer/activity/heritage"
