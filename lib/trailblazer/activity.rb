@@ -1,58 +1,8 @@
-require "trailblazer/circuit"
 require "trailblazer/activity/version"
+require "trailblazer/circuit"
 
 module Trailblazer
   module Activity
-    module Interface
-      # @return [Process, Hash, Adds] Adds is private and should not be used in your application as it might get removed.
-      def decompose # TODO: test me
-        return @process, outputs, @adds, @builder
-      end
-
-      def debug # TODO: TEST ME
-        @debug
-      end
-
-      def outputs
-        @outputs
-      end
-    end
-
-    module BuildState
-      def build_state_for(options)
-        BuildState.build_state_for(self.config, options)
-      end
-
-      # Compute all objects that need to be passed into the new Activity module.
-      # 1. Build the normalizer (unless passed with :normalizer)
-      # 2. Build the builder (in State)
-      # 3. Let State compute all state variables (that implies recompiling the Process)
-      #
-      # @return [Builder, Adds, Process, Outputs, remaining options]
-      # @api private
-      def self.build_state_for(default_options, options)
-        options                                  = default_options.merge(options) # TODO: use Variables::Merge() here.
-        normalizer, options                      = build_normalizer(options)
-        builder, adds, process, outputs, options = build_state(normalizer, options)
-      end
-
-      # Builds the normalizer (to process options in DSL calls) unless {:normalizer} is already set.
-      #
-      # @api private
-      def self.build_normalizer(normalizer_class:, normalizer: false, **options)
-        normalizer, options = normalizer_class.build( options ) unless normalizer
-
-        return normalizer, options
-      end
-
-      def self.build_state(normalizer, builder_class:, builder_options: {}, **options)
-        builder, adds, process, outputs = State.build(builder_class, normalizer, options.merge(builder_options))
-
-        return builder, adds, process, outputs, options
-      end
-    end
-
-
     def self.[](implementation=Activity::Path, options={})
       *state = implementation.build_state_for(options)
 
@@ -73,33 +23,8 @@ module Trailblazer
       end
     end
 
-    module AddTask
-      def add_task!(name, task, options, &block)
-        # The beautiful thing about State.add is it doesn't mutate anything.
-        # We're changing state here, on the outside, by overriding the ivars.
-        # That in turn means, the only mutated entity is this module.
-        builder, @adds, @process, @outputs, options = State.add(@builder, @adds, name, task, options, &block)
-      end
-    end
-
-
-
-    # TODO: use an Activity here and not super!
-    module AddTask
-      module ExtensionAPI
-        def add_task!(name, task, options, &block)
-          builder, adds, process, outputs, options = super
-          task, local_options, _ = options
-
-          # {Extension API} call all extensions.
-          local_options[:extension].collect { |ext| ext.(self, *options) } if local_options[:extension]
-        end
-      end
-    end
-
     # functional API should be like
     # Activity( builder.task ... ,builder.step, .. )
-
 
     module Inspect
       def inspect
@@ -120,9 +45,10 @@ module Trailblazer
     # Later, this module is `extended` in Path, Railway and FastTrack, and
     # imports the DSL methods as class methods.
     module PublicAPI
-      include Activity::AddTask
-      include AddTask::ExtensionAPI
+    require "trailblazer/activity/dsl/add_task"
+      include DSL::AddTask
 
+    require "trailblazer/activity/implementation/interface"
       include Activity::Interface # DISCUSS
 
       include DSLHelper # DISCUSS
@@ -150,9 +76,11 @@ end
 
 require "trailblazer/activity/structures"
 
-require "trailblazer/activity/path"
-require "trailblazer/activity/railway"
-require "trailblazer/activity/fast_track"
+require "trailblazer/activity/implementation/build_state"
+require "trailblazer/activity/implementation/interface"
+require "trailblazer/activity/implementation/path"
+require "trailblazer/activity/implementation/railway"
+require "trailblazer/activity/implementation/fast_track"
 
 require "trailblazer/activity/task_wrap"
 require "trailblazer/activity/task_wrap/call_task"
