@@ -1,5 +1,4 @@
 require "trailblazer/activity/version"
-require "trailblazer/circuit"
 
 module Trailblazer
   module Activity
@@ -74,6 +73,7 @@ module Trailblazer
   end # Activity
 end
 
+require "trailblazer/circuit"
 require "trailblazer/activity/structures"
 
 require "trailblazer/activity/implementation/build_state"
