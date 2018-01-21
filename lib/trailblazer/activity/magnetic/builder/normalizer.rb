@@ -6,12 +6,12 @@ module Trailblazer
     #
     # The Normalizer sits in the `@builder`, which receives all DSL calls from the Operation subclass.
     class Normalizer
-      def self.build(task_builder: Activity::TaskBuilder::Binary, default_plus_poles: Normalizer.InitialPlusPoles(), activity: Pipeline, extension:[], **options)
+      def self.build(task_builder: Activity::TaskBuilder::Binary, default_plus_poles: Normalizer.InitialPlusPoles(), pipeline: Pipeline, extension:[], **options)
         return new(
           default_plus_poles: default_plus_poles,
           extension:          extension,
           task_builder:       task_builder,
-          activity:           activity,
+          pipeline:           pipeline,
         ), options
       end
 
@@ -23,19 +23,20 @@ module Trailblazer
         )
       end
 
-      def initialize(task_builder:, default_plus_poles:, activity:, **options)
+      def initialize(task_builder:, default_plus_poles:, pipeline:, **options)
         @task_builder       = task_builder
         @default_plus_poles = default_plus_poles
+        @pipeline           = pipeline # TODO: test me.
       end
 
       def call(task, options)
         ctx = {
-          task: task, options: options,
-          task_builder:       @task_builder,
-          default_plus_poles: @default_plus_poles,
+          task: task, options:  options,
+          task_builder:         @task_builder,
+          default_plus_poles:   @default_plus_poles,
         }
 
-        signal, (ctx, ) = Pipeline.( [ctx] )
+        signal, (ctx, ) = @pipeline.( [ctx] )
 
         return ctx[:options][:task], ctx[:local_options], ctx[:connection_options], ctx[:sequence_options]
       end
