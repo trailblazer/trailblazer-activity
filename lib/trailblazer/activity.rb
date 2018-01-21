@@ -18,29 +18,17 @@ module Trailblazer
       end
     end
 
-    module DSL
-      # Create a new method (e.g. Activity::step) that delegates to its builder, recompiles
-      # the process, etc. Method comes in a module so it can be overridden via modules.
-      #
-      # This approach assumes you maintain a {#add_task!} method.
-      def self.def_dsl(_name)
-        Module.new do
-          define_method(_name) do |task, options={}, &block|
-            builder, adds, process, outputs, options = add_task!(_name, task, options, &block)  # TODO: similar to Block.
-          end
-        end
-      end
-    end
-
     module BuildState
       def build_state_for(options)
         BuildState.build_state_for(self.config, options)
       end
+
       # Compute all objects that need to be passed into the new Activity module.
       # 1. Build the normalizer (unless passed with :normalizer)
       # 2. Build the builder (in State)
       # 3. Let State compute all state variables (that implies recompiling the Process)
       #
+      # @return [Builder, Adds, Process, Outputs, remaining options]
       # @api private
       def self.build_state_for(default_options, options)
         options                                  = default_options.merge(options) # TODO: use Variables::Merge() here.
@@ -74,30 +62,14 @@ module Trailblazer
       mod = Module.new do
         # we need this method to inject data from here.
         define_singleton_method(:_state){ state } # this sucks so much, but is needed to inject state into the module.
-        include implementation # ::task or ::step, etc
+
+        # @import =>anonModule#task, anonModule#build_state_for, ...
+        include implementation
 
         def self.extended(extended)
           super
           extended.initialize!(*_state) # config is from singleton_class.config.
         end
-      end
-    end
-
-
-    module Call
-      def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
-        _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
-
-        @process.( args, circuit_options.merge(argumenter: argumenter) )
-      end
-    end
-
-    module Initialize
-      # Set all necessary state in the module.
-      # @api private
-      def initialize!(builder, adds, process, outputs, options)
-        @builder, @adds, @process, @outputs, @options = builder, adds, process, outputs, options
-        @debug                                        = {} # TODO: hmm.
       end
     end
 
@@ -144,12 +116,10 @@ module Trailblazer
       def_delegators DSL::Helper, :Output, :End
     end
 
+    # By including those modules, we create instance methods.
+    # Later, this module is `extended` in Path, Railway and FastTrack, and
+    # imports the DSL methods as class methods.
     module PublicAPI
-      # Include all DSL methods here as instance method, these get imported
-      # via extend.
-      include Activity::Initialize
-      include Activity::Call
-
       include Activity::AddTask
       include AddTask::ExtensionAPI
 
@@ -161,6 +131,19 @@ module Trailblazer
 
     require "trailblazer/activity/magnetic/merge"
       include Magnetic::Merge # Activity#merge!
+
+      # Set all necessary state in the module.
+      # @api private
+      def initialize!(builder, adds, process, outputs, options)
+        @builder, @adds, @process, @outputs, @options = builder, adds, process, outputs, options
+        @debug                                        = {} # TODO: hmm.
+      end
+
+      def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
+        _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
+
+        @process.( args, circuit_options.merge(argumenter: argumenter) )
+      end
     end
   end # Activity
 end

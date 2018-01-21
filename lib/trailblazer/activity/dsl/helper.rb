@@ -1,5 +1,17 @@
 module Trailblazer
   module Activity::DSL
+    # Create a new method (e.g. Activity::step) that delegates to its builder, recompiles
+    # the process, etc. Method comes in a module so it can be overridden via modules.
+    #
+    # This approach assumes you maintain a {#add_task!} method.
+    def self.def_dsl(_name)
+      Module.new do
+        define_method(_name) do |task, options={}, &block|
+          builder, adds, process, outputs, options = add_task!(_name, task, options, &block)  # TODO: similar to Block.
+        end
+      end
+    end
+
     # Shortcut functions for the DSL. These have no state.
     module Helper
       module_function
