@@ -33,80 +33,45 @@ module Trailblazer
       end
     end
 
-    # Implementation module that can be passed to `Activity[]`.
-    module Path
-      # Default variables, called in {Activity::[]}.
-      def self.config
-        {
-          builder_class:    Magnetic::Builder::Path, # we use the Activity-based Normalizer
-          normalizer_class: Magnetic::Normalizer,
-          plus_poles:       Magnetic::Builder::Path.default_plus_poles,
-          extension:        [ Introspect.method(:add_introspection) ],
-        }
+    module BuildState
+      def build_state_for(options)
+        BuildState.build_state_for(self.config, options)
+      end
+      # Compute all objects that need to be passed into the new Activity module.
+      # 1. Build the normalizer (unless passed with :normalizer)
+      # 2. Build the builder (in State)
+      # 3. Let State compute all state variables (that implies recompiling the Process)
+      #
+      # @api private
+      def self.build_state_for(default_options, options)
+        options                                  = default_options.merge(options) # TODO: use Variables::Merge() here.
+        normalizer, options                      = build_normalizer(options)
+        builder, adds, process, outputs, options = build_state(normalizer, options)
       end
 
-      include DSL.def_dsl(:task)  # define Path::task.
+      # Builds the normalizer (to process options in DSL calls) unless {:normalizer} is already set.
+      #
+      # @api private
+      def self.build_normalizer(normalizer_class:, normalizer: false, **options)
+        normalizer, options = normalizer_class.build( options ) unless normalizer
 
-      module Plan
-        def self.extended(extended)
-          extended.singleton_class.send :attr_accessor, :record
-          extended.record = []
-        end
+        return normalizer, options
+      end
 
-        def task(*args, &block)
-          record << [:task, args, block]
-        end
+      def self.build_state(normalizer, builder_class:, builder_options: {}, **options)
+        builder, adds, process, outputs = State.build(builder_class, normalizer, options.merge(builder_options))
 
-        def self.merge!(activity, plan)
-          plan.record.each { |(dsl_method, args, block)| activity.send(dsl_method, *args, &block)  }
-          activity
-        end
-
-        # Creates a copy of the {activity} module and merges the {Plan} into it.
-        #
-        # @params activity [Activity] The activity to extend
-        # @params plan [Plan] The plan providing additional steps
-        # @return [Activity] A new, merged activity
-        def self.merge(activity, plan)
-          merge!(activity.clone, plan)
-        end
+        return builder, adds, process, outputs, options
       end
     end
-
-    # Implementation module that can be passed to `Activity[]`.
-    module Railway
-      def self.config
-        Path.config.merge(
-          builder_class:  Magnetic::Builder::Railway,
-          plus_poles:     Magnetic::Builder::Railway.default_plus_poles
-        )
-      end
-
-      include DSL.def_dsl(:step)
-      include DSL.def_dsl(:fail)
-      include DSL.def_dsl(:pass)
-    end
-
-    # Implementation module that can be passed to `Activity[]`.
-    module FastTrack
-      def self.config
-        Railway.config.merge(
-          builder_class:  Magnetic::Builder::FastTrack,
-        )
-      end
-
-      include DSL.def_dsl(:step)
-      include DSL.def_dsl(:fail)
-      include DSL.def_dsl(:pass)
-    end
-
 
 
     def self.[](implementation=Activity::Path, options={})
-      *state = build_state_for(implementation.config, options)
+      *state = implementation.build_state_for(options)
 
       # This module would be unnecessary if we had better included/inherited
       # mechanics: https://twitter.com/apotonick/status/953520912682422272
+      #   mod = Module.new(state: state) do
       mod = Module.new do
         # we need this method to inject data from here.
         define_singleton_method(:_state){ state } # this sucks so much, but is needed to inject state into the module.
@@ -114,52 +79,11 @@ module Trailblazer
 
         def self.extended(extended)
           super
-          extended.initialize_activity!(*_state) # config is from singleton_class.config.
+          extended.initialize!(*_state) # config is from singleton_class.config.
         end
-
-        # Include all DSL methods here as instance method, these get imported
-        # via extend.
-        include Activity::Initialize
-        include Activity::Call
-
-        include Activity::AddTask
-        include AddTask::ExtensionAPI
-
-        include Activity::Interface # DISCUSS
-
-        include Activity::Magnetic::DSLHelper # DISCUSS
-
-        include Activity::Inspect # DISCUSS
-
-        include     Magnetic::Merge
       end
     end
 
-          #
-      # 1. Build the normalizer (unless passed with :normalizer)
-      # 2. Build the builder (in State)
-      # 3. Let State compute all state variables (that implies recompiling the Process)
-    # @api private
-    def self.build_state_for(default_options, options)
-      options                                  = default_options.merge(options) # TODO: use Variables::Merge() here.
-      normalizer, options                      = build_normalizer(options)
-      builder, adds, process, outputs, options = build_state(normalizer, options)
-    end
-
-    # Builds the normalizer (to process options in DSL calls) unless {:normalizer} is already set.
-    #
-    # @api private
-    def self.build_normalizer(normalizer_class:, normalizer: false, **options)
-      normalizer, options = normalizer_class.build( options ) unless normalizer
-
-      return normalizer, options
-    end
-
-    def self.build_state(normalizer, builder_class:, builder_options: {}, **options)
-      builder, adds, process, outputs = State.build(builder_class, normalizer, options.merge(builder_options))
-
-      return builder, adds, process, outputs, options
-    end
 
     module Call
       def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
@@ -172,7 +96,7 @@ module Trailblazer
     module Initialize
       # Set all necessary state in the module.
       # @api private
-      def initialize_activity!(builder, adds, process, outputs, options)
+      def initialize!(builder, adds, process, outputs, options)
         @builder, @adds, @process, @outputs, @options = builder, adds, process, outputs, options
         @debug                                        = {} # TODO: hmm.
       end
@@ -206,13 +130,45 @@ module Trailblazer
     # Activity( builder.task ... ,builder.step, .. )
 
 
-  module Inspect
-    def inspect
-      "#<Trailblazer::Activity: {#{name || @options[:name]}}>"
+    module Inspect
+      def inspect
+        "#<Trailblazer::Activity: {#{name || @options[:name]}}>"
+      end
     end
-  end
+
+      # Helpers such as Path, Output, End to be included into {Activity}.
+
+    require "trailblazer/activity/dsl/helper"
+    module DSLHelper
+      extend Forwardable
+      def_delegators :@builder, :Path
+      def_delegators DSL::Helper, :Output, :End
+    end
+
+    module PublicAPI
+      # Include all DSL methods here as instance method, these get imported
+      # via extend.
+      include Activity::Initialize
+      include Activity::Call
+
+      include Activity::AddTask
+      include AddTask::ExtensionAPI
+
+      include Activity::Interface # DISCUSS
+
+      include DSLHelper # DISCUSS
+
+      include Activity::Inspect # DISCUSS
+
+    require "trailblazer/activity/magnetic/merge"
+      include Magnetic::Merge # Activity#merge!
+    end
+  end # Activity
 end
-end
+
+require "trailblazer/activity/path"
+require "trailblazer/activity/railway"
+require "trailblazer/activity/fast_track"
 
 require "trailblazer/activity/task_wrap"
 require "trailblazer/activity/task_wrap/call_task"
@@ -232,6 +188,5 @@ require "trailblazer/activity/subprocess"
 require "trailblazer/activity/state"
 require "trailblazer/activity/magnetic" # the "magnetic" DSL
 require "trailblazer/activity/schema/sequence"
-    require "trailblazer/activity/magnetic/merge"
 
 require "trailblazer/activity/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)

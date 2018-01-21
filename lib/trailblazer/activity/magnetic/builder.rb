@@ -38,7 +38,7 @@ module Trailblazer
 
       # Stateful helper.
       def Path(*args)
-        DSLHelper.Path(@normalizer, *args)
+        Activity::DSL::Helper.Path(@normalizer, *args)
       end
 
       def insert(name, task, options, &block)
