@@ -35,6 +35,7 @@ module Trailblazer
 
     # Implementation module that can be passed to `Activity[]`.
     module Path
+      # Default variables, called in {Activity::[]}.
       def self.config
         {
           builder_class:    Magnetic::Builder::Path, # we use the Activity-based Normalizer
@@ -102,19 +103,18 @@ module Trailblazer
 
 
     def self.[](implementation=Activity::Path, options={})
+      *state = build_state_for(implementation.config, options)
+
       # This module would be unnecessary if we had better included/inherited
       # mechanics: https://twitter.com/apotonick/status/953520912682422272
       mod = Module.new do
         # we need this method to inject data from here.
-        options = implementation.config.merge(options) # TODO: use Variables::Merge() here.
-
-        define_singleton_method(:config){ options } # this sucks so much, but is needed to inject state into the module.
-
+        define_singleton_method(:_state){ state } # this sucks so much, but is needed to inject state into the module.
         include implementation # ::task or ::step, etc
 
         def self.extended(extended)
           super
-          extended.initialize_activity!(config) # config is from singleton_class.config.
+          extended.initialize_activity!(*_state) # config is from singleton_class.config.
         end
 
         # Include all DSL methods here as instance method, these get imported
@@ -135,6 +135,32 @@ module Trailblazer
       end
     end
 
+          #
+      # 1. Build the normalizer (unless passed with :normalizer)
+      # 2. Build the builder (in State)
+      # 3. Let State compute all state variables (that implies recompiling the Process)
+    # @api private
+    def self.build_state_for(default_options, options)
+      options                                  = default_options.merge(options) # TODO: use Variables::Merge() here.
+      normalizer, options                      = build_normalizer(options)
+      builder, adds, process, outputs, options = build_state(normalizer, options)
+    end
+
+    # Builds the normalizer (to process options in DSL calls) unless {:normalizer} is already set.
+    #
+    # @api private
+    def self.build_normalizer(normalizer_class:, normalizer: false, **options)
+      normalizer, options = normalizer_class.build( options ) unless normalizer
+
+      return normalizer, options
+    end
+
+    def self.build_state(normalizer, builder_class:, builder_options: {}, **options)
+      builder, adds, process, outputs = State.build(builder_class, normalizer, options.merge(builder_options))
+
+      return builder, adds, process, outputs, options
+    end
+
     module Call
       def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
         _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
@@ -145,19 +171,10 @@ module Trailblazer
 
     module Initialize
       # Set all necessary state in the module.
-      #
-      # 1. Build the normalizer (unless passed with :normalizer)
-      # 2. Build the builder (in State)
-      # 3. Let State compute all state variables (that implies recompiling the Process)
-      #
       # @api private
-      def initialize_activity!(builder_class:, builder_options: {}, normalizer_class:, normalizer: false, **options)
-        normalizer, options = normalizer_class.build( options ) unless normalizer
-
-        @builder, @adds, @process, @outputs = State.build(builder_class, normalizer, options.merge(builder_options))
-
-        @debug    = {}
-        @options  = options
+      def initialize_activity!(builder, adds, process, outputs, options)
+        @builder, @adds, @process, @outputs, @options = builder, adds, process, outputs, options
+        @debug                                        = {} # TODO: hmm.
       end
     end
 
