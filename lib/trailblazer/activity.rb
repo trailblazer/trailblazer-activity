@@ -1,6 +1,5 @@
 require "trailblazer/circuit"
 require "trailblazer/activity/version"
-require "trailblazer/activity/structures"
 
 module Trailblazer
   module Activity
@@ -165,6 +164,8 @@ module Trailblazer
     end
   end # Activity
 end
+
+require "trailblazer/activity/structures"
 
 require "trailblazer/activity/path"
 require "trailblazer/activity/railway"
