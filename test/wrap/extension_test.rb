@@ -37,6 +37,8 @@ class TaskWrapMacroTest < Minitest::Spec
   end
 
   describe "add_introspection" do
-    it { Create.debug.inspect.must_equal %{{#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.b>=>{:id=>\"add_another_1\"}, #<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.a>=>{:id=>\"a\"}}} }
+    let(:rvm_string) { %{{#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.b>=>{:id=>\"add_another_1\"}, #<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.a>=>{:id=>\"a\"}}} }
+    let(:jvm_string) { %{{#<Method: TaskWrapMacroTest::Create.b>=>{:id=>\"add_another_1\"}, #<Method: TaskWrapMacroTest::Create.a>=>{:id=>\"a\"}}} }
+    it { Create.debug.inspect.must_equal RUBY_PLATFORM == "java" ? jvm_string : rvm_string }
   end
 end
