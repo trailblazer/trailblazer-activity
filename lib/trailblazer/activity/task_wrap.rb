@@ -22,7 +22,7 @@ module Trailblazer::Activity
       circuit_args = circuit_args.merge(
         runner:       TaskWrap::Runner,
         wrap_runtime: circuit_args[:wrap_runtime] || {}, # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
-        wrap_static:  activity.static_task_wrap,
+        wrap_static:  activity.get(:static_task_wrap),
       )
 
       return activity, [ options, flow_options ], circuit_args
@@ -40,21 +40,10 @@ module Trailblazer::Activity
       end
     end
 
-    def self.included(includer)
-      includer.extend(ClassMethods)
-      includer.initialize_static_task_wrap!
+    def self.included(includer) # TODO: make this unnecessary.
+      includer.put!(:static_task_wrap, ::Hash.new(TaskWrap.initial_activity))
     end
 
     # better: MyClass < Activity(TaskWrap, ...)
-
-    module ClassMethods
-      def static_task_wrap
-        @static_task_wrap
-      end
-
-      def initialize_static_task_wrap!
-        @static_task_wrap = ::Hash.new(TaskWrap.initial_activity)
-      end
-    end
   end
 end

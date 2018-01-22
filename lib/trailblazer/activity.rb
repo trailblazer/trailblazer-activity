@@ -12,13 +12,40 @@ module Trailblazer
         # we need this method to inject data from here.
         define_singleton_method(:_state){ state } # this sucks so much, but is needed to inject state into the module.
 
-        # @import =>anonModule#task, anonModule#build_state_for, ...
+        # @import =>anonModule#task, anonModule#put, ..
         include implementation
 
         def self.extended(extended)
           super
           extended.initialize!(*_state) # config is from singleton_class.config.
         end
+      end
+    end
+
+    module Accessor
+      None = Class.new
+
+      def put!(name, value)
+        instance_variable_set(:"@#{name}", value).freeze
+      end
+
+      def put_in!(name, key, value)
+        hsh = get(name)
+        put!(name, hsh.merge(key => value.freeze).freeze)
+      end
+
+      def set!(name, key, value=None)
+        return put!(name, key) if value==None
+        put_in!(name, key, value)
+      end
+
+      def get_in(name, key)
+        get(name)[key]
+      end
+
+      def get(name, key=None)
+        return get_in(name, key) if key!=None
+        instance_variable_get(:"@#{name}")
       end
     end
 
@@ -41,6 +68,7 @@ module Trailblazer
     # Later, this module is `extended` in Path, Railway and FastTrack, and
     # imports the DSL methods as class methods.
     module PublicAPI
+      include Accessor
     require "trailblazer/activity/dsl/add_task"
       include DSL::AddTask
 
@@ -58,7 +86,8 @@ module Trailblazer
       # @api private
       def initialize!(builder, adds, circuit, outputs, options)
         @builder, @adds, @circuit, @outputs, @options = builder, adds, circuit, outputs, options
-        @debug                                        = {} # TODO: hmm.
+        @debug                                        = {}.freeze # TODO: hmm.
+        @options.freeze
       end
 
       def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.

@@ -11,7 +11,7 @@ module Trailblazer::Activity
       }
     end
 
-    # @import FastTrack::build_state_for
+    # @import Path::build_state_for
     extend BuildState
     # @import =>Path#call
     include PublicAPI

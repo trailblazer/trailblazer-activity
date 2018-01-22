@@ -7,7 +7,7 @@ module Trailblazer::Activity
         # That in turn means, the only mutated entity is this module.
         builder, @adds, @circuit, @outputs, options = State.add(@builder, @adds, name, task, options, &block) # this could be an extension itself.
 
-        task, local_options, _ = options
+        task, local_options = options
 
         # {Extension API} call all extensions.
         local_options[:extension].collect { |ext| ext.(self, *options) } if local_options[:extension]

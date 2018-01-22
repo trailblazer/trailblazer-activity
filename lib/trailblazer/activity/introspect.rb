@@ -10,7 +10,7 @@ module Trailblazer
 
       # {Extension} API
       def self.add_introspection(activity, task, local_options, *returned_options)
-        activity.debug[task] = { id: local_options[:id] || task }.freeze
+        activity.set!( :debug, task, { id: local_options[:id] || task } )
       end
 
 
