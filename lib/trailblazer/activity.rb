@@ -66,7 +66,7 @@ module Trailblazer
         # @state = @state.put()
 
         # TODO: how do I do this?
-        @state = @state.merge( args[0] => @state[args[0]].merge( args[1] => args[2].freeze ) )
+        @state = @state.merge( args[0] => @state[args[0]].merge( args[1] => args[2] ) )
 
         @state
       end
@@ -74,9 +74,6 @@ module Trailblazer
       def [](directive)
         @state[directive]
       end
-
-
-
 
       # include Accessor
     require "trailblazer/activity/dsl/add_task"
