@@ -57,7 +57,9 @@ module Trailblazer
     # imports the DSL methods as class methods.
     module PublicAPI
       def []=(*args)
-        return @state = @state.put(:adds, args[1]) if args.size == 2
+        if args.size == 2
+          return @state = @state.put(*args)
+        end
 
         @state = @state.update_in(args[0..-2]) { args[-1].freeze }
       end

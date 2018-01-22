@@ -303,12 +303,12 @@ ActivityTest::B
         extend Trailblazer::Activity::Path()
       end
 
-      process, outputs, adds, builder = activity.decompose
+      components = activity.decompose
 
-      assert process.frozen?
-      assert outputs.frozen?
-      assert adds.frozen?
-      assert builder.frozen?
+      assert components[:process].frozen?
+      assert components[:outputs].frozen?
+      assert components[:adds].frozen?
+      assert components[:builder].frozen?
     end
 
     it "exposes frozen objects, only" do
@@ -317,12 +317,12 @@ ActivityTest::B
         task A
       end
 
-      process, outputs, adds, builder = activity.decompose
+      components = activity.decompose
 
-      assert process.frozen?
-      assert outputs.frozen?
-      assert adds.frozen?
-      assert builder.frozen?
+      assert components[:process].frozen?
+      assert components[:outputs].frozen?
+      assert components[:adds].frozen?
+      assert components[:builder].frozen?
       # TODO: test @options.frozen?
     end
   end
