@@ -1,5 +1,5 @@
 module Trailblazer
-  module Activity    # Introspection is not used at run-time except for rendering diagrams, tracing, and the like.
+  class Activity < Module   # Introspection is not used at run-time except for rendering diagrams, tracing, and the like.
     module Introspect
       # {:argumenter} API
       def self.arguments_for_call(activity, (options, flow_options), **circuit_options)
@@ -10,7 +10,7 @@ module Trailblazer
 
       # {Extension} API
       def self.add_introspection(activity, task, local_options, *returned_options)
-        activity.set!( :debug, task, { id: local_options[:id] || task } )
+        activity[:debug, task] = { id: local_options[:id] || task }
       end
 
 

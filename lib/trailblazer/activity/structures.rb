@@ -1,5 +1,5 @@
   module Trailblazer
-    module Activity      # End event is just another callable task.
+    class Activity < Module     # End event is just another callable task.
       # Any instance of subclass of End will halt the circuit's execution when hit.
       class End
         def initialize(name, options={})

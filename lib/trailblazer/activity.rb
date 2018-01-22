@@ -1,53 +1,37 @@
 require "trailblazer/activity/version"
+require "hamster"
 
 module Trailblazer
-  module Activity
-    def self.[](implementation=Activity::Path, options={})
-      *state = implementation.build_state_for(options)
+  def self.Activity(implementation=Activity::Path, options={})
+    state = implementation.build_state_for(options)
+    Activity.new(state)
+  end
 
-      # This module would be unnecessary if we had better included/inherited
-      # mechanics: https://twitter.com/apotonick/status/953520912682422272
-      #   mod = Module.new(state: state) do
-      mod = Module.new do
-        # we need this method to inject data from here.
-        define_singleton_method(:_state){ state } # this sucks so much, but is needed to inject state into the module.
+  class Activity < Module
+    attr_reader :initial_state
 
-        # @import =>anonModule#task, anonModule#put, ..
-        include implementation
+    def initialize(state)
+      builder, adds, circuit, outputs, options = *state
 
-        def self.extended(extended)
-          super
-          extended.initialize!(*_state) # config is from singleton_class.config.
-        end
-      end
+      state = Hamster::Hash.new(
+        builder: builder,        # immutable
+        options: options.freeze, # immutable
+        adds:    adds.freeze,
+        circuit: circuit.freeze,
+        outputs: outputs.freeze,
+        debug:   Hamster::Hash.new,
+      )
+
+      @initial_state = state
     end
 
-    module Accessor
-      None = Class.new
-
-      def put!(name, value)
-        instance_variable_set(:"@#{name}", value).freeze
-      end
-
-      def put_in!(name, key, value)
-        hsh = get(name)
-        put!(name, hsh.merge(key => value.freeze).freeze)
-      end
-
-      def set!(name, key, value=None)
-        return put!(name, key) if value==None
-        put_in!(name, key, value)
-      end
-
-      def get_in(name, key)
-        get(name)[key]
-      end
-
-      def get(name, key=None)
-        return get_in(name, key) if key!=None
-        instance_variable_get(:"@#{name}")
-      end
+    def extended(extended)
+      # include implementation
+      super
+      extended.extend Activity::Path
+      extended.instance_variable_set(:@state, initial_state) # initialize!
     end
+
 
     module Inspect
       def inspect
@@ -68,7 +52,20 @@ module Trailblazer
     # Later, this module is `extended` in Path, Railway and FastTrack, and
     # imports the DSL methods as class methods.
     module PublicAPI
-      include Accessor
+      def []=(*args)
+        return @state = @state.put(:adds, args[1]) if args.size == 2
+
+        @state = @state.update_in(args[0..-2]) { args[-1].freeze }
+      end
+
+      def [](directive)
+        @state[directive]
+      end
+
+
+
+
+      # include Accessor
     require "trailblazer/activity/dsl/add_task"
       include DSL::AddTask
 
@@ -82,18 +79,10 @@ module Trailblazer
     require "trailblazer/activity/magnetic/merge"
       include Magnetic::Merge # Activity#merge!
 
-      # Set all necessary state in the module.
-      # @api private
-      def initialize!(builder, adds, circuit, outputs, options)
-        @builder, @adds, @circuit, @outputs, @options = builder, adds, circuit, outputs, options
-        @debug                                        = {}.freeze # TODO: hmm.
-        @options.freeze
-      end
-
       def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
         _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
 
-        @circuit.( args, circuit_options.merge(argumenter: argumenter) )
+        self[:circuit].( args, circuit_options.merge(argumenter: argumenter) )
       end
     end
   end # Activity

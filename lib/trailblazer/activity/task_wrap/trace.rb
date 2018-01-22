@@ -1,4 +1,4 @@
-module Trailblazer::Activity
+class Trailblazer::Activity < Module
   module TaskWrap
     # TaskWrap tasks for tracing.
     module Trace

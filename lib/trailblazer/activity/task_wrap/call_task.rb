@@ -1,4 +1,4 @@
-module Trailblazer::Activity
+class Trailblazer::Activity < Module
   module TaskWrap
     # TaskWrap step that calls the actual wrapped task and passes all `original_args` to it.
     #

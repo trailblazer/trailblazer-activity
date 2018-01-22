@@ -1,5 +1,5 @@
 module Trailblazer
-  module Activity    # all code related to the magnetic building of a circuit hash lives in this namespace.
+  class Activity < Module   # all code related to the magnetic building of a circuit hash lives in this namespace.
     module Magnetic
       # PlusPole "radiates" a color that MinusPoles are attracted to.
       #

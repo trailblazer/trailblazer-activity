@@ -1,4 +1,4 @@
-module Trailblazer::Activity
+class Trailblazer::Activity < Module
   # Implementation module that can be passed to `Activity[]`.
   module Railway
     def self.config

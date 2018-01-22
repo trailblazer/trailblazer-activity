@@ -1,4 +1,4 @@
-module Trailblazer::Activity
+class Trailblazer::Activity < Module
   module BuildState
     def build_state_for(options)
       BuildState.build_state_for(self.config, options)

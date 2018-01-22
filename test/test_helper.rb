@@ -24,8 +24,8 @@ Minitest::Spec.class_eval do
   end
 
   def assert_path(activity, content)
-    process = activity.decompose[0]
-    Cct(process).must_equal %{
+    circuit = activity.decompose[:circuit]
+    Cct(circuit).must_equal %{
 #<Start:default/nil>#{content.chomp}
 #<End:success/:success>
 }

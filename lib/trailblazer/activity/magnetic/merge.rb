@@ -1,4 +1,4 @@
-module Trailblazer::Activity
+class Trailblazer::Activity < Module
   module Magnetic
     module Merge
       # THIS IS HIGHLY EXPERIMENTAL AS WE'RE NOT MERGING taskWrap etc.
