@@ -3,13 +3,13 @@ require "test_helper"
 class MergeTest < Minitest::Spec
   it do
     activity = Module.new do
-      extend Activity[ Activity::Path ]
+      extend Activity::Path()
 
       task task: :a, id: "a"
     end
 
     merged = Module.new do
-      extend Activity[ Activity::Path::Plan ]
+      extend Activity::Path::Plan()
 
       task task: :b, before: "a"
       task task: :c
@@ -21,7 +21,7 @@ class MergeTest < Minitest::Spec
     # the existing activity gets extended.
     activity.must_equal _activity
 
-    Cct(activity.decompose.first).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => :b
 :b
@@ -37,13 +37,13 @@ class MergeTest < Minitest::Spec
   describe "Activity.merge" do
     it "creates a new module without mutating shared state" do
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
 
         task task: :a, id: "a"
       end
 
       plan = Module.new do
-        extend Activity[ Activity::Path::Plan ]
+        extend Activity::Path::Plan()
 
         task task: :b, before: "a"
         task task: :c
@@ -52,7 +52,7 @@ class MergeTest < Minitest::Spec
       merged = Activity::Path::Plan.merge(activity, plan)
 
       # activity still has one step
-      Cct(activity.decompose.first).must_equal %{
+      Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => :a
 :a
@@ -60,7 +60,7 @@ class MergeTest < Minitest::Spec
 #<End:success/:success>
 }
 
-      Cct(merged.decompose.first).must_equal %{
+      Cct(merged.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => :b
 :b

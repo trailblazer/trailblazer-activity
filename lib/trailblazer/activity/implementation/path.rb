@@ -6,7 +6,7 @@ module Trailblazer
 
     # Implementation module that can be passed to `Activity[]`.
     class Path < Activity
-      # Default variables, called in {Activity::[]}.
+      # Default variables, called in {Activity::initialize}.
       def self.config
         {
           builder_class:    Magnetic::Builder::Path, # we use the Activity-based Normalizer
@@ -18,18 +18,21 @@ module Trailblazer
         }
       end
 
+      def self.Plan()
+        Plan
+      end
+
       module Plan
-        def self.build_state_for(*)
-          {}
+        def self.extended(extended)
+          extended.singleton_class.send :attr_accessor, :record
+          extended.record = []
+          extended.extend(Methods)
         end
 
-        def initialize!(options)
-          singleton_class.send :attr_accessor, :record
-          @record = []
-        end
-
-        def task(*args, &block)
-          record << [:task, args, block]
+        module Methods
+          def task(*args, &block)
+            record << [:task, args, block]
+          end
         end
 
         def self.merge!(activity, plan)
