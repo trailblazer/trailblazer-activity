@@ -3,13 +3,13 @@ require "test_helper"
 class RailwayTest < Minitest::Spec
   it "accepts Railway as a builder" do
     activity = Module.new do
-      extend Activity[ Activity::Railway ]
+      extend Activity::Railway()
       step task: T.def_task(:a)
       step task: T.def_task(:b)
       fail task: T.def_task(:c)
     end
 
-    Cct(activity.decompose.first).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -30,13 +30,13 @@ class RailwayTest < Minitest::Spec
   describe "#pass" do
     it "accepts Railway as a builder" do
       activity = Module.new do
-        extend Activity[ Activity::Railway ]
+        extend Activity::Railway()
         step task: T.def_task(:a)
         pass task: T.def_task(:b)
         fail task: T.def_task(:c)
       end
 
-      Cct(activity.decompose.first).must_equal %{
+      Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -61,12 +61,12 @@ class RailwayTest < Minitest::Spec
       class MySuccess; end
 
       activity = Module.new do
-        extend Activity[ Activity::Railway, track_end: MySuccess, failure_end: MyFail ]
+        extend Activity::Railway( track_end: MySuccess, failure_end: MyFail )
 
         step task: T.def_task(:a)
       end
 
-      Cct(activity.decompose.first).must_equal %{
+      Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>

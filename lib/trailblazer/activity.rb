@@ -61,7 +61,12 @@ module Trailblazer
           return @state = @state.put(*args)
         end
 
-        @state = @state.update_in(args[0..-2]) { args[-1].freeze }
+        # @state = @state.put()
+
+        # TODO: how do I do this?
+        @state = @state.merge( args[0] => @state[args[0]].merge( args[1] => args[2].freeze ) )
+
+        @state
       end
 
       def [](directive)

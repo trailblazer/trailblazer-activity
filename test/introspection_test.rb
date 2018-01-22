@@ -10,7 +10,7 @@ class IntrospectionTest < Minitest::Spec
     nested = bc
 
     activity = Module.new do
-      extend Activity[]
+      extend Activity::Path()
       task task: A
       task task: nested, Output(nested.outputs.keys.first, :success) => :success
       task task: D, id: "D"
@@ -19,9 +19,15 @@ class IntrospectionTest < Minitest::Spec
 
   let(:bc) do
     activity = Module.new do
-      extend Activity[]
+      extend Activity::Path()
       task task: B
       task task: C
+    end
+  end
+
+  describe ":debug state" do
+    it "exposes all added tasks" do
+      activity.decompose[:debug].to_h.must_equal(A => {id: A}, bc => {id: bc}, D => {id: "D"})
     end
   end
 
@@ -59,7 +65,7 @@ class IntrospectionTest < Minitest::Spec
   describe "::find" do
     it "returns task" do
       activity = Module.new do
-        extend Activity[]
+        extend Activity::Path()
 
         task task: "I am not callable!"
         task B

@@ -16,14 +16,14 @@ module Trailblazer
 
       # @api private
       def self.find(activity, &block)
-        circuit, _ = activity.decompose
+        circuit = activity.decompose[:circuit]
 
         circuit.instance_variable_get(:@map).find(&block)
       end
 
 
       def self.collect(activity, options={}, &block)
-        circuit, _      = activity.decompose
+        circuit         = activity.decompose[:circuit]
         circuit_hash, _ = circuit.decompose
 
         locals = circuit_hash.collect do |task, connections|
