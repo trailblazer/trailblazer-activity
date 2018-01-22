@@ -53,6 +53,7 @@ module Trailblazer
       end
     end
 
+    # FIXME: still to be decided
     # By including those modules, we create instance methods.
     # Later, this module is `extended` in Path, Railway and FastTrack, and
     # imports the DSL methods as class methods.
