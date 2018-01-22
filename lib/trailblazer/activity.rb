@@ -27,6 +27,7 @@ module Trailblazer
       include PublicAPI
     end
 
+    # Injects the initial configuration into the module defining a new activity.
     def extended(extended)
       super
       extended.instance_variable_set(:@state, initial_state) # initialize!

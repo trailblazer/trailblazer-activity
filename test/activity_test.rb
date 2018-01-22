@@ -305,7 +305,7 @@ ActivityTest::B
 
       components = activity.decompose
 
-      assert components[:process].frozen?
+      assert components[:circuit].frozen?
       assert components[:outputs].frozen?
       assert components[:adds].frozen?
       assert components[:builder].frozen?
@@ -319,7 +319,7 @@ ActivityTest::B
 
       components = activity.decompose
 
-      assert components[:process].frozen?
+      assert components[:circuit].frozen?
       assert components[:outputs].frozen?
       assert components[:adds].frozen?
       assert components[:builder].frozen?
