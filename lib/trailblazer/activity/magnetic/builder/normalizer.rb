@@ -46,7 +46,7 @@ module Trailblazer
 
       # :default_plus_poles is an injectable option.
       module Pipeline
-        extend Trailblazer::Activity( Activity::Path, normalizer_class: DefaultNormalizer, plus_poles: Builder::Path.default_plus_poles )
+        extend Trailblazer::Activity::Path( normalizer_class: DefaultNormalizer, plus_poles: Builder::Path.default_plus_poles )
 
         def self.split_options( ctx, task:, options:, ** )
           keywords = extract_dsl_keywords(options)

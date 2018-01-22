@@ -4,7 +4,7 @@ class ActivityTest < Minitest::Spec
   describe ":task_builder" do
     let(:activity) do
       activity = Module.new do
-        extend Trailblazer::Activity( Activity::Path, task_builder: ->(task, *){task} )
+        extend Trailblazer::Activity::Path( task_builder: ->(task, *){task} )
 
         task T.def_task(:a)
         task T.def_task(:b), id: "b"

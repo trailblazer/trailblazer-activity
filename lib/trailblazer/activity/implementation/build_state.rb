@@ -1,9 +1,5 @@
 class Trailblazer::Activity < Module
   module BuildState
-    def build_state_for(options)
-      BuildState.build_state_for(self.config, options)
-    end
-
     # Compute all objects that need to be passed into the new Activity module.
     # 1. Build the normalizer (unless passed with :normalizer)
     # 2. Build the builder (in State)

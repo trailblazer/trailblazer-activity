@@ -3,14 +3,15 @@ require "hamster"
 
 module Trailblazer
   def self.Activity(implementation=Activity::Path, options={})
-    state = implementation.build_state_for(options)
-    Activity.new(state)
+    Activity.new(implementation, state)
   end
 
   class Activity < Module
     attr_reader :initial_state
 
-    def initialize(state)
+    def initialize(implementation, options)
+      state = BuildState.build_state_for( implementation.config, options)
+
       builder, adds, circuit, outputs, options = *state
 
       state = Hamster::Hash.new(
@@ -23,12 +24,13 @@ module Trailblazer
       )
 
       @initial_state = state
+
+      include *options[:extend] # include the DSL methods.
+      include PublicAPI
     end
 
     def extended(extended)
-      # include implementation
       super
-      extended.extend Activity::Path
       extended.instance_variable_set(:@state, initial_state) # initialize!
     end
 
