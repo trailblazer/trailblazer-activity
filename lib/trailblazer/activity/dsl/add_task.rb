@@ -8,10 +8,9 @@ class Trailblazer::Activity < Module
 
         _builder, adds, circuit, outputs, options = State.add( self[:builder], self[:adds], name, task, options, &block ) # this could be an extension itself.
 
-        self[:adds] = adds
-        @state = @state.put(:circuit, circuit)
-        @state = @state.put(:outputs, outputs)
-
+        self[:adds]    = adds
+        self[:circuit] = circuit
+        self[:outputs] = outputs
 
         task, local_options = options
 
