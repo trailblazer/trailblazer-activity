@@ -12,7 +12,7 @@ class Trailblazer::Activity < Module
     # The actual activity that implements the taskWrap.
     def self.initial_activity
       Module.new do
-        extend Trailblazer::Activity[ Path, name: "taskWrap", normalizer_class: Magnetic::DefaultNormalizer ]
+        extend Trailblazer::Activity::Path( name: "taskWrap", normalizer_class: Magnetic::DefaultNormalizer )
 
         task TaskWrap.method(:call_task), id: "task_wrap.call_task" # ::call_task is defined in task_wrap/call_task.
       end
@@ -22,7 +22,7 @@ class Trailblazer::Activity < Module
       circuit_args = circuit_args.merge(
         runner:       TaskWrap::Runner,
         wrap_runtime: circuit_args[:wrap_runtime] || {}, # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
-        wrap_static:  activity.get(:static_task_wrap),
+        wrap_static:  activity[:static_task_wrap],
       )
 
       return activity, [ options, flow_options ], circuit_args
@@ -41,7 +41,7 @@ class Trailblazer::Activity < Module
     end
 
     def self.included(includer) # TODO: make this unnecessary.
-      includer.put!(:static_task_wrap, ::Hash.new(TaskWrap.initial_activity))
+      includer[:static_task_wrap] = ::Hash.new(TaskWrap.initial_activity)
     end
 
     # better: MyClass < Activity(TaskWrap, ...)

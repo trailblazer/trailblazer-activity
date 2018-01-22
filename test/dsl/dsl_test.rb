@@ -13,51 +13,18 @@ class ActivityBuildTest < Minitest::Spec
   class K; end
   class L; end
 
-
-#   describe ":adds" do
-#     let(:adds) do
-#       [
-#         [ :add, [ "my.id", [ [:success], "MyTask", [] ], group: :end ]]
-#       ]
-#     end
-
-#     it do
-#       _adds = adds
-
-#       adds = Activity::Magnetic::Builder::Path.plan do
-#         task J, id: "extract", adds: _adds
-#       end
-
-#       seq = Finalizer.adds_to_tripletts(adds)
-
-#    # puts Seq(seq)
-#       Seq(seq).must_equal %{
-# [] ==> #<Start:default/nil>
-#  (success)/Right ==> :success
-# [:success] ==> ActivityBuildTest::J
-#  (success)/Right ==> :success
-# [:success] ==> #<End:success/:success>
-#  []
-# [:success] ==> \"MyTask\"
-#  []
-# }
-#     end
-#   end
-
   #---
   # wiring options
 
   # 3 ends, 1 of 'em default.
   it do
     activity = Module.new do
-      extend Activity[ Activity::Path, track_color: :"track_9" ]
+      extend Activity::Path( track_color: :"track_9" )
       task task: J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
       task task: K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
     end
 
-    process, outputs, adds = activity.decompose
-
-    Cct(process).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
@@ -77,7 +44,7 @@ ActivityBuildTest::K
   # Activity with 2 predefined outputs, direct 2nd one to new end
   it do
     activity = Module.new do
-      extend Activity[ Activity::Path, track_color: :"track_9" ]
+      extend Activity::Path( track_color: :"track_9" )
 
       task task: J,
         Output(Left, :trigger) => End("End.trigger", :triggered),
@@ -89,9 +56,7 @@ ActivityBuildTest::K
       task task: K
     end
 
-    process, outputs, adds = activity.decompose
-
-    Cct(process).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
@@ -109,7 +74,7 @@ ActivityBuildTest::K
   it "raises exception when referencing non-existant semantic" do
     exception = assert_raises do
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
 
         task J,
           Output(:does_absolutely_not_exist) => End("End.trigger", :triggered)
@@ -122,14 +87,12 @@ ActivityBuildTest::K
   # only PlusPole goes straight to IDed end.
   it "connects task to End" do
     activity = Module.new do
-      extend Activity[ Activity::Path, track_color: :"track_9" ]
+      extend Activity::Path( track_color: :"track_9" )
       task task: J, id: "confused", Output(Right, :success) => "End.track_9"
       task task: K, id: "normal"
     end
 
-process, outputs, adds = activity.decompose
-
-    Cct(process).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
@@ -144,7 +107,7 @@ ActivityBuildTest::K
   # circulars, etc.
   it do
     activity = Module.new do
-      extend Activity[ Activity::Path ]
+      extend Activity::Path()
 
       # circular
       task task: A, id: "inquiry_create", Output(Activity::Left, :failure) => Path() do
@@ -162,9 +125,7 @@ ActivityBuildTest::K
       task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    process, outputs, adds = activity.decompose
-
-    Cct(process).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
@@ -190,12 +151,12 @@ ActivityBuildTest::L
 #<End:track_0./:invalid_result>
 }
 
-    Ends(process).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid_result>]}
+    Ends(activity.decompose[:circuit]).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid_result>]}
   end
 
   it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do # FIXME: what were we (or I, haha) testing in here?
     activity = Module.new do
-      extend Activity[ Activity::Path ]
+      extend Activity::Path()
 
       task task: A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", Output(:success) => "receive_process_id"
       task task: B, id: "suspend_for_correct", Output(:failure) => "inquiry_create"
@@ -211,9 +172,7 @@ ActivityBuildTest::L
       task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    process, outputs, adds = activity.decompose
-
-    Cct(process).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A

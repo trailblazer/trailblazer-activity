@@ -9,7 +9,7 @@ class TraceTest < Minitest::Spec
   let(:activity) do
     nested = bc
     activity = Module.new do
-      extend Activity[]
+      extend Activity::Path()
       include Activity::TaskWrap
 
       task task: A, id: "A"
@@ -21,7 +21,7 @@ class TraceTest < Minitest::Spec
 
   let(:bc) do
     activity = Module.new do
-      extend Activity[]
+      extend Activity::Path()
       include Activity::TaskWrap
 
       task task: B, id: "B"

@@ -125,7 +125,7 @@ class PlusPolesTest < Minitest::Spec
   describe "::from_outputs" do
     it "creates PlusPoles from an Activity's outputs" do
       activity = activity = Module.new do
-        extend Activity[]
+        extend Activity::Path()
         task :a
       end
 

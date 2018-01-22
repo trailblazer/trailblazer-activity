@@ -17,7 +17,7 @@ class WrapTest < Minitest::Spec
   describe "running with TaskWrap.arguments_for_call but no configured taskWrap" do
     it "executes activity" do
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
         include Activity::TaskWrap
 
         task task: T.def_task(:a)#, extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
@@ -43,13 +43,13 @@ class WrapTest < Minitest::Spec
 
     it do
       extension_adds = Module.new do
-        extend Activity[ Activity::Path::Plan ]
+        extend Activity::Path::Plan()
 
         task TaskWrap_Extension_task, before: "task_wrap.call_task" # "Hi from taskWrap!"
       end
 
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
         include Activity::TaskWrap
 
         task task: T.def_task(:a), extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
@@ -72,7 +72,7 @@ class WrapTest < Minitest::Spec
   describe "nested trailing" do
     let (:more_nested) do
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
         task task: Upload
       end
     end
@@ -81,7 +81,7 @@ class WrapTest < Minitest::Spec
       _more_nested = more_nested
 
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
         task task: Save
         task task: _more_nested, _more_nested.outputs[:success] => :success
         task task: Cleanup
@@ -92,7 +92,7 @@ class WrapTest < Minitest::Spec
       _nested = nested
 
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
         task task: Model
         task task: _nested, _nested.outputs[:success] => :success, id: "A"
         task task: Uuid, Output(SpecialDirection, :success) => :success
@@ -122,7 +122,7 @@ class WrapTest < Minitest::Spec
     describe "Wrap::Runner#call with :wrap_runtime" do
       let(:wrap_alterations) do
         Module.new do
-          extend Activity[ Activity::Path::Plan ]
+          extend Activity::Path::Plan()
 
           task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
           task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
@@ -147,7 +147,7 @@ class WrapTest < Minitest::Spec
         end
 
         upload_wrap  = Module.new do
-          extend Activity[ Activity::Path::Plan ]
+          extend Activity::Path::Plan()
           task only_for_wrap, id: "task_wrap.upload", before: "task_wrap.call_task"
         end
 
@@ -187,7 +187,7 @@ class WrapTest < Minitest::Spec
     #- Tracing
     it "trail" do
       wrap_alterations = Module.new do
-        extend Activity[ Activity::Path::Plan ]
+        extend Activity::Path::Plan()
         task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
         task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
       end

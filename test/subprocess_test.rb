@@ -19,7 +19,7 @@ class SubprocessHelper < Minitest::Spec
   describe "circuit with 1 level of nesting" do # TODO: test this kind of configuration in dsl_tests somewhere.
     let(:blog) do
       Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
 
         task task: Blog::Read
         task task: Blog::Next, Output(Activity::Right, :done) => "End.success", Output(Activity::Left, :success) => :success
@@ -31,7 +31,7 @@ class SubprocessHelper < Minitest::Spec
       _blog = blog
 
       Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
 
         task task: _blog, _blog.outputs[:success] => :success
         task task: User::Relax
@@ -52,7 +52,7 @@ class SubprocessHelper < Minitest::Spec
   describe "circuit with 2 end events in the nested process" do
     let(:blog) do
       Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
 
         task task: Blog::Read
         task task: Blog::Next, Output(Activity::Right, :success___) => :__success, Output(Activity::Left, :retry___) => _retry=End(:retry, :retry)
@@ -63,7 +63,7 @@ class SubprocessHelper < Minitest::Spec
       _blog = blog
 
       Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
 
         task task: _blog, _blog.outputs[:success] => :success, _blog.outputs[:retry] => "End.success"
         task task: User::Relax
@@ -94,7 +94,7 @@ class SubprocessHelper < Minitest::Spec
       _blog = blog
 
       Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
 
         task task: Activity::Subprocess( _blog, task: Blog::Next ), _blog.outputs[:success] => :success
         task task: User::Relax
@@ -126,7 +126,7 @@ class SubprocessHelper < Minitest::Spec
         subprocess = Activity::Subprocess( Workout, call: :__call__ )
 
         Module.new do
-        extend Activity[ Activity::Path ]
+        extend Activity::Path()
 
           task task: subprocess
           task task: User::Relax

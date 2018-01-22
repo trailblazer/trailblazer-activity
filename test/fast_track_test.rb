@@ -2,7 +2,7 @@ require "test_helper"
 
 class FastTrackTest < Minitest::Spec
   def assert_main(activity, expected)
-    Cct(activity.decompose.first).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>#{expected}#<End:success/:success>
 
 #<End:failure/:failure>
@@ -16,7 +16,7 @@ class FastTrackTest < Minitest::Spec
   describe ":fail_fast" do
     it "builder API, what we use in Operation" do
       activity = Module.new do
-        extend Activity[ Activity::FastTrack, track_color: :pink, failure_color: :black ]
+        extend Activity::FastTrack( track_color: :pink, failure_color: :black )
 
         step task: T.def_task(:a), fail_fast: true # these options we WANT built by Operation (task, id, plus_poles)
         step task: T.def_task(:b)
@@ -24,7 +24,7 @@ class FastTrackTest < Minitest::Spec
         pass task: T.def_task(:d)
       end
 
-      Cct(activity.decompose.first).must_equal %{
+      Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -53,7 +53,7 @@ class FastTrackTest < Minitest::Spec
   describe ":pass_fast" do
     it "adds :pass_fast pole" do
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
 
         step task: T.def_task(:a), pass_fast: true
       end
@@ -70,7 +70,7 @@ class FastTrackTest < Minitest::Spec
   describe ":fail_fast" do
     it "adds pole" do
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
 
         step task: T.def_task(:a), fail_fast: true
       end
@@ -87,7 +87,7 @@ class FastTrackTest < Minitest::Spec
   describe ":fast_track" do
     it "adds pole" do
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
 
         step task: T.def_task(:a), fast_track: true
       end
@@ -106,7 +106,7 @@ class FastTrackTest < Minitest::Spec
       plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
 
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
         step task: T.def_task(:a), plus_poles: plus_poles, fast_track: true
       end
 
@@ -126,7 +126,7 @@ class FastTrackTest < Minitest::Spec
       plus_poles = plus_poles_for( Signal => :success, "Another" => :failure )
 
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
         step task: T.def_task(:a), plus_poles: plus_poles, pass_fast: true
       end
 
@@ -142,7 +142,7 @@ class FastTrackTest < Minitest::Spec
       plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
 
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
         step task: T.def_task(:a), plus_poles: plus_poles, pass_fast: true
       end
 
@@ -159,7 +159,7 @@ class FastTrackTest < Minitest::Spec
       plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Pff" => :pass_fast )
 
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
         step task: T.def_task(:a), plus_poles: plus_poles
       end
 
@@ -176,11 +176,11 @@ class FastTrackTest < Minitest::Spec
       plus_poles = plus_poles_for( Signal => :success, "Another" => :failure, "Exception!" => :exception )
 
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
         step task: T.def_task(:a), plus_poles: plus_poles, Output(:failure) => Activity.End(:failed), Output(:exception) => Activity.End(:exceptioned)
       end
 
-      Cct(activity.decompose.first).must_equal %{
+      Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -205,7 +205,7 @@ class FastTrackTest < Minitest::Spec
   describe ":magnetic_to" do
     it "allows overriding :magnetic_to" do
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
         step task: T.def_task(:a), magnetic_to: []
       end
 
@@ -221,7 +221,7 @@ class FastTrackTest < Minitest::Spec
   describe "Output()" do
     it "allows reconnecting" do
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
         step task: T.def_task(:a), id: "a"
         step task: T.def_task(:b), Output(:success) => "a"
       end
@@ -241,12 +241,12 @@ class FastTrackTest < Minitest::Spec
   describe "Output() => End()" do
     it "allows reconnecting" do
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
         step task: T.def_task(:a), id: "a"
         step task: T.def_task(:b), Output(:success) => "a", Output("Signal", :exception) => End(:exceptional, :exceptional)
       end
 
-      Cct(activity.decompose.first).must_equal %{
+      Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -277,12 +277,12 @@ class FastTrackTest < Minitest::Spec
 
     it "allows custom ends" do
       activity = Module.new do
-        extend Activity[ Activity::FastTrack, track_end: MySuccess, failure_end: MyFail, pass_fast_end: MyPassFast, fail_fast_end: MyFailFast ]
+        extend Activity::FastTrack( track_end: MySuccess, failure_end: MyFail, pass_fast_end: MyPassFast, fail_fast_end: MyFailFast )
 
         step task: T.def_task(:a)
       end
 
-      Cct(activity.decompose.first).must_equal %{
+      Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -302,7 +302,7 @@ FastTrackTest::MyFailFast
   describe "sequence_options" do
     it "accepts :before and :group" do
       activity = Module.new do
-        extend Activity[ Activity::FastTrack ]
+        extend Activity::FastTrack()
 
         step task: T.def_task(:a), id: "a"
         step task: T.def_task(:b), before: "a"

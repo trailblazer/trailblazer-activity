@@ -13,7 +13,7 @@ class TaskWrapMacroTest < Minitest::Spec
   #
   # Actual {Activity} using :extension
   module Create
-    extend Trailblazer::Activity[]
+    extend Trailblazer::Activity::Path()
 
     def self.a( (ctx, flow_options), **)
       ctx[:seq] << :a
@@ -37,8 +37,8 @@ class TaskWrapMacroTest < Minitest::Spec
   end
 
   describe "add_introspection" do
-    let(:rvm_string) { %{{#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.b>=>{:id=>\"add_another_1\"}, #<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.a>=>{:id=>\"a\"}}} }
-    let(:jvm_string) { %{{#<Method: TaskWrapMacroTest::Create.b>=>{:id=>\"add_another_1\"}, #<Method: TaskWrapMacroTest::Create.a>=>{:id=>\"a\"}}} }
-    it { Create.debug.inspect.must_equal RUBY_PLATFORM == "java" ? jvm_string : rvm_string }
+    let(:rvm_string) { %{[[#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.a>, {:id=>\"a\"}], [#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.b>, {:id=>\"add_another_1\"}]]} }
+    let(:jvm_string) { %{[[#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.a>, {:id=>\"a\"}], [#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.b>, {:id=>\"add_another_1\"}]]} }
+    it { Create.debug.to_h.sort_by{ |a,b| a.inspect  }.inspect.must_equal RUBY_PLATFORM == "java" ? jvm_string : rvm_string }
   end
 end
