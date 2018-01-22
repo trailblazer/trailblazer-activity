@@ -6,11 +6,11 @@ class Trailblazer::Activity < Module
     end
 
     def debug # TODO: TEST ME
-      @debug
+      decompose[:debug]
     end
 
     def outputs
-      @outputs
+      decompose[:outputs]
     end
   end
 end

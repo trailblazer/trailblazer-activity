@@ -10,9 +10,7 @@ module Trailblazer
     attr_reader :initial_state
 
     def initialize(implementation, options)
-      state = BuildState.build_state_for( implementation.config, options)
-
-      builder, adds, circuit, outputs, options = *state
+      builder, adds, circuit, outputs, options = BuildState.build_state_for( implementation.config, options)
 
       state = Hamster::Hash.new(
         builder: builder,        # immutable
@@ -37,7 +35,7 @@ module Trailblazer
 
     module Inspect
       def inspect
-        "#<Trailblazer::Activity: {#{name || @options[:name]}}>"
+        "#<Trailblazer::Activity: {#{name || self[:options][:name]}}>"
       end
     end
 
@@ -48,6 +46,10 @@ module Trailblazer
       extend Forwardable
       def_delegators :@builder, :Path
       def_delegators DSL::Helper, :Output, :End
+
+      def Path(*args, &block)
+        self[:builder].Path(*args, &block)
+      end
     end
 
     # By including those modules, we create instance methods.

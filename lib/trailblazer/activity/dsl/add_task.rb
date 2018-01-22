@@ -11,7 +11,6 @@ class Trailblazer::Activity < Module
         self[:adds] = adds
         @state = @state.put(:circuit, circuit)
         @state = @state.put(:outputs, outputs)
-        @state = @state.put(:options, options)
 
 
         task, local_options = options

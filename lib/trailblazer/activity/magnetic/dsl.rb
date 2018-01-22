@@ -61,7 +61,7 @@ module Trailblazer
           elsif task.is_a?(Proc)
             start_color, activity = task.(block)
 
-            adds = activity.instance_variable_get(:@adds)
+            adds = activity.decompose[:adds]
 
             [
               Polarization.new( output: output, color: start_color ),

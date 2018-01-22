@@ -32,7 +32,7 @@ class ActivityTest < Minitest::Spec
       my_simple_normalizer = ->(task, options){ [ task, { plus_poles: Trailblazer::Activity::Magnetic::Builder::Path.default_plus_poles }, {}, {} ] }
 
       activity = Module.new do
-        extend Activity[ Activity::Path, normalizer: my_simple_normalizer ]
+        extend Trailblazer::Activity::Path( normalizer: my_simple_normalizer )
 
         task T.def_task(:a)
         task T.def_task(:b), id: "b"
@@ -122,11 +122,11 @@ class ActivityTest < Minitest::Spec
 
   it "empty Activity" do
     activity = Module.new do
-      extend Activity[]
+      extend Trailblazer::Activity::Path()
     end
 
     # puts Cct(activity.instance_variable_get(:@process))
-    Cct(activity.decompose[0]).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => #<End:success/:success>
 #<End:success/:success>
@@ -145,7 +145,7 @@ class ActivityTest < Minitest::Spec
 
   let(:activity) do
     activity = Module.new do
-      extend Activity[Activity::Path, name: "Test::Create", task_builder: ->(task, *){task} ]
+      extend Trailblazer::Activity::Path( name: "Test::Create", task_builder: ->(task, *){task} )
 
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
@@ -164,7 +164,7 @@ class ActivityTest < Minitest::Spec
   end
 
   it do
-    Cct(activity.decompose[0]).must_equal %{
+    Cct(activity.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
@@ -193,7 +193,7 @@ ActivityTest::L
 }
 
 
-    Ends(activity.decompose[0]).must_equal %{[#<ActivityTest::B:resume_for_correct/:resume_1>,#<End:success/:success>,#<End:track_0./:invalid_result>]}
+    Ends(activity.decompose[:circuit]).must_equal %{[#<ActivityTest::B:resume_for_correct/:resume_1>,#<End:success/:success>,#<End:track_0./:invalid_result>]}
 
     # A -> B -> End.suspend
     options, flow_options, circuit_options = {id: 1, a_return: Activity::Left, b_return: Activity::Right }, {}, {}
@@ -233,7 +233,7 @@ ActivityTest::L
   describe "::task with macro style" do
     it "accepts sequence_options" do
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Trailblazer::Activity::Path()
 
         task task: A, id: "a"
         task task: B, before: "a", id: "b"
@@ -251,6 +251,11 @@ ActivityTest::A
 
   describe "#inspect" do
     it "shows name of anonymous module" do
+      activity = Module.new do
+        extend Trailblazer::Activity::Path( name: "Test::Create" )
+        task T.def_task(:a)
+      end
+
       activity.inspect.must_equal %{#<Trailblazer::Activity: {Test::Create}>}
     end
   end
@@ -265,18 +270,18 @@ ActivityTest::A
   describe "#merge" do
     it "what" do
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Trailblazer::Activity::Path()
         task task: A
         task task: B
       end
 
       merging = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Trailblazer::Activity::Path()
         task task: C
         merge! activity
       end
 
-      Cct(merging.decompose[0]).must_equal %{
+      Cct(merging.decompose[:circuit]).must_equal %{
 #<Start:default/nil>
  {Trailblazer::Activity::Right} => ActivityTest::C
 ActivityTest::C
@@ -295,7 +300,7 @@ ActivityTest::B
   describe "internal state" do
     it "a blank Activity exposes frozen objects, only" do
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Trailblazer::Activity::Path()
       end
 
       process, outputs, adds, builder = activity.decompose
@@ -308,7 +313,7 @@ ActivityTest::B
 
     it "exposes frozen objects, only" do
       activity = Module.new do
-        extend Activity[ Activity::Path ]
+        extend Trailblazer::Activity::Path()
         task A
       end
 

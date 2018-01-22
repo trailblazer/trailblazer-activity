@@ -34,7 +34,7 @@ module Trailblazer
         # Build an anonymous class which will be where the block is evaluated in.
         # We use the same normalizer here, so DSL calls in the inner block have the same behavior.
         path = Module.new do
-          extend Activity[ Activity::Path, options.merge( normalizer: normalizer ) ]
+          extend Activity::Path( options.merge( normalizer: normalizer ) )
         end
 
         # this block is called in DSL::ProcessTuples. This could be improved somehow.
