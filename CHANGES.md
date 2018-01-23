@@ -1,3 +1,7 @@
+# 0.4.0
+
+* We now use the "Module Subclass" pattern, and activities aren't classes anymore but modules.
+
 # 0.3.2
 
 * In the `TaskWrap`, rename `:result_direction` to `:return_signal` and `:result_args` to `:return_args`,
