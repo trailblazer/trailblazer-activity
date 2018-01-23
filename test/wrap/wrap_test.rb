@@ -18,7 +18,6 @@ class WrapTest < Minitest::Spec
     it "executes activity" do
       activity = Module.new do
         extend Activity::Path()
-        include Activity::TaskWrap
 
         task task: T.def_task(:a)#, extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
       end
@@ -50,7 +49,6 @@ class WrapTest < Minitest::Spec
 
       activity = Module.new do
         extend Activity::Path()
-        include Activity::TaskWrap
 
         task task: T.def_task(:a), extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
       end

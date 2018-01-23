@@ -18,30 +18,27 @@ class Trailblazer::Activity < Module
       end
     end
 
-    def self.arguments_for_call(activity, (options, flow_options), **circuit_args)
-      circuit_args = circuit_args.merge(
+    # Compute runtime arguments necessary to execute a taskWrap per task of the activity.
+    def self.arguments_for_call(activity, (options, flow_options), **circuit_options)
+      circuit_options = circuit_options.merge(
         runner:       TaskWrap::Runner,
-        wrap_runtime: circuit_args[:wrap_runtime] || {}, # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
-        wrap_static:  activity[:static_task_wrap],
+        wrap_runtime: circuit_options[:wrap_runtime] || {},
+        wrap_static:  activity[:wrap_static] || {},
       )
 
-      return activity, [ options, flow_options ], circuit_args
+      return activity, [ options, flow_options ], circuit_options
     end
 
     module NonStatic
-      def self.arguments_for_call(activity, (options, flow_options), **circuit_args)
-        circuit_args = circuit_args.merge(
+      def self.arguments_for_call(activity, (options, flow_options), **circuit_options)
+        circuit_options = circuit_options.merge(
           runner:       TaskWrap::Runner,
-          wrap_runtime: circuit_args[:wrap_runtime] || {}, # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
+          wrap_runtime: circuit_options[:wrap_runtime] || {}, # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
           wrap_static:  ::Hash.new(TaskWrap.initial_activity), # add a default static wrap.
         )
 
-        return activity, [ options, flow_options ], circuit_args
+        return activity, [ options, flow_options ], circuit_options
       end
-    end
-
-    def self.included(includer) # TODO: make this unnecessary.
-      includer[:static_task_wrap] = ::Hash.new(TaskWrap.initial_activity)
     end
 
     # better: MyClass < Activity(TaskWrap, ...)

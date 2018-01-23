@@ -1,5 +1,4 @@
 require "trailblazer/activity/version"
-require "hamster"
 
 module Trailblazer
   def self.Activity(implementation=Activity::Path, options={})
@@ -12,14 +11,13 @@ module Trailblazer
     def initialize(implementation, options)
       builder, adds, circuit, outputs, options = BuildState.build_state_for( implementation.config, options)
 
-      state = Hamster::Hash.new(
+      state = {
         builder: builder,        # immutable
         options: options.freeze, # immutable
         adds:    adds.freeze,
         circuit: circuit.freeze,
         outputs: outputs.freeze,
-        debug:   Hamster::Hash.new,
-      )
+      }
 
       @initial_state = state
 
@@ -60,19 +58,27 @@ module Trailblazer
     module PublicAPI
       def []=(*args)
         if args.size == 2
-          return @state = @state.put(*args)
+          key, value = *args
+
+          @state = @state.merge(key => value)
+        else
+          directive, key, value = *args
+
+          @state = @state.merge( directive => {}.freeze ) unless @state.key?(directive)
+
+          directive_hash = @state[directive].merge(key => value)
+          @state = @state.merge( directive => directive_hash.freeze )
         end
 
-        # @state = @state.put()
-
-        # TODO: how do I do this?
-        @state = @state.merge( args[0] => @state[args[0]].merge( args[1] => args[2] ) )
-
-        @state
+        @state.freeze
       end
 
-      def [](directive)
-        @state[directive]
+      def [](*args)
+        directive, key = *args
+
+        return @state[directive] if args.size == 1
+        return @state[directive][key] if @state.key?(directive)
+        nil
       end
 
       # include Accessor

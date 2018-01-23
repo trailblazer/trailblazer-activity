@@ -22,7 +22,6 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "hirb"
   spec.add_dependency "trailblazer-context"
-  spec.add_dependency "hamster"
 
   spec.add_development_dependency "bundler", "~> 1.14"
   spec.add_development_dependency "rake", "~> 10.0"
