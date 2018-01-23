@@ -1,8 +1,8 @@
 # Activity
 
-The `activity` gem brings a light-weight DSL to define business processes, and the runtime logic to run those activities. A process is a set of arbitrary pieces of logic you define, chained together and put into a meaningful context by an activity.
+The `activity` gem brings a light-weight DSL to define business processes, and the runtime logic to run those activities.
 
-Activity lets you focus on the implementation of steps while Trailblazer takes care of the control flow.
+A process is a set of arbitrary pieces of logic you define, chained together and put into a meaningful context by an activity. Activity lets you focus on the implementation of steps while Trailblazer takes care of the control flow.
 
 Please find the [full documentation on the Trailblazer website](http://trailblazer.to/2.1/activity). [Note that the docs are WIP.]
 
@@ -22,6 +22,7 @@ module Memo::Update
   def validate(ctx, params:, **)
     return true if params[:body].is_a?(String) && params[:body].size > 10
     ctx[:errors] = "body not long enough"
+    false
   end
 
   def save(ctx, model:, params:, **)
@@ -55,7 +56,7 @@ signal, (ctx, *) = Update.( [ctx, {}] )
 pp ctx #=>
 {:id=>1,
  :params=>{:body=>"Awesome!"},
- :model=>#<struct Memo body=nil>,
+ :model=>#<Memo body=nil>,
  :errors=>"body not long enough"}
 
 pp signal #=> #<Trailblazer::Activity::End:0x001958
