@@ -2,6 +2,7 @@ module Trailblazer
   module Activity::TaskWrap
     # This is instantiated via the DSL, and passed to the :extension API,
     # allowing to add steps to the Activity's static_wrap.
+    # Compile-time function
     class Merge
       def initialize(extension_plan)
         @extension_plan = extension_plan

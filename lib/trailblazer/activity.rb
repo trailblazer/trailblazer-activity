@@ -11,15 +11,13 @@ module Trailblazer
     def initialize(implementation, options)
       builder, adds, circuit, outputs, options = BuildState.build_state_for( implementation.config, options)
 
-      state = {
-        builder: builder,        # immutable
-        options: options.freeze, # immutable
-        adds:    adds.freeze,
-        circuit: circuit.freeze,
-        outputs: outputs.freeze,
-      }
-
-      @initial_state = state
+      @initial_state = State::Config.new(
+        builder: builder,
+        options: options,
+        adds:    adds,
+        circuit: circuit,
+        outputs: outputs,
+      )
 
       include *options[:extend] # include the DSL methods.
       include PublicAPI
@@ -51,37 +49,22 @@ module Trailblazer
       end
     end
 
+    module Accessor
+      def []=(*args)
+        @state = @state.send(:[]=, *args)
+      end
+
+      extend Forwardable
+      def_delegators :@state, :[]
+    end
+
     # FIXME: still to be decided
     # By including those modules, we create instance methods.
     # Later, this module is `extended` in Path, Railway and FastTrack, and
     # imports the DSL methods as class methods.
     module PublicAPI
-      def []=(*args)
-        if args.size == 2
-          key, value = *args
+      include Accessor
 
-          @state = @state.merge(key => value)
-        else
-          directive, key, value = *args
-
-          @state = @state.merge( directive => {}.freeze ) unless @state.key?(directive)
-
-          directive_hash = @state[directive].merge(key => value)
-          @state = @state.merge( directive => directive_hash.freeze )
-        end
-
-        @state.freeze
-      end
-
-      def [](*args)
-        directive, key = *args
-
-        return @state[directive] if args.size == 1
-        return @state[directive][key] if @state.key?(directive)
-        nil
-      end
-
-      # include Accessor
     require "trailblazer/activity/dsl/add_task"
       include DSL::AddTask
 
@@ -106,6 +89,7 @@ end
 
 require "trailblazer/circuit"
 require "trailblazer/activity/structures"
+require "trailblazer/activity/config"
 
 require "trailblazer/activity/implementation/build_state"
 require "trailblazer/activity/implementation/interface"
