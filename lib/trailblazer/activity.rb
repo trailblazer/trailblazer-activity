@@ -11,7 +11,7 @@ module Trailblazer
     def initialize(implementation, options)
       builder, adds, circuit, outputs, options = BuildState.build_state_for( implementation.config, options)
 
-      @initial_state = State::Config.new(
+      @initial_state = State::Config.build(
         builder: builder,
         options: options,
         adds:    adds,
@@ -51,11 +51,12 @@ module Trailblazer
 
     module Accessor
       def []=(*args)
-        @state = @state.send(:[]=, *args)
+        @state = State::Config.send(:[]=, @state, *args)
       end
 
-      extend Forwardable
-      def_delegators :@state, :[]
+      def [](*args)
+        State::Config.send(:[], @state, *args)
+      end
     end
 
     # FIXME: still to be decided
