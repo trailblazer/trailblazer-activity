@@ -55,7 +55,7 @@ module Trailblazer
       end
 
       def [](*args)
-        State::Config.send(:[], @state, *args)
+        State::Config[@state, *args]
       end
     end
 
