@@ -1,3 +1,7 @@
+# 0.4.2
+
+* `End` is not a `Struct` so we can maintain more state, and are immutable.
+
 # 0.4.1
 
 * Remove `decompose` and replace it with a better `to_h`.
