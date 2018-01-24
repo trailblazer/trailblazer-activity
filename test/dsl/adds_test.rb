@@ -90,11 +90,9 @@ class AddsTest < Minitest::Spec
   end
 
   def start
-    return %{#<Trailblazer::Activity::Start: @name=:default, @options={}>} if RUBY_PLATFORM == "java"
+    # return %{#<struct Trailblazer::Activity::Start semantic=:default>} if RUBY_PLATFORM == "java"
 
-    %{#<Trailblazer::Activity::Start:
-     @name=:default,
-     @options={}>}
+    %{#<struct Trailblazer::Activity::Start semantic=:default>}
   end
 
   it "Path.InitialAdds" do
@@ -113,11 +111,7 @@ class AddsTest < Minitest::Spec
    {:group=>:start}]],
  [:add,
   ["End.green",
-   [[:green],
-    #<Trailblazer::Activity::End:
-     @name=:green,
-     @options={:semantic=>:success}>,
-    []],
+   [[:green], #<struct Trailblazer::Activity::End semantic=:success>, []],
    {:group=>:end}]]]
 }
   end
@@ -138,19 +132,11 @@ class AddsTest < Minitest::Spec
    {:group=>:start}]],
  [:add,
   ["End.green",
-   [[:green],
-    #<Trailblazer::Activity::End:
-     @name=:green,
-     @options={:semantic=>:success}>,
-    []],
+   [[:green], #<struct Trailblazer::Activity::End semantic=:success>, []],
    {:group=>:end}]],
  [:add,
   ["End.failure",
-   [[:failure],
-    #<Trailblazer::Activity::End:
-     @name=:failure,
-     @options={:semantic=>:failure}>,
-    []],
+   [[:failure], #<struct Trailblazer::Activity::End semantic=:failure>, []],
    {:group=>:end}]]]
 }
   end
@@ -171,34 +157,22 @@ class AddsTest < Minitest::Spec
    {:group=>:start}]],
  [:add,
   ["End.green",
-   [[:green],
-    #<Trailblazer::Activity::End:
-     @name=:green,
-     @options={:semantic=>:success}>,
-    []],
+   [[:green], #<struct Trailblazer::Activity::End semantic=:success>, []],
    {:group=>:end}]],
  [:add,
   ["End.failure",
-   [[:failure],
-    #<Trailblazer::Activity::End:
-     @name=:failure,
-     @options={:semantic=>:failure}>,
-    []],
+   [[:failure], #<struct Trailblazer::Activity::End semantic=:failure>, []],
    {:group=>:end}]],
  [:add,
   ["End.pass_fast",
    [[:pass_fast],
-    #<Trailblazer::Activity::End:
-     @name="pass_fast",
-     @options={:semantic=>:pass_fast}>,
+    #<struct Trailblazer::Activity::End semantic=:pass_fast>,
     []],
    {:group=>:end}]],
  [:add,
   ["End.fail_fast",
    [[:fail_fast],
-    #<Trailblazer::Activity::End:
-     @name="fail_fast",
-     @options={:semantic=>:fail_fast}>,
+    #<struct Trailblazer::Activity::End semantic=:fail_fast>,
     []],
    {:group=>:end}]]]
 }

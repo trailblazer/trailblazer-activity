@@ -24,11 +24,11 @@ module Trailblazer
         Activity.Output(signal, semantic)
       end
 
-      def End(name, semantic)
-        Activity.End(name, semantic)
+      def End(semantic)
+        Activity.End(semantic)
       end
 
-      def Path(normalizer, track_color: "track_#{rand}", end_semantic: :success, **options)
+      def Path(normalizer, track_color: "track_#{rand}", end_semantic: track_color, **options)
         options    = options.merge(track_color: track_color, end_semantic: end_semantic)
 
         # Build an anonymous class which will be where the block is evaluated in.

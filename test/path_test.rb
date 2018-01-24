@@ -10,13 +10,13 @@ class PathTest < Minitest::Spec
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
     end
   end
@@ -31,17 +31,17 @@ class PathTest < Minitest::Spec
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Right} => #<End:track_9/:success>
-#<End:track_9/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
 
     SEQ(activity.decompose[:adds]).must_equal %{
-[] ==> #<Start:default/nil>
+[] ==> #<Start/:default>
  (success)/Right ==> :track_9
 [:track_9] ==> #<Method: #<Module:0x>.a>
  (success)/Right ==> :track_9
@@ -49,7 +49,7 @@ class PathTest < Minitest::Spec
 [:track_9] ==> #<Method: #<Module:0x>.b>
  (success)/Right ==> :track_9
  (failure)/Left ==> nil
-[:track_9] ==> #<End:track_9/:success>
+[:track_9] ==> #<End/:success>
  []
 }
   end
@@ -63,13 +63,13 @@ class PathTest < Minitest::Spec
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Right} => #<End:track_9/:success>
-#<End:track_9/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
   end
 
@@ -78,23 +78,23 @@ class PathTest < Minitest::Spec
       extend Activity::Path( track_color: :"track_9" )
 
       task task: T.def_task(:a)
-      task task: T.def_task(:b), id: "//b", Output(Activity::Right, :success) => End("End.invalid_result", :invalid_result)
+      task task: T.def_task(:b), id: "//b", Output(Activity::Right, :success) => End(:invalid_result)
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Right} => #<End:End.invalid_result/:invalid_result>
-#<End:track_9/:success>
+ {Trailblazer::Activity::Right} => #<End/:invalid_result>
+#<End/:success>
 
-#<End:End.invalid_result/:invalid_result>
+#<End/:invalid_result>
 }
 
     SEQ(activity.decompose[:adds]).must_equal %{
-[] ==> #<Start:default/nil>
+[] ==> #<Start/:default>
  (success)/Right ==> :track_9
 [:track_9] ==> #<Method: #<Module:0x>.a>
  (success)/Right ==> :track_9
@@ -102,9 +102,9 @@ class PathTest < Minitest::Spec
 [:track_9] ==> #<Method: #<Module:0x>.b>
  (success)/Right ==> "//b-Trailblazer::Activity::Right"
  (failure)/Left ==> nil
-[:track_9] ==> #<End:track_9/:success>
+[:track_9] ==> #<End/:success>
  []
-["//b-Trailblazer::Activity::Right"] ==> #<End:End.invalid_result/:invalid_result>
+["//b-Trailblazer::Activity::Right"] ==> #<End/:invalid_result>
  []
 }
   end
@@ -121,7 +121,7 @@ class PathTest < Minitest::Spec
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
@@ -132,8 +132,8 @@ class PathTest < Minitest::Spec
 #<Method: #<Module:0x>.d>
 
 #<Method: #<Module:0x>.e>
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
   end
 
@@ -149,14 +149,14 @@ class PathTest < Minitest::Spec
 
       task T.def_task(:a)
       task T.def_task(:b), Output(:failure) => Path(end_semantic: :invalid) do
-        task T.def_task(:c), Output(:failure) => End(:left, :left)
+        task T.def_task(:c), Output(:failure) => End(:left)
         task T.def_task(:k)#, Output(:success) => End("End.invalid_result", :invalid_result)
       end
       task T.def_task(:d) # no :id.
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
@@ -165,16 +165,16 @@ class PathTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.k>
- {Trailblazer::Activity::Left} => #<End:left/:left>
+ {Trailblazer::Activity::Left} => #<End/:left>
 #<Method: #<Module:0x>.k>
- {Trailblazer::Activity::Right} => #<End:track_0./:invalid>
+ {Trailblazer::Activity::Right} => #<End/:invalid>
 #<Method: #<Module:0x>.d>
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 
-#<End:track_0./:invalid>
+#<End/:invalid>
 
-#<End:left/:left>
+#<End/:left>
 }
   end
 
@@ -190,13 +190,13 @@ class PathTest < Minitest::Spec
       end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
    {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
   }
     end
   end
@@ -212,15 +212,15 @@ class PathTest < Minitest::Spec
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.c>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
     end
   end
@@ -235,7 +235,7 @@ class PathTest < Minitest::Spec
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => PathTest::MyEnd
@@ -258,11 +258,11 @@ PathTest::MyEnd
       end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
     end
   end
@@ -280,24 +280,24 @@ PathTest::MyEnd
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
- {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.d>
- {Trailblazer::Activity::Right} => #<End:track_0./:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/"track_0.">
+#<End/:success>
 
-#<End:track_0./:success>
+#<End/"track_0.">
 }
 
       SEQ(activity.decompose[:adds]).must_equal %{
-[] ==> #<Start:default/nil>
+[] ==> #<Start/:default>
  (success)/Right ==> :success
 [:success] ==> #<Method: #<Module:0x>.a>
  (success)/Right ==> :success
@@ -311,9 +311,9 @@ PathTest::MyEnd
 ["track_0."] ==> #<Method: #<Module:0x>.d>
  (success)/Right ==> "track_0."
  (failure)/Left ==> nil
-[:success] ==> #<End:success/:success>
+[:success] ==> #<End/:success>
  []
-["track_0."] ==> #<End:track_0./:success>
+["track_0."] ==> #<End/"track_0.">
  []
 }
     end
@@ -330,20 +330,20 @@ PathTest::MyEnd
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
- {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.d>
- {Trailblazer::Activity::Right} => #<End:track_0./:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/"track_0.">
+#<End/:success>
 
-#<End:track_0./:success>
+#<End/"track_0.">
 }
     end
 
@@ -358,18 +358,18 @@ PathTest::MyEnd
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.c>
- {Trailblazer::Activity::Right} => #<End:track_0./:invalid>
+ {Trailblazer::Activity::Right} => #<End/:invalid>
 #<Method: #<Module:0x>.d>
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 
-#<End:track_0./:invalid>
+#<End/:invalid>
 }
     end
 
@@ -377,7 +377,7 @@ PathTest::MyEnd
       activity = Module.new do
         extend Activity::Path()
 
-        task task: T.def_task(:a), id: "extract",  Output(Activity::Left, :failure) => End("End.extract.key_not_found", :key_not_found)
+        task task: T.def_task(:a), id: "extract",  Output(Activity::Left, :failure) => End(:key_not_found)
         task task: T.def_task(:b), id: "validate", Output(Activity::Left, :failure) => Path() do
           task task: T.def_task(:c)
           task task: T.def_task(:d), Output(:success) => "extract" # go back to J{extract}.
@@ -386,11 +386,11 @@ PathTest::MyEnd
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
+ {Trailblazer::Activity::Left} => #<End/:key_not_found>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.e>
@@ -399,12 +399,12 @@ PathTest::MyEnd
 #<Method: #<Module:0x>.d>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.e>
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 
-#<End:End.extract.key_not_found/:key_not_found>
+#<End/:key_not_found>
 
-#<End:track_0./:success>
+#<End/"track_0.">
 }
     end
   end
@@ -414,17 +414,17 @@ PathTest::MyEnd
       activity = Module.new do
         extend Activity::Path( track_color: :"track_9" )
 
-        task task: T.def_task(:a), Output(Activity::Right, :success) => End("End.invalid_result", :invalid_result)
+        task task: T.def_task(:a), Output(Activity::Right, :success) => End(:invalid_result)
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Right} => #<End:End.invalid_result/:invalid_result>
-#<End:track_9/:success>
+ {Trailblazer::Activity::Right} => #<End/:invalid_result>
+#<End/:success>
 
-#<End:End.invalid_result/:invalid_result>
+#<End/:invalid_result>
 }
     end
 
@@ -432,17 +432,17 @@ PathTest::MyEnd
       activity = Module.new do
         extend Activity::Path( track_color: :"track_9" )
 
-        task task: T.def_task(:a), Output(:success) => End("End.invalid_result", :invalid_result)
+        task task: T.def_task(:a), Output(:success) => End(:invalid_result)
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Right} => #<End:End.invalid_result/:invalid_result>
-#<End:track_9/:success>
+ {Trailblazer::Activity::Right} => #<End/:invalid_result>
+#<End/:success>
 
-#<End:End.invalid_result/:invalid_result>
+#<End/:invalid_result>
 }
     end
 
@@ -450,7 +450,7 @@ PathTest::MyEnd
       activity = Module.new do
         extend Activity::Path()
 
-        task task: T.def_task(:a), Output(:trigger) => End("End.something_triggered", :something_triggered),
+        task task: T.def_task(:a), Output(:trigger) => End(:something_triggered),
           plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
                         Activity.Output("trigger!",      :trigger) => nil,
                         Activity.Output(Activity::Right, :success) => nil,
@@ -458,38 +458,38 @@ PathTest::MyEnd
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Right} => #<End:success/:success>
- {trigger!} => #<End:End.something_triggered/:something_triggered>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {trigger!} => #<End/:something_triggered>
+#<End/:success>
 
-#<End:End.something_triggered/:something_triggered>
+#<End/:something_triggered>
 }
     end
 
     it "can build fake Railway using Output(Left)s" do
       activity = Module.new do
         extend Activity::Path( track_color: :"track_9" )
-        task task: T.def_task(:a), Output(Activity::Left, :failure) => End("End.extract.key_not_found", :key_not_found)
-        task task: T.def_task(:b), Output(Activity::Left, :failure) => End("End.invalid", :invalid)
+        task task: T.def_task(:a), Output(Activity::Left, :failure) => End(:key_not_found)
+        task task: T.def_task(:b), Output(Activity::Left, :failure) => End(:invalid)
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
+ {Trailblazer::Activity::Left} => #<End/:key_not_found>
 #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Right} => #<End:track_9/:success>
- {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
-#<End:track_9/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:key_not_found>
+#<End/:success>
 
-#<End:End.extract.key_not_found/:key_not_found>
+#<End/:key_not_found>
 
-#<End:End.invalid/:invalid>
+#<End/:invalid>
 }
     end
   end

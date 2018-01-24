@@ -20,24 +20,24 @@ class ActivityBuildTest < Minitest::Spec
   it do
     activity = Module.new do
       extend Activity::Path( track_color: :"track_9" )
-      task task: J, id: "extract",  Output(Left, :failure) => End("End.extract.key_not_found", :key_not_found)
-      task task: K, id: "validate", Output(Left, :failure) => End("End.invalid", :invalid)
+      task task: J, id: "extract",  Output(Left, :failure) => End(:key_not_found)
+      task task: K, id: "validate", Output(Left, :failure) => End(:invalid)
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
  {Trailblazer::Activity::Right} => ActivityBuildTest::K
- {Trailblazer::Activity::Left} => #<End:End.extract.key_not_found/:key_not_found>
+ {Trailblazer::Activity::Left} => #<End/:key_not_found>
 ActivityBuildTest::K
- {Trailblazer::Activity::Right} => #<End:track_9/:success>
- {Trailblazer::Activity::Left} => #<End:End.invalid/:invalid>
-#<End:track_9/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:invalid>
+#<End/:success>
 
-#<End:End.extract.key_not_found/:key_not_found>
+#<End/:key_not_found>
 
-#<End:End.invalid/:invalid>
+#<End/:invalid>
 }
   end
 
@@ -47,7 +47,7 @@ ActivityBuildTest::K
       extend Activity::Path( track_color: :"track_9" )
 
       task task: J,
-        Output(Left, :trigger) => End("End.trigger", :triggered),
+        Output(Left, :trigger) => End(:triggered),
         # this comes from the Operation DSL since it knows {Activity}J
         plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
           Activity.Output(Activity::Left,  :trigger) => nil,
@@ -57,16 +57,16 @@ ActivityBuildTest::K
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
  {Trailblazer::Activity::Right} => ActivityBuildTest::K
- {Trailblazer::Activity::Left} => #<End:End.trigger/:triggered>
+ {Trailblazer::Activity::Left} => #<End/:triggered>
 ActivityBuildTest::K
- {Trailblazer::Activity::Right} => #<End:track_9/:success>
-#<End:track_9/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 
-#<End:End.trigger/:triggered>
+#<End/:triggered>
 }
   end
 
@@ -77,7 +77,7 @@ ActivityBuildTest::K
         extend Activity::Path()
 
         task J,
-          Output(:does_absolutely_not_exist) => End("End.trigger", :triggered)
+          Output(:does_absolutely_not_exist) => End(:triggered)
       end
     end
 
@@ -93,13 +93,13 @@ ActivityBuildTest::K
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
- {Trailblazer::Activity::Right} => #<End:track_9/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
 ActivityBuildTest::K
  {Trailblazer::Activity::Right} => ActivityBuildTest::K
-#<End:track_9/:success>
+#<End/:success>
 }
   end
 
@@ -126,7 +126,7 @@ ActivityBuildTest::K
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
  {Trailblazer::Activity::Left} => ActivityBuildTest::B
@@ -141,17 +141,17 @@ ActivityBuildTest::I
 ActivityBuildTest::J
  {Trailblazer::Activity::Right} => ActivityBuildTest::K
 ActivityBuildTest::K
- {Trailblazer::Activity::Right} => #<End:track_0./:invalid_result>
+ {Trailblazer::Activity::Right} => #<End/:invalid_result>
 ActivityBuildTest::L
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 
-#<End:track_0./:success>
+#<End/"track_0.">
 
-#<End:track_0./:invalid_result>
+#<End/:invalid_result>
 }
 
-    Ends(activity.decompose[:circuit]).must_equal %{[#<End:success/:success>,#<End:track_0./:invalid_result>]}
+    Ends(activity.decompose[:circuit]).must_equal %{[#<End/:success>,#<End/:invalid_result>]}
   end
 
   it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do # FIXME: what were we (or I, haha) testing in here?
@@ -166,14 +166,14 @@ ActivityBuildTest::L
       task task: I, id: :process_result, Output(Left, :failure) => Path(end_semantic: :invalid_resulto) do
         task task: J, id: "report_invalid_result"
         # task task: K, id: "log_invalid_result", Output(:success) => color
-        task task: K, id: "log_invalid_result", Output(:success) => End("End.invalid_result", :invalid_result)
+        task task: K, id: "log_invalid_result", Output(:success) => End(:invalid_result)
       end
 
       task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
  {Trailblazer::Activity::Left} => ActivityBuildTest::B
@@ -189,14 +189,14 @@ ActivityBuildTest::I
 ActivityBuildTest::J
  {Trailblazer::Activity::Right} => ActivityBuildTest::K
 ActivityBuildTest::K
- {Trailblazer::Activity::Right} => #<End:End.invalid_result/:invalid_result>
+ {Trailblazer::Activity::Right} => #<End/:invalid_result>
 ActivityBuildTest::L
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 
-#<End:track_0./:invalid_resulto>
+#<End/:invalid_resulto>
 
-#<End:End.invalid_result/:invalid_result>
+#<End/:invalid_result>
 }
   end
 end

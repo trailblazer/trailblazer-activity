@@ -3,13 +3,13 @@ require "test_helper"
 class FastTrackTest < Minitest::Spec
   def assert_main(activity, expected)
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>#{expected}#<End:success/:success>
+#<Start/:default>#{expected}#<End/:success>
 
-#<End:failure/:failure>
+#<End/:failure>
 
-#<End:pass_fast/:pass_fast>
+#<End/:pass_fast>
 
-#<End:fail_fast/:fail_fast>
+#<End/:fail_fast>
 }
   end
 
@@ -25,27 +25,27 @@ class FastTrackTest < Minitest::Spec
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Left} => #<End:fail_fast/:fail_fast>
+ {Trailblazer::Activity::Left} => #<End/:fail_fast>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.c>
- {Trailblazer::Activity::Right} => #<End:black/:failure>
- {Trailblazer::Activity::Left} => #<End:black/:failure>
+ {Trailblazer::Activity::Right} => #<End/:black>
+ {Trailblazer::Activity::Left} => #<End/:black>
 #<Method: #<Module:0x>.d>
- {Trailblazer::Activity::Right} => #<End:pink/:success>
- {Trailblazer::Activity::Left} => #<End:pink/:success>
-#<End:pink/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
+#<End/:success>
 
-#<End:black/:failure>
+#<End/:black>
 
-#<End:pass_fast/:pass_fast>
+#<End/:pass_fast>
 
-#<End:fail_fast/:fail_fast>
+#<End/:fail_fast>
 }
     end
   end
@@ -61,8 +61,8 @@ class FastTrackTest < Minitest::Spec
       assert_main activity, %{
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
- {Trailblazer::Activity::Right} => #<End:pass_fast/:pass_fast>
+ {Trailblazer::Activity::Left} => #<End/:failure>
+ {Trailblazer::Activity::Right} => #<End/:pass_fast>
 }
     end
   end
@@ -78,8 +78,8 @@ class FastTrackTest < Minitest::Spec
       assert_main activity, %{
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Right} => #<End:success/:success>
- {Trailblazer::Activity::Left} => #<End:fail_fast/:fail_fast>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:fail_fast>
 }
     end
   end
@@ -95,10 +95,10 @@ class FastTrackTest < Minitest::Spec
       assert_main activity, %{
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Right} => #<End:success/:success>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
- {Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast} => #<End:pass_fast/:pass_fast>
- {Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast} => #<End:fail_fast/:fail_fast>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:failure>
+ {Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast} => #<End/:pass_fast>
+ {Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast} => #<End/:fail_fast>
 }
     end
 
@@ -113,10 +113,10 @@ class FastTrackTest < Minitest::Spec
       assert_main activity, %{
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Signal} => #<End:success/:success>
- {Another} => #<End:failure/:failure>
- {Pff} => #<End:pass_fast/:pass_fast>
- {Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast} => #<End:fail_fast/:fail_fast>
+ {Signal} => #<End/:success>
+ {Another} => #<End/:failure>
+ {Pff} => #<End/:pass_fast>
+ {Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast} => #<End/:fail_fast>
 }
     end
   end
@@ -133,8 +133,8 @@ class FastTrackTest < Minitest::Spec
       assert_main activity, %{
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Another} => #<End:failure/:failure>
- {Signal} => #<End:pass_fast/:pass_fast>
+ {Another} => #<End/:failure>
+ {Signal} => #<End/:pass_fast>
 }
     end
 
@@ -149,9 +149,9 @@ class FastTrackTest < Minitest::Spec
       assert_main activity, %{
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Another} => #<End:failure/:failure>
- {Signal} => #<End:pass_fast/:pass_fast>
- {Pff} => #<End:pass_fast/:pass_fast>
+ {Another} => #<End/:failure>
+ {Signal} => #<End/:pass_fast>
+ {Pff} => #<End/:pass_fast>
 }
     end
 
@@ -166,9 +166,9 @@ class FastTrackTest < Minitest::Spec
       assert_main activity, %{
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Signal} => #<End:success/:success>
- {Another} => #<End:failure/:failure>
- {Pff} => #<End:pass_fast/:pass_fast>
+ {Signal} => #<End/:success>
+ {Another} => #<End/:failure>
+ {Pff} => #<End/:pass_fast>
 }
     end
 
@@ -181,23 +181,23 @@ class FastTrackTest < Minitest::Spec
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
- {Signal} => #<End:success/:success>
- {Another} => #<End:failed/:failed>
- {Exception!} => #<End:exceptioned/:exceptioned>
-#<End:success/:success>
+ {Signal} => #<End/:success>
+ {Another} => #<End/:failed>
+ {Exception!} => #<End/:exceptioned>
+#<End/:success>
 
-#<End:failure/:failure>
+#<End/:failure>
 
-#<End:pass_fast/:pass_fast>
+#<End/:pass_fast>
 
-#<End:fail_fast/:fail_fast>
+#<End/:fail_fast>
 
-#<End:failed/:failed>
+#<End/:failed>
 
-#<End:exceptioned/:exceptioned>
+#<End/:exceptioned>
 }
     end
   end
@@ -210,10 +210,10 @@ class FastTrackTest < Minitest::Spec
       end
 
       assert_main activity, %{
- {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Right} => #<End:success/:success>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:failure>
 }
     end
   end
@@ -230,10 +230,10 @@ class FastTrackTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
+ {Trailblazer::Activity::Left} => #<End/:failure>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
+ {Trailblazer::Activity::Left} => #<End/:failure>
 }
     end
   end
@@ -243,28 +243,28 @@ class FastTrackTest < Minitest::Spec
       activity = Module.new do
         extend Activity::FastTrack()
         step task: T.def_task(:a), id: "a"
-        step task: T.def_task(:b), Output(:success) => "a", Output("Signal", :exception) => End(:exceptional, :exceptional)
+        step task: T.def_task(:b), Output(:success) => "a", Output("Signal", :exception) => End(:exceptional)
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
+ {Trailblazer::Activity::Left} => #<End/:failure>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
- {Signal} => #<End:exceptional/:exceptional>
-#<End:success/:success>
+ {Trailblazer::Activity::Left} => #<End/:failure>
+ {Signal} => #<End/:exceptional>
+#<End/:success>
 
-#<End:failure/:failure>
+#<End/:failure>
 
-#<End:pass_fast/:pass_fast>
+#<End/:pass_fast>
 
-#<End:fail_fast/:fail_fast>
+#<End/:fail_fast>
 
-#<End:exceptional/:exceptional>
+#<End/:exceptional>
 }
     end
   end
@@ -283,7 +283,7 @@ class FastTrackTest < Minitest::Spec
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => FastTrackTest::MySuccess
@@ -313,13 +313,13 @@ FastTrackTest::MyFailFast
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.c>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
+ {Trailblazer::Activity::Left} => #<End/:failure>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
+ {Trailblazer::Activity::Left} => #<End/:failure>
 #<Method: #<Module:0x>.a>
- {Trailblazer::Activity::Right} => #<End:success/:success>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:failure>
 }
     end
   end

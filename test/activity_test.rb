@@ -17,7 +17,7 @@ class ActivityTest < Minitest::Spec
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
 }
     end
 
@@ -45,7 +45,7 @@ class ActivityTest < Minitest::Spec
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
 }
     end
 
@@ -127,12 +127,12 @@ class ActivityTest < Minitest::Spec
 
     # puts Cct(activity.instance_variable_get(:@process))
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+#<Start/:default>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
 
-    Outputs(activity.outputs).must_equal %{success=> (#<Trailblazer::Activity::End:>, success)}
+    Outputs(activity.outputs).must_equal %{success=> (#<struct Trailblazer::Activity::End semantic=:success>, success)}
 
     options = { id: 1 }
 
@@ -149,7 +149,7 @@ class ActivityTest < Minitest::Spec
 
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
-        task B.new(:resume_for_correct, semantic: :resume_1), id: "resume_for_correct", type: :End
+        task B.new(:resume_1), id: "resume_for_correct", type: :End
         task C, id: "suspend_for_correct", Output(:success) => "inquiry_create"
       end
 
@@ -165,12 +165,12 @@ class ActivityTest < Minitest::Spec
 
   it do
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
- {Trailblazer::Activity::Left} => #<ActivityTest::B:resume_for_correct/:resume_1>
+ {Trailblazer::Activity::Left} => #<ActivityTest::B/:resume_1>
  {Trailblazer::Activity::Right} => ActivityTest::G
-#<ActivityTest::B:resume_for_correct/:resume_1>
+#<ActivityTest::B/:resume_1>
 
 ActivityTest::C
  {Trailblazer::Activity::Right} => ActivityTest::A
@@ -182,18 +182,18 @@ ActivityTest::I
 ActivityTest::J
  {Trailblazer::Activity::Right} => ActivityTest::K
 ActivityTest::K
- {Trailblazer::Activity::Right} => #<End:track_0./:invalid_result>
+ {Trailblazer::Activity::Right} => #<End/:invalid_result>
 ActivityTest::L
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 
-#<End:track_0./:success>
+#<End/"track_0.">
 
-#<End:track_0./:invalid_result>
+#<End/:invalid_result>
 }
 
 
-    Ends(activity.decompose[:circuit]).must_equal %{[#<ActivityTest::B:resume_for_correct/:resume_1>,#<End:success/:success>,#<End:track_0./:invalid_result>]}
+    Ends(activity.decompose[:circuit]).must_equal %{[#<ActivityTest::B/:resume_1>,#<End/:success>,#<End/:invalid_result>]}
 
     # A -> B -> End.suspend
     options, flow_options, circuit_options = {id: 1, a_return: Activity::Left, b_return: Activity::Right }, {}, {}
@@ -244,7 +244,7 @@ ActivityTest::L
 ActivityTest::B
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
- {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
 }
     end
   end
@@ -282,15 +282,15 @@ ActivityTest::A
       end
 
       Cct(merging.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => ActivityTest::C
 ActivityTest::C
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
  {Trailblazer::Activity::Right} => ActivityTest::B
 ActivityTest::B
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
     end
 
@@ -340,25 +340,25 @@ ActivityTest::B
       end
 
       Cct(activity).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
  {Trailblazer::Activity::Right} => ActivityTest::B
 ActivityTest::B
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
 
       Cct(subactivity).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
  {Trailblazer::Activity::Right} => ActivityTest::B
 ActivityTest::B
  {Trailblazer::Activity::Right} => ActivityTest::C
 ActivityTest::C
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
     end
   end

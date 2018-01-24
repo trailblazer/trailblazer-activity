@@ -45,7 +45,7 @@ module Trailblazer
         def self.recompile_outputs(end_events)
           ary = end_events.collect do |evt|
             [
-              semantic = evt.instance_variable_get(:@options)[:semantic], # DISCUSS: better API here?
+              semantic = evt.to_h[:semantic],
               Activity::Output(evt, semantic)
             ]
           end

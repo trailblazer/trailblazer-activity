@@ -81,7 +81,7 @@ module Trailblazer
         end
 
         # Adds the End.fail_fast and End.pass_fast end to the Railway sequence.
-        def self.InitialAdds(pass_fast_end: Activity.End("pass_fast", :pass_fast), fail_fast_end: Activity.End("fail_fast", :fail_fast), **builder_options)
+        def self.InitialAdds(pass_fast_end: Activity.End(:pass_fast), fail_fast_end: Activity.End(:fail_fast), **builder_options)
           path_adds = Railway.InitialAdds(**builder_options)
 
           ends =

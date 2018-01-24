@@ -10,20 +10,20 @@ class RailwayTest < Minitest::Spec
     end
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
- {Trailblazer::Activity::Right} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
 #<Method: #<Module:0x>.c>
- {Trailblazer::Activity::Right} => #<End:failure/:failure>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:failure>
+ {Trailblazer::Activity::Left} => #<End/:failure>
+#<End/:success>
 
-#<End:failure/:failure>
+#<End/:failure>
 }
     end
 
@@ -37,20 +37,20 @@ class RailwayTest < Minitest::Spec
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
 #<Method: #<Module:0x>.b>
- {Trailblazer::Activity::Right} => #<End:success/:success>
- {Trailblazer::Activity::Left} => #<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<Method: #<Module:0x>.c>
- {Trailblazer::Activity::Right} => #<End:failure/:failure>
- {Trailblazer::Activity::Left} => #<End:failure/:failure>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:failure>
+ {Trailblazer::Activity::Left} => #<End/:failure>
+#<End/:success>
 
-#<End:failure/:failure>
+#<End/:failure>
 }
     end
   end
@@ -67,7 +67,7 @@ class RailwayTest < Minitest::Spec
       end
 
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => RailwayTest::MySuccess

@@ -28,7 +28,7 @@ class DSLPathTest < Minitest::Spec
       sequence = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
 
       Seq(sequence).must_equal %{
-[] ==> #<Start:default/nil>
+[] ==> #<Start/:default>
  (success)/Right ==> :pink
 [:pink] ==> DSLPathTest::G
  (success)/Right ==> :pink
@@ -36,11 +36,11 @@ class DSLPathTest < Minitest::Spec
 [:pink] ==> DSLPathTest::I
  (success)/Right ==> :pink
  (failure)/Left ==> "DSLPathTest::I-Trailblazer::Activity::Left"
-[:pink] ==> #<End:pink/:success>
+[:pink] ==> #<End/:success>
  []
-["DSLPathTest::G-Exception"] ==> #<End:exception/:exception>
+["DSLPathTest::G-Exception"] ==> #<End/:exception>
  []
-["DSLPathTest::I-Trailblazer::Activity::Left"] ==> #<End:failure/:failure>
+["DSLPathTest::I-Trailblazer::Activity::Left"] ==> #<End/:failure>
  []
 }
     end
@@ -59,7 +59,7 @@ class DSLPathTest < Minitest::Spec
       sequence = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
 
       Seq(sequence).must_equal %{
-[] ==> #<Start:default/nil>
+[] ==> #<Start/:default>
  (success)/Right ==> :success
 [:success] ==> DSLPathTest::G
  (success)/Right ==> :success
@@ -68,11 +68,11 @@ class DSLPathTest < Minitest::Spec
 [:success] ==> DSLPathTest::I
  (success)/Right ==> :success
  (failure)/Left ==> "DSLPathTest::I-Trailblazer::Activity::Left"
-[:success] ==> #<End:success/:success>
+[:success] ==> #<End/:success>
  []
-["DSLPathTest::G-Exception"] ==> #<End:exception/:exception>
+["DSLPathTest::G-Exception"] ==> #<End/:exception>
  []
-["DSLPathTest::I-Trailblazer::Activity::Left"] ==> #<End:failure/:failure>
+["DSLPathTest::I-Trailblazer::Activity::Left"] ==> #<End/:failure>
  []
 }
     end

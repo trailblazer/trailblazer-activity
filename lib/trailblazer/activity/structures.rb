@@ -1,14 +1,15 @@
   module Trailblazer
     class Activity < Module     # End event is just another callable task.
-      # Any instance of subclass of End will halt the circuit's execution when hit.
-      class End
-        def initialize(name, options={})
-          @name    = name
-          @options = options
-        end
 
+      # Any instance of subclass of End will halt the circuit's execution when hit.
+
+      # An End event is a simple structure typically found as the last task invoked
+      # in an activity. The special behavior is that it
+      # a) maintains a semantic that is used to further connect that very event
+      # b) its `End#call` method returns the end instance itself as the signal.
+      End = Struct.new(:semantic) do
         def call(*args)
-          [ self, *args ]
+          return self, *args
         end
       end
 
@@ -18,9 +19,9 @@
         end
       end
 
-      # Builder for Activity::End.
-      def self.End(name, semantic=name)
-        Activity::End.new(name, semantic: semantic)
+      # Builds an Activity::End instance.
+      def self.End(semantic)
+        Activity::End.new(semantic)
       end
 
       class Signal;         end

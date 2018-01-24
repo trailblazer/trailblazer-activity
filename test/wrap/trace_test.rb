@@ -48,10 +48,10 @@ class TraceTest < Minitest::Spec
 
     output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
-    output.must_equal %{|-- #<Trailblazer::Activity::Start:>
+    output.must_equal %{|-- #<struct Trailblazer::Activity::Start semantic=:default>
 |-- B
 |-- C
-`-- #<Trailblazer::Activity::End:>}
+`-- #<struct Trailblazer::Activity::End semantic=:success>}
   end
 
   it do
@@ -66,14 +66,14 @@ class TraceTest < Minitest::Spec
 
     puts output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
-    output.must_equal %{|-- #<Trailblazer::Activity::Start:>
+    output.must_equal %{|-- #<struct Trailblazer::Activity::Start semantic=:default>
 |-- A
 |-- <Nested>
-|   |-- #<Trailblazer::Activity::Start:>
+|   |-- #<struct Trailblazer::Activity::Start semantic=:default>
 |   |-- B
 |   |-- C
-|   `-- #<Trailblazer::Activity::End:>
+|   `-- #<struct Trailblazer::Activity::End semantic=:success>
 |-- D
-`-- #<Trailblazer::Activity::End:>}
+`-- #<struct Trailblazer::Activity::End semantic=:success>}
   end
 end

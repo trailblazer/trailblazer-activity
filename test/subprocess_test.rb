@@ -55,7 +55,7 @@ class SubprocessHelper < Minitest::Spec
         extend Activity::Path()
 
         task task: Blog::Read
-        task task: Blog::Next, Output(Activity::Right, :success___) => :__success, Output(Activity::Left, :retry___) => _retry=End(:retry, :retry)
+        task task: Blog::Next, Output(Activity::Right, :success___) => :__success, Output(Activity::Left, :retry___) => _retry=End(:retry)
       end
     end
 

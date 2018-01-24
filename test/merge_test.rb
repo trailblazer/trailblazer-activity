@@ -22,15 +22,15 @@ class MergeTest < Minitest::Spec
     activity.must_equal _activity
 
     Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => :b
 :b
  {Trailblazer::Activity::Right} => :a
 :a
  {Trailblazer::Activity::Right} => :c
 :c
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
   end
 
@@ -53,23 +53,23 @@ class MergeTest < Minitest::Spec
 
       # activity still has one step
       Cct(activity.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => :a
 :a
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
 
       Cct(merged.decompose[:circuit]).must_equal %{
-#<Start:default/nil>
+#<Start/:default>
  {Trailblazer::Activity::Right} => :b
 :b
  {Trailblazer::Activity::Right} => :a
 :a
  {Trailblazer::Activity::Right} => :c
 :c
- {Trailblazer::Activity::Right} => #<End:success/:success>
-#<End:success/:success>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
     end
 
