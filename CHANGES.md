@@ -1,3 +1,8 @@
+# 0.4.1
+
+* Remove `decompose` and replace it with a better `to_h`.
+* `End` doesn't have a redundant `@name` anymore but only a semantic.
+
 # 0.4.0
 
 * We now use the "Module Subclass" pattern, and activities aren't classes anymore but modules.
