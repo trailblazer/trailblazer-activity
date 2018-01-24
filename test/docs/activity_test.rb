@@ -17,6 +17,8 @@ class DocsActivityTest < Minitest::Spec
           extend Trailblazer::Activity::Railway()
           module_function
 
+          # here goes your business logic
+          #
           def find_model(ctx, id:, **)
             ctx[:model] = Memo.find_by(id: id)
           end
@@ -35,8 +37,8 @@ class DocsActivityTest < Minitest::Spec
             ctx[:log] = "Some idiot wrote #{params.inspect}"
           end
 
-          # another task before End.validate
-
+          # here comes the DSL describing the layout of the activity
+          #
           step method(:find_model)
           step method(:validate), Output(:failure) => End(:validation_error)
           step method(:save)

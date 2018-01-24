@@ -61,8 +61,7 @@ pp ctx #=>
  :model=>#<Memo body=nil>,
  :errors=>"body not long enough"}
 
-pp signal #=> #<Trailblazer::Activity::End:0x001958
- semantic=:validation_error>
+pp signal #=> #<struct Trailblazer::Activity::End semantic=:validation_error>
 ```
 
 With Activity, modeling business processes turns out to be ridiculously simple: You define what should happen and when, and Trailblazer makes sure _that_ it happens.
