@@ -21,8 +21,8 @@ module Trailblazer
       end
 
       # @private
-      def decompose
-        @activity.decompose # TODO: test explicitly
+      def to_h
+        @activity.to_h # TODO: test explicitly
       end
 
       def debug

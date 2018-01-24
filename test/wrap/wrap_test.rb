@@ -53,8 +53,6 @@ class WrapTest < Minitest::Spec
         task task: T.def_task(:a), extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
       end
 
-      # pp activity.static_task_wrap.values.first.decompose
-
       args = [ {seq: []}, {} ]
 
       # event, (options, _) = activity.( *Wrap.arguments_for_call( activity, args ) )

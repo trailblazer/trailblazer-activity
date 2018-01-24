@@ -9,7 +9,7 @@ class RailwayTest < Minitest::Spec
       fail task: T.def_task(:c)
     end
 
-    Cct(activity.decompose[:circuit]).must_equal %{
+    Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -36,7 +36,7 @@ class RailwayTest < Minitest::Spec
         fail task: T.def_task(:c)
       end
 
-      Cct(activity.decompose[:circuit]).must_equal %{
+      Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -66,7 +66,7 @@ class RailwayTest < Minitest::Spec
         step task: T.def_task(:a)
       end
 
-      Cct(activity.decompose[:circuit]).must_equal %{
+      Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>

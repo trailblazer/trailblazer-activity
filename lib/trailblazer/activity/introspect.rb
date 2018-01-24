@@ -16,15 +16,15 @@ module Trailblazer
 
       # @api private
       def self.find(activity, &block)
-        circuit = activity.decompose[:circuit]
+        circuit = activity.to_h[:circuit]
 
         circuit.instance_variable_get(:@map).find(&block)
       end
 
 
       def self.collect(activity, options={}, &block)
-        circuit         = activity.decompose[:circuit]
-        circuit_hash, _ = circuit.decompose
+        circuit      = activity.to_h[:circuit]
+        circuit_hash = circuit.to_h[:map]
 
         locals = circuit_hash.collect do |task, connections|
           [
@@ -39,7 +39,7 @@ module Trailblazer
 
 # render
       def self.Cct(circuit, **options)
-        circuit_hash( circuit.decompose[0], **options )
+        circuit_hash( circuit.to_h[:map], **options )
       end
 
       def self.circuit_hash(circuit_hash, show_ids:false)
@@ -59,7 +59,7 @@ module Trailblazer
       end
 
       def self.Ends(activity)
-        end_events = activity.decompose[1]
+        end_events = activity.to_h[:end_events]
         ends = end_events.collect { |evt| Task(evt) }.join(",")
         "[#{ends}]".gsub(/\d\d+/, "")
       end

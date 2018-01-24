@@ -27,7 +27,7 @@ class IntrospectionTest < Minitest::Spec
 
   describe ":debug state" do
     it "exposes all added tasks" do
-      activity.decompose[:debug].to_h.must_equal(A => {id: A}, bc => {id: bc}, D => {id: "D"})
+      activity.to_h[:debug].to_h.must_equal(A => {id: A}, bc => {id: bc}, D => {id: "D"})
     end
   end
 

@@ -126,7 +126,7 @@ class ActivityTest < Minitest::Spec
     end
 
     # puts Cct(activity.instance_variable_get(:@process))
-    Cct(activity.decompose[:circuit]).must_equal %{
+    Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<End/:success>
 #<End/:success>
@@ -164,7 +164,7 @@ class ActivityTest < Minitest::Spec
   end
 
   it do
-    Cct(activity.decompose[:circuit]).must_equal %{
+    Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A
@@ -193,7 +193,7 @@ ActivityTest::L
 }
 
 
-    Ends(activity.decompose[:circuit]).must_equal %{[#<ActivityTest::B/:resume_1>,#<End/:success>,#<End/:invalid_result>]}
+    Ends(activity.to_h[:circuit]).must_equal %{[#<ActivityTest::B/:resume_1>,#<End/:success>,#<End/:invalid_result>]}
 
     # A -> B -> End.suspend
     options, flow_options, circuit_options = {id: 1, a_return: Activity::Left, b_return: Activity::Right }, {}, {}
@@ -281,7 +281,7 @@ ActivityTest::A
         merge! activity
       end
 
-      Cct(merging.decompose[:circuit]).must_equal %{
+      Cct(merging.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityTest::C
 ActivityTest::C
@@ -303,7 +303,7 @@ ActivityTest::B
         extend Trailblazer::Activity::Path()
       end
 
-      components = activity.decompose
+      components = activity.to_h
 
       assert components[:circuit].frozen?
       assert components[:outputs].frozen?
@@ -317,7 +317,7 @@ ActivityTest::B
         task A
       end
 
-      components = activity.decompose
+      components = activity.to_h
 
       assert components[:circuit].frozen?
       assert components[:outputs].frozen?

@@ -2,7 +2,7 @@ require "test_helper"
 
 class FastTrackTest < Minitest::Spec
   def assert_main(activity, expected)
-    Cct(activity.decompose[:circuit]).must_equal %{
+    Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>#{expected}#<End/:success>
 
 #<End/:failure>
@@ -24,7 +24,7 @@ class FastTrackTest < Minitest::Spec
         pass task: T.def_task(:d)
       end
 
-      Cct(activity.decompose[:circuit]).must_equal %{
+      Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -180,7 +180,7 @@ class FastTrackTest < Minitest::Spec
         step task: T.def_task(:a), plus_poles: plus_poles, Output(:failure) => Activity.End(:failed), Output(:exception) => Activity.End(:exceptioned)
       end
 
-      Cct(activity.decompose[:circuit]).must_equal %{
+      Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -246,7 +246,7 @@ class FastTrackTest < Minitest::Spec
         step task: T.def_task(:b), Output(:success) => "a", Output("Signal", :exception) => End(:exceptional)
       end
 
-      Cct(activity.decompose[:circuit]).must_equal %{
+      Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -282,7 +282,7 @@ class FastTrackTest < Minitest::Spec
         step task: T.def_task(:a)
       end
 
-      Cct(activity.decompose[:circuit]).must_equal %{
+      Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>

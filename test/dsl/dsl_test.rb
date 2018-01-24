@@ -24,7 +24,7 @@ class ActivityBuildTest < Minitest::Spec
       task task: K, id: "validate", Output(Left, :failure) => End(:invalid)
     end
 
-    Cct(activity.decompose[:circuit]).must_equal %{
+    Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
@@ -56,7 +56,7 @@ ActivityBuildTest::K
       task task: K
     end
 
-    Cct(activity.decompose[:circuit]).must_equal %{
+    Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
@@ -92,7 +92,7 @@ ActivityBuildTest::K
       task task: K, id: "normal"
     end
 
-    Cct(activity.decompose[:circuit]).must_equal %{
+    Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
@@ -125,7 +125,7 @@ ActivityBuildTest::K
       task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    Cct(activity.decompose[:circuit]).must_equal %{
+    Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
@@ -151,7 +151,7 @@ ActivityBuildTest::L
 #<End/:invalid_result>
 }
 
-    Ends(activity.decompose[:circuit]).must_equal %{[#<End/:success>,#<End/:invalid_result>]}
+    Ends(activity.to_h[:circuit]).must_equal %{[#<End/:success>,#<End/:invalid_result>]}
   end
 
   it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do # FIXME: what were we (or I, haha) testing in here?
@@ -172,7 +172,7 @@ ActivityBuildTest::L
       task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    Cct(activity.decompose[:circuit]).must_equal %{
+    Cct(activity.to_h[:circuit]).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
