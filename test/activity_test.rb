@@ -132,7 +132,7 @@ class ActivityTest < Minitest::Spec
 #<End/:success>
 }
 
-    Outputs(activity.outputs).must_equal %{success=> (#<struct Trailblazer::Activity::End semantic=:success>, success)}
+    Outputs(activity.outputs).must_equal %{success=> (#<Trailblazer::Activity::End semantic=:success>, success)}
 
     options = { id: 1 }
 
@@ -149,7 +149,7 @@ class ActivityTest < Minitest::Spec
 
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
-        task B.new(:resume_1), id: "resume_for_correct", type: :End
+        task B.new(semantic: :resume_1), id: "resume_for_correct", type: :End
         task C, id: "suspend_for_correct", Output(:success) => "inquiry_create"
       end
 

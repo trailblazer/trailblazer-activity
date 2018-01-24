@@ -1,5 +1,9 @@
   module Trailblazer
     class Activity < Module     # End event is just another callable task.
+      # Builds an Activity::End instance.
+      def self.End(semantic)
+        End.new(semantic: semantic)
+      end
 
       # Any instance of subclass of End will halt the circuit's execution when hit.
 
@@ -7,9 +11,24 @@
       # in an activity. The special behavior is that it
       # a) maintains a semantic that is used to further connect that very event
       # b) its `End#call` method returns the end instance itself as the signal.
-      End = Struct.new(:semantic) do
+      class End
+        def initialize(semantic:, **options)
+          @options = options.merge(semantic: semantic)
+        end
+
         def call(*args)
           return self, *args
+        end
+
+        def to_h
+          @options
+        end
+
+        def inspect
+          to_s
+        end
+        def to_s
+          %{#<#{self.class.name} #{@options.collect{ |k,v| "#{k}=#{v.inspect}" }.join(" ")}>}
         end
       end
 
@@ -17,11 +36,6 @@
         def call(*args)
           return Activity::Right, *args
         end
-      end
-
-      # Builds an Activity::End instance.
-      def self.End(semantic)
-        Activity::End.new(semantic)
       end
 
       class Signal;         end

@@ -173,9 +173,9 @@ class WrapTest < Minitest::Spec
         tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
 
         # all three tasks should be executed.
-        tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<struct Trailblazer::Activity::Start semantic=:default>
+        tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start semantic=:default>
 |-- #<Proc:.rb:12 (lambda)>
-`-- #<struct Trailblazer::Activity::End semantic=:success>}
+`-- #<Trailblazer::Activity::End semantic=:success>}
       end
     end
 
@@ -210,19 +210,19 @@ class WrapTest < Minitest::Spec
 pp flow_options
       puts tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
 
-      tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<struct Trailblazer::Activity::Start semantic=:default>
+      tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start semantic=:default>
 |-- outsideg.Model
 |-- #<Module:>
-|   |-- #<struct Trailblazer::Activity::Start semantic=:default>
+|   |-- #<Trailblazer::Activity::Start semantic=:default>
 |   |-- #<Proc:.rb:11 (lambda)>
 |   |-- #<Module:>
-|   |   |-- #<struct Trailblazer::Activity::Start semantic=:default>
+|   |   |-- #<Trailblazer::Activity::Start semantic=:default>
 |   |   |-- #<Proc:.rb:12 (lambda)>
-|   |   `-- #<struct Trailblazer::Activity::End semantic=:success>
+|   |   `-- #<Trailblazer::Activity::End semantic=:success>
 |   |-- #<Proc:.rb:13 (lambda)>
-|   `-- #<struct Trailblazer::Activity::End semantic=:success>
+|   `-- #<Trailblazer::Activity::End semantic=:success>
 |-- outsideg.Uuid
-`-- #<struct Trailblazer::Activity::End semantic=:success>}
+`-- #<Trailblazer::Activity::End semantic=:success>}
     end
   end
 end

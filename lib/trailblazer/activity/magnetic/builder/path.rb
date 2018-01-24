@@ -33,7 +33,7 @@ module Trailblazer
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
           start_adds = adds(
-            Activity::Start.new(:default),
+            Activity::Start.new(semantic: :default),
 
             TaskPolarizations(builder_options),
 

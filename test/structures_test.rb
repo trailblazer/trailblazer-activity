@@ -13,5 +13,17 @@ class StructuresTest < Minitest::Spec
     it "responds to #to_h" do
       evt.to_h.must_equal( { semantic: :meaning } )
     end
+
+    it "has strict object identity" do
+      evt.wont_equal Activity::End(:meaning)
+    end
+
+    it "responds to #inspect" do
+      evt.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:meaning>}
+    end
+
+    it "allows more variables" do
+      Activity::End.new(semantic: :success, type: :event).to_h.must_equal(semantic: :success, type: :event)
+    end
   end
 end

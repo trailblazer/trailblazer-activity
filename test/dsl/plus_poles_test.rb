@@ -130,7 +130,7 @@ class PlusPolesTest < Minitest::Spec
       end
 
       Activity::Magnetic::DSL::PlusPoles::from_outputs( activity.outputs ).to_a.inspect.gsub(/0x\w+/, "").inspect.
-        must_equal %{"[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=#<struct Trailblazer::Activity::End semantic=:success>, semantic=:success>, color=:success>]"}
+        must_equal %{"[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, color=:success>]"}
     end
   end
 end

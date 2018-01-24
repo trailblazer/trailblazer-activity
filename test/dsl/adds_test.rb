@@ -92,7 +92,7 @@ class AddsTest < Minitest::Spec
   def start
     # return %{#<struct Trailblazer::Activity::Start semantic=:default>} if RUBY_PLATFORM == "java"
 
-    %{#<struct Trailblazer::Activity::Start semantic=:default>}
+    %{#<Trailblazer::Activity::Start semantic=:default>}
   end
 
   it "Path.InitialAdds" do
@@ -111,7 +111,7 @@ class AddsTest < Minitest::Spec
    {:group=>:start}]],
  [:add,
   ["End.green",
-   [[:green], #<struct Trailblazer::Activity::End semantic=:success>, []],
+   [[:green], #<Trailblazer::Activity::End semantic=:success>, []],
    {:group=>:end}]]]
 }
   end
@@ -132,11 +132,11 @@ class AddsTest < Minitest::Spec
    {:group=>:start}]],
  [:add,
   ["End.green",
-   [[:green], #<struct Trailblazer::Activity::End semantic=:success>, []],
+   [[:green], #<Trailblazer::Activity::End semantic=:success>, []],
    {:group=>:end}]],
  [:add,
   ["End.failure",
-   [[:failure], #<struct Trailblazer::Activity::End semantic=:failure>, []],
+   [[:failure], #<Trailblazer::Activity::End semantic=:failure>, []],
    {:group=>:end}]]]
 }
   end
@@ -157,23 +157,19 @@ class AddsTest < Minitest::Spec
    {:group=>:start}]],
  [:add,
   ["End.green",
-   [[:green], #<struct Trailblazer::Activity::End semantic=:success>, []],
+   [[:green], #<Trailblazer::Activity::End semantic=:success>, []],
    {:group=>:end}]],
  [:add,
   ["End.failure",
-   [[:failure], #<struct Trailblazer::Activity::End semantic=:failure>, []],
+   [[:failure], #<Trailblazer::Activity::End semantic=:failure>, []],
    {:group=>:end}]],
  [:add,
   ["End.pass_fast",
-   [[:pass_fast],
-    #<struct Trailblazer::Activity::End semantic=:pass_fast>,
-    []],
+   [[:pass_fast], #<Trailblazer::Activity::End semantic=:pass_fast>, []],
    {:group=>:end}]],
  [:add,
   ["End.fail_fast",
-   [[:fail_fast],
-    #<struct Trailblazer::Activity::End semantic=:fail_fast>,
-    []],
+   [[:fail_fast], #<Trailblazer::Activity::End semantic=:fail_fast>, []],
    {:group=>:end}]]]
 }
   end
