@@ -42,14 +42,14 @@ module Trailblazer
         circuit_hash( circuit.to_h[:map], **options )
       end
 
-      def self.circuit_hash(circuit_hash, show_ids:false)
+      def self.circuit_hash(circuit_hash, show_ids:false, inspect_task:method(:inspect_task), inspect_end:method(:inspect_end))
         content =
           circuit_hash.collect do |task, connections|
             conns = connections.collect do |signal, target|
-              " {#{signal}} => #{Task(target)}"
+              " {#{signal}} => #{inspect_with_matcher(target)}"
             end
 
-            [ Task(task), conns.join("\n") ]
+            [ inspect_with_matcher(task), conns.join("\n") ]
           end
 
           content = content.join("\n")
@@ -60,7 +60,7 @@ module Trailblazer
 
       def self.Ends(activity)
         end_events = activity.to_h[:end_events]
-        ends = end_events.collect { |evt| Task(evt) }.join(",")
+        ends = end_events.collect { |evt| inspect_end(evt) }.join(",")
         "[#{ends}]".gsub(/\d\d+/, "")
       end
 
@@ -70,9 +70,17 @@ module Trailblazer
           join("\n").gsub(/0x\w+/, "").gsub(/\d\d+/, "")
       end
 
-      def self.Task(task)
-        return task.inspect unless task.kind_of?(Trailblazer::Activity::End)
+      # If Ruby had pattern matching, this function wasn't necessary.
+      def self.inspect_with_matcher(task)
+        return inspect_task(task) unless task.kind_of?(Trailblazer::Activity::End)
+        inspect_end(task)
+      end
 
+      def self.inspect_task(task)
+        task.inspect
+      end
+
+      def self.inspect_end(task)
         class_name = strip(task.class)
         options    = task.to_h
 
@@ -108,7 +116,7 @@ module Trailblazer
           sequence.collect do |(magnetic_to, task, plus_poles)|
             pluses = plus_poles.collect { |plus_pole| PlusPole(plus_pole) }
 
-%{#{magnetic_to.inspect} ==> #{Activity::Introspect.Task(task)}
+%{#{magnetic_to.inspect} ==> #{Activity::Introspect.inspect_with_matcher(task)}
 #{pluses.empty? ? " []" : pluses.join("\n")}}
           end.join("\n")
 
