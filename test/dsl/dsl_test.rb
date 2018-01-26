@@ -3,7 +3,6 @@ require "test_helper"
 class ActivityBuildTest < Minitest::Spec
   Left = Trailblazer::Activity::Left
   Right = Trailblazer::Activity::Right
-  Finalizer = Trailblazer::Activity::Magnetic::Builder::Finalizer
 
   class A; end
   class B; end

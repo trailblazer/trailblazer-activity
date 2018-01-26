@@ -22,6 +22,7 @@ class Trailblazer::Activity < Module
       return normalizer, options
     end
 
+    # @api private
     def self.build_state(normalizer, builder_class:, builder_options: {}, **options)
       builder, adds, circuit, outputs = State.build(builder_class, normalizer, options.merge(builder_options))
 

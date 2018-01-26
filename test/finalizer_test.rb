@@ -127,6 +127,32 @@ DrawGraphTest::EF
 }
   end
 
+  describe "referencing a task coming ahead" do
+    it do
+      normalizer, _ = Magnetic::Normalizer.build(plus_poles: Magnetic::Builder::Railway.default_plus_poles)
+
+      builder, adds, _ = Activity::State.build( Magnetic::Builder::Path, normalizer, {} )
+
+      _, adds, _       = Activity::State.add( builder, adds, :task, {task: A, Activity::DSL::Helper.Output(:success) => "find"}, {} )
+      _, adds, _       = Activity::State.add( builder, adds, :task, {task: :Find, id: "find"}, {} )
+
+      # pp adds
+
+      # without magnetic_to: [], Find will reference itself due to the Finalizer algorithm.
+      activity, _ = Trailblazer::Activity::Magnetic::Builder::Finalizer.( adds )
+
+     Cct(activity).must_equal %{
+#<Start/:default>
+ {Trailblazer::Activity::Right} => DrawGraphTest::A
+DrawGraphTest::A
+ {Trailblazer::Activity::Right} => :Find
+:Find
+ {Trailblazer::Activity::Right} => :Find
+#<End/:success>
+}
+    end
+  end
+
   describe "Alterations" do
     it do
       skip "please unit-test Alterations"
