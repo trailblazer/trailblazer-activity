@@ -42,14 +42,14 @@ module Trailblazer
         circuit_hash( circuit.to_h[:map], **options )
       end
 
-      def self.circuit_hash(circuit_hash, show_ids:false, inspect_task:method(:inspect_task), inspect_end:method(:inspect_end))
+      def self.circuit_hash(circuit_hash, show_ids:false, **options)
         content =
           circuit_hash.collect do |task, connections|
             conns = connections.collect do |signal, target|
               " {#{signal}} => #{inspect_with_matcher(target)}"
             end
 
-            [ inspect_with_matcher(task), conns.join("\n") ]
+            [ inspect_with_matcher(task, **options), conns.join("\n") ]
           end
 
           content = content.join("\n")
@@ -71,9 +71,9 @@ module Trailblazer
       end
 
       # If Ruby had pattern matching, this function wasn't necessary.
-      def self.inspect_with_matcher(task)
-        return inspect_task(task) unless task.kind_of?(Trailblazer::Activity::End)
-        inspect_end(task)
+      def self.inspect_with_matcher(task, inspect_task: method(:inspect_task), inspect_end: method(:inspect_end))
+        return inspect_task.(task) unless task.kind_of?(Trailblazer::Activity::End)
+        inspect_end.(task)
       end
 
       def self.inspect_task(task)
