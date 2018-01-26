@@ -4,7 +4,7 @@ The `activity` gem brings a light-weight DSL to define business processes, and t
 
 A process is a set of arbitrary pieces of logic you define, chained together and put into a meaningful context by an activity. Activity lets you focus on the implementation of steps while Trailblazer takes care of the control flow.
 
-Please find the [full documentation on the Trailblazer website](http://trailblazer.to/2.1/activity). [Note that the docs are WIP.]
+Please find the [full documentation on the Trailblazer website](http://trailblazer.to/api-docs). [Note that the docs are WIP.]
 
 ## Example
 

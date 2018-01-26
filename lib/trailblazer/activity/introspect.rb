@@ -35,6 +35,11 @@ module Trailblazer
       end
 
 
+      def self.inspect_task_builder(task)
+        proc = task.instance_variable_get(:@user_proc)
+        %{#<TaskBuilder{#{proc}}>}
+      end
+
         # FIXME: clean up that shit below.
 
 # render
@@ -46,7 +51,7 @@ module Trailblazer
         content =
           circuit_hash.collect do |task, connections|
             conns = connections.collect do |signal, target|
-              " {#{signal}} => #{inspect_with_matcher(target)}"
+              " {#{signal}} => #{inspect_with_matcher(target, **options)}"
             end
 
             [ inspect_with_matcher(task, **options), conns.join("\n") ]
