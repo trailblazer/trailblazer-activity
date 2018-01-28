@@ -31,7 +31,7 @@ class NestedTest < Minitest::Spec
 }
   end
 
-  it "connects three :plus_poles for a nested FastTrack, in a Railway" do
+  it "allows overriding existing plus_pole via Output" do
     nested = self.nested
 
     activity = Module.new do
