@@ -28,30 +28,30 @@ module Trailblazer
         # options:
         #   { DSL::Output[::Semantic] => target }
         #
-        def call(id, options, initial_plus_poles, &block)
+        def call(id, options, plus_poles, &block)
           polarization, adds =
             options.
               collect { |key, task|
                 # this method call is the only thing that really matters here. # TODO: make this transformation a bit more obvious.
-                process_tuple(id, key, task, initial_plus_poles, &block)
+                process_tuple(id, key, task, plus_poles, &block)
               }.
               inject([[],[]]) { |memo, (polarization, adds)| memo[0]<<polarization; memo[1]<<adds; memo }
 
           return polarization, adds.flatten(1)
         end
 
-        def process_tuple(id, output, task, initial_plus_poles, &block)
-          output = output_for(output, initial_plus_poles) if output.kind_of?(DSL::Output::Semantic)
+        def process_tuple(id, output, task, plus_poles, &block)
+          output = output_for(output, plus_poles) if output.kind_of?(DSL::Output::Semantic)
 
           if task.kind_of?(Activity::End)
             new_edge = "#{id}-#{output.signal}"
 
             [
               Polarization.new( output: output, color: new_edge ),
-              [ [:add, [task.instance_variable_get(:@name), [ [new_edge], task, [] ], group: :end]] ]
+              [ [:add, [task.to_h[:semantic], [ [new_edge], task, [] ], group: :end]] ]
             ]
           elsif task.is_a?(String) # let's say this means an existing step
-            new_edge = "#{output.signal}-#{task}"
+            new_edge = "#{id}-#{output.signal}-#{task}"
 
             [
               Polarization.new( output: output, color: new_edge ),

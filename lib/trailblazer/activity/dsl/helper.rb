@@ -44,6 +44,14 @@ module Trailblazer
           [ track_color, path ]
         }
       end
+
+      # Computes the :outputs options for {activity}
+      def Nested(activity)
+        {
+          task:       activity,
+          plus_poles: Activity::Magnetic::DSL::PlusPoles.from_outputs(activity.outputs)
+        }
+      end
     end
   end
 end
