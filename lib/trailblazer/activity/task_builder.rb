@@ -33,6 +33,11 @@ module Trailblazer
 
         [ direction, [ options, *args ], **circuit_args ]
       end
+
+      def inspect
+        %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{@user_proc}>}
+      end
+      alias_method :to_s, :inspect
     end
   end
 end

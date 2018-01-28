@@ -2,7 +2,7 @@
 
 * Allow injecting `inspect` implementations into `Introspect` methods.
 * Add `Nested`.
-
+* Add `TaskBuilder::Task#to_s`.
 
 # 0.4.2
 

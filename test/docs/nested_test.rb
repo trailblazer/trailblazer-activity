@@ -55,4 +55,9 @@ class NestedTest < Minitest::Spec
 #<End/:my_pass_fast>
 }
   end
+
+  it "allows to reconnect nested outputs by grabbing those" do
+        # collection.outputs[:failure] => :failure,
+    # collection.outputs[:success] => :success
+  end
 end
