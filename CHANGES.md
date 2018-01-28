@@ -1,3 +1,9 @@
+# 0.4.3
+
+* Allow injecting `inspect` implementations into `Introspect` methods.
+* Add `Nested`.
+
+
 # 0.4.2
 
 * `End` is not a `Struct` so we can maintain more state, and are immutable.
