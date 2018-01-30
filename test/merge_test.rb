@@ -1,5 +1,10 @@
 require "test_helper"
 
+# class PlanTest < Minitest::Spec
+#   Plan()
+#   add id: "a", Output(..) => Path().. # could we update the adds directly or do we have to go via the DSL here?
+# end
+
 class MergeTest < Minitest::Spec
   it do
     activity = Module.new do

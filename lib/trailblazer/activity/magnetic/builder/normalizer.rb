@@ -17,7 +17,7 @@ module Trailblazer
 
       # @private Might be removed.
       def self.InitialPlusPoles
-        Activity::Magnetic::DSL::PlusPoles.new.merge(
+        Activity::Magnetic::PlusPoles.new.merge(
           Activity.Output(Activity::Right, :success) => nil,
           Activity.Output(Activity::Left,  :failure) => nil,
         )

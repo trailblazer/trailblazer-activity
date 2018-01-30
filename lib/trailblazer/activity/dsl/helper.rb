@@ -49,7 +49,7 @@ module Trailblazer
       def Nested(activity)
         {
           task:       activity,
-          plus_poles: Activity::Magnetic::DSL::PlusPoles.from_outputs(activity.outputs)
+          plus_poles: Activity::Magnetic::PlusPoles.from_outputs(activity.outputs)
         }
       end
     end

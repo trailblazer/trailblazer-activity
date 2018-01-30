@@ -20,7 +20,7 @@ Minitest::Spec.class_eval do
   def plus_poles_for(mapping)
     ary = mapping.collect { |evt, semantic| [Trailblazer:: Activity::Output(evt, semantic), semantic ] }
 
-    Trailblazer::Activity::Magnetic::DSL::PlusPoles.new.merge(::Hash[ary])
+    Trailblazer::Activity::Magnetic::PlusPoles.new.merge(::Hash[ary])
   end
 
   def assert_path(activity, content)

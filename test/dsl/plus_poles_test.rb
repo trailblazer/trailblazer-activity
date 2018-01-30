@@ -8,7 +8,7 @@ class PlusPolesTest < Minitest::Spec
   Left = Trailblazer::Activity::Left
   Right = Trailblazer::Activity::Right
 
-  let(:poles) { Trailblazer::Activity::Magnetic::DSL::PlusPoles.new }
+  let(:poles) { Trailblazer::Activity::Magnetic::PlusPoles.new }
 
   # it do # TODO: delete me
   #   test "writes poles on brand-new instance" do
@@ -40,9 +40,9 @@ class PlusPolesTest < Minitest::Spec
     # it do # FIXME.
     #   require "simpletest"
     #   Simpletest.test "#merge" do
-    #     poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
+    #     poles = Trailblazer::Activity::Magnetic::PlusPoles.new
     #     let(:poles, poles)
-    #     # let(:poles) { Trailblazer::Activity::Magnetic::DSL::PlusPoles.new }
+    #     # let(:poles) { Trailblazer::Activity::Magnetic::PlusPoles.new }
 
     #     test "writes poles on brand-new instance" do |poles:|
     #       new_poles = poles.merge(
@@ -113,7 +113,7 @@ class PlusPolesTest < Minitest::Spec
 
   describe "#reconnect" do
     it "skips not existing semantics" do
-      poles = Trailblazer::Activity::Magnetic::DSL::PlusPoles.new
+      poles = Trailblazer::Activity::Magnetic::PlusPoles.new
       new_poles = poles.merge( Activity.Output("My.Right", :success) => nil )
 
       new_poles = new_poles.reconnect( :success => :fantastic, :failure => :ignored )
@@ -129,7 +129,7 @@ class PlusPolesTest < Minitest::Spec
         task :a
       end
 
-      Activity::Magnetic::DSL::PlusPoles::from_outputs( activity.outputs ).to_a.inspect.gsub(/0x\w+/, "").inspect.
+      Activity::Magnetic::PlusPoles::from_outputs( activity.outputs ).to_a.inspect.gsub(/0x\w+/, "").inspect.
         must_equal %{"[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, color=:success>]"}
     end
   end

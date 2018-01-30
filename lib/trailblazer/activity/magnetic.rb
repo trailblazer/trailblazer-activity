@@ -16,8 +16,8 @@ module Trailblazer
 end
 
 require "trailblazer/activity/magnetic/dsl"
-require "trailblazer/activity/magnetic/dsl/plus_poles"
-require "trailblazer/activity/magnetic/dsl/alterations"
+require "trailblazer/activity/magnetic/structure/plus_poles"
+require "trailblazer/activity/magnetic/structure/alterations"
 
 require "trailblazer/activity/schema/dependencies"
 

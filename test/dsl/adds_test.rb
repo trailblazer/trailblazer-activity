@@ -16,7 +16,7 @@ class AddsTest < Minitest::Spec
 
   Builder = Activity::Magnetic::Builder::Path
 
-  binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+  binary_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
     Activity.Output(Activity::Right, :success) => nil,
     Activity.Output(Activity::Left, :failure) => nil
   )

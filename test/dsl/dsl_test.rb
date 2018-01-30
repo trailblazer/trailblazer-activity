@@ -48,7 +48,7 @@ ActivityBuildTest::K
       task task: J,
         Output(Left, :trigger) => End(:triggered),
         # this comes from the Operation DSL since it knows {Activity}J
-        plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
+        plus_poles: Activity::Magnetic::PlusPoles.new.merge(
           Activity.Output(Activity::Left,  :trigger) => nil,
           Activity.Output(Activity::Right, :success) => nil,
         ).freeze

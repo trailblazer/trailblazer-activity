@@ -138,7 +138,7 @@ class PathTest < Minitest::Spec
   end
 
   it "accepts :normalizer" do
-    binary_plus_poles = Activity::Magnetic::DSL::PlusPoles.new.merge(
+    binary_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
       Activity.Output(Activity::Right, :success) => nil,
       Activity.Output(Activity::Left, :failure) => nil )
 
@@ -247,7 +247,7 @@ PathTest::MyEnd
   describe ":plus_poles" do
     it "allows overriding existing outputs via semantic=>:new_color" do
       plus_poles =
-        Activity::Magnetic::DSL::PlusPoles.new.merge(
+        Activity::Magnetic::PlusPoles.new.merge(
           Activity.Output(Activity::Right, :success) => :success,
           Activity.Output(Activity::Left,  :failure) => :failure,
         )
@@ -451,7 +451,7 @@ PathTest::MyEnd
         extend Activity::Path()
 
         task task: T.def_task(:a), Output(:trigger) => End(:something_triggered),
-          plus_poles: Activity::Magnetic::DSL::PlusPoles.new.merge(
+          plus_poles: Activity::Magnetic::PlusPoles.new.merge(
                         Activity.Output("trigger!",      :trigger) => nil,
                         Activity.Output(Activity::Right, :success) => nil,
                       ).freeze

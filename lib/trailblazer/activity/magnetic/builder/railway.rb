@@ -23,7 +23,7 @@ module Trailblazer
         end
 
         def self.default_plus_poles
-          DSL::PlusPoles.new.merge(
+          PlusPoles.new.merge(
             Activity.Output(Activity::Right, :success) => nil,
             Activity.Output(Activity::Left,  :failure) => nil,
           ).freeze

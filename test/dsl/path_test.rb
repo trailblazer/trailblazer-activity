@@ -9,7 +9,7 @@ class DSLPathTest < Minitest::Spec
 
   describe "Procedural interface" do
     let(:initial_plus_poles) do
-      Activity::Magnetic::DSL::PlusPoles.new.merge(
+      Activity::Magnetic::PlusPoles.new.merge(
         Activity.Output(Activity::Right, :success) => :success,
       )
     end
