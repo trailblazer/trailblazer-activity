@@ -9,6 +9,6 @@ rvm:
   - 2.5.0
 matrix:
   include:
-  - rvm: jruby-9.1.15.0
+  - rvm: jruby-head
     env: JRUBY_OPTS="--profile.api"
 before_install: gem install bundler
