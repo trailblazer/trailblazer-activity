@@ -88,8 +88,6 @@ module Trailblazer
         )
       end
 
-
-
       def self.Add(id, task, magnetic_to, plus_poles, options, sequence_options)
         [
           [ :add, [id, [ magnetic_to, task, plus_poles ], sequence_options] ],

@@ -95,6 +95,7 @@ require "trailblazer/activity/config"
 require "trailblazer/activity/implementation/build_state"
 require "trailblazer/activity/implementation/interface"
 require "trailblazer/activity/implementation/path"
+require "trailblazer/activity/implementation/plan"
 require "trailblazer/activity/implementation/railway"
 require "trailblazer/activity/implementation/fast_track"
 
