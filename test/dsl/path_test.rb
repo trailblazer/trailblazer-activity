@@ -16,7 +16,7 @@ class DSLPathTest < Minitest::Spec
 
     # with all options.
     it do
-      normalizer, _ = Activity::Magnetic::Normalizer.build(plus_poles: Builder::Path.default_plus_poles)
+      normalizer, _ = Activity::Magnetic::Normalizer.build(outputs: Builder::Path.DefaultOutputs)
 
       builder, adds = Builder::Path.for( normalizer, {track_color: :pink} )
 
@@ -47,7 +47,7 @@ class DSLPathTest < Minitest::Spec
 
     # with plus_poles.
     it do
-      normalizer, _ = Activity::Magnetic::Normalizer.build(plus_poles: Builder::Path.default_plus_poles)
+      normalizer, _ = Activity::Magnetic::Normalizer.build(outputs: Builder::Path.DefaultOutputs)
 
       builder, adds = Builder::Path.for( normalizer, {plus_poles: initial_plus_poles} )
 
