@@ -40,6 +40,7 @@ module Trailblazer
         Activity::DSL::Helper.Path(@normalizer, *args)
       end
 
+      # Public top-level entry point.
       def insert(name, task, options, &block)
         normalizer = options[:normalizer] || @normalizer # DISCUSS: do this at a deeper point?
 

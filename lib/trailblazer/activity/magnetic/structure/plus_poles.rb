@@ -83,8 +83,8 @@ module Trailblazer
       # FIXME: should this be a hash or whatever?
       #
       # @return Hash All {Output}s mapped to nil: `{ Output(Right, :success) => nil }`
-      def self.initial(outputs_ary)
-        new.merge(Hash[ outputs_ary.collect { |output| [output, nil] } ])
+      def self.initial(outputs)
+        new.merge(Hash[ outputs.collect { |key, output| [output, nil] } ])
       end
     end
   end

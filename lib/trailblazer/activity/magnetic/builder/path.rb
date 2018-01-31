@@ -22,14 +22,14 @@ module Trailblazer
 
               # @private Might be removed.
         def self.default_outputs
-          [
-            Activity.Output(Activity::Right, :success),
-            Activity.Output(Activity::Left,  :failure),
-          ]
+          {
+            success: Activity.Output(Activity::Right, :success),
+            failure: Activity.Output(Activity::Left,  :failure),
+          }
         end
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:raise, end_semantic:raise, start_outputs: self.default_outputs[0..0], track_end: Activity.End(end_semantic), **)
+        def self.InitialAdds(track_color:raise, end_semantic:raise, start_outputs: {success: self.default_outputs[:success]}, track_end: Activity.End(end_semantic), **)
 
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 

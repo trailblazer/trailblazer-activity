@@ -48,8 +48,8 @@ module Trailblazer
       # Computes the :outputs options for {activity}
       def Nested(activity)
         {
-          task:       activity,
-          plus_poles: Activity::Magnetic::PlusPoles.from_outputs(activity.outputs)
+          task:    activity,
+          outputs: activity.outputs
         }
       end
     end

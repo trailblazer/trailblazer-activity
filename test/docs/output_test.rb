@@ -11,7 +11,7 @@ class DocsOutputTest < Minitest::Spec
 
       activity = Module.new do
         extend Activity::Path()
-puts "****"
+
         task Activity::DSL::Helper::Nested(nested),
           Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
       end

@@ -6,18 +6,18 @@ module Trailblazer
     #
     # The Normalizer sits in the `@builder`, which receives all DSL calls from the Operation subclass.
     class Normalizer
-      def self.build(task_builder: Activity::TaskBuilder::Binary, initial_outputs: Builder::Path.default_outputs(), pipeline: Pipeline, extension:[], **options)
+      def self.build(task_builder: Activity::TaskBuilder::Binary, default_outputs: Builder::Path.default_outputs, pipeline: Pipeline, extension:[], **options)
         return new(
-          initial_outputs: initial_outputs,
+          default_outputs: default_outputs,
           extension:       extension,
           task_builder:    task_builder,
           pipeline:        pipeline,
         ), options
       end
 
-      def initialize(task_builder:, initial_outputs:, pipeline:, **options)
+      def initialize(task_builder:, default_outputs:, pipeline:, **options)
         @task_builder    = task_builder
-        @initial_outputs = initial_outputs
+        @default_outputs = default_outputs
         @pipeline        = pipeline # TODO: test me.
         freeze
       end
@@ -27,7 +27,7 @@ module Trailblazer
           task:            task,
           options:         options,
           task_builder:    @task_builder,
-          initial_outputs: @initial_outputs,
+          default_outputs: @default_outputs,
         }
 
         signal, (ctx, ) = @pipeline.( [ctx] )
@@ -39,7 +39,7 @@ module Trailblazer
 
       # :default_plus_poles is an injectable option.
       module Pipeline
-        extend Trailblazer::Activity::Path( normalizer_class: DefaultNormalizer, plus_poles: PlusPoles.new.merge( Builder::Path.default_outputs ) ) # FIXME: the DefaultNormalizer actually doesn't need Left.
+        extend Trailblazer::Activity::Path( normalizer_class: DefaultNormalizer, plus_poles: PlusPoles.new.merge( Builder::Path.default_outputs.values ) ) # FIXME: the DefaultNormalizer actually doesn't need Left.
 
         def self.split_options( ctx, task:, options:, ** )
           keywords = extract_dsl_keywords(options)
@@ -77,9 +77,10 @@ module Trailblazer
             end
         end
 
-        # Merge user options over defaults.
-        def self.initialize_plus_poles( ctx, local_options:, initial_outputs:, outputs: nil, ** )
-          outputs = outputs || initial_outputs
+        # Create the `plus_poles: <PlusPoles>` tuple where the PlusPoles instance will act as the interface
+        # to rewireor add connections for the DSL.
+        def self.initialize_plus_poles( ctx, local_options:, default_outputs:, ** )
+          outputs = local_options[:outputs] || default_outputs
 
           ctx[:local_options] =
             {

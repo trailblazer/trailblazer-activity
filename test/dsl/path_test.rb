@@ -8,21 +8,17 @@ class DSLPathTest < Minitest::Spec
   class I; end
 
   describe "Procedural interface" do
-    let(:initial_plus_poles) do
-      Activity::Magnetic::PlusPoles.new.merge(
-        Activity.Output(Activity::Right, :success) => :success,
-      )
-    end
+    let(:initial_outputs) { { :success => Activity.Output(Activity::Right, :success) } }
 
     # with all options.
     it do
-      normalizer, _ = Activity::Magnetic::Normalizer.build(outputs: Builder::Path.default_outputs)
+      normalizer, _ = Activity::Magnetic::Normalizer.build(default_outputs: { :success => Builder::Path.default_outputs[:success] } )
 
       builder, adds = Builder::Path.for( normalizer, {track_color: :pink} )
 
-      _adds, _ = builder.insert( :task, {task: G}, id: G, plus_poles: initial_plus_poles, Activity.Output("Exception", :exception) => Activity.End(:exception) )
+      _adds, _ = builder.insert( :task, {task: G}, id: G, outputs: initial_outputs, Activity.Output("Exception", :exception) => Activity.End(:exception) )
       adds += _adds
-      _adds, _ = builder.insert( :task, {task: I}, id: I, plus_poles: initial_plus_poles, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
+      _adds, _ = builder.insert( :task, {task: I}, id: I, outputs: initial_outputs, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
       adds += _adds
 
       sequence = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
@@ -49,7 +45,7 @@ class DSLPathTest < Minitest::Spec
     it do
       normalizer, _ = Activity::Magnetic::Normalizer.build(outputs: Builder::Path.default_outputs)
 
-      builder, adds = Builder::Path.for( normalizer, {plus_poles: initial_plus_poles} )
+      builder, adds = Builder::Path.for( normalizer, {outputs: initial_outputs} )
 
       _adds, _ = builder.insert( :task, {task: G}, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception) )
       adds += _adds
