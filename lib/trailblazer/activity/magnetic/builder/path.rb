@@ -59,14 +59,14 @@ module Trailblazer
           start_adds + end_adds
         end
 
-        def self.TaskPolarizations(track_color:raise, type: :task, **)
+        def self.TaskPolarizations(track_color:, type: :task, **)
           return [EndPolarization.new( track_color: track_color )] if type == :End # DISCUSS: should this dispatch be here?
 
           [TaskPolarization.new( track_color: track_color )]
         end
 
         class TaskPolarization
-          def initialize( track_color:raise )
+          def initialize(track_color:)
             @track_color = track_color
           end
 

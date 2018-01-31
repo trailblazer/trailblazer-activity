@@ -75,7 +75,7 @@ module Trailblazer
       # Low-level interface for DSL calls (e.g. Start, where "you know what you're doing")
       # @private
       def self.adds(task, polarizations, options, sequence_options, magnetic_to:nil, id:nil, plus_poles:, **) # DISCUSS: no :id ?
-        magnetic_to, plus_poles = apply_polarizations(
+        magnetic_to, plus_poles = PlusPoles.apply_polarizations(
           polarizations,
           magnetic_to,
           plus_poles,
@@ -88,19 +88,11 @@ module Trailblazer
         )
       end
 
-      # Called once per DSL method call, e.g. ::step.
-      #
-      # The idea is to chain a bunch of PlusPoles transformations (and magnetic_to "transformations")
-      # for each DSL call, and thus realize things like path+railway+fast_track
-      def self.apply_polarizations(polarizations, magnetic_to, plus_poles, options)
-        polarizations.inject([magnetic_to, plus_poles]) do |args, pol|
-          magnetic, plus_poles = pol.(*args, options)
-        end
-      end
+
 
       def self.Add(id, task, magnetic_to, plus_poles, options, sequence_options)
         [
-          [ :add, [id, [ magnetic_to, task, plus_poles.to_a ], sequence_options] ],
+          [ :add, [id, [ magnetic_to, task, plus_poles ], sequence_options] ],
         ]
       end
     end # Builder

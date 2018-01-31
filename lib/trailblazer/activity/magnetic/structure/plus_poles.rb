@@ -1,10 +1,23 @@
 module Trailblazer
   module Activity::Magnetic
+    # A plus pole is associating an Output{:signal, :semantic} to a magnetic :color.
+    #
+    # When it comes to connecting tasks to each other, PlusPoles is the most important object
+    # here. When a task is added via the DSL, a PlusPoles is set up, and the DSL adds polarizations
+    # from the implementation and from the options (e.g. `Outputs(..) => ..`).
+    #
+    # These are then finalized and return the effective plus poles
+
+    # Polarization is one or multiple calls to PlusPoles
+
+
+
+
+
     # Output(:signal, :semantic) => :color
     # add / merge
     #   change existing, => color
     #
-    # Mutable DSL datastructure for managing all PlusPoles for a particular task.
     #
     # Produces [ PlusPole, PlusPole, ] via `to_a`.
     #
@@ -40,7 +53,21 @@ module Trailblazer
         merge( ::Hash[ary.compact] )
       end
 
+      # Compile one {PlusPoles} instance from all a sequence of {Polarization}s.
+      # This is usually called once per `step` DSL call.
+      #
+      # @api private
+      def self.apply_polarizations(polarizations, magnetic_to, plus_poles, options)
+        magnetic_to, plus_poles = polarizations.inject([magnetic_to, plus_poles]) do |args, pol|
+          magnetic_to, plus_poles = pol.(*args, options)
+        end
+
+        return magnetic_to, plus_poles.to_a
+      end
+
       # The DSL is a series of transformations that yield in tasks with several PlusPole instances each.
+      #
+      # @api private
       def to_a
         @plus_poles.values.collect { |output, color| PlusPole.new(output, color) }
       end
