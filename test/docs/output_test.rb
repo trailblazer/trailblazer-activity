@@ -2,7 +2,7 @@ require "test_helper"
 
 class DocsOutputTest < Minitest::Spec
   describe "Output() with task: Activity" do
-    it do
+    it "allows to grab existing Output(:semantic) from nested activity" do
       nested = Module.new do
         extend Activity::FastTrack()
 
