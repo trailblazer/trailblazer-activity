@@ -16,7 +16,7 @@ module Trailblazer
           extend Trailblazer::Activity::Path(
             name:             "taskWrap",
             normalizer_class: Magnetic::DefaultNormalizer,
-            plus_poles:       Magnetic::PlusPoles.initial( Magnetic::Builder::Path.DefaultOutputs[0..0] ) # DefaultNormalizer doesn't give us default PlusPoles.
+            plus_poles:       Magnetic::PlusPoles.initial( Magnetic::Builder::Path.default_outputs[0..0] ) # DefaultNormalizer doesn't give us default PlusPoles.
           )
 
           task TaskWrap.method(:call_task), id: "task_wrap.call_task" # ::call_task is defined in task_wrap/call_task.

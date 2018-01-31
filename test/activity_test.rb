@@ -29,7 +29,7 @@ class ActivityTest < Minitest::Spec
 
   describe ":normalizer" do
     let(:activity) do
-      my_simple_normalizer = ->(task, options){ [ task, { plus_poles: Trailblazer::Activity::Magnetic::PlusPoles.initial( Trailblazer::Activity::Magnetic::Builder::Path.DefaultOutputs[0..0] ) }, {}, {} ] }
+      my_simple_normalizer = ->(task, options){ [ task, { plus_poles: Trailblazer::Activity::Magnetic::PlusPoles.initial( Trailblazer::Activity::Magnetic::Builder::Path.default_outputs[0..0] ) }, {}, {} ] }
 
       activity = Module.new do
         extend Trailblazer::Activity::Path( normalizer: my_simple_normalizer )
