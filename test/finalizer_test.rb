@@ -129,7 +129,7 @@ DrawGraphTest::EF
 
   describe "referencing a task coming ahead" do
     it do
-      normalizer, _ = Magnetic::Normalizer.build(plus_poles: Magnetic::Builder::Railway.default_plus_poles)
+      normalizer, _ = Magnetic::Normalizer.build(outputs: Magnetic::Builder::Railway.default_outputs)
 
       builder, adds, _ = Activity::State.build( Magnetic::Builder::Path, normalizer, {} )
 

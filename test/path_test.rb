@@ -45,10 +45,8 @@ class PathTest < Minitest::Spec
  (success)/Right ==> :track_9
 [:track_9] ==> #<Method: #<Module:0x>.a>
  (success)/Right ==> :track_9
- (failure)/Left ==> nil
 [:track_9] ==> #<Method: #<Module:0x>.b>
  (success)/Right ==> :track_9
- (failure)/Left ==> nil
 [:track_9] ==> #<End/:success>
  []
 }
@@ -98,10 +96,8 @@ class PathTest < Minitest::Spec
  (success)/Right ==> :track_9
 [:track_9] ==> #<Method: #<Module:0x>.a>
  (success)/Right ==> :track_9
- (failure)/Left ==> nil
 [:track_9] ==> #<Method: #<Module:0x>.b>
  (success)/Right ==> "//b-Trailblazer::Activity::Right"
- (failure)/Left ==> nil
 [:track_9] ==> #<End/:success>
  []
 ["//b-Trailblazer::Activity::Right"] ==> #<End/:invalid_result>
@@ -301,16 +297,13 @@ PathTest::MyEnd
  (success)/Right ==> :success
 [:success] ==> #<Method: #<Module:0x>.a>
  (success)/Right ==> :success
- (failure)/Left ==> nil
 [:success] ==> #<Method: #<Module:0x>.b>
  (success)/Right ==> :success
  (failure)/Left ==> \"track_0.\"
 ["track_0."] ==> #<Method: #<Module:0x>.c>
  (success)/Right ==> "track_0."
- (failure)/Left ==> nil
 ["track_0."] ==> #<Method: #<Module:0x>.d>
  (success)/Right ==> "track_0."
- (failure)/Left ==> nil
 [:success] ==> #<End/:success>
  []
 ["track_0."] ==> #<End/"track_0.">

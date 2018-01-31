@@ -158,7 +158,7 @@ ActivityBuildTest::L
       extend Activity::Path()
 
       task task: A, id: "inquiry_create", Output(Left, :failure) => "suspend_for_correct", Output(:success) => "receive_process_id"
-      task task: B, id: "suspend_for_correct", Output(:failure) => "inquiry_create"
+      task task: B, id: "suspend_for_correct", Output(Left, :failure) => "inquiry_create"
 
       task task: G, id: "receive_process_id", magnetic_to: []
 

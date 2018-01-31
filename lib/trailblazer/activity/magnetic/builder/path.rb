@@ -24,7 +24,7 @@ module Trailblazer
         def self.default_outputs
           {
             success: Activity.Output(Activity::Right, :success),
-            failure: Activity.Output(Activity::Left,  :failure),
+            # failure: Activity.Output(Activity::Left,  :failure),
           }
         end
 

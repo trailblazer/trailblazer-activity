@@ -39,7 +39,7 @@ class DocsMacroTest < Minitest::Spec
           ctx[:model] = Memo.find_by(id: id)
         end
 
-        task method(:find_model), Output(:failure) => "create", Output(:success) => "update"
+        task method(:find_model), Output(Activity::Left, :failure) => "create", Output(:success) => "update"
         task method(:create), magnetic_to: [], id: "create"
         task method(:update), magnetic_to: [], id: "update"
         task method(:save)

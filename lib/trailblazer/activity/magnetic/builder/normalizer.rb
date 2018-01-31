@@ -77,8 +77,12 @@ module Trailblazer
             end
         end
 
+        # :outputs passed: I know what I want to have connected.
+        # no :outputs: use default_outputs
+        # ALWAYS connect all outputs to their semantic-color.
+
         # Create the `plus_poles: <PlusPoles>` tuple where the PlusPoles instance will act as the interface
-        # to rewireor add connections for the DSL.
+        # to rewire or add connections for the DSL.
         def self.initialize_plus_poles( ctx, local_options:, default_outputs:, ** )
           outputs = local_options[:outputs] || default_outputs
 

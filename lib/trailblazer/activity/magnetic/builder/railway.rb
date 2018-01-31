@@ -22,11 +22,10 @@ module Trailblazer
           return Railway, Railway.PassPolarizations(@builder_options), task, options, block
         end
 
-        def self.default_plus_poles
-          PlusPoles.new.merge(
-            Activity.Output(Activity::Right, :success) => nil,
-            Activity.Output(Activity::Left,  :failure) => nil,
-          ).freeze
+        def self.default_outputs
+          Path.default_outputs.merge(
+            :failure => Activity.Output(Activity::Left,  :failure),
+          )
         end
 
         # Adds the End.failure end to the Path sequence.

@@ -37,7 +37,8 @@ module Trailblazer
       def reverse_merge(output_to_color)
         existing_colors = @plus_poles.values.collect { |pole_cfg| pole_cfg.last }
 
-        overrides = output_to_color.find_all { |output, color| !existing_colors.include?(color) } # filter all outputs with a color that already exists.
+        # filter all outputs with a color that already exists.
+        overrides = output_to_color.find_all { |output, color| !existing_colors.include?(color) }
         merge(overrides)
       end
 
@@ -82,9 +83,9 @@ module Trailblazer
 
       # FIXME: should this be a hash or whatever?
       #
-      # @return Hash All {Output}s mapped to nil: `{ Output(Right, :success) => nil }`
+      # @return Hash All {Output}s mapped to their semantic: `{ Output(Right, :success) => :success }`
       def self.initial(outputs)
-        new.merge(Hash[ outputs.collect { |key, output| [output, nil] } ])
+        new.merge(Hash[ outputs.collect { |semantic, output| [output, semantic] } ])
       end
     end
   end
