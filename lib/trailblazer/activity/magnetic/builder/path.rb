@@ -20,15 +20,16 @@ module Trailblazer
           return Path, polarizations, task, options, block
         end
 
-
-        def self.default_plus_poles
-          PlusPoles.new.merge(
-            Activity.Output( Activity::Right, :success ) => nil
-          ).freeze
+              # @private Might be removed.
+        def self.DefaultOutputs
+          [
+            Activity.Output(Activity::Right, :success),
+            Activity.Output(Activity::Left,  :failure),
+          ]
         end
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:raise, end_semantic:raise, default_plus_poles: self.default_plus_poles, track_end: Activity.End(end_semantic), **)
+        def self.InitialAdds(track_color:raise, end_semantic:raise, default_outputs: self.DefaultOutputs, track_end: Activity.End(end_semantic), **)
 
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
@@ -41,7 +42,7 @@ module Trailblazer
 
             id:           "Start.default",
             magnetic_to:  [],
-            plus_poles:   default_plus_poles
+            plus_poles:   PlusPoles.initial(default_outputs), # FIXME: this is actually redundant with Normalizer
           )
 
           end_adds = adds(

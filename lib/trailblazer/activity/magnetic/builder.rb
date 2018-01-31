@@ -15,6 +15,7 @@ module Trailblazer
       end
     end
 
+    # Called from Path/Railway/FastTrack, creates the specific {Builder} instance.
     def self.Builder(implementation, normalizer, builder_options={})
       builder = implementation.new(normalizer, builder_options.freeze).freeze # e.g. Path.new(...)
 
@@ -32,7 +33,9 @@ module Trailblazer
         activity_adds + merged_adds
       end
 
-      # Stateful helper.
+      # DSL method to create a Path within an activity which is embedded.
+      #
+      # Output(:success) => Path() {}
       def Path(*args)
         Activity::DSL::Helper.Path(@normalizer, *args)
       end
@@ -50,13 +53,12 @@ module Trailblazer
       private
 
       # Internal top-level entry point to add task(s) and connections.
+      # High level interface for DSL calls like ::task or ::step.
       def insert_element(impl, polarizations, task, local_options, connection_options, sequence_options, &block)
         adds, *returned_options = Builder.adds_for(polarizations, task, local_options, connection_options, sequence_options, &block)
       end
 
       # @return Adds
-      # High level interface for DSL calls like ::task or ::step.
-      # TODO: RETURN ALL OPTIONS
       def self.adds_for(polarizations, task, local_options, connection_options, sequence_options, &block)
         # go through all wiring options such as Output()=>:color.
         polarizations_from_user_options, additional_adds = process_dsl_options(connection_options, local_options, &block)

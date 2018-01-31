@@ -1,40 +1,33 @@
 module Trailblazer
   module Activity::Magnetic
-    # The {Normalizer} is called for every DSL call (step/pass/fail etc.) and normalizes/defaults
+    # One {Normalizer} instance is called for every DSL call (step/pass/fail etc.) and normalizes/defaults
     # the user options, such as setting `:id`, connecting the task's outputs or wrapping the user's
     # task via {TaskBuilder::Binary} in order to translate true/false to `Right` or `Left`.
     #
     # The Normalizer sits in the `@builder`, which receives all DSL calls from the Operation subclass.
     class Normalizer
-      def self.build(task_builder: Activity::TaskBuilder::Binary, default_plus_poles: Normalizer.InitialPlusPoles(), pipeline: Pipeline, extension:[], **options)
+      def self.build(task_builder: Activity::TaskBuilder::Binary, default_outputs: Builder::Path.DefaultOutputs(), pipeline: Pipeline, extension:[], **options)
         return new(
-          default_plus_poles: default_plus_poles,
-          extension:          extension,
-          task_builder:       task_builder,
-          pipeline:           pipeline,
+          default_outputs: default_outputs,
+          extension:       extension,
+          task_builder:    task_builder,
+          pipeline:        pipeline,
         ), options
       end
 
-      # @private Might be removed.
-      def self.InitialPlusPoles
-        Activity::Magnetic::PlusPoles.new.merge(
-          Activity.Output(Activity::Right, :success) => nil,
-          Activity.Output(Activity::Left,  :failure) => nil,
-        )
-      end
-
-      def initialize(task_builder:, default_plus_poles:, pipeline:, **options)
-        @task_builder       = task_builder
-        @default_plus_poles = default_plus_poles
-        @pipeline           = pipeline # TODO: test me.
+      def initialize(task_builder:, default_outputs:, pipeline:, **options)
+        @task_builder    = task_builder
+        @default_outputs = default_outputs
+        @pipeline        = pipeline # TODO: test me.
         freeze
       end
 
       def call(task, options)
         ctx = {
-          task: task, options:  options,
-          task_builder:         @task_builder,
-          default_plus_poles:   @default_plus_poles,
+          task:            task,
+          options:         options,
+          task_builder:    @task_builder,
+          default_outputs: @default_outputs,
         }
 
         signal, (ctx, ) = @pipeline.( [ctx] )
@@ -46,7 +39,7 @@ module Trailblazer
 
       # :default_plus_poles is an injectable option.
       module Pipeline
-        extend Trailblazer::Activity::Path( normalizer_class: DefaultNormalizer, plus_poles: Builder::Path.default_plus_poles )
+        extend Trailblazer::Activity::Path( normalizer_class: DefaultNormalizer, plus_poles: PlusPoles.new.merge( Builder::Path.DefaultOutputs ) ) # FIXME: the DefaultNormalizer actually doesn't need Left.
 
         def self.split_options( ctx, task:, options:, ** )
           keywords = extract_dsl_keywords(options)
@@ -85,10 +78,12 @@ module Trailblazer
         end
 
         # Merge user options over defaults.
-        def self.defaultize( ctx, local_options:, default_plus_poles:, ** ) # TODO: test :default_plus_poles
+        def self.initialize_plus_poles( ctx, local_options:, default_outputs:, outputs: nil, ** )
+          outputs = outputs || default_outputs
+
           ctx[:local_options] =
             {
-              plus_poles: default_plus_poles,
+              plus_poles: PlusPoles.initial(outputs),
             }
             .merge(local_options)
         end
@@ -96,7 +91,7 @@ module Trailblazer
         task Activity::TaskBuilder::Binary.( method(:normalize_for_macro) ),        id: "normalize_for_macro"
         task Activity::TaskBuilder::Binary.( method(:split_options) ),              id: "split_options"
         task Activity::TaskBuilder::Binary.( method(:normalize_extension_option) ), id: "normalize_extension_option"
-        task Activity::TaskBuilder::Binary.( method(:defaultize) ),                 id: "defaultize"
+        task Activity::TaskBuilder::Binary.( method(:initialize_plus_poles) ),      id: "initialize_plus_poles"
         # task ->((ctx, _), **) { pp ctx; [Activity::Right, [ctx, _]] }
       end
     end # Normalizer

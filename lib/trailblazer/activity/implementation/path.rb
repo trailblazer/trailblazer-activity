@@ -11,7 +11,7 @@ module Trailblazer
         {
           builder_class:    Magnetic::Builder::Path, # we use the Activity-based Normalizer
           normalizer_class: Magnetic::Normalizer,
-          plus_poles:       Magnetic::Builder::Path.default_plus_poles,
+          default_outputs:  Magnetic::Builder::Path.DefaultOutputs,
           extension:        [ Introspect.method(:add_introspection) ],
 
           extend:           [ DSL.def_dsl(:task) ],

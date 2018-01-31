@@ -1,6 +1,6 @@
   module Trailblazer
     class Activity < Module     # End event is just another callable task.
-      # Builds an Activity::End instance.
+      # Builds an {Activity::End} instance.
       def self.End(semantic)
         End.new(semantic: semantic)
       end
@@ -48,6 +48,7 @@
       # semantic: the original "semantic" or role of the signal, such as :success. This usually comes from the activity hosting this output.
       Output = Struct.new(:signal, :semantic)
 
+      # Builds an {Activity::Output} instance.
       def self.Output(signal, color)
         Output.new(signal, color).freeze
       end

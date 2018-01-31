@@ -79,6 +79,13 @@ module Trailblazer
 
         new.merge(::Hash[ary])
       end
+
+      # FIXME: should this be a hash or whatever?
+      #
+      # @return Hash All {Output}s mapped to nil: `{ Output(Right, :success) => nil }`
+      def self.initial(outputs_ary)
+        new.merge(Hash[ outputs_ary.collect { |output| [output, nil] } ])
+      end
     end
   end
 end
