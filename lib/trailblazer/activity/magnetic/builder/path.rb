@@ -29,7 +29,7 @@ module Trailblazer
         end
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:raise, end_semantic:raise, default_outputs: self.DefaultOutputs, track_end: Activity.End(end_semantic), **)
+        def self.InitialAdds(track_color:raise, end_semantic:raise, start_outputs: self.DefaultOutputs[0..0], track_end: Activity.End(end_semantic), **)
 
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
@@ -42,7 +42,7 @@ module Trailblazer
 
             id:           "Start.default",
             magnetic_to:  [],
-            plus_poles:   PlusPoles.initial(default_outputs), # FIXME: this is actually redundant with Normalizer
+            plus_poles:   PlusPoles.initial(start_outputs), # FIXME: this is actually redundant with Normalizer
           )
 
           end_adds = adds(
