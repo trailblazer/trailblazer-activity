@@ -62,6 +62,8 @@ class DocsOutputTest < Minitest::Spec
 
         task Activity::DSL::Helper::Nested(nested) # Nested() has a :pass_fast output.
         task task: Trailblazer::Activity::End(:pass_fast), type: :End, magnetic_to: [:pass_fast]
+        task task: Trailblazer::Activity::End(:fail_fast), type: :End, magnetic_to: [:fail_fast]
+        task task: Trailblazer::Activity::End(:failure), type: :End, magnetic_to: [:failure]
       end
 
       Cct(activity.to_h[:circuit]).must_equal %{
@@ -69,8 +71,14 @@ class DocsOutputTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
  {#<Trailblazer::Activity::End semantic=:pass_fast>} => #<End/:pass_fast>
+ {#<Trailblazer::Activity::End semantic=:fail_fast>} => #<End/:fail_fast>
+ {#<Trailblazer::Activity::End semantic=:failure>} => #<End/:failure>
  {#<Trailblazer::Activity::End semantic=:success>} => #<End/:success>
 #<End/:pass_fast>
+
+#<End/:fail_fast>
+
+#<End/:failure>
 
 #<End/:success>
 }
