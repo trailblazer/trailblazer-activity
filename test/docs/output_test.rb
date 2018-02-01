@@ -1,15 +1,55 @@
 require "test_helper"
 
 class DocsOutputTest < Minitest::Spec
-  let(:nested) do
-    Module.new do
-      extend Activity::FastTrack()
+  describe "plain task" do
+    it "allows wiring existing default outputs" do
+      activity = Module.new do
+        extend Activity::Path()
 
-      step T.def_task(:a), fast_track: true # four ends.
+        task "A",
+          Output(:success) => End(:my_pass_fast)
+      end
+
+      Cct(activity.to_h[:circuit]).must_equal %{
+#<Start/:default>
+ {Trailblazer::Activity::Right} => #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
+#<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
+ {Trailblazer::Activity::Right} => #<End/:my_pass_fast>
+#<End/:success>
+
+#<End/:my_pass_fast>
+}
+    end
+
+    it "allows grabing explicitly passed output" do
+      activity = Module.new do
+        extend Activity::Path()
+
+        task "A",
+          Output(:pass) => End(:my_pass), outputs: { pass: Activity.Output("Pass", :pass), fail: Activity.Output("Fail", :fail) }
+      end
+
+      Cct(activity.to_h[:circuit]).must_equal %{
+#<Start/:default>
+ {Trailblazer::Activity::Right} => #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
+#<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
+ {Pass} => #<End/:my_pass>
+#<End/:success>
+
+#<End/:my_pass>
+}
     end
   end
 
-  describe "Output() with task: Activity" do
+  describe "Nested" do
+    let(:nested) do
+      Module.new do
+        extend Activity::FastTrack()
+
+        step T.def_task(:a), fast_track: true # four ends.
+      end
+    end
+
     it "allows to grab existing Output(:semantic) from nested activity" do
       nested = self.nested
 
