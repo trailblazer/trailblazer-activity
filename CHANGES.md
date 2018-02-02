@@ -1,5 +1,6 @@
 # 0.4.3
 
+* Make `:outputs` the canonical way to define outputs, and not `:plus_poles`. The latter is computed by the DSL if not passed.
 * Allow injecting `inspect` implementations into `Introspect` methods.
 * Add `Nested`.
 * Add `TaskBuilder::Task#to_s`.
