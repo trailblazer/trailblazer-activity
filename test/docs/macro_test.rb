@@ -16,8 +16,6 @@ class DocsMacroTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<End/:success>
 #<End/:success>
 }
-    content = content.gsub("#<Trailblazer::Activity: {}>.", "#<Method: #<Module:0x>.") if RUBY_PLATFORM == "java"
-    content
   end
 
   describe "manual branching" do
