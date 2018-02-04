@@ -1,3 +1,7 @@
+# 0.4.4
+
+* Rename `Nested()` to `Subprocess` and move the original one to the `operation` gem.
+
 # 0.4.3
 
 * Make `:outputs` the canonical way to define outputs, and not `:plus_poles`. The latter is computed by the DSL if not passed.
