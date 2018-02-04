@@ -12,6 +12,9 @@ module Trailblazer
       end
     end
 
+    # @api private
+    OutputSemantic = Struct.new(:value)
+
     # Shortcut functions for the DSL. These have no state.
     module Helper
       module_function
@@ -19,7 +22,7 @@ module Trailblazer
       #   Output( Left, :failure )
       #   Output( :failure ) #=> Output::Semantic
       def Output(signal, semantic=nil)
-        return Activity::Magnetic::DSL::Output::Semantic.new(signal) if semantic.nil?
+        return OutputSemantic.new(signal) if semantic.nil?
 
         Activity.Output(signal, semantic)
       end

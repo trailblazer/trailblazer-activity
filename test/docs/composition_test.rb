@@ -3,12 +3,7 @@ require "test_helper"
 class DocsCompositionTest < Minitest::Spec
 ### Automatic Wiring
   class SimpleRailwayInRailwayTest < Minitest::Spec
-    Memo = Struct.new(:id, :body) do
-      def self.find(id)
-        return new(id, "Yo!") if id
-        nil
-      end
-    end
+    Memo = Class.new(Memo)
 
     # A simple Railway and no special {End}s.
     #:simple-railway
@@ -63,12 +58,7 @@ class DocsCompositionTest < Minitest::Spec
 
 ### Manual Wiring
   class RailwayWithThreeEndsInRailwayTest < Minitest::Spec
-    Memo = Struct.new(:id, :body) do
-      def self.find(id)
-        return new(id, "Yo!") if id
-        nil
-      end
-    end
+    Memo = Class.new(Memo)
 
     # Nested component
     #:manual-inner
@@ -159,6 +149,45 @@ class DocsCompositionTest < Minitest::Spec
 
       # works! :success
       event, (ctx, _) = Rewire::Memo::Update.( { params: { id: 1 } })
+      event.to_h[:semantic].must_equal :success
+      ctx[:model].to_h.inspect.must_equal %{{:id=>1, :body=>\"Yo!\"}}
+    end
+
+### use Subprocess() for automatic :outputs.
+    module Subprocess
+      module Memo
+        Find = RailwayWithThreeEndsInRailwayTest::Memo::Find
+      end
+
+      #:subprocess-outer
+      module Memo::Update
+        extend Trailblazer::Activity::Railway()
+        #~methods
+        module_function
+
+        def policy( ctx, ** )
+          true
+        end
+        #~methods end
+        step method(:policy)
+        step Subprocess( Memo::Find ),
+          Output(:model_not_found) => End(:err404),
+          Output(:id_missing)      => :failure
+      end
+      #:subprocess-outer end
+    end
+
+    it "connects :id_missing to :failure" do
+      # No :id
+      event, (ctx, _) = Subprocess::Memo::Update.( { params: {} })
+      event.to_h[:semantic].must_equal :failure
+
+      # find fails
+      event, (ctx, _) = Subprocess::Memo::Update.( { params: { id: nil } })
+      event.to_h[:semantic].must_equal :err404
+
+      # works! :success
+      event, (ctx, _) = Subprocess::Memo::Update.( { params: { id: 1 } })
       event.to_h[:semantic].must_equal :success
       ctx[:model].to_h.inspect.must_equal %{{:id=>1, :body=>\"Yo!\"}}
     end

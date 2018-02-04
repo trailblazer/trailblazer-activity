@@ -54,7 +54,7 @@ module Trailblazer
         end
 
         # Filter out connections, e.g. `Output(:fail_fast) => :success` and return only the keywords like `:id` or `:replace`.
-        def self.extract_dsl_keywords(options, connection_classes = [Activity::Output, DSL::Output::Semantic])
+        def self.extract_dsl_keywords(options, connection_classes = [Activity::Output, Activity::DSL::OutputSemantic])
           options.keys - options.keys.find_all { |k| connection_classes.include?( k.class ) }
         end
 

@@ -37,6 +37,13 @@ Minitest::Spec.class_eval do
     Seq(tripletts)
   end
 
+
+  Memo = Struct.new(:id, :body) do
+    def self.find(id)
+      return new(id, "Yo!") if id
+      nil
+    end
+  end
 end
 
 Trailblazer::Activity.module_eval do

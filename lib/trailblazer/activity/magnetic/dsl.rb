@@ -41,9 +41,10 @@ module Trailblazer
         end
 
         def process_tuple(id, output, task, plus_poles, &block)
-          output = output_for(output, plus_poles) if output.kind_of?(DSL::Output::Semantic)
+          output = output_for(output, plus_poles) if output.kind_of?(Activity::DSL::OutputSemantic)
 
           if task.kind_of?(Activity::End)
+            # raise %{An end event with semantic `#{task.to_h[:semantic]}` has already been added. Please use an ID reference: `=> "End.#{task.to_h[:semantic]}"`} if
             new_edge = "#{id}-#{output.signal}"
 
             [
@@ -83,11 +84,6 @@ module Trailblazer
           output or raise("Couldn't find existing output for `#{semantic.value.inspect}`.")
         end
       end # OptionsProcessing
-
-      # DSL datastructures
-      module Output
-        Semantic = Struct.new(:value)
-      end
     end # DSL
   end
 end
