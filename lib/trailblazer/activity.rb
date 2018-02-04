@@ -42,7 +42,7 @@ module Trailblazer
     module DSLHelper
       extend Forwardable
       def_delegators :@builder, :Path
-      def_delegators DSL::Helper, :Output, :End, :Nested
+      def_delegators DSL::Helper, :Output, :End, :Subprocess
 
       def Path(*args, &block)
         self[:builder].Path(*args, &block)
@@ -109,9 +109,6 @@ require "trailblazer/activity/trace"
 require "trailblazer/activity/present"
 
 require "trailblazer/activity/introspect"
-
-# require "trailblazer/activity/heritage"
-require "trailblazer/activity/subprocess"
 
 require "trailblazer/activity/state"
 require "trailblazer/activity/magnetic" # the "magnetic" DSL

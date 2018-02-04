@@ -46,7 +46,7 @@ module Trailblazer
       end
 
       # Computes the :outputs options for {activity}
-      def Nested(activity)
+      def Subprocess(activity)
         {
           task:    activity,
           outputs: activity.outputs

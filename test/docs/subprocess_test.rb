@@ -1,6 +1,6 @@
 require "test_helper"
 
-class NestedTest < Minitest::Spec
+class SubprocessTest < Minitest::Spec
   let(:nested) do
     Module.new do
       extend Activity::FastTrack()
@@ -15,7 +15,7 @@ class NestedTest < Minitest::Spec
     activity = Module.new do
       extend Activity::Path()
 
-      task Nested(nested),
+      task Subprocess(nested),
         Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
     end
 
@@ -37,7 +37,7 @@ class NestedTest < Minitest::Spec
     activity = Module.new do
       extend Activity::Railway()
 
-      step Nested(nested),
+      step Subprocess(nested),
         Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
     end
 

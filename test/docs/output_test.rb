@@ -41,7 +41,8 @@ class DocsOutputTest < Minitest::Spec
     end
   end
 
-  describe "Nested" do
+
+  describe "Subprocess" do
     let(:nested) do
       Module.new do
         extend Activity::FastTrack()
@@ -56,7 +57,7 @@ class DocsOutputTest < Minitest::Spec
       activity = Module.new do
         extend Activity::Path()
 
-        task Activity::DSL::Helper::Nested(nested),
+        task Subprocess(nested),
           Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
       end
 
@@ -72,13 +73,13 @@ class DocsOutputTest < Minitest::Spec
 }
     end
 
-    it "allows adding an additional plus pole to Nested's outputs via Output(.. ,..)" do
+    it "allows adding an additional plus pole to Subprocess's outputs via Output(.. ,..)" do
       nested = self.nested
 
       activity = Module.new do
         extend Activity::Path()
 
-        task Activity::DSL::Helper::Nested(nested),
+        task Subprocess(nested),
           Output("Restart", :restart) => End(:restart) # references a plus pole from VV
       end
 
@@ -100,7 +101,7 @@ class DocsOutputTest < Minitest::Spec
       activity = Module.new do
         extend Activity::Path()
 
-        task Activity::DSL::Helper::Nested(nested) # Nested() has a :pass_fast output.
+        task Subprocess(nested) # Subprocess() has a :pass_fast output.
         task task: Trailblazer::Activity::End(:pass_fast), type: :End, magnetic_to: [:pass_fast]
         task task: Trailblazer::Activity::End(:fail_fast), type: :End, magnetic_to: [:fail_fast]
         task task: Trailblazer::Activity::End(:failure), type: :End, magnetic_to: [:failure]
