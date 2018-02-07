@@ -4,15 +4,15 @@ class DocsMacroTest < Minitest::Spec
   let(:branching) do
     content = %{
 #<Start/:default>
- {Trailblazer::Activity::Right} => #<TaskBuilder{#<Method: #<Trailblazer::Activity: {}>.find_model>}>
-#<TaskBuilder{#<Method: #<Trailblazer::Activity: {}>.find_model>}>
- {Trailblazer::Activity::Left} => #<TaskBuilder{#<Method: #<Trailblazer::Activity: {}>.create>}>
- {Trailblazer::Activity::Right} => #<TaskBuilder{#<Method: #<Trailblazer::Activity: {}>.update>}>
-#<TaskBuilder{#<Method: #<Trailblazer::Activity: {}>.create>}>
- {Trailblazer::Activity::Right} => #<TaskBuilder{#<Method: #<Trailblazer::Activity: {}>.save>}>
-#<TaskBuilder{#<Method: #<Trailblazer::Activity: {}>.update>}>
- {Trailblazer::Activity::Right} => #<TaskBuilder{#<Method: #<Trailblazer::Activity: {}>.save>}>
-#<TaskBuilder{#<Method: #<Trailblazer::Activity: {}>.save>}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.find_model}>
+#<TaskBuilder{.find_model}>
+ {Trailblazer::Activity::Left} => #<TaskBuilder{.create}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.update}>
+#<TaskBuilder{.create}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.save}>
+#<TaskBuilder{.update}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.save}>
+#<TaskBuilder{.save}>
  {Trailblazer::Activity::Right} => #<End/:success>
 #<End/:success>
 }

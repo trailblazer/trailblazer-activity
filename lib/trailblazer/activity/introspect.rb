@@ -37,7 +37,9 @@ module Trailblazer
 
       def self.inspect_task_builder(task)
         proc = task.instance_variable_get(:@user_proc)
-        %{#<TaskBuilder{#{proc}}>}
+        match = proc.inspect.match(/(\w+)>$/)
+
+        %{#<TaskBuilder{.#{match[1]}}>}
       end
 
         # FIXME: clean up that shit below.
