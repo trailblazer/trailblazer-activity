@@ -73,14 +73,6 @@ module Trailblazer
         @plus_poles.values.collect { |output, color| PlusPole.new(output, color) }
       end
 
-      # Builds PlusPoles from { semantic => Output }, which, surprisingly, is exactly what Activity::outputs looks like.
-      # The plus pole's color is set to the output's semantic.
-      def self.from_outputs(outputs)
-        ary = outputs.collect { |semantic, output| [ output, semantic ] }
-
-        new.merge(::Hash[ary])
-      end
-
       # FIXME: should this be a hash or whatever?
       #
       # @return Hash All {Output}s mapped to their semantic: `{ Output(Right, :success) => :success }`

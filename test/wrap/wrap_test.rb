@@ -212,10 +212,10 @@ pp flow_options
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start semantic=:default>
 |-- outsideg.Model
-|-- #<Module:>
+|-- #<Trailblazer::Activity: {}>
 |   |-- #<Trailblazer::Activity::Start semantic=:default>
 |   |-- #<Proc:.rb:11 (lambda)>
-|   |-- #<Module:>
+|   |-- #<Trailblazer::Activity: {}>
 |   |   |-- #<Trailblazer::Activity::Start semantic=:default>
 |   |   |-- #<Proc:.rb:12 (lambda)>
 |   |   `-- #<Trailblazer::Activity::End semantic=:success>

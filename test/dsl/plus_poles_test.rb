@@ -121,16 +121,4 @@ class PlusPolesTest < Minitest::Spec
       new_poles.to_a.inspect.must_equal %{[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=\"My.Right\", semantic=:success>, color=:fantastic>]}
     end
   end
-
-  describe "::from_outputs" do
-    it "creates PlusPoles from an Activity's outputs" do
-      activity = activity = Module.new do
-        extend Activity::Path()
-        task :a
-      end
-
-      Activity::Magnetic::PlusPoles::from_outputs( activity.outputs ).to_a.inspect.gsub(/0x\w+/, "").inspect.
-        must_equal %{"[#<struct Trailblazer::Activity::Magnetic::PlusPole output=#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, color=:success>]"}
-    end
-  end
 end
