@@ -18,18 +18,19 @@ class DocsRailwayTest < Minitest::Spec
 
   class ThirdTrackTest < Minitest::Spec
     Memo = Class.new(Memo)
-
+    #:custom
     module Memo::Create
       extend Trailblazer::Activity::Railway()
       #~methods
       extend Methods
       #~methods end
-      step method(:authenticate), Output(:failure) => :auth_failed
+      step method(:authenticate),  Output(:failure) => :auth_failed
       step method(:auth_err),      magnetic_to: [:auth_failed], Output(:success) => :auth_failed
       step method(:reset_counter), magnetic_to: [:auth_failed], Output(:success) => End(:authentication_failure)
 
       step method(:find_model)
     end
+    #:custom end
 
     it do
        Cct(Memo::Create.to_h[:circuit], inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
@@ -59,7 +60,7 @@ class DocsRailwayTest < Minitest::Spec
 
   class ThirdTrackWithPathTest < Minitest::Spec
     Memo = Class.new(Memo)
-
+    #:path
     module Memo::Create
       extend Trailblazer::Activity::Railway()
       #~methods
@@ -72,6 +73,7 @@ class DocsRailwayTest < Minitest::Spec
 
       step method(:find_model)
     end
+    #:path end
 
     it do
        Cct(Memo::Create.to_h[:circuit], inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
@@ -103,7 +105,7 @@ class DocsRailwayTest < Minitest::Spec
 
   class ThirdTrackWithPathAndImplicitEndTest < Minitest::Spec
     Memo = Class.new(Memo)
-
+    #:path-end
     module Memo::Create
       extend Trailblazer::Activity::Railway()
       #~methods
@@ -116,6 +118,7 @@ class DocsRailwayTest < Minitest::Spec
 
       step method(:find_model)
     end
+    #:path-end end
 
     it do
        Cct(Memo::Create.to_h[:circuit], inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
