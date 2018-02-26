@@ -1,3 +1,6 @@
+# 2.2
+  * The `Polarizations` classes, e.g. in `FastTrack` could be steps in the normalizer? so we wouldn't need `reverse_merge`.
+
   # NOT lowest level. if you need that, use your own proc.
     # TODO: how do we track what goes into the callable?
     #                 adjust what goes into it (e.g. without direction or with kw args)?

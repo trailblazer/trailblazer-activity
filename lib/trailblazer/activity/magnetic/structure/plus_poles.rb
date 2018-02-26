@@ -75,10 +75,11 @@ module Trailblazer
 
       # FIXME: should this be a hash or whatever?
       #
-      # @return Hash All {Output}s mapped to their semantic: `{ Output(Right, :success) => :success }`
+      # @return Hash All {Output}s mapped to their (guessed) semantic: `{ Output(Right, :success) => :success }`
       def self.initial(outputs)
         new.merge(Hash[ outputs.collect { |semantic, output| [output, semantic] } ])
       end
     end
   end
 end
+

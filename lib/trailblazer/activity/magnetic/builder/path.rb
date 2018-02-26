@@ -17,7 +17,7 @@ module Trailblazer
         def task(task, options={}, &block)
           polarizations = Path.TaskPolarizations( @builder_options.merge( type: options[:type] ) ) # DISCUSS: handle :type here? Really?
 
-          return Path, polarizations, task, options, block
+          return polarizations, task, options, block
         end
 
               # @private Might be removed.

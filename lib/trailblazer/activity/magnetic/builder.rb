@@ -46,16 +46,17 @@ module Trailblazer
 
         task, local_options, connection_options, sequence_options = normalizer.(task, options)
 
-        implementation, polarizations, task, local_options, block = send(name, task, local_options, &block) # builder.task
+        # builder.task
+        polarizations, task, local_options, block = send(name, task, local_options, &block)
 
-        insert_element( implementation, polarizations, task, local_options, connection_options, sequence_options, &block )
+        insert_element( polarizations, task, local_options, connection_options, sequence_options, &block )
       end
 
       private
 
       # Internal top-level entry point to add task(s) and connections.
       # High level interface for DSL calls like ::task or ::step.
-      def insert_element(impl, polarizations, task, local_options, connection_options, sequence_options, &block)
+      def insert_element(polarizations, task, local_options, connection_options, sequence_options, &block)
         adds, *returned_options = Builder.adds_for(polarizations, task, local_options, connection_options, sequence_options, &block)
       end
 

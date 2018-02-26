@@ -32,7 +32,7 @@ module Trailblazer
       end
 
       def Path(normalizer, track_color: "track_#{rand}", end_semantic: track_color, **options)
-        options    = options.merge(track_color: track_color, end_semantic: end_semantic)
+        options = options.merge(track_color: track_color, end_semantic: end_semantic)
 
         # Build an anonymous class which will be where the block is evaluated in.
         # We use the same normalizer here, so DSL calls in the inner block have the same behavior.
