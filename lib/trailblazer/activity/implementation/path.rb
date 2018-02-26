@@ -14,7 +14,7 @@ module Trailblazer
           default_outputs:  Magnetic::Builder::Path.default_outputs,
           extension:        [ Introspect.method(:add_introspection) ],
 
-          extend:           [ DSL.def_dsl(:task) ],
+          extend:           [ DSL.def_dsl(:task), DSL.def_dsl(:_end) ],
         }
       end
     end # Path

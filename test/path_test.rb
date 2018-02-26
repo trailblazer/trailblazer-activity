@@ -110,9 +110,9 @@ class PathTest < Minitest::Spec
       extend Activity::Path()
 
       task task: T.def_task(:a), id: "A"
-      task task: T.def_task(:b), id: "B", type: :End
+      _end task: T.def_task(:b), id: "B"
       task task: T.def_task(:c), id: "D", magnetic_to: [] # start event
-      task task: T.def_task(:d), id: "I", type: :End
+      _end task: T.def_task(:d), id: "I"
       task task: T.def_task(:e), id: "G", magnetic_to: [] # start event
     end
 

@@ -102,9 +102,9 @@ class DocsOutputTest < Minitest::Spec
         extend Activity::Path()
 
         task Subprocess(nested) # Subprocess() has a :pass_fast output.
-        task task: Trailblazer::Activity::End(:pass_fast), type: :End, magnetic_to: [:pass_fast]
-        task task: Trailblazer::Activity::End(:fail_fast), type: :End, magnetic_to: [:fail_fast]
-        task task: Trailblazer::Activity::End(:failure), type: :End, magnetic_to: [:failure]
+        _end task: Trailblazer::Activity::End(:pass_fast), magnetic_to: [:pass_fast]
+        _end task: Trailblazer::Activity::End(:fail_fast), magnetic_to: [:fail_fast]
+        _end task: Trailblazer::Activity::End(:failure), magnetic_to: [:failure]
       end
 
       Cct(activity.to_h[:circuit]).must_equal %{

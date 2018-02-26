@@ -18,8 +18,8 @@ module Trailblazer
           return Path.TaskPolarizations( @builder_options ), task, options, block
         end
 
-        def end_event(task=nil, options={}, &block)
-          return Path.EndEventPolarization( @builder_options ), task, options, block
+        def _end(task=nil, options={}, &block)
+          return Path.EndEventPolarizations( @builder_options ), task, options, block
         end
 
               # @private Might be removed.
