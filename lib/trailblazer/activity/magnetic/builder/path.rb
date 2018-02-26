@@ -14,11 +14,9 @@ module Trailblazer
           )
         end
 
-              # @private Might be removed.
         def self.default_outputs
           {
-            success: Activity.Output(Activity::Right, :success),
-            # failure: Activity.Output(Activity::Left,  :failure),
+            success: Activity.Output(Activity::Right, :success)
           }
         end
 

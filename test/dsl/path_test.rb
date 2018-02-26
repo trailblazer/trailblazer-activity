@@ -16,9 +16,9 @@ class DSLPathTest < Minitest::Spec
 
       builder, adds = Builder::Path.for( normalizer, {track_color: :pink} )
 
-      _adds, _ = builder.insert( :task, {task: G}, id: G, outputs: initial_outputs, Activity.Output("Exception", :exception) => Activity.End(:exception) )
+      _adds, _ = builder.insert( Builder::Path, :TaskPolarizations, :task, {task: G}, id: G, outputs: initial_outputs, Activity.Output("Exception", :exception) => Activity.End(:exception) )
       adds += _adds
-      _adds, _ = builder.insert( :task, {task: I}, id: I, outputs: initial_outputs, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
+      _adds, _ = builder.insert( Builder::Path, :TaskPolarizations, :task, {task: I}, id: I, outputs: initial_outputs, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
       adds += _adds
 
       sequence = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
@@ -47,9 +47,9 @@ class DSLPathTest < Minitest::Spec
 
       builder, adds = Builder::Path.for( normalizer, {outputs: initial_outputs} )
 
-      _adds, _ = builder.insert( :task, {task: G}, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception) )
+      _adds, _ = builder.insert( Builder::Path, :TaskPolarizations, :task, {task: G}, id: G, Activity.Output("Exception", :exception) => Activity.End(:exception) )
       adds += _adds
-      _adds, _ = builder.insert( :task, {task: I}, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
+      _adds, _ = builder.insert( Builder::Path, :TaskPolarizations, :task, {task: I}, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
       adds += _adds
 
       sequence = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)

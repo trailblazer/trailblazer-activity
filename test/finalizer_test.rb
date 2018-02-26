@@ -131,10 +131,10 @@ DrawGraphTest::EF
     it do
       normalizer, _ = Magnetic::Normalizer.build(outputs: Magnetic::Builder::Railway.default_outputs)
 
-      builder, adds, _ = Activity::State.build( Magnetic::Builder::Path, normalizer, {} )
+      builder, adds, _ = Activity::Magnetic::Builder::State.build( Magnetic::Builder::Path, normalizer, {} )
 
-      _, adds, _       = Activity::State.add( builder, adds, :task, {task: A, Activity::DSL::Helper.Output(:success) => "find"}, {} )
-      _, adds, _       = Activity::State.add( builder, adds, :task, {task: :Find, id: "find"}, {} )
+      _, adds, _       = Activity::Magnetic::Builder::State.add( builder, adds, Activity::Magnetic::Builder::Path, :TaskPolarizations, :task, {task: A, Activity::DSL::Helper.Output(:success) => "find"}, {} )
+      _, adds, _       = Activity::Magnetic::Builder::State.add( builder, adds, Activity::Magnetic::Builder::Path, :TaskPolarizations, :task, {task: :Find, id: "find"}, {} )
 
       # pp adds
 
