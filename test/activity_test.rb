@@ -149,7 +149,7 @@ class ActivityTest < Minitest::Spec
 
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
-        task B.new(semantic: :resume_1), id: "resume_for_correct", type: :End
+        _end B.new(semantic: :resume_1), id: "resume_for_correct"
         task C, id: "suspend_for_correct", Output(:success) => "inquiry_create"
       end
 

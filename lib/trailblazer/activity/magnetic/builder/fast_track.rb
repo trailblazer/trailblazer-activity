@@ -88,7 +88,7 @@ module Trailblazer
             adds(
               pass_fast_end,
 
-              Path::TaskPolarizations(builder_options.merge( type: :End )),
+              Path::EndEventPolarizations(builder_options),
 
               {},
               { group: :end },
@@ -100,7 +100,7 @@ module Trailblazer
             adds(
               fail_fast_end,
 
-              Path::TaskPolarizations(builder_options.merge( type: :End )),
+              Path::EndEventPolarizations(builder_options),
 
               {},
               { group: :end },

@@ -36,7 +36,7 @@ module Trailblazer
           end_adds = adds(
             failure_end,
 
-            Path::TaskPolarizations(builder_options.merge( type: :End )),
+            Path::EndEventPolarizations(builder_options),
 
             {},
             { group: :end },

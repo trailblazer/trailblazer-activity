@@ -15,9 +15,11 @@ module Trailblazer
         end
 
         def task(task, options={}, &block)
-          polarizations = Path.TaskPolarizations( @builder_options.merge( type: options[:type] ) ) # DISCUSS: handle :type here? Really?
+          return Path.TaskPolarizations( @builder_options ), task, options, block
+        end
 
-          return polarizations, task, options, block
+        def end_event(task=nil, options={}, &block)
+          return Path.EndEventPolarization( @builder_options ), task, options, block
         end
 
               # @private Might be removed.
@@ -48,7 +50,7 @@ module Trailblazer
           end_adds = adds(
             track_end,
 
-            TaskPolarizations(builder_options.merge( type: :End )),
+            EndEventPolarizations(builder_options),
 
             {}, { group: :end },
 
@@ -60,10 +62,12 @@ module Trailblazer
           start_adds + end_adds
         end
 
-        def self.TaskPolarizations(track_color:, type: :task, **)
-          return [EndPolarization.new( track_color: track_color )] if type == :End # DISCUSS: should this dispatch be here?
-
+        def self.TaskPolarizations(track_color:, **)
           [TaskPolarization.new( track_color: track_color )]
+        end
+
+        def self.EndEventPolarizations(track_color:, **)
+          [EndEventPolarization.new( track_color: track_color )]
         end
 
         class TaskPolarization
@@ -79,14 +83,14 @@ module Trailblazer
           end
         end # TaskPolarization
 
-        class EndPolarization < TaskPolarization
+        class EndEventPolarization < TaskPolarization
           def call(magnetic_to, plus_poles, options)
             [
               magnetic_to || [@track_color],
               {}
             ]
           end
-        end # EndPolarization
+        end # EndEventPolarization
       end # Path
     end # Builder
   end

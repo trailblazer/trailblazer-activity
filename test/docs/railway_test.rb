@@ -111,9 +111,9 @@ class DocsRailwayTest < Minitest::Spec
       #~methods
       extend Methods
       #~methods end
-      step method(:authenticate), Output(:failure) => Path( end_semantic: :authentication_failure) do
-        task Memo::Create.method(:auth_err)
-        task Memo::Create.method(:reset_counter)
+      step method(:authenticate), Output(:failure) => Path( end_semantic: :authentication_failure ) do
+        # pass Memo::Create.method(:auth_err)
+        # pass Memo::Create.method(:reset_counter)
       end
 
       step method(:find_model)
