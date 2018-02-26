@@ -112,8 +112,8 @@ class DocsRailwayTest < Minitest::Spec
       extend Methods
       #~methods end
       step method(:authenticate), Output(:failure) => Path( end_semantic: :authentication_failure ) do
-        # pass Memo::Create.method(:auth_err)
-        # pass Memo::Create.method(:reset_counter)
+        pass Memo::Create.method(:auth_err)
+        pass Memo::Create.method(:reset_counter)
       end
 
       step method(:find_model)
@@ -129,10 +129,10 @@ class DocsRailwayTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<TaskBuilder{.find_model}>
 #<TaskBuilder{.auth_err}>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.reset_counter}>
- {Trailblazer::Activity::Left} => #<End/:failure>
+ {Trailblazer::Activity::Left} => #<TaskBuilder{.reset_counter}>
 #<TaskBuilder{.reset_counter}>
- {Trailblazer::Activity::Left} => #<End/:failure>
  {Trailblazer::Activity::Right} => #<End/:authentication_failure>
+ {Trailblazer::Activity::Left} => #<End/:authentication_failure>
 #<TaskBuilder{.find_model}>
  {Trailblazer::Activity::Right} => #<End/:success>
  {Trailblazer::Activity::Left} => #<End/:failure>

@@ -1,6 +1,6 @@
 module Trailblazer
-  class Activity < Module   # @private
-    # Maintain Builder/Adds/Process/Outputs as immutable objects.
+  class Activity::Magnetic::Builder
+    # Maintain Builder instance plus Adds/Process/Outputs as immutable objects.
     module State
       def self.build(builder_class, normalizer, builder_options)
         builder, adds = builder_class.for(normalizer, builder_options) # e.g. Path.for(...) which creates a Builder::Path instance.
@@ -8,8 +8,8 @@ module Trailblazer
         recompile(builder.freeze, adds.freeze)
       end
 
-      def self.add(builder, adds, name, *args, &block)
-        new_adds, *returned_options = builder.insert(name, *args, &block) # builder.task
+      def self.add(builder, adds, strategy, polarizer, name, *args, &block)
+        new_adds, *returned_options = builder.insert(strategy, polarizer, name, *args, &block) # TODO: move that out of here.
 
         adds = adds + new_adds
 
@@ -34,7 +34,7 @@ module Trailblazer
         #
         # @return [Process, Hash] The {Process} instance and its outputs hash.
         def self.call(adds)
-          circuit, end_events = Magnetic::Builder::Finalizer.(adds)
+          circuit, end_events = Finalizer.(adds)
           outputs             = recompile_outputs(end_events)
 
           return circuit, outputs

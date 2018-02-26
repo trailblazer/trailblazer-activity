@@ -4,10 +4,10 @@ module Trailblazer
     # the circuit, etc. Method comes in a module so it can be overridden via modules.
     #
     # This approach assumes you maintain a {#add_task!} method.
-    def self.def_dsl(_name)
+    def self.def_dsl(_name, strategy, polarizer)
       Module.new do
         define_method(_name) do |task, options={}, &block|
-          builder, adds, circuit, outputs, options = add_task!(_name, task, options, &block)  # TODO: similar to Block.
+          builder, adds, circuit, outputs, options = add_task!(strategy, polarizer, _name, task, options, &block)  # TODO: similar to Block.
         end
       end
     end

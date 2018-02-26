@@ -10,18 +10,6 @@ module Trailblazer
           )
         end
 
-        def step(task, options={}, &block)
-          return Railway.StepPolarizations(@builder_options), task, options, block
-        end
-
-        def fail(task, options={}, &block)
-          return Railway.FailPolarizations(@builder_options), task, options, block
-        end
-
-        def pass(task, options={}, &block)
-          return Railway.PassPolarizations(@builder_options), task, options, block
-        end
-
         def self.default_outputs
           Path.default_outputs.merge(
             :failure => Activity.Output(Activity::Left,  :failure),

@@ -24,7 +24,7 @@ class Trailblazer::Activity < Module
 
     # @api private
     def self.build_state(normalizer, builder_class:, builder_options: {}, **options)
-      builder, adds, circuit, outputs = State.build(builder_class, normalizer, options.merge(builder_options))
+      builder, adds, circuit, outputs = Magnetic::Builder::State.build(builder_class, normalizer, options.merge(builder_options))
 
       return builder, adds, circuit, outputs, options
     end

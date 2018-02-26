@@ -14,7 +14,11 @@ module Trailblazer
           default_outputs:  Magnetic::Builder::Path.default_outputs,
           extension:        [ Introspect.method(:add_introspection) ],
 
-          extend:           [ DSL.def_dsl(:task), DSL.def_dsl(:_end) ],
+          extend:           [
+            DSL.def_dsl(:task, Magnetic::Builder::Path,    :TaskPolarizations),
+            DSL.def_dsl(:_end, Magnetic::Builder::Path,    :EndEventPolarizations),
+            DSL.def_dsl(:pass, Magnetic::Builder::Railway, :PassPolarizations),
+          ],
         }
       end
     end # Path

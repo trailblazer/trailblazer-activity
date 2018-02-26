@@ -10,7 +10,11 @@ module Trailblazer
         Path.config.merge(
           builder_class:   Magnetic::Builder::Railway,
           default_outputs: Magnetic::Builder::Railway.default_outputs,
-          extend:          [ DSL.def_dsl(:step), DSL.def_dsl(:fail), DSL.def_dsl(:pass) ],
+          extend:          [
+            DSL.def_dsl(:step, Magnetic::Builder::Railway, :StepPolarizations),
+            DSL.def_dsl(:fail, Magnetic::Builder::Railway, :FailPolarizations),
+            DSL.def_dsl(:pass, Magnetic::Builder::Railway, :PassPolarizations)
+          ],
         )
       end
     end

@@ -116,18 +116,6 @@ module Trailblazer
         # Direction signals.
         FailFast = Class.new(Activity::Signal)
         PassFast = Class.new(Activity::Signal)
-
-        def step(task, options={}, &block)
-          return FastTrack.StepPolarizations(@builder_options), task, options, block
-        end
-
-        def fail(task, options={}, &block)
-          return FastTrack.FailPolarizations(@builder_options), task, options, block
-        end
-
-        def pass(task, options={}, &block)
-          return FastTrack.PassPolarizations(@builder_options), task, options, block
-        end
       end
     end
   end

@@ -112,7 +112,7 @@ require "trailblazer/activity/present"
 
 require "trailblazer/activity/introspect"
 
-require "trailblazer/activity/state"
+require "trailblazer/activity/magnetic/builder/state"
 require "trailblazer/activity/magnetic" # the "magnetic" DSL
 require "trailblazer/activity/schema/sequence"
 

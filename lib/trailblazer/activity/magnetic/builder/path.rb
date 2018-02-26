@@ -14,14 +14,6 @@ module Trailblazer
           )
         end
 
-        def task(task, options={}, &block)
-          return Path.TaskPolarizations( @builder_options ), task, options, block
-        end
-
-        def _end(task=nil, options={}, &block)
-          return Path.EndEventPolarizations( @builder_options ), task, options, block
-        end
-
               # @private Might be removed.
         def self.default_outputs
           {

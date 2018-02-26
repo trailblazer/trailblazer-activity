@@ -5,7 +5,7 @@ class Trailblazer::Activity < Module
       def merge!(merged)
         merged_adds = Builder.merge(self[:adds], merged[:adds])
         # TODO: MERGE DEBUG, TASK_WRAP
-        builder, adds, circuit, outputs, = State.recompile(self[:builder], merged_adds)
+        builder, adds, circuit, outputs, = Builder::State.recompile(self[:builder], merged_adds)
 
         self[:adds] = adds
         self[:circuit] = circuit
