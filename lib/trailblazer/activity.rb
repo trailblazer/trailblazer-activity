@@ -118,3 +118,5 @@ require "trailblazer/activity/dsl/schema/sequence"
 require "trailblazer/activity/dsl/schema/dependencies"
 
 require "trailblazer/activity/dsl/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)
+
+require "trailblazer/activity/dsl/record"
