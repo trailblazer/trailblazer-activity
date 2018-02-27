@@ -8,8 +8,8 @@ module Trailblazer
         recompile(builder.freeze, adds.freeze)
       end
 
-      def self.add(builder, adds, strategy, polarizer, name, *args, &block)
-        new_adds, *returned_options = builder.insert(strategy, polarizer, name, *args, &block) # TODO: move that out of here.
+      def self.add(builder, adds, strategy, polarizer, *args, &block)
+        new_adds, *returned_options = builder.insert(strategy, polarizer, *args, &block) # TODO: move that out of here.
 
         adds = adds + new_adds
 

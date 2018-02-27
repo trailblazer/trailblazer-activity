@@ -133,8 +133,8 @@ DrawGraphTest::EF
 
       builder, adds, _ = Activity::Magnetic::Builder::State.build( Magnetic::Builder::Path, normalizer, {} )
 
-      _, adds, _       = Activity::Magnetic::Builder::State.add( builder, adds, Activity::Magnetic::Builder::Path, :TaskPolarizations, :task, {task: A, Activity::DSL::Helper.Output(:success) => "find"}, {} )
-      _, adds, _       = Activity::Magnetic::Builder::State.add( builder, adds, Activity::Magnetic::Builder::Path, :TaskPolarizations, :task, {task: :Find, id: "find"}, {} )
+      _, adds, _       = Activity::Magnetic::Builder::State.add( builder, adds, Activity::Magnetic::Builder::Path, :TaskPolarizations, {task: A, Activity::DSL::Helper.Output(:success) => "find"}, {} )
+      _, adds, _       = Activity::Magnetic::Builder::State.add( builder, adds, Activity::Magnetic::Builder::Path, :TaskPolarizations, {task: :Find, id: "find"}, {} )
 
       # pp adds
 

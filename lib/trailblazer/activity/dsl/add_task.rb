@@ -6,7 +6,7 @@ class Trailblazer::Activity < Module
         # We're changing state here, on the outside, by overriding the ivars.
         # That in turn means, the only mutated entity is this module.
 
-        _builder, adds, circuit, outputs, options = Magnetic::Builder::State.add( self[:builder], self[:adds], strategy, polarizer, name, task, options, &block ) # this could be an extension itself.
+        _builder, adds, circuit, outputs, options = Magnetic::Builder::State.add( self[:builder], self[:adds], strategy, polarizer, task, options, &block ) # this could be an extension itself.
 
         self[:adds]    = adds
         self[:circuit] = circuit

@@ -41,7 +41,7 @@ module Trailblazer
       end
 
       # Public top-level entry point.
-      def insert(strategy, polarizer, name, task, options, &block)
+      def insert(strategy, polarizer, task, options, &block)
         normalizer = options[:normalizer] || @normalizer # DISCUSS: do this at a deeper point?
 
         task, local_options, connection_options, sequence_options = normalizer.(task, options)
