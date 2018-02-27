@@ -1,5 +1,3 @@
-require "trailblazer/activity/magnetic/finalizer"
-
 module Trailblazer
   module Activity::Magnetic
 

@@ -71,14 +71,14 @@ module Trailblazer
     require "trailblazer/activity/dsl/add_task"
       include DSL::AddTask
 
-    require "trailblazer/activity/implementation/interface"
+    require "trailblazer/activity/dsl/implementation/interface"
       include Activity::Interface # DISCUSS
 
       include DSLHelper # DISCUSS
 
       include Activity::Inspect # DISCUSS
 
-    require "trailblazer/activity/magnetic/merge"
+    require "trailblazer/activity/dsl/magnetic/merge"
       include Magnetic::Merge # Activity#merge!
 
       def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
@@ -94,12 +94,12 @@ require "trailblazer/circuit"
 require "trailblazer/activity/structures"
 require "trailblazer/activity/config"
 
-require "trailblazer/activity/implementation/build_state"
-require "trailblazer/activity/implementation/interface"
-require "trailblazer/activity/implementation/path"
-require "trailblazer/activity/implementation/plan"
-require "trailblazer/activity/implementation/railway"
-require "trailblazer/activity/implementation/fast_track"
+require "trailblazer/activity/dsl/implementation/build_state"
+require "trailblazer/activity/dsl/implementation/interface"
+require "trailblazer/activity/dsl/implementation/path"
+require "trailblazer/activity/dsl/implementation/plan"
+require "trailblazer/activity/dsl/implementation/railway"
+require "trailblazer/activity/dsl/implementation/fast_track"
 
 require "trailblazer/activity/task_wrap"
 require "trailblazer/activity/task_wrap/call_task"
@@ -112,8 +112,10 @@ require "trailblazer/activity/present"
 
 require "trailblazer/activity/introspect"
 
-require "trailblazer/activity/magnetic/builder/state"
-require "trailblazer/activity/magnetic" # the "magnetic" DSL
-require "trailblazer/activity/schema/sequence"
+require "trailblazer/activity/dsl/magnetic/builder/state"
+require "trailblazer/activity/dsl/magnetic" # the "magnetic" DSL
 
-require "trailblazer/activity/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)
+require "trailblazer/activity/dsl/schema/sequence"
+require "trailblazer/activity/dsl/schema/dependencies"
+
+require "trailblazer/activity/dsl/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)

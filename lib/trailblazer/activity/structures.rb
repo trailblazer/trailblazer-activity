@@ -1,5 +1,7 @@
   module Trailblazer
-    class Activity < Module     # End event is just another callable task.
+    class Activity < Module
+      # Generic run-time structures that are built via the DSL.
+
       # Builds an {Activity::End} instance.
       def self.End(semantic)
         End.new(semantic: semantic)
@@ -24,12 +26,11 @@
           @options
         end
 
-        def inspect
-          to_s
-        end
         def to_s
           %{#<#{self.class.name} #{@options.collect{ |k,v| "#{k}=#{v.inspect}" }.join(" ")}>}
         end
+
+        alias_method :inspect, :to_s
       end
 
       class Start < End
