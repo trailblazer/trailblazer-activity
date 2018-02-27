@@ -1,19 +1,6 @@
 module Trailblazer
   module Activity::Magnetic
     module DSL
-      class Polarization
-        def initialize( output:raise, color:raise )
-          @output, @color = output, color
-        end
-
-        def call(magnetic_to, plus_poles, options)
-          [
-            magnetic_to,
-            plus_poles.merge( @output => @color ) # this usually adds a new Output to the task.
-          ]
-        end
-      end # Polarization
-
       # This module only processes additional "wiring" options from the DSL calls
       #   Output(:success) => End("my.new")
       #

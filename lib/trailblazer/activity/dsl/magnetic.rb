@@ -15,8 +15,9 @@ module Trailblazer
   end
 end
 
-require "trailblazer/activity/dsl/magnetic/dsl"
+require "trailblazer/activity/dsl/magnetic/process_options"
 require "trailblazer/activity/dsl/magnetic/structure/plus_poles"
+require "trailblazer/activity/dsl/magnetic/structure/polarization"
 require "trailblazer/activity/dsl/magnetic/structure/alterations"
 
 require "trailblazer/activity/dsl/magnetic"

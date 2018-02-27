@@ -71,7 +71,7 @@ module Trailblazer
     require "trailblazer/activity/dsl/add_task"
       include DSL::AddTask
 
-    require "trailblazer/activity/dsl/implementation/interface"
+    require "trailblazer/activity/interface"
       include Activity::Interface # DISCUSS
 
       include DSLHelper # DISCUSS
@@ -95,7 +95,6 @@ require "trailblazer/activity/structures"
 require "trailblazer/activity/config"
 
 require "trailblazer/activity/dsl/implementation/build_state"
-require "trailblazer/activity/dsl/implementation/interface"
 require "trailblazer/activity/dsl/implementation/path"
 require "trailblazer/activity/dsl/implementation/plan"
 require "trailblazer/activity/dsl/implementation/railway"
