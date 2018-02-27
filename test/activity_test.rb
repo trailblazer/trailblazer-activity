@@ -267,36 +267,6 @@ ActivityTest::A
     options.inspect.must_equal %{{:L=>1}}
   end
 
-  describe "#merge" do
-    it "what" do
-      activity = Module.new do
-        extend Trailblazer::Activity::Path()
-        task task: A
-        task task: B
-      end
-
-      merging = Module.new do
-        extend Trailblazer::Activity::Path()
-        task task: C
-        merge! activity
-      end
-
-      Cct(merging.to_h[:circuit]).must_equal %{
-#<Start/:default>
- {Trailblazer::Activity::Right} => ActivityTest::C
-ActivityTest::C
- {Trailblazer::Activity::Right} => ActivityTest::A
-ActivityTest::A
- {Trailblazer::Activity::Right} => ActivityTest::B
-ActivityTest::B
- {Trailblazer::Activity::Right} => #<End/:success>
-#<End/:success>
-}
-    end
-
-    # TODO: merge task_wrap, etc.
-  end
-
   describe "internal state" do
     it "a blank Activity exposes frozen objects, only" do
       activity = Module.new do

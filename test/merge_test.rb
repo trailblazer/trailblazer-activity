@@ -80,4 +80,34 @@ class MergeTest < Minitest::Spec
 
     # TODO: test @options.frozen?
   end
+
+  describe "Activity#merge" do
+    it "what" do
+      activity = Module.new do
+        extend Trailblazer::Activity::Path()
+        task task: :a
+        task task: :b
+      end
+
+      merging = Module.new do
+        extend Trailblazer::Activity::Path()
+        task task: :c
+        merge! activity
+      end
+
+      Cct(merging.to_h[:circuit]).must_equal %{
+#<Start/:default>
+ {Trailblazer::Activity::Right} => ActivityTest::C
+ActivityTest::C
+ {Trailblazer::Activity::Right} => ActivityTest::A
+ActivityTest::A
+ {Trailblazer::Activity::Right} => ActivityTest::B
+ActivityTest::B
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
+}
+    end
+
+    # TODO: merge task_wrap, etc.
+  end
 end

@@ -6,7 +6,9 @@ class TaskWrapMacroTest < Minitest::Spec
 
   # Sample {Extension}
   # We test if we can change `activity` here.
-  SampleExtension = ->(activity, task, local_options, *returned_options) do
+  SampleExtension = ->(activity, task, local_options, connections, sequence_options) do
+    activity[:args_from_extension] = [activity, task, local_options.keys, connections.inspect, sequence_options]
+
     activity.task task: activity.method(:b), id: "add_another_1", before: local_options[:id]
   end
 
@@ -27,7 +29,7 @@ class TaskWrapMacroTest < Minitest::Spec
       return Trailblazer::Activity::Right, [ ctx, flow_options ]
     end
 
-    task task: method(:a), extension: [ SampleExtension ], id: "a"
+    task task: method(:a), extension: [ SampleExtension ], id: "a", Output(nil, :failure) => End(:special), group: :main
   end
 
   it "runs two tasks" do
@@ -39,5 +41,9 @@ class TaskWrapMacroTest < Minitest::Spec
   describe "add_introspection" do
     let(:rvm_string) { %{[[#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.a>, {:id=>\"a\"}], [#<Method: #<Trailblazer::Activity: {TaskWrapMacroTest::Create}>.b>, {:id=>\"add_another_1\"}]]} }
     it { Create.debug.to_h.sort_by{ |a,b| a.inspect  }.inspect.must_equal rvm_string }
+
+    it "passes through all options" do
+      Create[:args_from_extension].must_equal [Create, Create.method(:a), [:plus_poles, :task, :extension, :id], "{#<struct Trailblazer::Activity::Output signal=nil, semantic=:failure>=>#<Trailblazer::Activity::End semantic=:special>}", {:group=>:main}]
+    end
   end
 end
