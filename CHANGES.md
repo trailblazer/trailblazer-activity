@@ -1,4 +1,4 @@
-# 0.4.4
+# 0.5.0
 
 * Rename `Nested()` to `Subprocess` and move the original one to the `operation` gem.
 * Add merging: `Activity.merge!` now allows to compose an activity by merging another.
