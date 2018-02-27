@@ -16,6 +16,47 @@ class DocsRailwayTest < Minitest::Spec
     end
   end
 
+  class RecoverTest < Minitest::Spec
+    Memo = Class.new(Memo)
+
+    module Memo::Create
+      extend Trailblazer::Activity::Railway()
+      #~methods
+      extend Methods
+      def self.find_by_email(ctx, **)
+        true
+      end
+      #~methods end
+      step method(:authenticate)
+      fail method(:auth_err), Output(:success) => :find_by_email
+      step method(:find_by_email)#, id: "find_by_email"
+
+      step method(:find_model)
+    end
+
+    it do
+       Cct(Memo::Create.to_h[:circuit], inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
+#<Start/:default>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.authenticate}>
+#<TaskBuilder{.authenticate}>
+ {Trailblazer::Activity::Left} => #<TaskBuilder{.auth_err}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.find_by_email}>
+#<TaskBuilder{.auth_err}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.find_by_email}>
+ {Trailblazer::Activity::Left} => #<End/:failure>
+#<TaskBuilder{.find_by_email}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.find_model}>
+ {Trailblazer::Activity::Left} => #<End/:failure>
+#<TaskBuilder{.find_model}>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:failure>
+#<End/:success>
+
+#<End/:failure>
+}
+    end
+  end
+
   class ThirdTrackTest < Minitest::Spec
     Memo = Class.new(Memo)
     #:custom
