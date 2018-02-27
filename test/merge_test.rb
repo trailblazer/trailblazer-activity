@@ -85,29 +85,38 @@ class MergeTest < Minitest::Spec
     it "what" do
       activity = Module.new do
         extend Trailblazer::Activity::Path()
+
         task task: :a
-        task task: :b
+        task task: :b, id: "B", Output(false, :failure) => Path(end_semantic: :false) do
+          pass task: :d
+        end
       end
 
       merging = Module.new do
         extend Trailblazer::Activity::Path()
+
         task task: :c
+
         merge! activity
       end
 
       Cct(merging.to_h[:circuit]).must_equal %{
 #<Start/:default>
- {Trailblazer::Activity::Right} => ActivityTest::C
-ActivityTest::C
- {Trailblazer::Activity::Right} => ActivityTest::A
-ActivityTest::A
- {Trailblazer::Activity::Right} => ActivityTest::B
-ActivityTest::B
+ {Trailblazer::Activity::Right} => :c
+:c
+ {Trailblazer::Activity::Right} => :a
+:a
+ {Trailblazer::Activity::Right} => :b
+:b
+ {false} => :d
  {Trailblazer::Activity::Right} => #<End/:success>
+:d
+ {Trailblazer::Activity::Right} => #<End/:false>
 #<End/:success>
+
+#<End/:false>
 }
     end
 
-    # TODO: merge task_wrap, etc.
   end
 end

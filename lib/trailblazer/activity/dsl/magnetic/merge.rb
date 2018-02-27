@@ -1,15 +1,13 @@
 class Trailblazer::Activity < Module
   module Magnetic
     module Merge
-      # THIS IS HIGHLY EXPERIMENTAL AS WE'RE NOT MERGING taskWrap etc.
       def merge!(merged)
-        merged_adds = Builder.merge(self[:adds], merged[:adds])
-        # TODO: MERGE DEBUG, TASK_WRAP
-        builder, adds, circuit, outputs, = Builder::State.recompile(self[:builder], merged_adds)
+        merged[:record].each do |key, args|
+          dsl_method, *args = args
 
-        self[:adds] = adds
-        self[:circuit] = circuit
-        self[:outputs] = outputs
+          return send( dsl_method, args[0], args[1], &args[2] ) if args[2]
+          send( dsl_method, args[0], args[1] )
+        end
 
         self
       end
