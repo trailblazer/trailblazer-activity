@@ -3,16 +3,15 @@ require "test_helper"
 class DocsRailwayTest < Minitest::Spec
   module Methods
     def authenticate(ctx, **)
-
     end
+
     def auth_err(ctx, **)
-
     end
+
     def reset_counter(ctx, **)
-
     end
-    def find_model(ctx, **)
 
+    def find_model(ctx, **)
     end
   end
 
