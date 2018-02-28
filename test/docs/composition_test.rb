@@ -92,7 +92,7 @@ class DocsCompositionTest < Minitest::Spec
       #~methods end
       step method(:policy)
       step task: Memo::Find,
-        Memo::Find.outputs[:success]         => :success,
+        Memo::Find.outputs[:success]         => Track(:success),
         Memo::Find.outputs[:model_not_found] => End(:err404),
         Memo::Find.outputs[:id_missing]      => End(:id_missing)
     end
@@ -131,9 +131,9 @@ class DocsCompositionTest < Minitest::Spec
         #~methods end
         step method(:policy)
         step task: Memo::Find,
-          Memo::Find.outputs[:success]         => :success,
+          Memo::Find.outputs[:success]         => Track(:success),
           Memo::Find.outputs[:model_not_found] => End(:err404),
-          Memo::Find.outputs[:id_missing]      => :failure
+          Memo::Find.outputs[:id_missing]      => Track(:failure)
       end
       #:rewire-outer end
     end
@@ -172,7 +172,7 @@ class DocsCompositionTest < Minitest::Spec
         step method(:policy)
         step Subprocess( Memo::Find ),
           Output(:model_not_found) => End(:err404),
-          Output(:id_missing)      => :failure
+          Output(:id_missing)      => Track(:failure)
       end
       #:subprocess-outer end
     end

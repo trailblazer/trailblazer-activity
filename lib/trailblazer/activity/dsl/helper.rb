@@ -14,6 +14,7 @@ module Trailblazer
 
     # @api private
     OutputSemantic = Struct.new(:value)
+    Track          = Struct.new(:color)
 
     # Shortcut functions for the DSL. These have no state.
     module Helper
@@ -29,6 +30,10 @@ module Trailblazer
 
       def End(semantic)
         Activity.End(semantic)
+      end
+
+      def Track(color)
+        Track.new(color).freeze
       end
 
       def Path(normalizer, track_color: "track_#{rand}", end_semantic: track_color, **options)

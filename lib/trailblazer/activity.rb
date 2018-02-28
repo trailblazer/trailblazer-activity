@@ -44,7 +44,7 @@ module Trailblazer
     module DSLHelper
       extend Forwardable
       def_delegators :@builder, :Path
-      def_delegators DSL::Helper, :Output, :End, :Subprocess
+      def_delegators DSL::Helper, :Output, :End, :Subprocess, :Track
 
       def Path(*args, &block)
         self[:builder].Path(*args, &block)

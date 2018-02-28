@@ -12,7 +12,7 @@ class TraceTest < Minitest::Spec
       extend Activity::Path()
 
       task task: A, id: "A"
-      task task: nested, nested.outputs[:success] => :success, id: "<Nested>"
+      task task: nested, nested.outputs[:success] => Track(:success), id: "<Nested>"
       task task: D, id: "D"
     end
     activity

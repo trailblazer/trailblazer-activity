@@ -79,7 +79,7 @@ class WrapTest < Minitest::Spec
       activity = Module.new do
         extend Activity::Path()
         task task: Save
-        task task: _more_nested, _more_nested.outputs[:success] => :success
+        task task: _more_nested, _more_nested.outputs[:success] => Track(:success)
         task task: Cleanup
       end
     end
@@ -90,8 +90,8 @@ class WrapTest < Minitest::Spec
       activity = Module.new do
         extend Activity::Path()
         task task: Model
-        task task: _nested, _nested.outputs[:success] => :success, id: "A"
-        task task: Uuid, Output(SpecialDirection, :success) => :success
+        task task: _nested, _nested.outputs[:success] => Track(:success), id: "A"
+        task task: Uuid, Output(SpecialDirection, :success) => Track(:success)
       end
     end
 

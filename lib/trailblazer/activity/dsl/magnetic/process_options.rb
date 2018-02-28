@@ -38,13 +38,6 @@ module Trailblazer
               Polarization.new( output: output, color: new_edge ),
               [ [:add, [task.to_h[:semantic], [ [new_edge], task, [] ], group: :end]] ]
             ]
-          elsif task.is_a?(String) # let's say this means an existing step
-            new_edge = "#{id}-#{output.signal}-#{task}"
-
-            [
-              Polarization.new( output: output, color: new_edge ),
-              [[ :magnetic_to, [ task, [new_edge] ] ]],
-            ]
           # procs come from DSL calls such as `Path() do ... end`.
           elsif task.is_a?(Proc)
             start_color, activity = task.(block)
@@ -57,9 +50,16 @@ module Trailblazer
             # TODO: we also need to merge all the other states such as debug.
               adds[1..-1] # drop start
             ]
-          else # An additional plus polarization. Example: Output => :success
+          elsif task.is_a?(Activity::DSL::Track) # An additional plus polarization. Example: Output => :success
             [
-              Polarization.new( output: output, color: task )
+              Polarization.new( output: output, color: task.color )
+            ]
+          else  # ID: existing step
+            new_edge = "#{id}-#{output.signal}-#{task}"
+
+            [
+              Polarization.new( output: output, color: new_edge ),
+              [[ :magnetic_to, [ task, [new_edge] ] ]],
             ]
           end
         end

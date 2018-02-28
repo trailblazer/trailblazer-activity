@@ -29,7 +29,7 @@ class DocsRailwayTest < Minitest::Spec
       #~methods end
       step method(:authenticate)
       fail method(:auth_err), Output(:success) => :find_by_email
-      step method(:find_by_email)#, id: "find_by_email"
+      step method(:find_by_email), id: :find_by_email
 
       step method(:find_model)
     end
@@ -65,8 +65,8 @@ class DocsRailwayTest < Minitest::Spec
       #~methods
       extend Methods
       #~methods end
-      step method(:authenticate),  Output(:failure) => :auth_failed
-      step method(:auth_err),      magnetic_to: [:auth_failed], Output(:success) => :auth_failed
+      step method(:authenticate),  Output(:failure) => Track(:auth_failed)
+      step method(:auth_err),      magnetic_to: [:auth_failed], Output(:success) => Track(:auth_failed)
       step method(:reset_counter), magnetic_to: [:auth_failed], Output(:success) => End(:authentication_failure)
 
       step method(:find_model)
