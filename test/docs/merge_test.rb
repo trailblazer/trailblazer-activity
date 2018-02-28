@@ -17,6 +17,7 @@ class DocsMergeTest < Minitest::Spec
   class OneMerge_Test < Minitest::Spec
     Memo = Class.new(Memo)
 
+    #:merge
     module Memo::Update
       extend Trailblazer::Activity::Railway()
       #~methods
@@ -28,6 +29,7 @@ class DocsMergeTest < Minitest::Spec
 
       step method(:update)
     end
+    #:merge end
 
     it do
       # happy update path
@@ -42,6 +44,7 @@ class DocsMergeTest < Minitest::Spec
     module Lib
     end
 
+    #:logger
     module Lib::Logger
       extend Trailblazer::Activity::Railway()
       #~methods
@@ -50,7 +53,9 @@ class DocsMergeTest < Minitest::Spec
       fail method(:log_error),   group: :end, before: "End.failure" # always as last.
       pass method(:log_success), group: :end, before: "End.success" # always as last.
     end
+    #:logger end
 
+    #:merge-two
     module Memo::Update
       extend Trailblazer::Activity::Railway()
       #~methods
@@ -62,6 +67,7 @@ class DocsMergeTest < Minitest::Spec
       merge!(Memo::Find)
       step method(:update)
     end
+    #:merge-two end
 
     it do
       # puts Cct(Memo::Update.to_h[:circuit])
