@@ -2,6 +2,7 @@
 
 * Rename `Nested()` to `Subprocess` and move the original one to the `operation` gem.
 * Add merging: `Activity.merge!` now allows to compose an activity by merging another.
+* Enforce using `Output(..) => Track(:success)` instead of just the track color `:success`. This allow having IDs both symbols and strings.
 
 # 0.4.3
 
