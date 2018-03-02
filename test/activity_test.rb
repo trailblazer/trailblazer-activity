@@ -143,6 +143,18 @@ class ActivityTest < Minitest::Spec
     circuit_options.must_be_nil
   end
 
+  describe "unconnected ends" do
+    it "are valid outputs since they define the interface" do
+      activity = Module.new do
+        extend Trailblazer::Activity::Path()
+
+        _end task: End(:invalid)
+      end
+
+      activity.outputs.inspect.must_equal %{{:invalid=>#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:invalid>, semantic=:invalid>, :success=>#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>}}
+    end
+  end
+
   let(:activity) do
     activity = Module.new do
       extend Trailblazer::Activity::Path( name: "Test::Create", task_builder: ->(task, *){task} )
@@ -193,7 +205,7 @@ ActivityTest::L
 }
 
 
-    Ends(activity.to_h[:circuit]).must_equal %{[#<ActivityTest::B/:resume_1>,#<End/:success>,#<End/:invalid_result>]}
+    Ends(activity.to_h[:circuit]).must_equal %{[#<ActivityTest::B/:resume_1>,#<End/:success>,#<End/\"track_0.\">,#<End/:invalid_result>]}
 
     # A -> B -> End.suspend
     options, flow_options, circuit_options = {id: 1, a_return: Activity::Left, b_return: Activity::Right }, {}, {}

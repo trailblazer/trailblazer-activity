@@ -37,14 +37,10 @@ module Trailblazer
           return Circuit.new(circuit_hash, end_events), end_events
         end
 
-        # Filters out unconnected ends, e.g. the standard end in nested tracks that weren't used.
+        # Find all end events that don't have outgoing connections.
         def self.end_events_for(circuit_hash)
-          tasks_with_incoming_edge = circuit_hash.values.collect { |connections| connections.values }.flatten(1)
-
           ary = circuit_hash.collect do |task, connections|
-            task.kind_of?(Activity::End) &&
-              connections.empty? &&
-              tasks_with_incoming_edge.include?(task) ? task : nil
+            task.kind_of?(Activity::End) && connections.empty? ? task : nil
           end
 
           ary.compact

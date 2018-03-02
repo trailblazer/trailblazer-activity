@@ -1,3 +1,7 @@
+# 0.5.1
+
+* Include all end events without outgoing connections into `Activity.outputs`. In earlier versions, we were filtering out end events without incoming connections, which reduces the number of outputs, but might not represent the desired interface of an activity.
+
 # 0.5.0
 
 * Rename `Nested()` to `Subprocess` and move the original one to the `operation` gem.

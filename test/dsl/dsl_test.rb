@@ -150,7 +150,7 @@ ActivityBuildTest::L
 #<End/:invalid_result>
 }
 
-    Ends(activity.to_h[:circuit]).must_equal %{[#<End/:success>,#<End/:invalid_result>]}
+    Ends(activity.to_h[:circuit]).must_equal %{[#<End/:success>,#<End/\"track_0.\">,#<End/:invalid_result>]}
   end
 
   it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do # FIXME: what were we (or I, haha) testing in here?
