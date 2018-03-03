@@ -41,8 +41,8 @@ module Trailblazer
 
             # add fast track outputs if :fast_track
             plus_poles = plus_poles.reverse_merge(
-              Activity.Output(FailFast, :fail_fast) => :fail_fast,
-              Activity.Output(PassFast, :pass_fast) => :pass_fast
+              Activity.Output(Activity::FastTrack::FailFast, :fail_fast) => :fail_fast,
+              Activity.Output(Activity::FastTrack::PassFast, :pass_fast) => :pass_fast
             ) if options[:fast_track]
 
             [
@@ -55,7 +55,7 @@ module Trailblazer
         class FailPolarization < Railway::StepPolarization
           def call(magnetic_to, plus_poles, options)
             plus_poles = plus_poles.reconnect( :failure => :fail_fast, :success => :fail_fast ) if options[:fail_fast]
-            plus_poles = plus_poles.reverse_merge( Activity.Output(FailFast, :fail_fast) => :fail_fast, Activity.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
+            plus_poles = plus_poles.reverse_merge( Activity.Output(Activity::FastTrack::FailFast, :fail_fast) => :fail_fast, Activity.Output(Activity::FastTrack::PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
 
             [
               magnetic_to,
@@ -67,7 +67,7 @@ module Trailblazer
         class PassPolarization < Railway::StepPolarization
           def call(magnetic_to, plus_poles, options)
             plus_poles = plus_poles.reconnect( :success => :pass_fast, :failure => :pass_fast ) if options[:pass_fast]
-            plus_poles = plus_poles.reverse_merge( Activity.Output(FailFast, :fail_fast) => :fail_fast, Activity.Output(PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
+            plus_poles = plus_poles.reverse_merge( Activity.Output(Activity::FastTrack::FailFast, :fail_fast) => :fail_fast, Activity.Output(Activity::FastTrack::PassFast, :pass_fast) => :pass_fast ) if options[:fast_track]
 
             [
               magnetic_to,
@@ -112,10 +112,6 @@ module Trailblazer
 
           path_adds + ends
         end
-
-        # Direction signals.
-        FailFast = Class.new(Activity::Signal)
-        PassFast = Class.new(Activity::Signal)
       end
     end
   end

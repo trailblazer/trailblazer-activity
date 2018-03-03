@@ -97,8 +97,8 @@ class FastTrackTest < Minitest::Spec
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<End/:success>
  {Trailblazer::Activity::Left} => #<End/:failure>
- {Trailblazer::Activity::Magnetic::Builder::FastTrack::PassFast} => #<End/:pass_fast>
- {Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast} => #<End/:fail_fast>
+ {Trailblazer::Activity::FastTrack::PassFast} => #<End/:pass_fast>
+ {Trailblazer::Activity::FastTrack::FailFast} => #<End/:fail_fast>
 }
     end
 
@@ -116,7 +116,7 @@ class FastTrackTest < Minitest::Spec
  {Signal} => #<End/:success>
  {Another} => #<End/:failure>
  {Pff} => #<End/:pass_fast>
- {Trailblazer::Activity::Magnetic::Builder::FastTrack::FailFast} => #<End/:fail_fast>
+ {Trailblazer::Activity::FastTrack::FailFast} => #<End/:fail_fast>
 }
     end
   end

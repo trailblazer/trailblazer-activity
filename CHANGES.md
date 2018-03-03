@@ -1,6 +1,8 @@
 # 0.5.1
 
 * Include all end events without outgoing connections into `Activity.outputs`. In earlier versions, we were filtering out end events without incoming connections, which reduces the number of outputs, but might not represent the desired interface of an activity.
+* Add `_end` to `Railway` and `FastTrack`.
+* Move `Builder::FastTrack::PassFast` and `:::FailFast` to `Activity::FastTrack` since those are signals and unrelated to builders.
 
 # 0.5.0
 
