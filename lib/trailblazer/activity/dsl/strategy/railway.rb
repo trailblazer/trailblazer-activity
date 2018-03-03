@@ -13,7 +13,8 @@ module Trailblazer
           extend:          [
             DSL.def_dsl(:step, Magnetic::Builder::Railway, :StepPolarizations),
             DSL.def_dsl(:fail, Magnetic::Builder::Railway, :FailPolarizations),
-            DSL.def_dsl(:pass, Magnetic::Builder::Railway, :PassPolarizations)
+            DSL.def_dsl(:pass, Magnetic::Builder::Railway, :PassPolarizations),
+            DSL.def_dsl(:_end, Magnetic::Builder::Path,    :EndEventPolarizations), # TODO: TEST ME
           ],
         )
       end
