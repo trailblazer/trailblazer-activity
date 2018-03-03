@@ -1,6 +1,34 @@
 require "test_helper"
 
 class DocsMacroTest < Minitest::Spec
+  describe "using a block" do
+    let(:activity) do
+      Module.new do
+        extend Activity::Path()
+
+        module_function
+        def self.MyNested(target: "mine", &block)
+          task = ->((ctx, flow_options), *) do
+            ctx[:my_nested] = yield(target) # use the block.
+
+            return Trailblazer::Activity::Right, [ctx, flow_options]
+          end
+
+          { task: task }
+        end
+
+        pass MyNested(target: "yours") { |target|
+          "this block's content is all #{target}!"
+        }
+      end
+    end
+
+    it "allows to claim and call the block that would usually go to the DSL" do
+      end_event, (ctx, _) = activity.( [{}] )
+      ctx.must_equal(:my_nested=>"this block's content is all yours!")
+    end
+  end
+
   let(:branching) do
     content = %{
 #<Start/:default>
