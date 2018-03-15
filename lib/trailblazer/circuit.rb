@@ -47,7 +47,7 @@ module Trailblazer
 
         task = next_for(task, last_signal) do |next_task, in_map|
           raise IllegalInputError.new("#{task}") unless in_map
-          raise IllegalOutputSignalError.new("#{@name}[#{task}][ #{last_signal.inspect} ]") unless next_task
+          raise IllegalOutputSignalError.new("<#{@name}>[#{task}][ #{last_signal.inspect} ]") unless next_task
         end
       end
     end
