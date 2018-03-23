@@ -1,6 +1,7 @@
 # 0.5.2
 
 * In `Path()`, we removed the `#path` method in favor of a cleaner `task` DSL method. We now use the default plus_poles `success` and `failure` everywhere for consistency. This means that a `task` has two outputs, and if you referenced `Output(:success)`, that would be only one of them. We're planning to have `pass` back which has one `success` plus_pole, only. This change makes the DSL wiring behavior much more consistent.
+* Changed `TaskBuilder::Builder.()` to a function `TaskBuilder::Builder()`.
 
 # 0.5.1
 
