@@ -2,7 +2,7 @@ module Trailblazer
   module Activity::TaskBuilder
     # every step is wrapped by this proc/decider. this is executed in the circuit as the actual task.
     # Step calls step.(options, **options, flow_options)
-    # Output direction binary: true=>Right, false=>Left.
+    # Output signal binary: true=>Right, false=>Left.
     # Passes through all subclasses of Direction.~~~~~~~~~~~~~~~~~
     module Binary
       def self.call(user_proc)
@@ -11,7 +11,7 @@ module Trailblazer
 
       # Translates the return value of the user step into a valid signal.
       # Note that it passes through subclasses of {Signal}.
-      def self.binary_direction_for(result, on_true, on_false)
+      def self.binary_signal_for(result, on_true, on_false)
         result.is_a?(Class) && result < Activity::Signal ? result : (result ? on_true : on_false)
       end
     end
@@ -29,9 +29,9 @@ module Trailblazer
         result = @task.( options, **circuit_options ) # circuit_options contains :exec_context.
 
         # Return an appropriate signal which direction to go next.
-        direction = Binary.binary_direction_for( result, Activity::Right, Activity::Left )
+        signal = Binary.binary_signal_for( result, Activity::Right, Activity::Left )
 
-        [ direction, [ options, *args ], **circuit_options ]
+        return signal, [ options, *args ]
       end
 
       def inspect
