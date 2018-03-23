@@ -14,11 +14,6 @@ module Trailblazer
       result.is_a?(Class) && result < Activity::Signal ? result : (result ? on_true : on_false)
     end
 
-    # Task that always returns `Activity::Right`.
-    def self.Unary(user_proc)
-      Task.new( Trailblazer::Option::KW( user_proc ), user_proc, Activity::Right, Activity::Right )
-    end
-
     class Task
       def initialize(task, user_proc, signal_on_true, signal_on_false)
         @task            = task
