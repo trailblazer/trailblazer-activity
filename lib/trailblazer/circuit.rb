@@ -33,13 +33,15 @@ module Trailblazer
     # @param flow_options Library-specific flow control data
     # @return [last_signal, options, flow_options, *args]
     #
-    # DISCUSS: returned circuit_options are ignored when calling the runner.
+    # NOTE: returned circuit_options are discarded when calling the runner.
     def call(args, task: @start_task, runner: Run, **circuit_options)
+      circuit_options = circuit_options.merge( runner: runner ) # TODO: set the :runner option via arguments_for_call to save the merge?
+
       loop do
-        last_signal, args, _ignored_circuit_options = runner.(
+        last_signal, args, _discarded_circuit_options = runner.(
           task,
           args,
-          circuit_options.merge( runner: runner ) # options for runner, to be discarded.
+          circuit_options
         )
 
         # Stop execution of the circuit when we hit a stop event (< End). This could be an task's End or Suspend.
