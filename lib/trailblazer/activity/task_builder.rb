@@ -5,7 +5,7 @@ module Trailblazer
     # Output signal binary: true=>Right, false=>Left.
     # Passes through all subclasses of Direction.~~~~~~~~~~~~~~~~~
     def self.Binary(user_proc)
-      Task.new( Trailblazer::Option::KW( user_proc ), user_proc, Activity::Right, Activity::Left )
+      Task.new(Trailblazer::Option::KW( user_proc ), user_proc)
     end
 
     # Translates the return value of the user step into a valid signal.
@@ -15,7 +15,7 @@ module Trailblazer
     end
 
     class Task
-      def initialize(task, user_proc, signal_on_true, signal_on_false)
+      def initialize(task, user_proc, signal_on_true=Activity::Right, signal_on_false=Activity::Left)
         @task            = task
         @user_proc       = user_proc
         @signal_on_true  = signal_on_true
