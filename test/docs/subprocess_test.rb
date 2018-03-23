@@ -24,6 +24,7 @@ class SubprocessTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
  {#<Trailblazer::Activity::End semantic=:success>} => #<End/:success>
+ {#<Trailblazer::Activity::End semantic=:failure>} => #<End/:success>
  {#<Trailblazer::Activity::End semantic=:pass_fast>} => #<End/:my_pass_fast>
 #<End/:success>
 

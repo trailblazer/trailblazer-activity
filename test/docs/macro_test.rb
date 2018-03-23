@@ -17,7 +17,7 @@ class DocsMacroTest < Minitest::Spec
           { task: task }
         end
 
-        pass MyNested(target: "yours") { |target|
+        task MyNested(target: "yours") { |target|
           "this block's content is all #{target}!"
         }
       end
@@ -38,10 +38,13 @@ class DocsMacroTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<TaskBuilder{.update}>
 #<TaskBuilder{.create}>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.save}>
+ {Trailblazer::Activity::Left} => #<TaskBuilder{.save}>
 #<TaskBuilder{.update}>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.save}>
+ {Trailblazer::Activity::Left} => #<TaskBuilder{.save}>
 #<TaskBuilder{.save}>
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
   end

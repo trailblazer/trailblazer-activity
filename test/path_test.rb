@@ -14,8 +14,10 @@ class PathTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
     end
@@ -35,8 +37,10 @@ class PathTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
 
@@ -45,8 +49,10 @@ class PathTest < Minitest::Spec
  (success)/Right ==> :track_9
 [:track_9] ==> #<Method: #<Module:0x>.a>
  (success)/Right ==> :track_9
+ (failure)/Left ==> :track_9
 [:track_9] ==> #<Method: #<Module:0x>.b>
  (success)/Right ==> :track_9
+ (failure)/Left ==> :track_9
 [:track_9] ==> #<End/:success>
  []
 }
@@ -65,8 +71,10 @@ class PathTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
   end
@@ -84,7 +92,9 @@ class PathTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<End/:success>
  {Trailblazer::Activity::Right} => #<End/:invalid_result>
 #<End/:success>
 
@@ -96,8 +106,10 @@ class PathTest < Minitest::Spec
  (success)/Right ==> :track_9
 [:track_9] ==> #<Method: #<Module:0x>.a>
  (success)/Right ==> :track_9
+ (failure)/Left ==> :track_9
 [:track_9] ==> #<Method: #<Module:0x>.b>
  (success)/Right ==> "//b-Trailblazer::Activity::Right"
+ (failure)/Left ==> :track_9
 [:track_9] ==> #<End/:success>
  []
 ["//b-Trailblazer::Activity::Right"] ==> #<End/:invalid_result>
@@ -121,31 +133,35 @@ class PathTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
 
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.d>
 
 #<Method: #<Module:0x>.e>
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
   end
 
   it "accepts :normalizer" do
-    binary_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
+    extended_plus_poles = Activity::Magnetic::PlusPoles.new.merge(
       Activity.Output(Activity::Right, :success) => nil,
-      Activity.Output(Activity::Left, :failure) => nil )
+      Activity.Output(Activity::Left, :exception)          => nil,
+      )
 
-    normalizer = ->(task, options) { [ task, { plus_poles: binary_plus_poles }, options, {} ] }
+    normalizer = ->(task, options) { [ task, { plus_poles: extended_plus_poles }, options, {} ] }
 
     activity = Module.new do
       extend Activity::Path( normalizer: normalizer )
 
       task T.def_task(:a)
-      task T.def_task(:b), Output(:failure) => Path(end_semantic: :invalid) do
-        task T.def_task(:c), Output(:failure) => End(:left)
+      task T.def_task(:b), Output(:exception) => Path(end_semantic: :invalid) do
+        task T.def_task(:c), Output(:exception) => End(:left)
         task T.def_task(:k)#, Output(:success) => End("End.invalid_result", :invalid_result)
       end
       task T.def_task(:d) # no :id.
@@ -212,10 +228,13 @@ class PathTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.c>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
     end
@@ -235,6 +254,7 @@ class PathTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => PathTest::MyEnd
+ {Trailblazer::Activity::Left} => PathTest::MyEnd
 PathTest::MyEnd
 }
     end
@@ -280,13 +300,16 @@ PathTest::MyEnd
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<End/:success>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.d>
  {Trailblazer::Activity::Right} => #<End/"track_0.">
+ {Trailblazer::Activity::Left} => #<End/"track_0.">
 #<End/:success>
 
 #<End/"track_0.">
@@ -297,13 +320,16 @@ PathTest::MyEnd
  (success)/Right ==> :success
 [:success] ==> #<Method: #<Module:0x>.a>
  (success)/Right ==> :success
+ (failure)/Left ==> :success
 [:success] ==> #<Method: #<Module:0x>.b>
  (success)/Right ==> :success
  (failure)/Left ==> \"track_0.\"
 ["track_0."] ==> #<Method: #<Module:0x>.c>
  (success)/Right ==> "track_0."
+ (failure)/Left ==> "track_0."
 ["track_0."] ==> #<Method: #<Module:0x>.d>
  (success)/Right ==> "track_0."
+ (failure)/Left ==> "track_0."
 [:success] ==> #<End/:success>
  []
 ["track_0."] ==> #<End/"track_0.">
@@ -327,13 +353,16 @@ PathTest::MyEnd
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<End/:success>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.d>
  {Trailblazer::Activity::Right} => #<End/"track_0.">
+ {Trailblazer::Activity::Left} => #<End/"track_0.">
 #<End/:success>
 
 #<End/"track_0.">
@@ -358,8 +387,10 @@ PathTest::MyEnd
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<End/:invalid>
+ {Trailblazer::Activity::Left} => #<End/:invalid>
 #<Method: #<Module:0x>.d>
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 
 #<End/:invalid>
@@ -389,10 +420,13 @@ PathTest::MyEnd
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.e>
 #<Method: #<Module:0x>.c>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.d>
 #<Method: #<Module:0x>.d>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Left} => #<End/\"track_0.\">
 #<Method: #<Module:0x>.e>
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 
 #<End/:key_not_found>
@@ -414,6 +448,7 @@ PathTest::MyEnd
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Left} => #<End/:success>
  {Trailblazer::Activity::Right} => #<End/:invalid_result>
 #<End/:success>
 
@@ -432,6 +467,7 @@ PathTest::MyEnd
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
+ {Trailblazer::Activity::Left} => #<End/:success>
  {Trailblazer::Activity::Right} => #<End/:invalid_result>
 #<End/:success>
 

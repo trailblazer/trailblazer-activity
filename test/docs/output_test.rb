@@ -14,6 +14,7 @@ class DocsOutputTest < Minitest::Spec
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
 #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
+ {Trailblazer::Activity::Left} => #<End/:success>
  {Trailblazer::Activity::Right} => #<End/:my_pass_fast>
 #<End/:success>
 
@@ -66,6 +67,7 @@ class DocsOutputTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
  {#<Trailblazer::Activity::End semantic=:success>} => #<End/:success>
+ {#<Trailblazer::Activity::End semantic=:failure>} => #<End/:success>
  {#<Trailblazer::Activity::End semantic=:pass_fast>} => #<End/:my_pass_fast>
 #<End/:success>
 
@@ -88,6 +90,7 @@ class DocsOutputTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
  {#<Trailblazer::Activity::End semantic=:success>} => #<End/:success>
+ {#<Trailblazer::Activity::End semantic=:failure>} => #<End/:success>
  {Restart} => #<End/:restart>
 #<End/:success>
 
@@ -95,13 +98,43 @@ class DocsOutputTest < Minitest::Spec
 }
     end
 
-    it "connects existing semantics" do
+    it "connects existing semantics, except for :failure (that's the point of #task)" do
       nested = self.nested
 
       activity = Module.new do
         extend Activity::Path()
 
         task Subprocess(nested) # Subprocess() has a :pass_fast output.
+        _end task: Trailblazer::Activity::End(:pass_fast), magnetic_to: [:pass_fast]
+        _end task: Trailblazer::Activity::End(:fail_fast), magnetic_to: [:fail_fast]
+        _end task: Trailblazer::Activity::End(:failure), magnetic_to: [:failure]
+      end
+
+      Cct(activity.to_h[:circuit]).must_equal %{
+#<Start/:default>
+ {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
+#<Trailblazer::Activity: {}>
+ {#<Trailblazer::Activity::End semantic=:pass_fast>} => #<End/:pass_fast>
+ {#<Trailblazer::Activity::End semantic=:fail_fast>} => #<End/:fail_fast>
+ {#<Trailblazer::Activity::End semantic=:success>} => #<End/:success>
+ {#<Trailblazer::Activity::End semantic=:failure>} => #<End/:success>
+#<End/:pass_fast>
+
+#<End/:fail_fast>
+
+#<End/:failure>
+
+#<End/:success>
+}
+    end
+
+    it "connects existing semantics and allows connecting :failure" do
+      nested = self.nested
+
+      activity = Module.new do
+        extend Activity::Path()
+
+        task Subprocess(nested), Output(:failure) => Track(:failure) # Subprocess() has a :pass_fast output.
         _end task: Trailblazer::Activity::End(:pass_fast), magnetic_to: [:pass_fast]
         _end task: Trailblazer::Activity::End(:fail_fast), magnetic_to: [:fail_fast]
         _end task: Trailblazer::Activity::End(:failure), magnetic_to: [:failure]

@@ -63,6 +63,7 @@ ActivityBuildTest::J
  {Trailblazer::Activity::Left} => #<End/:triggered>
 ActivityBuildTest::K
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 
 #<End/:triggered>
@@ -95,9 +96,11 @@ ActivityBuildTest::K
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
+ {Trailblazer::Activity::Left} => ActivityBuildTest::K
  {Trailblazer::Activity::Right} => #<End/:success>
 ActivityBuildTest::K
- {Trailblazer::Activity::Right} => ActivityBuildTest::K
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
   end
@@ -132,17 +135,22 @@ ActivityBuildTest::A
  {Trailblazer::Activity::Right} => ActivityBuildTest::G
 ActivityBuildTest::B
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
+ {Trailblazer::Activity::Left} => #<End/\"track_0.\">
 ActivityBuildTest::G
  {Trailblazer::Activity::Right} => ActivityBuildTest::I
+ {Trailblazer::Activity::Left} => ActivityBuildTest::I
 ActivityBuildTest::I
  {Trailblazer::Activity::Left} => ActivityBuildTest::J
  {Trailblazer::Activity::Right} => ActivityBuildTest::L
 ActivityBuildTest::J
  {Trailblazer::Activity::Right} => ActivityBuildTest::K
+ {Trailblazer::Activity::Left} => ActivityBuildTest::K
 ActivityBuildTest::K
  {Trailblazer::Activity::Right} => #<End/:invalid_result>
+ {Trailblazer::Activity::Left} => #<End/:invalid_result>
 ActivityBuildTest::L
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 
 #<End/"track_0.">
@@ -182,15 +190,19 @@ ActivityBuildTest::B
  {Trailblazer::Activity::Left} => ActivityBuildTest::A
 ActivityBuildTest::G
  {Trailblazer::Activity::Right} => ActivityBuildTest::I
+ {Trailblazer::Activity::Left} => ActivityBuildTest::I
 ActivityBuildTest::I
  {Trailblazer::Activity::Left} => ActivityBuildTest::J
  {Trailblazer::Activity::Right} => ActivityBuildTest::L
 ActivityBuildTest::J
  {Trailblazer::Activity::Right} => ActivityBuildTest::K
+ {Trailblazer::Activity::Left} => ActivityBuildTest::K
 ActivityBuildTest::K
+ {Trailblazer::Activity::Left} => #<End/:invalid_resulto>
  {Trailblazer::Activity::Right} => #<End/:invalid_result>
 ActivityBuildTest::L
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 
 #<End/:invalid_resulto>

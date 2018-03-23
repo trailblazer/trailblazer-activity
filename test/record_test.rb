@@ -7,7 +7,7 @@ class RecordTest < Minitest::Spec
 
       step task: :a
       pass task: :b, Output(:success) => Path() do
-        pass task: :c
+        task task: :c
       end
       step task: :d
     end

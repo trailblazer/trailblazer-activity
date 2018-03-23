@@ -16,8 +16,10 @@ class ActivityTest < Minitest::Spec
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
+ {Trailblazer::Activity::Left} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 }
     end
 
@@ -162,7 +164,7 @@ class ActivityTest < Minitest::Spec
       # circular
       task A, id: "inquiry_create", Output(Left, :failure) => Path() do
         _end B.new(semantic: :resume_1), id: "resume_for_correct"
-        task C, id: "suspend_for_correct", Output(:success) => "inquiry_create"
+        task C, id: "suspend_for_correct", Output(:success) => "inquiry_create", Output(:failure) => "inquiry_create"
       end
 
       task G, id: "receive_process_id"
@@ -186,17 +188,22 @@ ActivityTest::A
 
 ActivityTest::C
  {Trailblazer::Activity::Right} => ActivityTest::A
+ {Trailblazer::Activity::Left} => ActivityTest::A
 ActivityTest::G
  {Trailblazer::Activity::Right} => ActivityTest::I
+ {Trailblazer::Activity::Left} => ActivityTest::I
 ActivityTest::I
  {Trailblazer::Activity::Left} => ActivityTest::J
  {Trailblazer::Activity::Right} => ActivityTest::L
 ActivityTest::J
  {Trailblazer::Activity::Right} => ActivityTest::K
+ {Trailblazer::Activity::Left} => ActivityTest::K
 ActivityTest::K
  {Trailblazer::Activity::Right} => #<End/:invalid_result>
+ {Trailblazer::Activity::Left} => #<End/:invalid_result>
 ActivityTest::L
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 
 #<End/"track_0.">
@@ -255,8 +262,10 @@ ActivityTest::L
  {Trailblazer::Activity::Right} => ActivityTest::B
 ActivityTest::B
  {Trailblazer::Activity::Right} => ActivityTest::A
+ {Trailblazer::Activity::Left} => ActivityTest::A
 ActivityTest::A
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 }
     end
   end

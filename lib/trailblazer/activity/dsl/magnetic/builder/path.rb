@@ -14,9 +14,12 @@ module Trailblazer
           )
         end
 
+        # In most cases, a task has a binary signal, which is why we decided to make that
+        # the default output set.
         def self.default_outputs
           {
-            success: Activity.Output(Activity::Right, :success)
+            :success => Activity.Output(Activity::Right, :success),
+            :failure => Activity.Output(Activity::Left,  :failure)
           }
         end
 

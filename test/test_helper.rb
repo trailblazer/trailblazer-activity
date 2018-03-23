@@ -66,6 +66,7 @@ module T
       names.each do |name|
         define_method(name) do | ctx, ** |
           ctx[:seq] << name
+          ctx.key?(name) ? ctx[name] : true
         end
       end
     end

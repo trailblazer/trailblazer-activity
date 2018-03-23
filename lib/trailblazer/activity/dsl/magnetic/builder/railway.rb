@@ -10,12 +10,6 @@ module Trailblazer
           )
         end
 
-        def self.default_outputs
-          Path.default_outputs.merge(
-            :failure => Activity.Output(Activity::Left,  :failure),
-          )
-        end
-
         # Adds the End.failure end to the Path sequence.
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
         def self.InitialAdds(failure_color:raise, failure_end: Activity.End(failure_color), **builder_options)

@@ -59,6 +59,7 @@ class DSLPathTest < Minitest::Spec
  (success)/Right ==> :success
 [:success] ==> DSLPathTest::G
  (success)/Right ==> :success
+ (failure)/Left ==> :failure
  (exception)/Exception ==> "DSLPathTest::G-Exception"
 [:success] ==> DSLPathTest::I
  (success)/Right ==> :success

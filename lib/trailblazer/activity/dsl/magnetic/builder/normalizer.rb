@@ -6,7 +6,7 @@ module Trailblazer
     #
     # The Normalizer sits in the `@builder`, which receives all DSL calls from the Operation subclass.
     class Normalizer
-      def self.build(task_builder: Activity::TaskBuilder::Binary, default_outputs: Builder::Path.default_outputs, pipeline: Pipeline, extension:[], **options)
+      def self.build(task_builder: Activity::TaskBuilder.method(:Binary), default_outputs: Builder::Path.default_outputs, pipeline: Pipeline, extension:[], **options)
         return new(
           default_outputs: default_outputs,
           extension:       extension,
@@ -93,10 +93,10 @@ module Trailblazer
             .merge(local_options)
         end
 
-        task Activity::TaskBuilder::Binary.( method(:normalize_for_macro) ),        id: "normalize_for_macro"
-        task Activity::TaskBuilder::Binary.( method(:split_options) ),              id: "split_options"
-        task Activity::TaskBuilder::Binary.( method(:normalize_extension_option) ), id: "normalize_extension_option"
-        task Activity::TaskBuilder::Binary.( method(:initialize_plus_poles) ),      id: "initialize_plus_poles"
+        task Activity::TaskBuilder::Binary( method(:normalize_for_macro) ),        id: "normalize_for_macro"
+        task Activity::TaskBuilder::Binary( method(:split_options) ),              id: "split_options"
+        task Activity::TaskBuilder::Binary( method(:normalize_extension_option) ), id: "normalize_extension_option"
+        task Activity::TaskBuilder::Binary( method(:initialize_plus_poles) ),      id: "initialize_plus_poles"
         # task ->((ctx, _), **) { pp ctx; [Activity::Right, [ctx, _]] }
       end
     end # Normalizer

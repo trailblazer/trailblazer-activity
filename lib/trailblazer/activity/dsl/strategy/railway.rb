@@ -9,7 +9,7 @@ module Trailblazer
       def self.config
         Path.config.merge(
           builder_class:   Magnetic::Builder::Railway,
-          default_outputs: Magnetic::Builder::Railway.default_outputs,
+          default_outputs: Magnetic::Builder::Path.default_outputs,
           extend:          [
             DSL.def_dsl(:step, Magnetic::Builder::Railway, :StepPolarizations),
             DSL.def_dsl(:fail, Magnetic::Builder::Railway, :FailPolarizations),

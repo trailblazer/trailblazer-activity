@@ -31,10 +31,13 @@ class MergeTest < Minitest::Spec
  {Trailblazer::Activity::Right} => :b
 :b
  {Trailblazer::Activity::Right} => :a
+ {Trailblazer::Activity::Left} => :a
 :a
  {Trailblazer::Activity::Right} => :c
+ {Trailblazer::Activity::Left} => :c
 :c
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
   end
@@ -62,6 +65,7 @@ class MergeTest < Minitest::Spec
  {Trailblazer::Activity::Right} => :a
 :a
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
 
@@ -70,10 +74,13 @@ class MergeTest < Minitest::Spec
  {Trailblazer::Activity::Right} => :b
 :b
  {Trailblazer::Activity::Right} => :a
+ {Trailblazer::Activity::Left} => :a
 :a
  {Trailblazer::Activity::Right} => :c
+ {Trailblazer::Activity::Left} => :c
 :c
  {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:success>
 #<End/:success>
 }
     end
@@ -88,7 +95,7 @@ class MergeTest < Minitest::Spec
 
         task task: :a
         task task: :b, id: "B", Output(false, :failure) => Path(end_semantic: :false) do
-          pass task: :d
+          task task: :d
         end
       end
 
@@ -105,13 +112,16 @@ class MergeTest < Minitest::Spec
  {Trailblazer::Activity::Right} => :c
 :c
  {Trailblazer::Activity::Right} => :a
+ {Trailblazer::Activity::Left} => :a
 :a
  {Trailblazer::Activity::Right} => :b
+ {Trailblazer::Activity::Left} => :b
 :b
  {false} => :d
  {Trailblazer::Activity::Right} => #<End/:success>
 :d
  {Trailblazer::Activity::Right} => #<End/:false>
+ {Trailblazer::Activity::Left} => #<End/:false>
 #<End/:success>
 
 #<End/:false>
