@@ -6,7 +6,7 @@ module Trailblazer
     # Passes through all subclasses of Direction.~~~~~~~~~~~~~~~~~
     module Binary
       def self.call(user_proc)
-        Task.new( Trailblazer::Option::KW( user_proc ), user_proc )
+        Task.new( Trailblazer::Option::KW( user_proc ), user_proc, Activity::Right, Activity::Left )
       end
 
       # Translates the return value of the user step into a valid signal.
@@ -17,21 +17,23 @@ module Trailblazer
     end
 
     class Task
-      def initialize(task, user_proc)
-        @task      = task
-        @user_proc = user_proc
+      def initialize(task, user_proc, signal_on_true, signal_on_false)
+        @task            = task
+        @user_proc       = user_proc
+        @signal_on_true  = signal_on_true
+        @signal_on_false = signal_on_false
 
         freeze
       end
 
-      def call( (options, flow_options), **circuit_options )
+      def call( (ctx, flow_options), **circuit_options )
         # Execute the user step with TRB's kw args.
-        result = @task.( options, **circuit_options ) # circuit_options contains :exec_context.
+        result = @task.( ctx, **circuit_options ) # circuit_options contains :exec_context.
 
         # Return an appropriate signal which direction to go next.
-        signal = Binary.binary_signal_for( result, Activity::Right, Activity::Left )
+        signal = Binary.binary_signal_for( result, @signal_on_true, @signal_on_false )
 
-        return signal, [ options, flow_options ]
+        return signal, [ ctx, flow_options ]
       end
 
       def inspect
