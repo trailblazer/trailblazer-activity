@@ -11,6 +11,8 @@ module Trailblazer
   #
   # @see Activity
   # @api semi-private
+  #
+  # This is the "pipeline operator"'s implementation.
   class Circuit
     def initialize(map, stop_events, name: nil, start_task: map.keys.first)
       @map         = map
@@ -35,7 +37,7 @@ module Trailblazer
     #
     # NOTE: returned circuit_options are discarded when calling the runner.
     def call(args, task: @start_task, runner: Run, **circuit_options)
-      circuit_options = circuit_options.merge( runner: runner ) # TODO: set the :runner option via arguments_for_call to save the merge?
+      circuit_options = circuit_options.merge( runner: runner ).freeze # TODO: set the :runner option via arguments_for_call to save the merge?
 
       loop do
         last_signal, args, _discarded_circuit_options = runner.(
