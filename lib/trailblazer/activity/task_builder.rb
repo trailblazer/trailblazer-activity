@@ -24,14 +24,14 @@ module Trailblazer
         freeze
       end
 
-      def call( (options, *args), **circuit_args )
+      def call( (options, *args), **circuit_options )
         # Execute the user step with TRB's kw args.
-        result = @task.( options, **circuit_args ) # circuit_args contains :exec_context.
+        result = @task.( options, **circuit_options ) # circuit_options contains :exec_context.
 
         # Return an appropriate signal which direction to go next.
         direction = Binary.binary_direction_for( result, Activity::Right, Activity::Left )
 
-        [ direction, [ options, *args ], **circuit_args ]
+        [ direction, [ options, *args ], **circuit_options ]
       end
 
       def inspect
