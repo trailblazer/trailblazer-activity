@@ -15,11 +15,9 @@ module Trailblazer
     end
 
     class Task
-      def initialize(task, user_proc, signal_on_true=Activity::Right, signal_on_false=Activity::Left)
+      def initialize(task, user_proc)
         @task            = task
         @user_proc       = user_proc
-        @signal_on_true  = signal_on_true
-        @signal_on_false = signal_on_false
 
         freeze
       end
@@ -29,7 +27,7 @@ module Trailblazer
         result = @task.( ctx, **circuit_options ) # circuit_options contains :exec_context.
 
         # Return an appropriate signal which direction to go next.
-        signal = Activity::TaskBuilder.binary_signal_for( result, @signal_on_true, @signal_on_false )
+        signal = Activity::TaskBuilder.binary_signal_for( result, Activity::Right, Activity::Left )
 
         return signal, [ ctx, flow_options ]
       end
