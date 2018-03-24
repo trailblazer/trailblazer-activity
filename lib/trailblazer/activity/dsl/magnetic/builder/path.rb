@@ -24,7 +24,7 @@ module Trailblazer
         end
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:raise, end_semantic:raise, start_outputs: {success: self.default_outputs[:success]}, track_end: Activity.End(end_semantic), **)
+        def self.InitialAdds(track_color:, end_semantic:, start_outputs: {success: self.default_outputs[:success]}, track_end: Activity.End(end_semantic), **)
 
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
@@ -43,7 +43,7 @@ module Trailblazer
           end_adds = adds(
             track_end,
 
-            EndEventPolarizations(builder_options),
+            EndEventPolarizations(builder_options), # only sets :magnetic_to.
 
             {}, { group: :end },
 
