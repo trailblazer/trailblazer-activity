@@ -24,11 +24,15 @@ module Trailblazer
         end
 
         # @return [Adds] list of Adds instances that can be chained or added to an existing sequence.
-        def self.InitialAdds(track_color:, end_semantic:, start_outputs: {success: self.default_outputs[:success]}, track_end: Activity.End(end_semantic), **)
+        def self.InitialAdds(**options)
+          StartAdds(**options) + EndAdds(**options)
+        end
 
+        # TODO: make this nicer.
+        def self.StartAdds(track_color:, end_semantic:, start_outputs: {success: self.default_outputs[:success]}, **)
           builder_options={ track_color: track_color, end_semantic: end_semantic }
 
-          start_adds = adds(
+          adds(
             Activity::Start.new(semantic: :default),
 
             TaskPolarizations(builder_options),
@@ -39,20 +43,31 @@ module Trailblazer
             magnetic_to:  [],
             plus_poles:   PlusPoles.initial(start_outputs), # FIXME: this is actually redundant with Normalizer
           )
+        end
 
-          end_adds = adds(
-            track_end,
+        # TODO: make this nicer.
+        def self.EndAdds(track_color:, end_semantic:, track_end: Activity.End(end_semantic), end_id: nil, **)
+          # an end can either be a reference to another task,
+          # or a "real" end event.
+          if end_id
+            [[:magnetic_to,
+              [ end_id, [track_color] ] ]
+            ]
+          else
+            builder_options={ track_color: track_color, end_semantic: end_semantic }
 
-            EndEventPolarizations(builder_options), # only sets :magnetic_to.
+            adds(
+              track_end,
 
-            {}, { group: :end },
+              EndEventPolarizations(builder_options), # only sets :magnetic_to.
 
-            id:         "End.#{track_color}",
-            plus_poles: {},
-            magnetic_to: nil,
-          )
+              {}, { group: :end },
 
-          start_adds + end_adds
+              id:         "End.#{track_color}",
+              plus_poles: {},
+              magnetic_to: nil,
+            )
+          end
         end
 
         def self.TaskPolarizations(track_color:, **)

@@ -196,6 +196,57 @@ class DocsRailwayTest < Minitest::Spec
     it { Memo::Create.({ seq: [], authenticate: false, reset_counter: false }).inspect.sub(/\.\d+/, "").must_equal %{[#<Trailblazer::Activity::End semantic=:authentication_failure>, [{:seq=>[:authenticate, :auth_err, :reset_counter], :authenticate=>false, :reset_counter=>false}, nil]]} }
   end
 
+=begin
+Test referencing a task by ID as the end of the Path()
+
+  step ... Path( end_id: :some_id )
+
+=end
+  class ThirdTrackWithPath_AndIDEndTest < Minitest::Spec
+    Memo = Class.new(Memo)
+    #:path-to-id
+    module Memo::Create
+      extend Trailblazer::Activity::Railway()
+      #~methods
+      extend T.def_steps(:authenticate, :auth_err, :reset_counter, :find_model)
+      #~methods end
+      step method(:authenticate), Output(:failure) => Path( end_id: :find_model ) do
+        task Memo::Create.method(:auth_err)
+        task Memo::Create.method(:reset_counter)
+      end
+
+      step method(:find_model), id: :find_model
+    end
+    #:path-to-id end
+
+    it do
+       Cct(Memo::Create.to_h[:circuit], inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
+#<Start/:default>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.authenticate}>
+#<TaskBuilder{.authenticate}>
+ {Trailblazer::Activity::Left} => #<TaskBuilder{.auth_err}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.find_model}>
+#<TaskBuilder{.auth_err}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.reset_counter}>
+ {Trailblazer::Activity::Left} => #<TaskBuilder{.reset_counter}>
+#<TaskBuilder{.reset_counter}>
+ {Trailblazer::Activity::Right} => #<TaskBuilder{.find_model}>
+ {Trailblazer::Activity::Left} => #<TaskBuilder{.find_model}>
+#<TaskBuilder{.find_model}>
+ {Trailblazer::Activity::Right} => #<End/:success>
+ {Trailblazer::Activity::Left} => #<End/:failure>
+#<End/:success>
+
+#<End/:failure>
+}
+    end
+
+    it { Memo::Create.({ seq: [] }).inspect.must_equal %{[#<Trailblazer::Activity::End semantic=:success>, [{:seq=>[:authenticate, :find_model]}, nil]]} }
+    it { Memo::Create.({ seq: [], authenticate: false }).inspect.must_equal %{[#<Trailblazer::Activity::End semantic=:success>, [{:seq=>[:authenticate, :auth_err, :reset_counter, :find_model], :authenticate=>false}, nil]]} }
+    it { Memo::Create.({ seq: [], authenticate: false, auth_err: false }).inspect.must_equal %{[#<Trailblazer::Activity::End semantic=:success>, [{:seq=>[:authenticate, :auth_err, :reset_counter, :find_model], :authenticate=>false, :auth_err=>false}, nil]]} }
+    it { Memo::Create.({ seq: [], authenticate: false, reset_counter: false }).inspect.sub(/\.\d+/, "").must_equal %{[#<Trailblazer::Activity::End semantic=:success>, [{:seq=>[:authenticate, :auth_err, :reset_counter, :find_model], :authenticate=>false, :reset_counter=>false}, nil]]} }
+  end
+
 end
 
 
