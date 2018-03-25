@@ -49,10 +49,7 @@ module Trailblazer
         # Stop execution of the circuit when we hit a stop event (< End). This could be an task's End or Suspend.
         return [ last_signal, args ] if @stop_events.include?(task) # DISCUSS: return circuit_options here?
 
-        task = next_for(task, last_signal) do |next_task, in_map|
-          raise IllegalInputError.new("#{task}") unless in_map
-          raise IllegalOutputSignalError.new("<#{@name}>[#{task}][ #{last_signal.inspect} ]") unless next_task
-        end
+        task = next_for(task, last_signal) or raise IllegalSignalError.new("<#{@name}>[#{task}][ #{last_signal.inspect} ]")
       end
     end
 
@@ -62,22 +59,12 @@ module Trailblazer
     end
 
   private
-    def next_for(last_task, emitted_signal)
-      # p @map
-      in_map        = false
-      cfg           = @map.keys.find { |t| t == last_task } and in_map = true
-      cfg = @map[cfg] if cfg
-      cfg         ||= {}
-      next_task = cfg[emitted_signal]
-      yield next_task, in_map
-
-      next_task
+    def next_for(last_task, signal)
+      outputs = @map[last_task]
+      outputs[signal]
     end
 
-    class IllegalInputError < RuntimeError
-    end
-
-    class IllegalOutputSignalError < RuntimeError
+    class IllegalSignalError < RuntimeError
     end
   end
 end
