@@ -18,8 +18,8 @@
           @options = options.merge(semantic: semantic)
         end
 
-        def call(*args)
-          return self, *args
+        def call(args, circuit_options)
+          return self, args, circuit_options
         end
 
         def to_h
@@ -34,8 +34,8 @@
       end
 
       class Start < End
-        def call(*args)
-          return Activity::Right, *args
+        def call(args, circuit_options)
+          return Activity::Right, args, circuit_options
         end
       end
 
