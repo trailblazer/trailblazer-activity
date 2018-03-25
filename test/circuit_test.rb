@@ -14,7 +14,7 @@ class CircuitTest < Minitest::Spec
       B => { "from b" => End}
     }
 
-    circuit = Trailblazer::Circuit.new( map, [ End ] )
+    circuit = Trailblazer::Circuit.new( map, [ End ], start_task: map.keys.first )
 
     ctx = {}
 
@@ -50,7 +50,7 @@ class CircuitTest < Minitest::Spec
       C     => { "from c" => End }
     }
 
-    nest = Trailblazer::Circuit.new( nest_map, [ End ] )
+    nest = Trailblazer::Circuit.new( nest_map, [ End ], start_task: nest_map.keys.first )
 
     # fixme: FROM Activity#call
     nest_call = ->((options, flow_options, *args), **circuit_options) {
@@ -68,7 +68,7 @@ class CircuitTest < Minitest::Spec
       B     => { "from b" => End}
     }
 
-    circuit = Trailblazer::Circuit.new( outer_map, [ End ] )
+    circuit = Trailblazer::Circuit.new( outer_map, [ End ], start_task: outer_map.keys.first )
   end
 
   it "allows nesting circuits by using a nesting callable" do

@@ -14,7 +14,7 @@ module Trailblazer
   #
   # This is the "pipeline operator"'s implementation.
   class Circuit
-    def initialize(map, stop_events, name: nil, start_task: map.keys.first)
+    def initialize(map, stop_events, start_task:, name: nil)
       @map         = map
       @stop_events = stop_events
       @name        = name
