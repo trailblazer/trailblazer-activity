@@ -3,11 +3,12 @@
 commits = {
   "ref-1" => "master",
   "ref-2" => "master",
+  "before optimizations" => "e80dc640b",
 }
 
 
 results =
-  commits.values[-2..-1].collect do |tag|
+  commits.values.collect do |tag|
     puts `git checkout #{tag}`
     result = `bundle exec ruby test/benchmark/ips.rb`
     result = result.split("\n").last.split("-").last
