@@ -36,13 +36,19 @@ module Create
   task method(:save)
 end
 
+def run_with_task_wrap
+  signal, (ctx, _) = Create.([{}, {}], argumenter: [ Trailblazer::Activity::TaskWrap.method(:arguments_for_call) ])
+  # pp ctx
+end
+
 def run
-  signal, (ctx, _) = Create.({})
+  signal, (ctx, _) = Create.([{}, {}])
   # pp ctx
 end
 
 Benchmark.ips do |x|
   x.report("@") { run }
+  x.report("@tw") { run_with_task_wrap }
 
-  x.compare!
+  puts x.compare!
 end

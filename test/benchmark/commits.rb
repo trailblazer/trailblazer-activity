@@ -2,8 +2,8 @@
 
 commits = {
   "ref-1" => "master",
-  "ref-2" => "master",
   "before optimizations" => "e80dc640b",
+  "ref-2" => "master",
 }
 
 
