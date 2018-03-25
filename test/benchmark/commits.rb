@@ -13,7 +13,7 @@ def run(tag)
 end
 
 
-commits.values[-2..-1].each do |tag|
+commits.values[-1..-1].each do |tag|
   puts `git checkout #{tag}`
   result = `bundle exec ruby test/benchmark/ips.rb`
   raise result.inspect
