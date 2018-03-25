@@ -1,6 +1,3 @@
-require "test_helper"
-
-gem "benchmark-ips"
 require "benchmark/ips"
 
 =begin
