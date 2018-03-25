@@ -59,4 +59,4 @@ Benchmark.ips do |x|
   x.compare!
 end
 
-
+`git checkout master`
