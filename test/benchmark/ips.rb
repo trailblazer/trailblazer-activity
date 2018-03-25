@@ -47,8 +47,8 @@ def run
 end
 
 Benchmark.ips do |x|
-  x.report("@") { run }
-  # x.report("@tw") { run_with_task_wrap }
+  # x.report("@") { run }
+  x.report("@tw") { run_with_task_wrap }
 
   # puts x.compare!
 end
