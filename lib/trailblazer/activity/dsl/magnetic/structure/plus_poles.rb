@@ -47,7 +47,6 @@ module Trailblazer
           existing_output, _ = @plus_poles[semantic]
 
           next unless existing_output
-
           [ Activity.Output(existing_output.signal, existing_output.semantic), color ]
         end
 
