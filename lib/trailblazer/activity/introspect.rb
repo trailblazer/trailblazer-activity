@@ -18,7 +18,7 @@ module Trailblazer
       def self.find(activity, &block)
         circuit = activity.to_h[:circuit]
 
-        circuit.instance_variable_get(:@map).find(&block)
+        circuit.to_h[:map].find(&block)
       end
 
 
