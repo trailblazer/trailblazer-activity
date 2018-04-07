@@ -13,12 +13,17 @@ module Trailblazer
         activity[:debug, task] = { id: local_options[:id] || task }
       end
 
+      class Enumerator
+        include Enumerable # This is why I start hating OOP.
 
-      # @api private
-      def self.find(activity, &block)
-        circuit = activity.to_h[:circuit]
+        def initialize(activity)
+          @activity = activity
+          @circuit  = @activity.to_h[:circuit]
+        end
 
-        circuit.to_h[:map].find(&block)
+        def each(&block)
+          @circuit.to_h[:map].each(&block)
+        end
       end
 
 

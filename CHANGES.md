@@ -1,3 +1,7 @@
+# 0.5.4
+
+* Introducing `Introspect::Enumerator` and removing `Introspect.find`. `Enumerator` contains `Enumerable` and exposes all necessary utility methods.
+
 # 0.5.3
 
 * In Path(), allow referencing an existing task, instead of creating an end event.
