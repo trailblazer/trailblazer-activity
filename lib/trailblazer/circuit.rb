@@ -55,7 +55,7 @@ module Trailblazer
 
     # Returns the circuit's components.
     def to_h
-      { map: @map, end_events: @stop_events }
+      { map: @map, end_events: @stop_events, start_task: @start_task }
     end
 
   private

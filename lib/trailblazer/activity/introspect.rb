@@ -13,6 +13,14 @@ module Trailblazer
         activity[:debug, task] = { id: local_options[:id] || task }
       end
 
+      def self.Enumerator(*args)
+        Enumerator.new(*args)
+      end
+
+      def self.Graph(*args)
+        Graph.new(*args)
+      end
+
       class Enumerator
         include Enumerable # This is why I start hating OOP.
 
@@ -26,7 +34,32 @@ module Trailblazer
         end
       end
 
+      class Graph
+        def initialize(activity)
+          @activity = activity
+          @circuit  = activity.to_h[:circuit]
+          @adds     = activity.to_h[:adds]
+          @debug    = activity.to_h[:debug]
+        end
 
+        def find(id)
+          (_, (id, triplett)) = @adds.find { |(op, (_id, triplett))| _id == id }
+
+          Node(triplett[1], id, triplett[0])
+        end
+
+        private
+
+        def Node(*args)
+          Node.new(*args).freeze
+        end
+
+        Node = Struct.new(:task, :id, :magnetic_to) do
+        end
+      end
+
+
+      # FIXME: remove this
       def self.collect(activity, options={}, &block)
         circuit      = activity.to_h[:circuit]
         circuit_hash = circuit.to_h[:map]

@@ -68,10 +68,37 @@ class IntrospectionTest < Minitest::Spec
         extend Activity::Path()
 
         task task: "I am not callable!"
-        task B
+        task B, id: "B"
       end
 
-      Activity::Introspect::Enumerator.new(activity).find { |task, _| task.inspect =~ /callable!/ }.first.must_equal "I am not callable!"
+      Activity::Introspect::Enumerator(activity).find { |task, _| task.inspect =~ /callable!/ }.first.must_equal "I am not callable!"
+    end
+  end
+
+  describe "Introspect::Graph" do
+    let(:activity) do
+      Module.new do
+        extend Activity::Path()
+
+        task task: "I am not callable!"
+        task task: B, id: "B"
+      end
+    end
+
+    let(:graph) { graph = Activity::Introspect::Graph(activity) }
+
+    describe "#find" do
+      let(:node) { graph.find("B") }
+      it { node[:id].must_equal "B" }
+      it { node[:magnetic_to].must_equal [:success] }
+      it { node[:task].must_equal B }
+
+      describe "with Start.default" do
+        let(:node) { graph.find("Start.default") }
+        it { node[:id].must_equal "Start.default" }
+        it { node[:magnetic_to].must_equal [] }
+        it { node[:task].must_equal activity.to_h[:circuit].to_h[:start_task] }
+      end
     end
   end
 end
