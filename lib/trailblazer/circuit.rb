@@ -36,8 +36,9 @@ module Trailblazer
     # @return [last_signal, options, flow_options, *args]
     #
     # NOTE: returned circuit_options are discarded when calling the runner.
-    def call(args, task: @start_task, runner: Run, **circuit_options)
+    def call(args, start_task: @start_task, runner: Run, **circuit_options)
       circuit_options = circuit_options.merge( runner: runner ).freeze # TODO: set the :runner option via arguments_for_call to save the merge?
+      task            = start_task
 
       loop do
         last_signal, args, _discarded_circuit_options = runner.(
