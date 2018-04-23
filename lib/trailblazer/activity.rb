@@ -1,10 +1,6 @@
 require "trailblazer/activity/version"
 
 module Trailblazer
-  def self.Activity(implementation=Activity::Path, options={})
-    Activity.new(implementation, state)
-  end
-
   class Activity < Module
     attr_reader :initial_state
 
@@ -51,6 +47,12 @@ module Trailblazer
       end
     end
 
+    # Reader and writer method for DSL objects.
+    # The writer {dsl[:key] = "value"} exposes immutable behavior and will replace the old
+    # @state with a new, modified copy.
+    #
+    # Always use the DSL::Accessor accessors to avoid leaking state to other components
+    # due to mutable write operations.
     module Accessor
       def []=(*args)
         @state = State::Config.send(:[]=, @state, *args)
