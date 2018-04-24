@@ -81,10 +81,10 @@ module Trailblazer
     require "trailblazer/activity/dsl/magnetic/merge"
       include Magnetic::Merge # Activity#merge!
 
-      def call(args, argumenter: [], **circuit_options) # DISCUSS: the argumenter logic might be moved out.
-        _, args, circuit_options = argumenter.inject( [self, args, circuit_options] ) { |memo, argumenter| argumenter.(*memo) }
-
-        self[:circuit].( args, circuit_options.merge(argumenter: argumenter) )
+      # @private Note that {Activity.call} is considered private until the public API is stable.
+      def call(args, **circuit_options)
+        warn "don't use Activity::call"
+        self[:circuit].( args, circuit_options )
       end
     end
   end # Activity

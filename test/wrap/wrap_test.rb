@@ -68,7 +68,7 @@ class WrapTest < Minitest::Spec
   describe "nested trailing" do
     let (:more_nested) do
       activity = Module.new do
-        extend Activity::Path()
+        extend Activity::Path(name: :bottom)
         task task: Upload
       end
     end
@@ -77,7 +77,7 @@ class WrapTest < Minitest::Spec
       _more_nested = more_nested
 
       activity = Module.new do
-        extend Activity::Path()
+        extend Activity::Path(name: :middle)
         task task: Save
         task task: _more_nested, _more_nested.outputs[:success] => Track(:success)
         task task: Cleanup
@@ -88,7 +88,7 @@ class WrapTest < Minitest::Spec
       _nested = nested
 
       activity = Module.new do
-        extend Activity::Path()
+        extend Activity::Path(name: :top)
         task task: Model
         task task: _nested, _nested.outputs[:success] => Track(:success), id: "A"
         task task: Uuid, Output(SpecialDirection, :success) => Track(:success)
@@ -97,7 +97,7 @@ class WrapTest < Minitest::Spec
 
     describe "plain TaskWrap without additional steps" do
       it do
-        signal, (options, flow_options) = activity.(
+        signal, (options, flow) = activity.(
         [
           options = {},
           {},
@@ -112,6 +112,7 @@ class WrapTest < Minitest::Spec
       options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
       end
     end
+
 
     #---
     #-
@@ -150,7 +151,7 @@ class WrapTest < Minitest::Spec
         wrap_static         = Hash.new( Wrap.initial_activity )
         wrap_static[Upload] = Trailblazer::Activity::Path::Plan.merge( Wrap.initial_activity, upload_wrap )
 
-        signal, (options, flow_options, *ret) = more_nested.(
+        signal, (options, flow, *ret) = more_nested.(
           [
             options = {},
 
@@ -170,7 +171,7 @@ class WrapTest < Minitest::Spec
         # upload should contain only one 1.
         options.inspect.must_equal %{{:upload=>[1], \"bits\"=>64}}
 
-        tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
+        tree = Activity::Trace::Present.tree(flow[:stack].to_a)
 
         # all three tasks should be executed.
         tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start semantic=:default>
@@ -188,7 +189,7 @@ class WrapTest < Minitest::Spec
         task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
       end
 
-      signal, (options, flow_options) = activity.(
+      signal, (options, flow) = activity.(
         [
           options = {},
           {
@@ -207,8 +208,8 @@ class WrapTest < Minitest::Spec
       signal.must_equal activity.outputs[:success].signal # the actual activity's End signal.
       options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
-pp flow_options
-      puts tree = Activity::Trace::Present.tree(flow_options[:stack].to_a)
+pp flow
+      puts tree = Activity::Trace::Present.tree(flow[:stack].to_a)
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start semantic=:default>
 |-- outsideg.Model
@@ -223,6 +224,47 @@ pp flow_options
 |   `-- #<Trailblazer::Activity::End semantic=:success>
 |-- outsideg.Uuid
 `-- #<Trailblazer::Activity::End semantic=:success>}
+    end
+
+    # FIXME
+    describe "public interface" do
+      it "what" do
+        wrap_alterations = Module.new do
+          extend Activity::Path::Plan()
+          task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
+          task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
+        end
+
+        # these options will never change anywhere.
+        circuit_options = {
+          runner:       Activity::TaskWrap::Runner,
+          wrap_runtime: Hash.new(wrap_alterations),
+
+          activity:     { wrap_static: {} } # i am overridden
+        }
+
+
+        signal, (ctx, flow), circuit_options =
+        Activity::TaskWrap::Runner.( activity,
+          [
+            {},
+            {
+              # Trace specific:
+              stack:      Activity::Trace::Stack.new,
+            }
+          ],
+
+          circuit_options
+        )
+
+        pp ctx
+        pp flow[:stack]
+
+              puts tree = Activity::Trace::Present.tree(flow[:stack].to_a)
+
+
+        # Activity.invoke(activity, args, argumenter: [ Activity::TaskWrap.method(:arguments_for_call) ] )
+      end
     end
   end
 end

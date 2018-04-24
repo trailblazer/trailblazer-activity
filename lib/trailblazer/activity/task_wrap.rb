@@ -34,18 +34,6 @@ module Trailblazer
         return activity, [ options, flow_options ], circuit_options
       end
 
-      module NonStatic
-        def self.arguments_for_call(activity, (options, flow_options), **circuit_options)
-          circuit_options = circuit_options.merge(
-            runner:       TaskWrap::Runner,
-            wrap_runtime: circuit_options[:wrap_runtime] || {}, # FIXME:this sucks. (was:) this overwrites wrap_runtime from outside.
-            wrap_static:  ::Hash.new(TaskWrap.initial_activity), # add a default static wrap.
-          )
-
-          return activity, [ options, flow_options ], circuit_options
-        end
-      end
-
       # better: MyClass < Activity(TaskWrap, ...)
     end
   end

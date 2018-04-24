@@ -1,18 +1,6 @@
 module Trailblazer
   class Activity < Module   # Introspection is not used at run-time except for rendering diagrams, tracing, and the like.
     module Introspect
-      # {:argumenter} API
-      def self.arguments_for_call(activity, (options, flow_options), **circuit_options)
-        circuit_options = circuit_options.merge( introspect: activity.debug )
-
-        return activity, [ options, flow_options ], circuit_options
-      end
-
-      # {Extension} API
-      def self.add_introspection(activity, task, local_options, *returned_options)
-        activity[:debug, task] = { id: local_options[:id] || task }
-      end
-
       def self.Enumerator(*args)
         Enumerator.new(*args)
       end
@@ -39,7 +27,6 @@ module Trailblazer
           @activity = activity
           @circuit  = activity.to_h[:circuit]
           @adds     = activity.to_h[:adds]
-          @debug    = activity.to_h[:debug]
         end
 
         def find(id)

@@ -60,7 +60,7 @@ module Trailblazer
 
         # FIXME; why don't we use the extensions passed into the initializer?
         def self.normalize_extension_option( ctx, local_options:, ** )
-          local_options[:extension] = (local_options[:extension]||[]) + [ Activity::Introspect.method(:add_introspection), Activity::DSL.method(:record) ] # fixme: this sucks
+          local_options[:extension] = (local_options[:extension]||[]) + [ Activity::DSL.method(:record) ] # fixme: this sucks
         end
 
         # Normalizes ctx[:options]
