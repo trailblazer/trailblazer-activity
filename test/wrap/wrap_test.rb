@@ -24,7 +24,7 @@ class WrapTest < Minitest::Spec
 
       args = [ {seq: []}, {} ]
 
-      event, (options, _) = activity.( args, argumenter: [ Activity::TaskWrap.method(:arguments_for_call) ] )
+      event, (options, _) = Activity::TaskWrap.invoke(activity, args)
 
       options.must_equal(:seq=>[:a])
     end
@@ -55,8 +55,7 @@ class WrapTest < Minitest::Spec
 
       args = [ {seq: []}, {} ]
 
-      # event, (options, _) = activity.( *Wrap.arguments_for_call( activity, args ) )
-      event, (options, _) = activity.( args, argumenter: [ Activity::TaskWrap.method(:arguments_for_call) ] )
+      event, (options, _) = Activity::TaskWrap.invoke(activity, args)
 
       options.must_equal(:seq=>["Hi from taskWrap!", :a])
     end
@@ -97,19 +96,10 @@ class WrapTest < Minitest::Spec
 
     describe "plain TaskWrap without additional steps" do
       it do
-        signal, (options, flow) = activity.(
-        [
-          options = {},
-          {},
-        ],
+        signal, (options, flow) = Activity::TaskWrap.invoke(activity, [options = {}, {}] )
 
-        wrap_runtime: Hash.new, # dynamic additions from the outside (e.g. tracing), also per task.
-        runner: Wrap::Runner,
-        wrap_static: Hash.new( Wrap.initial_activity ), # per activity?
-      )
-
-      signal.must_equal activity.outputs[:success].signal # the actual activity's End signal.
-      options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
+        signal.must_equal activity.outputs[:success].signal # the actual activity's End signal.
+        options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
       end
     end
 
@@ -151,25 +141,20 @@ class WrapTest < Minitest::Spec
         wrap_static         = Hash.new( Wrap.initial_activity )
         wrap_static[Upload] = Trailblazer::Activity::Path::Plan.merge( Wrap.initial_activity, upload_wrap )
 
-        signal, (options, flow, *ret) = more_nested.(
+        signal, (ctx, flow) = Activity::TaskWrap.invoke( more_nested,
           [
-            options = {},
-
+            {},
             {
-              stack:         Activity::Trace::Stack.new,
+              stack:        Activity::Trace::Stack.new,
             },
           ],
 
-          runner:        Wrap::Runner,
-          wrap_runtime:  Hash.new(wrap_alterations),      # apply to all tasks!
-          wrap_static:   wrap_static,
-          # introspection: { } # TODO: crashes without :debug.
-
-          argumenter: [ Activity::Introspect.method(:arguments_for_call) ]
+          # circuit_options:
+          # wrap_static:  wrap_static,
         )
 
         # upload should contain only one 1.
-        options.inspect.must_equal %{{:upload=>[1], \"bits\"=>64}}
+        ctx.inspect.must_equal %{{:upload=>[1], \"bits\"=>64}}
 
         tree = Activity::Trace::Present.tree(flow[:stack].to_a)
 
