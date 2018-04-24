@@ -12,16 +12,7 @@ class Trailblazer::Activity < Module
 
       # in a cool programming language, we'd be using pattern matching here to override
       # e.g. Activity::Call only for an Activity instance.
-      if task.is_a?(Trailblazer::Activity::Interface)
-      puts "@@@@@ #{task.inspect}"
-        circuit_options = circuit_options.merge(activity: task)
-
-        return_signal, return_args = task[:circuit].( args, circuit_options )
-      else
-        return_signal, return_args = task.( *original_args ) # we lose :exec_context here.
-      end
-
-
+      return_signal, return_args = task.(args, circuit_options)
 
       # DISCUSS: do we want original_args here to be passed on, or the "effective" return_args which are different to original_args now?
       wrap_ctx = wrap_ctx.merge( return_signal: return_signal, return_args: return_args )

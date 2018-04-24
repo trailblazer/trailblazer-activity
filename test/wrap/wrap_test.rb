@@ -261,9 +261,6 @@ pp flow
         pp flow[:stack]
 
               puts tree = Activity::Trace::Present.tree(flow[:stack].to_a)
-
-
-        # Activity.invoke(activity, args, argumenter: [ Activity::TaskWrap.method(:arguments_for_call) ] )
       end
     end
   end

@@ -30,7 +30,7 @@ module Trailblazer
           default_outputs: @default_outputs,
         }
 
-        signal, (ctx, ) = @pipeline.( [ctx] )
+        signal, (ctx, ) = @pipeline.( [ctx], {} )
 
         return ctx[:options][:task], ctx[:local_options], ctx[:connection_options], ctx[:sequence_options]
       end

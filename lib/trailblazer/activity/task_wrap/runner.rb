@@ -20,7 +20,8 @@ class Trailblazer::Activity < Module
         original_args = [ args, circuit_options ]
         # call the wrap {Activity} around the task.
         wrap_end_signal, ( wrap_ctx, _ ) = task_wrap_activity.(
-          [ wrap_ctx, original_args ] # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
+          [ wrap_ctx, original_args ], # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
+          {}
         )
 
         # don't return the wrap's end signal, but the one from call_task.
