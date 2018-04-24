@@ -10,6 +10,7 @@ class Trailblazer::Activity < Module
       # @api private
       # @interface Runner
       def self.call(task, args, circuit_options)
+        puts "@@@@@ #{task.inspect}"
         wrap_ctx = { task: task }
 
         # this activity is "wrapped around" the actual `task`.

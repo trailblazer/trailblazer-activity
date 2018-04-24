@@ -24,17 +24,18 @@ module Trailblazer
       end
 
       # Compute runtime arguments necessary to execute a taskWrap per task of the activity.
-      def self.arguments_for_call(activity, (options, flow_options), **circuit_options)
+      def self.invoke(activity, args, wrap_runtime: {}, wrap_static: {}, **circuit_options)
         circuit_options = circuit_options.merge(
           runner:       TaskWrap::Runner,
-          wrap_runtime: circuit_options[:wrap_runtime] || {},
-          wrap_static:  activity[:wrap_static] || {},
+          wrap_runtime: wrap_runtime,
+          # wrap_static:  wrap_static,
+
+          activity: {}, # for Runner
         )
 
-        return activity, [ options, flow_options ], circuit_options
+        # signal, (ctx, flow), circuit_options =
+        Runner.(activity, args, circuit_options)
       end
-
-      # better: MyClass < Activity(TaskWrap, ...)
-    end
+    end # TaskWrap
   end
 end
