@@ -225,7 +225,7 @@ ActivityTest::L
     #---
     #- start from C, stop in B
     options = { c_return: Activity::Right, a_return: Activity::Left }
-    signal, (options, _) = activity.( [options, flow_options], task: C )
+    signal, (options, _) = activity.( [options, flow_options], start_task: C )
 
     signal.must_equal activity.outputs[:resume_1].signal
     options.inspect.must_equal %{{:c_return=>Trailblazer::Activity::Right, :a_return=>Trailblazer::Activity::Left, :C=>1, :A=>1, :B=>1}}
@@ -233,7 +233,7 @@ ActivityTest::L
     #---
     #- start from C, via G>I>L
     options = { c_return: Activity::Right, a_return: Activity::Right, g_return: Activity::Right, i_return: Activity::Right }
-    signal, (options, _) = activity.( [options, flow_options], task: C )
+    signal, (options, _) = activity.( [options, flow_options], start_task: C )
 
     signal.must_equal activity.outputs[:success].signal
     options.inspect.must_equal %{{:c_return=>Trailblazer::Activity::Right, :a_return=>Trailblazer::Activity::Right, :g_return=>Trailblazer::Activity::Right, :i_return=>Trailblazer::Activity::Right, :C=>1, :A=>1, :G=>1, :I=>1, :L=>1}}
@@ -241,7 +241,7 @@ ActivityTest::L
     #---
     #- start from C, via G>I>J>K
     options = { c_return: Activity::Right, a_return: Activity::Right, g_return: Activity::Right, i_return: Activity::Left }
-    signal, (options, _) = activity.( [options, flow_options], task: C )
+    signal, (options, _) = activity.( [options, flow_options], start_task: C )
 
     signal.must_equal activity.outputs[:invalid_result].signal
     options.inspect.must_equal %{{:c_return=>Trailblazer::Activity::Right, :a_return=>Trailblazer::Activity::Right, :g_return=>Trailblazer::Activity::Right, :i_return=>Trailblazer::Activity::Left, :C=>1, :A=>1, :G=>1, :I=>1, :J=>1, :K=>1}}
@@ -282,7 +282,7 @@ ActivityTest::A
   end
 
   it "can start with any task" do
-    signal, (options, _) = activity.( [{}], task: L )
+    signal, (options, _) = activity.( [{}], start_task: L )
 
     signal.must_equal activity.outputs[:success].signal
     options.inspect.must_equal %{{:L=>1}}

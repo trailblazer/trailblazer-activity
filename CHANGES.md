@@ -1,3 +1,7 @@
+# 0.6.0
+
+* The `:task` option in `Circuit::call` is now named `:start_task` for consistency.
+
 # 0.5.4
 
 * Introducing `Introspect::Enumerator` and removing `Introspect.find`. `Enumerator` contains `Enumerable` and exposes all necessary utility methods.

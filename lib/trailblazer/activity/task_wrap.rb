@@ -24,11 +24,10 @@ module Trailblazer
       end
 
       # Compute runtime arguments necessary to execute a taskWrap per task of the activity.
-      def self.invoke(activity, args, wrap_runtime: {}, wrap_static: {}, **circuit_options)
+      def self.invoke(activity, args, wrap_runtime: {}, **circuit_options)
         circuit_options = circuit_options.merge(
           runner:       TaskWrap::Runner,
           wrap_runtime: wrap_runtime,
-          # wrap_static:  wrap_static,
 
           activity: {}, # for Runner
         )

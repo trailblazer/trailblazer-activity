@@ -82,7 +82,7 @@ module Trailblazer
       include Magnetic::Merge # Activity#merge!
 
       # @private Note that {Activity.call} is considered private until the public API is stable.
-      def call(args, circuit_options)
+      def call(args, circuit_options={})
         self[:circuit].( args, circuit_options.merge(activity: self) )
       end
     end
