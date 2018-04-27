@@ -42,23 +42,23 @@ module Trailblazer
       def insert(strategy, polarizer, task, options, &block)
         normalizer = options[:normalizer] || @normalizer # DISCUSS: do this at a deeper point?
 
-        task, local_options, connection_options, sequence_options = normalizer.(task, options)
+        task, local_options, connection_options, sequence_options, extension_options = normalizer.(task, options)
 
         polarizations = strategy.send(polarizer, @builder_options) # Railway.StepPolarizations( @builder_options )
 
-        insert_element( polarizations, task, local_options, connection_options, sequence_options, &block )
+        insert_element( polarizations, task, local_options, connection_options, sequence_options, extension_options, &block )
       end
 
       private
 
       # Internal top-level entry point to add task(s) and connections.
       # High level interface for DSL calls like ::task or ::step.
-      def insert_element(polarizations, task, local_options, connection_options, sequence_options, &block)
-        adds, *returned_options = Builder.adds_for(polarizations, task, local_options, connection_options, sequence_options, &block)
+      def insert_element(polarizations, task, local_options, connection_options, sequence_options, extension_options, &block)
+        adds, *returned_options = Builder.adds_for(polarizations, task, local_options, connection_options, sequence_options, extension_options, &block)
       end
 
       # @return Adds
-      def self.adds_for(polarizations, task, local_options, connection_options, sequence_options, &block)
+      def self.adds_for(polarizations, task, local_options, connection_options, sequence_options, extension_options, &block)
         # go through all wiring options such as Output()=>:color.
         polarizations_from_user_options, additional_adds = process_dsl_options(connection_options, local_options, &block)
 
@@ -66,7 +66,7 @@ module Trailblazer
 
         result = adds(task, polarizations, local_options, sequence_options, local_options)
 
-        return result + (local_options[:adds] || []) + additional_adds, task, local_options, connection_options, sequence_options
+        return result + (local_options[:adds] || []) + additional_adds, task, local_options, connection_options, sequence_options, extension_options
       end
 
       def self.process_dsl_options(options, id:nil, plus_poles:, **, &block)

@@ -32,7 +32,7 @@ module Trailblazer
 
         signal, (ctx, ) = @pipeline.( [ctx], {} )
 
-        return ctx[:options][:task], ctx[:local_options], ctx[:connection_options], ctx[:sequence_options]
+        return ctx[:options][:task], ctx[:local_options], ctx[:connection_options], ctx[:sequence_options], ctx[:extension_options]
       end
 
       # needs the basic Normalizer
@@ -42,15 +42,18 @@ module Trailblazer
         extend Trailblazer::Activity::Path( normalizer_class: DefaultNormalizer, plus_poles: PlusPoles.new.merge( Builder::Path.default_outputs.values ) ) # FIXME: the DefaultNormalizer actually doesn't need Left.
 
         def self.split_options( ctx, task:, options:, ** )
-          keywords = extract_dsl_keywords(options)
+          keywords   = extract_dsl_keywords(options)
+          extensions = extract_extensions(options)
 
            # sort through the "original" user DSL options.
+          options, extension_options      = Options.normalize( options, extensions ) # DISCUSS:
           options, local_options          = Options.normalize( options, keywords ) # DISCUSS:
           local_options, sequence_options = Options.normalize( local_options, Activity::Schema::Dependencies.sequence_keywords )
 
           ctx[:local_options],
           ctx[:connection_options],
-          ctx[:sequence_options] = local_options, options, sequence_options
+          ctx[:sequence_options],
+          ctx[:extension_options] = local_options, options, sequence_options, extension_options
         end
 
         # Filter out connections, e.g. `Output(:fail_fast) => :success` and return only the keywords like `:id` or `:replace`.
@@ -58,17 +61,19 @@ module Trailblazer
           options.keys - options.keys.find_all { |k| connection_classes.include?( k.class ) }
         end
 
-        # FIXME; why don't we use the extensions passed into the initializer?
-        def self.normalize_extension_option( ctx, local_options:, ** )
-          local_options[:extension] = (local_options[:extension]||[]) + [ Activity::DSL.method(:record) ] # fixme: this sucks
+        def self.extract_extensions(options, extensions_classes = [Activity::DSL::Extension])
+          options.keys.find_all { |k| extensions_classes.include?( k.class ) }
         end
 
-        # Normalizes ctx[:options]
+        # FIXME; why don't we use the extensions passed into the initializer?
+        def self.initialize_extension_option( ctx, options:, ** )
+          ctx[:options] = options.merge( Activity::DSL::Extension.new( Activity::DSL.method(:record) ) => true )
+        end
+
+        # Normalizes ctx[:options] (the user-options via the DSL) into the internal Hash format.
         def self.normalize_for_macro( ctx, task:, options:, task_builder:, ** )
           ctx[:options] =
             if task.is_a?(::Hash) # macro.
-              options = options.merge(extension: (options[:extension]||[])+(task[:extension]||[]) ) # FIXME.
-
               task.merge(options) # Note that the user options are merged over the macro options.
             else # user step
               { id: task }
@@ -93,9 +98,9 @@ module Trailblazer
             .merge(local_options)
         end
 
+        task Activity::TaskBuilder::Binary( method(:initialize_extension_option) ), id: "initialize_extension_option"
         task Activity::TaskBuilder::Binary( method(:normalize_for_macro) ),        id: "normalize_for_macro"
         task Activity::TaskBuilder::Binary( method(:split_options) ),              id: "split_options"
-        task Activity::TaskBuilder::Binary( method(:normalize_extension_option) ), id: "normalize_extension_option"
         task Activity::TaskBuilder::Binary( method(:initialize_plus_poles) ),      id: "initialize_plus_poles"
         # task ->((ctx, _), **) { pp ctx; [Activity::Right, [ctx, _]] }
       end

@@ -20,11 +20,20 @@ class NormalizerTest < Minitest::Spec
 
       normalizer, _ = Trailblazer::Activity::Magnetic::Normalizer.build( task_builder: ->(task) { task } )
 
-      task, locals, dsl, sequence_options = normalizer.({task: task, id: "A"}, {})
+      task, locals, connections, sequence_options, extension_options = normalizer.(
+        {
+          task: task,
+          id: "A",
+          Activity::DSL::Extension.new("callable extension") => true
+        },
+        {}
+      )
 
       task.must_equal task
       locals[:id].must_equal "A"
       sequence_options.must_equal({})
+      connections.must_equal({})
+      extension_options.inspect.must_equal %{{#<struct Trailblazer::Activity::DSL::Extension callable=\"callable extension\">=>true, #<struct Trailblazer::Activity::DSL::Extension callable=#<Method: Trailblazer::Activity::DSL.record>>=>true}}
     end
   end
 end
