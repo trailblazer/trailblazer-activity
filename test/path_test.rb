@@ -154,7 +154,7 @@ class PathTest < Minitest::Spec
       Activity.Output(Activity::Left, :exception)          => nil,
       )
 
-    normalizer = ->(task, options) { [ task, { plus_poles: extended_plus_poles }, options, {} ] }
+    normalizer = ->(task, options) { [ task, { plus_poles: extended_plus_poles }, options, {}, {} ] }
 
     activity = Module.new do
       extend Activity::Path( normalizer: normalizer )

@@ -6,7 +6,7 @@ class TaskWrapMacroTest < Minitest::Spec
 
   # Sample {Extension}
   # We test if we can change `activity` here.
-  SampleExtension = ->(activity, task, local_options, connections, sequence_options, **kws) do
+  SampleExtension = ->(activity, task, local_options, connections, sequence_options, extension_options, **kws) do
     # save all args somewhere readable.
     activity[:args_from_extension] = [activity, task, local_options.keys, connections.inspect, sequence_options]
     activity[:args_from_extension_2] = [kws.keys, kws[:original_dsl_args][0], kws[:original_dsl_args][1].keys.inspect, kws[:original_dsl_args][2], kws[:original_dsl_args][3] ]
@@ -22,7 +22,7 @@ class TaskWrapMacroTest < Minitest::Spec
   module Create
     extend Trailblazer::Activity::Path()
 
-    task task: A = T.def_task(:a), extension: [ SampleExtension ], id: "a", Output(nil, :failure) => End(:special), group: :main, &Block
+    task task: A = T.def_task(:a), EXT=Trailblazer::Activity::DSL::Extension.new(SampleExtension)=>true, id: "a", Output(nil, :failure) => End(:special), group: :main, &Block
   end
 
   it "runs two tasks" do
@@ -37,11 +37,11 @@ class TaskWrapMacroTest < Minitest::Spec
   end
 
   it "passes through all options" do
-    Create[:args_from_extension].must_equal [Create, Create::A, [:plus_poles, :task, :extension, :id],
+    Create[:args_from_extension].must_equal [Create, Create::A, [:plus_poles, :task, :id],
       "{#<struct Trailblazer::Activity::Output signal=nil, semantic=:failure>=>#<Trailblazer::Activity::End semantic=:special>}",
       {:group=>:main},
 
     ]
-    Create[:args_from_extension_2].must_equal [[:original_dsl_args], :task, "[:task, :extension, :id, #<struct Trailblazer::Activity::Output signal=nil, semantic=:failure>, :group]", {}, Block]
+    Create[:args_from_extension_2].must_equal [[:original_dsl_args], :task, %{[:task, #{Create::EXT}, :id, #<struct Trailblazer::Activity::Output signal=nil, semantic=:failure>, :group]}, {}, Block]
   end
 end

@@ -5,8 +5,8 @@ module Trailblazer
     #   task Callable, id: "success", before: "another"
     class DefaultNormalizer
       # Declarative::Variables
-      def self.build(plus_poles:, extension:[], **options)
-        return new(plus_poles: plus_poles, extension: extension), options
+      def self.build(plus_poles:, **options)
+        return new(plus_poles: plus_poles), options
       end
 
       def initialize(**default_options)
@@ -19,7 +19,7 @@ module Trailblazer
 
         local_options, sequence_options = Options.normalize( local_options, Activity::Schema::Dependencies.sequence_keywords )
 
-        return task, local_options, {}, sequence_options
+        return task, local_options, {}, sequence_options, {}
       end
     end
   end

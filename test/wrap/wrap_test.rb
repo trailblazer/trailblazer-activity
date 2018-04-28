@@ -50,7 +50,7 @@ class WrapTest < Minitest::Spec
       activity = Module.new do
         extend Activity::Path()
 
-        task task: T.def_task(:a), extension: [ Activity::TaskWrap::Merge.new(extension_adds) ]
+        task task: T.def_task(:a), Activity::DSL::Extension.new( Activity::TaskWrap::Merge.new(extension_adds) ) => true
       end
 
       args = [ {seq: []}, {} ]

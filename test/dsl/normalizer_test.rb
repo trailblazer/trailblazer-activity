@@ -8,7 +8,7 @@ class NormalizerTest < Minitest::Spec
       task, locals, dsl, sequence_options = normalizer.( "aTask", id: "A", Activity::DSL::Helper.Output(:success) => "find", before: "B" )
 
       task.must_equal "aTask"
-      locals.inspect.must_equal %{{:plus_poles=>\"default_plus_poles\", :extension=>[], :id=>\"A\", #<struct Trailblazer::Activity::DSL::OutputSemantic value=:success>=>\"find\"}}
+      locals.inspect.must_equal %{{:plus_poles=>\"default_plus_poles\", :id=>\"A\", #<struct Trailblazer::Activity::DSL::OutputSemantic value=:success>=>\"find\"}}
       dsl.inspect.must_equal %{{}}
       sequence_options.inspect.must_equal %{{:before=>\"B\"}}
     end
@@ -21,7 +21,7 @@ class NormalizerTest < Minitest::Spec
       normalizer, _ = Trailblazer::Activity::Magnetic::Normalizer.build( task_builder: ->(task) { task } )
 
       task, locals, connections, sequence_options, extension_options = normalizer.(
-        {
+          {
           task: task,
           id: "A",
           Activity::DSL::Extension.new("callable extension") => true

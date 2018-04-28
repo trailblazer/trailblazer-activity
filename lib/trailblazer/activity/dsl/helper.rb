@@ -15,7 +15,11 @@ module Trailblazer
     # @api private
     OutputSemantic = Struct.new(:value)
     Track          = Struct.new(:color)
-    Extension      = Struct.new(:callable)
+    Extension      = Struct.new(:callable) do
+      def call(*args, &block)
+        callable.(*args, &block)
+      end
+    end
 
     # Shortcut functions for the DSL. These have no state.
     module Helper
