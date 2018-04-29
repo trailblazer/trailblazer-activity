@@ -25,10 +25,7 @@ module Trailblazer
       def self.call(activity, (options, flow_options), circuit_options={})
         activity, (options, flow_options), circuit_options = Trace.arguments_for_call( activity, [options, flow_options], circuit_options ) # only run once for the entire circuit!
         last_signal, (options, flow_options) =
-          activity.(
-            [options, flow_options],
-            circuit_options.merge({ argumenter: [ Introspect.method(:arguments_for_call), TaskWrap.method(:arguments_for_call) ] })
-          )
+          Activity::TaskWrap.invoke(activity, [options, flow_options], circuit_options)
 
         return flow_options[:stack].to_a, last_signal, [options, flow_options]
       end
