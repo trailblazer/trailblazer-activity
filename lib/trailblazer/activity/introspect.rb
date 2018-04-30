@@ -9,6 +9,7 @@ module Trailblazer
         Graph.new(*args)
       end
 
+      # @private
       class Enumerator
         include Enumerable # This is why I start hating OOP.
 
@@ -22,20 +23,35 @@ module Trailblazer
         end
       end
 
+      # @private This API is still under construction.
       class Graph
         def initialize(activity)
           @activity = activity
           @circuit  = activity.to_h[:circuit]
-          @adds     = activity.to_h[:adds]
+          @adds     = activity.to_h[:adds].compact # FIXME: why are there nils in Adds?
         end
 
-        def find(id)
+        def find(id=nil, &block)
+          return find_by_id(id) unless block_given?
+          find_with_block(&block)
+        end
+
+        private
+
+        def find_by_id(id)
           (_, (id, triplett)) = @adds.find { |(op, (_id, triplett))| _id == id }
 
           Node(triplett[1], id, triplett[0])
         end
 
-        private
+        def find_with_block(&block)
+          adds = @adds.find { |(op, (id, triplett))| yield( Node(triplett[1], id, triplett[0]) ) }
+          return nil unless adds
+
+          (op, (id, triplett)) = adds
+
+          Node(triplett[1], id, triplett[0])
+        end
 
         def Node(*args)
           Node.new(*args).freeze

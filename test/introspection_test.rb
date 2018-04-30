@@ -25,12 +25,6 @@ class IntrospectionTest < Minitest::Spec
     end
   end
 
-  describe ":debug state" do
-    it "exposes all added tasks" do
-      activity.to_h[:debug].to_h.must_equal(A => {id: A}, bc => {id: bc}, D => {id: "D"})
-    end
-  end
-
   describe "#collect" do
     it "collects all tasks of a flat activity" do
       all_tasks = Activity::Introspect.collect(bc) do |task, connections|
@@ -98,6 +92,14 @@ class IntrospectionTest < Minitest::Spec
         it { node[:id].must_equal "Start.default" }
         it { node[:magnetic_to].must_equal [] }
         it { node[:task].must_equal activity.to_h[:circuit].to_h[:start_task] }
+      end
+
+      describe "with block" do
+        let(:node) { graph.find { |node| node[:task] == B } }
+
+        it { node[:id].must_equal "B" }
+        it { node[:task].must_equal B }
+        it { node[:magnetic_to].must_equal [:success] }
       end
     end
   end
