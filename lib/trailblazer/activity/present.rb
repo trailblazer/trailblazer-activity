@@ -17,7 +17,9 @@ module Trailblazer
           stack.each do |captured, *returned|
             task = captured.task
 
-            name = (node = captured.introspection[task]) ? node[:id] : task
+            graph = Introspect::Graph(captured.introspection)
+
+            name = (node = graph.find { |node| node[:task] == task }) ? node[:id] : task
 
             if returned.size == 1 # flat
               tree << [ level, name ]
