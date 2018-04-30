@@ -1,5 +1,3 @@
-require "trailblazer/activity/version"
-
 module Trailblazer
   class Activity < Module
     attr_reader :initial_state
