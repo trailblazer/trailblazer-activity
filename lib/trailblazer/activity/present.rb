@@ -17,9 +17,10 @@ module Trailblazer
           stack.each do |captured, *returned|
             task = captured.task
 
-            graph = Introspect::Graph(captured.introspection)
+            graph = Introspect::Graph(captured.activity)
 
             name = (node = graph.find { |node| node[:task] == task }) ? node[:id] : task
+            name ||= task # FIXME: bullshit
 
             if returned.size == 1 # flat
               tree << [ level, name ]

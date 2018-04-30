@@ -189,28 +189,27 @@ class WrapTest < Minitest::Spec
 
         # wrap_static
         wrap_runtime: Hash.new(wrap_alterations), # dynamic additions from the outside (e.g. tracing), also per task.
-        introspect:      { Model => { id: "outsideg.Model" }, Uuid => { id: "outsideg.Uuid" } }, # optional, eg. per Activity.
       )
 
       signal.must_equal activity.outputs[:success].signal # the actual activity's End signal.
       options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
-pp flow
       puts tree = Activity::Trace::Present.tree(flow[:stack].to_a)
 
-      tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{|-- #<Trailblazer::Activity::Start semantic=:default>
-|-- outsideg.Model
-|-- #<Trailblazer::Activity: {}>
-|   |-- #<Trailblazer::Activity::Start semantic=:default>
-|   |-- #<Proc:.rb:11 (lambda)>
-|   |-- #<Trailblazer::Activity: {}>
-|   |   |-- #<Trailblazer::Activity::Start semantic=:default>
-|   |   |-- #<Proc:.rb:12 (lambda)>
-|   |   `-- #<Trailblazer::Activity::End semantic=:success>
-|   |-- #<Proc:.rb:13 (lambda)>
-|   `-- #<Trailblazer::Activity::End semantic=:success>
-|-- outsideg.Uuid
-`-- #<Trailblazer::Activity::End semantic=:success>}
+      tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{`-- #<Trailblazer::Activity: {top}>
+    |-- Start.default
+    |-- #<Proc:.rb:9 (lambda)>
+    |-- A
+    |   |-- Start.default
+    |   |-- #<Proc:.rb:11 (lambda)>
+    |   |-- #<Trailblazer::Activity: {bottom}>
+    |   |   |-- Start.default
+    |   |   |-- #<Proc:.rb:12 (lambda)>
+    |   |   `-- End.success
+    |   |-- #<Proc:.rb:13 (lambda)>
+    |   `-- End.success
+    |-- #<Proc:.rb:10 (lambda)>
+    `-- End.success}
     end
 
     # FIXME
@@ -227,7 +226,7 @@ pp flow
           runner:       Activity::TaskWrap::Runner,
           wrap_runtime: Hash.new(wrap_alterations),
 
-          activity:     { wrap_static: {} } # i am overridden
+          activity:     { wrap_static: {}, adds: {} } # i am overridden
         }
 
 

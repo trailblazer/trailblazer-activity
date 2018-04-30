@@ -18,7 +18,7 @@ class Trailblazer::Activity < Module
         (original_options, original_flow_options, _) = original_args[0]
 
         original_flow_options[:stack] << Trailblazer::Activity::Trace::Entity.new(
-          wrap_config[:task], :return, wrap_config[:return_signal], {}
+          wrap_config[:task], {}, :return, wrap_config[:return_signal]
         )
 
         original_flow_options[:stack].unindent!
@@ -34,7 +34,7 @@ class Trailblazer::Activity < Module
         flow[:stack].indent!
 
         flow[:stack] << Trailblazer::Activity::Trace::Entity.new(
-          task, :args, nil, {}, activity
+          task, activity, :args, nil, {}
         )
 
         return [ctx, flow], circuit_options.merge(activity: activity)
