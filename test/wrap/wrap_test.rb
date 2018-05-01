@@ -226,7 +226,7 @@ class WrapTest < Minitest::Spec
           runner:       Activity::TaskWrap::Runner,
           wrap_runtime: Hash.new(wrap_alterations),
 
-          activity:     { wrap_static: {}, adds: {} } # i am overridden
+          activity:     { wrap_static: {}, adds: [] }
         }
 
 
