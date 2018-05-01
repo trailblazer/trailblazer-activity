@@ -1,6 +1,10 @@
 # 0.6.0
 
 * The `:task` option in `Circuit::call` is now named `:start_task` for consistency.
+* Removed the `:argumenter` option for `Activity::call`. Instead, an `Activity` passes itself via the `:activity` option.
+* Removed the `:extension` option. Instead, any option from the DSL that `is_a?(DSL::Extension)` will be processed in `add_task!`.
+* Replace argumenters with `TaskWrap::invoke`.
+* Added `Introspect::Graph::find`.
 
 # 0.5.4
 
