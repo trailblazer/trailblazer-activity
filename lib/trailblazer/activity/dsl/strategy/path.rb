@@ -12,7 +12,6 @@ module Trailblazer
           builder_class:    Magnetic::Builder::Path, # we use the Activity-based Normalizer
           normalizer_class: Magnetic::Normalizer,
           default_outputs:  Magnetic::Builder::Path.default_outputs, # binary outputs
-          extension:        [ ],
 
           extend:           [
             # DSL.def_dsl(:task, Magnetic::Builder::Path,    :PassPolarizations),
