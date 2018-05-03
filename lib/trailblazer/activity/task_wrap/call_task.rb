@@ -8,11 +8,7 @@ class Trailblazer::Activity < Module
 
       # Call the actual task we're wrapping here.
       # puts "~~~~wrap.call: #{task}"
-      args, circuit_options = original_args
-
-      # in a cool programming language, we'd be using pattern matching here to override
-      # e.g. Activity::Call only for an Activity instance.
-      return_signal, return_args = task.(args, circuit_options)
+      return_signal, return_args = task.(*original_args)
 
       # DISCUSS: do we want original_args here to be passed on, or the "effective" return_args which are different to original_args now?
       wrap_ctx = wrap_ctx.merge( return_signal: return_signal, return_args: return_args )
