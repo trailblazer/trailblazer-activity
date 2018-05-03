@@ -5,6 +5,7 @@
 * Removed the `:extension` option. Instead, any option from the DSL that `is_a?(DSL::Extension)` will be processed in `add_task!`.
 * Replace argumenters with `TaskWrap::invoke`.
 * Added `Introspect::Graph::find`.
+* Removed `Introspect::Enumerator` in favor of the `Graph` API.
 
 # 0.5.4
 

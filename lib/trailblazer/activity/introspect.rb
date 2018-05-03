@@ -1,26 +1,10 @@
 module Trailblazer
-  class Activity < Module   # Introspection is not used at run-time except for rendering diagrams, tracing, and the like.
+  class Activity < Module
+    # Compile-time.
+    # Introspection is not used at run-time except for rendering diagrams, tracing, and the like.
     module Introspect
-      def self.Enumerator(*args)
-        Enumerator.new(*args)
-      end
-
       def self.Graph(*args)
         Graph.new(*args)
-      end
-
-      # @private
-      class Enumerator
-        include Enumerable # This is why I start hating OOP.
-
-        def initialize(activity)
-          @activity = activity
-          @circuit  = @activity.to_h[:circuit]
-        end
-
-        def each(&block)
-          @circuit.to_h[:map].each(&block)
-        end
       end
 
       # @private This API is still under construction.
@@ -57,12 +41,12 @@ module Trailblazer
           Node.new(*args).freeze
         end
 
-        Node = Struct.new(:task, :id, :magnetic_to) do
-        end
+        Node = Struct.new(:task, :id, :magnetic_to)
       end
 
 
       # FIXME: remove this
+      # @private This will be removed shortly.
       def self.collect(activity, options={}, &block)
         circuit      = activity.to_h[:circuit]
         circuit_hash = circuit.to_h[:map]
