@@ -56,19 +56,6 @@ class IntrospectionTest < Minitest::Spec
     end
   end
 
-  describe "Enumerator#find" do
-    it "returns task" do
-      activity = Module.new do
-        extend Activity::Path()
-
-        task task: "I am not callable!"
-        task B, id: "B"
-      end
-
-      Activity::Introspect::Enumerator(activity).find { |task, _| task.inspect =~ /callable!/ }.first.must_equal "I am not callable!"
-    end
-  end
-
   describe "Introspect::Graph" do
     let(:activity) do
       Module.new do
