@@ -10,12 +10,12 @@ class Trailblazer::Activity < Module
     # @note Assumption: we always have :input _and_ :output, where :input produces a Context and :output decomposes it.
     class Input
       def initialize(filter)
-        @filter = Trailblazer::Option(filter)
+        @filter = filter
       end
 
       # `original_args` are the actual args passed to the wrapped task: [ [options, ..], circuit_options ]
       #
-      def call( (wrap_ctx, original_args), **circuit_options )
+      def call( (wrap_ctx, original_args), circuit_options )
         # let user compute new ctx for the wrapped task.
         input_ctx = apply_filter(*original_args) # FIXME: THIS SHOULD ALWAYS BE A _NEW_ Context.
         # TODO: make this unnecessary.
@@ -35,17 +35,60 @@ class Trailblazer::Activity < Module
       private
 
       def apply_filter((ctx, original_flow_options), original_circuit_options)
-        new_ctx = @filter.( ctx, **original_circuit_options )
+        new_ctx = @filter.( ctx, original_circuit_options )
         raise new_ctx.inspect unless new_ctx.is_a?(Trailblazer::Context)
         new_ctx
       end
+
+      def self.Scoped(filter)
+        Input.new(
+          Scoped.new( Trailblazer::Option(filter) )
+        )
+      end
+
+      class Scoped
+        def initialize(filter)
+          @filter = filter
+        end
+
+        def call(original_ctx, circuit_options)
+          Trailblazer::Context(
+            @filter.(original_ctx, **circuit_options)
+          )
+        end
+      end
+
+      def self.FromDSL(map)
+        hsh = DSL.hash_for(map)
+
+        Scoped( ->(original_ctx) { Hash[hsh.collect { |from_name, to_name| [to_name, original_ctx[from_name]] }].tap do |b|
+          puts "@@@@@ #{b.inspect}"
+        end } )
+      end
+
     end
+
+    module DSL
+      def self.hash_for(ary)
+        return ary if ary.instance_of?(::Hash)
+        Hash[ary.collect { |name| [name, name] }]
+      end
+    end
+
+    def self.Input(filter)
+      Input.new( Trailblazer::Option(filter) )
+    end
+
+    def self.Output(filter)
+      Output.new( Trailblazer::Option(filter) )
+    end
+
 
     # TaskWrap step to compute the outgoing {Context} from the wrapped task.
     # This allows renaming, filtering, hiding, of the options returned from the wrapped task.
     class Output
       def initialize(filter, strategy=CopyMutableToOriginal)
-        @filter   = Trailblazer::Option(filter)
+        @filter   = filter
         @strategy = strategy
       end
 
@@ -66,8 +109,6 @@ class Trailblazer::Activity < Module
         output_ctx = @filter.(original_ctx, returned_ctx, **original_circuit_options)
         # output_ctx = apply_filter(returned_ctx, original_flow_options, original_circuit_options)
 
-pp output_ctx
-
         # new_ctx = @strategy.( original_ctx, output ) # here, we compute the "new" options {Context}.
 
         wrap_ctx = wrap_ctx.merge( return_args: [output_ctx, original_flow_options] )
@@ -78,11 +119,6 @@ pp output_ctx
 
       private
 
-      # @note API not stable
-      def apply_filter(mutable_data, original_flow_options, original_circuit_options)
-        @filter.(mutable_data, **original_circuit_options)
-      end
-
       # "merge" Strategy
       module CopyMutableToOriginal
         # @param original Context
@@ -92,6 +128,37 @@ pp output_ctx
 
           original
         end
+      end
+
+      def self.Unscoped(filter)
+        Output.new(
+          Unscoped.new( Trailblazer::Option(filter) )
+        )
+      end
+
+      class Unscoped
+        def initialize(filter)
+          @filter = filter
+        end
+
+        def call(original_ctx, new_ctx, **circuit_options)
+          _, mutable_data = new_ctx.decompose
+
+          #   # "strategy" and user block
+          original_ctx.merge(
+            @filter.(new_ctx, **circuit_options)
+          )
+        end
+      end
+
+      def self.FromDSL(map)
+        hsh = DSL.hash_for(map)
+
+        Unscoped( ->(new_ctx) { Hash[hsh.collect { |from_name, to_name|
+pp new_ctx, from_name
+          [to_name, new_ctx[from_name]] }].tap do |v|
+          puts "@@@@@, #{v.inspect}"
+        end } )
       end
     end
   end # Wrap

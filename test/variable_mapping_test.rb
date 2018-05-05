@@ -19,11 +19,28 @@ class VariableMappingTest < Minitest::Spec
     [Activity::Right, [options, flow]]
   end
 
+  C = ->((ctx, flow), **) do
+    ctx[:c] = ctx["a"].dup
+
+    [Activity::Right, [ctx, flow]]
+  end
+
+  let(:nested) do
+    Module.new do
+      extend Activity::Path()
+
+      task task: C
+    end
+  end
+
   let (:activity) do
+    _nested = nested
+
     Module.new do
       extend Activity::Path()
 
       task task: Model
+      task task: _nested, _nested.outputs[:success] => Track(:success)
       task task: Uuid
     end
   end
@@ -55,16 +72,16 @@ class VariableMappingTest < Minitest::Spec
       runtime[ Model ] = Module.new do
         extend Activity::Path::Plan()
 
-        task Activity::TaskWrap::Input.new( model_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
-        task Activity::TaskWrap::Output.new( model_output ), id: "task_wrap.output", before: "End.success", group: :end
+        task Activity::TaskWrap::Input( model_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::TaskWrap::Output( model_output ), id: "task_wrap.output", before: "End.success", group: :end
       end
 
       # add filters around Uuid.
       runtime[ Uuid ] = Module.new do
         extend Activity::Path::Plan()
 
-        task Activity::TaskWrap::Input.new( uuid_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
-        task Activity::TaskWrap::Output.new( uuid_output ), id: "task_wrap.output", before: "End.success", group: :end
+        task Activity::TaskWrap::Input( uuid_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::TaskWrap::Output( uuid_output ), id: "task_wrap.output", before: "End.success", group: :end
       end
 
       signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
@@ -77,13 +94,12 @@ class VariableMappingTest < Minitest::Spec
       )
 
       signal.must_equal activity.outputs[:success].signal
-      options.must_equal({"a"=>1, "model.a"=>4, "uuid.a" => 7 })
+      options.must_equal({"a"=>1, "model.a"=>4, :c=>1, "uuid.a" => 7 })
     end
   end
 
-  describe "pure Input/Output xxx" do
+  describe "Input/Output with scope" do
     it do
-      skip
 
       model_input  = ->(options) { { "a"       => options["a"]+1 } }
       model_output = ->(options) { { "model.a" => options["a"] } }
@@ -96,16 +112,16 @@ class VariableMappingTest < Minitest::Spec
       runtime[ Model ] = Module.new do
         extend Activity::Path::Plan()
 
-        task Activity::TaskWrap::Input.new( model_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
-        task Activity::TaskWrap::Output.new( model_output ), id: "task_wrap.output", before: "End.success", group: :end
+        task Activity::TaskWrap::Input::Scoped( model_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::TaskWrap::Output::Unscoped( model_output ), id: "task_wrap.output", before: "End.success", group: :end
       end
 
       # add filters around Uuid.
       runtime[ Uuid ] = Module.new do
         extend Activity::Path::Plan()
 
-        task Activity::TaskWrap::Input.new( uuid_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
-        task Activity::TaskWrap::Output.new( uuid_output ), id: "task_wrap.output", before: "End.success", group: :end
+        task Activity::TaskWrap::Input::Scoped( uuid_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::TaskWrap::Output::Unscoped( uuid_output ), id: "task_wrap.output", before: "End.success", group: :end
       end
 
       signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
@@ -118,7 +134,47 @@ class VariableMappingTest < Minitest::Spec
       )
 
       signal.must_equal activity.outputs[:success].signal
-      options.must_equal({"a"=>1, "model.a"=>4, "uuid.a" => 7 })
+      options.must_equal({"a"=>1, "model.a"=>4, :c=>1, "uuid.a" => 7 })
+    end
+  end
+
+  describe "Input/Output with mapping DSL" do
+    it do
+
+      model_input  = ["a"]# ->(options) { { "a"       => options["a"]+1 } }
+      model_output = { "a"=>"model.a" } # ->(options) { { "model.a" => options["a"] } }
+      uuid_input   = ["a", "model.a"]# ->(options) { { "a"       => options["a"]*3, "model.a" => options["model.a"] } }
+      uuid_output  = { "a"=>"uuid.a" }#->(options) { { "uuid.a"  => options["a"] } }
+
+      runtime = {}
+
+      # add filters around Model.
+      runtime[ Model ] = Module.new do
+        extend Activity::Path::Plan()
+
+        task Activity::TaskWrap::Input::FromDSL( model_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::TaskWrap::Output::FromDSL( model_output ), id: "task_wrap.output", before: "End.success", group: :end
+      end
+
+      # add filters around Uuid.
+      runtime[ Uuid ] = Module.new do
+        extend Activity::Path::Plan()
+
+        task Activity::TaskWrap::Input::FromDSL( uuid_input ),   id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::TaskWrap::Output::FromDSL( uuid_output ), id: "task_wrap.output", before: "End.success", group: :end
+      end
+
+      signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
+        [
+          options = { "a" => 1 },
+          {},
+        ],
+
+        wrap_runtime: runtime, # dynamic additions from the outside (e.g. tracing), also per task.
+      )
+
+      signal.must_equal activity.outputs[:success].signal
+      options.must_equal({"a"=>1, "model.a"=>4, :c=>1, "uuid.a" => 7 })
     end
   end
 end
