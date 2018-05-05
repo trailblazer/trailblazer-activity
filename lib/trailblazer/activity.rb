@@ -105,6 +105,7 @@ require "trailblazer/activity/task_wrap/call_task"
 require "trailblazer/activity/task_wrap/trace"
 require "trailblazer/activity/task_wrap/runner"
 require "trailblazer/activity/task_wrap/merge"
+require "trailblazer/activity/task_wrap/variable_mapping"
 
 require "trailblazer/activity/trace"
 require "trailblazer/activity/present"
