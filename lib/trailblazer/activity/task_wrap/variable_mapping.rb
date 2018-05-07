@@ -155,10 +155,7 @@ class Trailblazer::Activity < Module
         hsh = DSL.hash_for(map)
 
         Unscoped( ->(new_ctx) { Hash[hsh.collect { |from_name, to_name|
-pp new_ctx, from_name
-          [to_name, new_ctx[from_name]] }].tap do |v|
-          puts "@@@@@, #{v.inspect}"
-        end } )
+          [to_name, new_ctx[from_name]] }] } )
       end
     end
   end # Wrap

@@ -174,7 +174,7 @@ class VariableMappingTest < Minitest::Spec
       )
 
       signal.must_equal activity.outputs[:success].signal
-      options.must_equal({"a"=>1, "model.a"=>4, :c=>1, "uuid.a" => 7 })
+      options.must_equal({"a"=>1, "model.a"=>2, :c=>1, "uuid.a" => 3 })
     end
   end
 end
