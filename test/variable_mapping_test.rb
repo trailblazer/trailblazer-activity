@@ -20,7 +20,7 @@ class VariableMappingTest < Minitest::Spec
   end
 
   C = ->((ctx, flow), **) do
-    ctx[:c] = ctx["a"].dup
+    ctx[:c] = ctx["a"]#.dup
 
     [Activity::Right, [ctx, flow]]
   end
