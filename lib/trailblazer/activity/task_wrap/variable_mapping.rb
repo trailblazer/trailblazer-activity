@@ -2,6 +2,31 @@ require "trailblazer/context"
 
 class Trailblazer::Activity < Module
   module TaskWrap
+    # @private
+    def self.filter_for(filter, constant)
+      if filter.is_a?(Proc)
+        constant( filter )
+      else
+        constant::FromDSL(filter)
+      end
+    end
+
+    def self.VariableMapping(input:, output:)
+      input  = filter_for(input, TaskWrap::Input)
+      output = filter_for(output, TaskWrap::Output)
+
+      Trailblazer::Activity::DSL::Extension.new(
+        Merge.new(
+          Module.new do
+            extend Path::Plan()
+
+            task input,  id: "task_wrap.input", before: "task_wrap.call_task"
+            task output, id: "task_wrap.output", before: "End.success", group: :end
+          end
+        )
+      )
+    end
+
     # TaskWrap step to compute the incoming {Context} for the wrapped task.
     # This allows renaming, filtering, hiding, of the options passed into the wrapped task.
     #
@@ -58,12 +83,11 @@ class Trailblazer::Activity < Module
         end
       end
 
+      # Convert the DSL input into a hash (if it isn't already) and pass that into `Input::Scoped`.
       def self.FromDSL(map)
         hsh = DSL.hash_for(map)
 
-        Scoped( ->(original_ctx) { Hash[hsh.collect { |from_name, to_name| [to_name, original_ctx[from_name]] }].tap do |b|
-          puts "@@@@@ #{b.inspect}"
-        end } )
+        Scoped( ->(original_ctx) { Hash[hsh.collect { |from_name, to_name| [to_name, original_ctx[from_name]] }] } )
       end
 
     end
@@ -87,9 +111,8 @@ class Trailblazer::Activity < Module
     # TaskWrap step to compute the outgoing {Context} from the wrapped task.
     # This allows renaming, filtering, hiding, of the options returned from the wrapped task.
     class Output
-      def initialize(filter, strategy=CopyMutableToOriginal)
+      def initialize(filter)
         @filter   = filter
-        @strategy = strategy
       end
 
       # Runs the user filter and replaces the ctx in `wrap_ctx[:return_args]` with the filtered one.
@@ -119,17 +142,6 @@ class Trailblazer::Activity < Module
 
       private
 
-      # "merge" Strategy
-      module CopyMutableToOriginal
-        # @param original Context
-        # @param options  Context The object returned from a (nested) {Activity}.
-        def self.call(original, mutable)
-          mutable.each { |k,v| original[k] = v }
-
-          original
-        end
-      end
-
       def self.Unscoped(filter)
         Output.new(
           Unscoped.new( Trailblazer::Option(filter) )
@@ -151,6 +163,7 @@ class Trailblazer::Activity < Module
         end
       end
 
+      # Convert the DSL input into a hash (if it isn't already) and pass that into `Output::Unscoped`.
       def self.FromDSL(map)
         hsh = DSL.hash_for(map)
 
