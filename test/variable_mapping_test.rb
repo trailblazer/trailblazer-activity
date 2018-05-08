@@ -205,6 +205,30 @@ class VariableMappingTest < Minitest::Spec
       options.must_equal({"a"=>1, "model.a"=>2, :c=>1, "uuid.a" => 3 })
     end
   end
+
+  describe "via DSL" do
+    it do
+      _nested = nested
+
+      activity = Module.new do
+        extend Activity::Path()
+
+        task task: Model,     input: ["a"], output: { "a"=>"model.a" }
+        task task: _nested,    _nested.outputs[:success] => Track(:success)
+        task task: Uuid,      input: ["a", "model.a"], output: { "a"=>"uuid.a" }
+      end
+
+      signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
+        [
+          options = { "a" => 1 },
+          {},
+        ],
+      )
+
+      signal.must_equal activity.outputs[:success].signal
+      options.must_equal({"a"=>1, "model.a"=>2, :c=>1, "uuid.a" => 3 })
+    end
+  end
 end
 
 
