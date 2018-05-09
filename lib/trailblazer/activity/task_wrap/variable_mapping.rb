@@ -5,7 +5,7 @@ class Trailblazer::Activity < Module
     # @private
     def self.filter_for(filter, constant)
       if filter.is_a?(Proc)
-        constant( filter )
+        constant::Scoped( filter )
       else
         constant::FromDSL(filter)
       end
@@ -146,6 +146,10 @@ class Trailblazer::Activity < Module
         Output.new(
           Unscoped.new( Trailblazer::Option(filter) )
         )
+      end
+
+      def self.Scoped(filter)
+        Unscoped(filter)
       end
 
       class Unscoped

@@ -204,16 +204,68 @@ class VariableMappingTest < Minitest::Spec
       signal.must_equal activity.outputs[:success].signal
       options.must_equal({"a"=>1, "model.a"=>2, :c=>1, "uuid.a" => 3 })
     end
-  end
 
-  describe "via DSL" do
-    it do
+    it "allows procs" do
       _nested = nested
 
       activity = Module.new do
         extend Activity::Path()
 
+        task task: Model, Trailblazer::Activity::TaskWrap::VariableMapping(
+          input:  ->(ctx, **) { { "a" => a+1 } },
+          output: ->(ctx, a:, **) { { "model.a"=>a } }
+        ) => true
+        task task: _nested, _nested.outputs[:success] => Track(:success)
+        task task: Uuid, Trailblazer::Activity::TaskWrap::VariableMapping(
+          input:  ->(ctx, a:, **) { { "a" => a, "model.a" => ctx["model.a"] } },
+          output: ->(ctx, a:, **) { { "uuid.a"=>a } }
+        ) => true
+      end
+
+      signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
+        [
+          options = { "a" => 1 },
+          {},
+        ],
+      )
+
+      signal.must_equal activity.outputs[:success].signal
+      options.must_equal({"a"=>1, "model.a"=>2, :c=>1, "uuid.a" => 3 })
+    end
+  end
+
+  describe "via DSL" do
+    it "allows array and hash" do
+      _nested = nested
+
+      activity = Module.new do
+        extend Activity::Path()
+
+        # a => a, ctx[:model].id => id
         task task: Model,     input: ["a"], output: { "a"=>"model.a" }
+        task task: _nested,    _nested.outputs[:success] => Track(:success)
+        task task: Uuid,      input: ["a", "model.a"], output: { "a"=>"uuid.a" }
+      end
+
+      signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
+        [
+          options = { "a" => 1 },
+          {},
+        ],
+      )
+
+      signal.must_equal activity.outputs[:success].signal
+      options.must_equal({"a"=>1, "model.a"=>2, :c=>1, "uuid.a" => 3 })
+    end
+
+    it "allows procs, too" do
+      _nested = nested
+
+      activity = Module.new do
+        extend Activity::Path()
+
+        # a => a, ctx[:model].id => id
+        task task: Model,     input: ->(ctx, a:, **) { { "a" => a+1 } }, output: ->(ctx, a:, **) { { "model.a"=>a } }
         task task: _nested,    _nested.outputs[:success] => Track(:success)
         task task: Uuid,      input: ["a", "model.a"], output: { "a"=>"uuid.a" }
       end
