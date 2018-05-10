@@ -17,22 +17,22 @@ class Trailblazer::Activity < Module
     end
 
     # @private
-    def self.filter_for(filter, constant)
+    def self.filter_for(filter)
       if filter.is_a?(Proc)
         filter
       else
-        constant::filter_from_dsl(filter)
+        TaskWrap::Input::filter_from_dsl(filter)
       end
     end
 
     def self.VariableMapping(input:, output:)
-      input  = filter_for(input, TaskWrap::Input)
+      input  = filter_for(input)
 
       input  = Input.new(
                 Input::Scoped.new(
                   Trailblazer::Option::KW( input ) ) )
 
-      output = filter_for(output, TaskWrap::Output)
+      output = filter_for(output)
 
       output = Output.new(
                 Output::Unscoped.new(
@@ -101,7 +101,7 @@ class Trailblazer::Activity < Module
       def self.filter_from_dsl(map)
         hsh = DSL.hash_for(map)
 
-        ->(original_ctx, kwargs) { Hash[hsh.collect { |from_name, to_name| [to_name, original_ctx[from_name]] }] }
+        ->(incoming_ctx, kwargs) { Hash[hsh.collect { |from_name, to_name| [to_name, incoming_ctx[from_name]] }] }
       end
 
     end
@@ -150,13 +150,6 @@ class Trailblazer::Activity < Module
             @filter.(new_ctx, **circuit_options)
           )
         end
-      end
-
-      # Convert the DSL input into a hash (if it isn't already) and pass that into `Output::Unscoped`.
-      def self.filter_from_dsl(map)
-        hsh = DSL.hash_for(map)
-
-        ->(new_ctx, **kws) { Hash[hsh.collect { |from_name, to_name| [to_name, new_ctx[from_name]] }] }
       end
     end
   end # Wrap
