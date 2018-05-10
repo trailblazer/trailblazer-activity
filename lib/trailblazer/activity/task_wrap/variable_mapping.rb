@@ -2,14 +2,19 @@ require "trailblazer/context"
 
 class Trailblazer::Activity < Module
   module TaskWrap
-
+    # Creates taskWrap steps to map variables before and after the actual step.
+    # We hook into the Normalizer, process `:input` and `:output` directives and
+    # translate them into a {DSL::Extension}.
+    #
+    # Note that the two options are not the only way to create filters, you can use the
+    # more low-level {Scoped()} etc., too, and write your own filter logic.
     module VariableMapping
       # DSL step for Magnetic::Normalizer.
       # Translates `:input` and `:output` into VariableMapping taskWrap extensions.
       def self.normalizer_step_for_input_output(ctx, *)
         options, io_config = Magnetic::Options.normalize( ctx[:options], [:input, :output] )
 
-        return true if io_config.empty?
+        return if io_config.empty?
 
         ctx[:options] = options # without :input and :output
         ctx[:options] = options.merge(Trailblazer::Activity::TaskWrap::VariableMapping(io_config) => true)
