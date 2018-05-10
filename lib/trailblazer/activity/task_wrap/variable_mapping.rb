@@ -52,10 +52,6 @@ class Trailblazer::Activity < Module
       def call( (wrap_ctx, original_args), circuit_options )
         # let user compute new ctx for the wrapped task.
         input_ctx = apply_filter(*original_args) # FIXME: THIS SHOULD ALWAYS BE A _NEW_ Context.
-        # TODO: make this unnecessary.
-        # wrap user's hash in Context if it's not one, already (in case user used options.merge).
-        # DISCUSS: should we restrict user to .merge and options.Context?
-        # input_ctx = Trailblazer.Context(input_ctx) #if !input_ctx.instance_of?(Trailblazer::Context) || input_ctx==original_args[0][0]
 
         wrap_ctx = wrap_ctx.merge( vm_original_ctx: original_args[0][0] ) # remember the original ctx
 
@@ -86,7 +82,8 @@ class Trailblazer::Activity < Module
         end
       end
 
-      # Convert the DSL input into a hash (if it isn't already) and pass that into `Input::Scoped`.
+      # The returned filter compiles a new hash for Scoped/Unscoped that only contains
+      # the desired i/o variables.
       def self.filter_from_dsl(map)
         hsh = DSL.hash_for(map)
 
