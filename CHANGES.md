@@ -1,3 +1,7 @@
+# 0.6.1
+
+* Make `:input` and `:output` standard options of the DSL to create variable mappings.
+
 # 0.6.0
 
 * The `:task` option in `Circuit::call` is now named `:start_task` for consistency.

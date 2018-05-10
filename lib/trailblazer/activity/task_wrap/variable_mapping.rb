@@ -21,22 +21,19 @@ class Trailblazer::Activity < Module
       if filter.is_a?(Proc)
         filter
       else
-        TaskWrap::Input::filter_from_dsl(filter)
+        TaskWrap::DSL.filter_from_dsl(filter)
       end
     end
 
+    # Returns an Extension instance to be thrown into the `step` DSL arguments.
     def self.VariableMapping(input:, output:)
-      input  = filter_for(input)
-
       input  = Input.new(
                 Input::Scoped.new(
-                  Trailblazer::Option::KW( input ) ) )
-
-      output = filter_for(output)
+                  Trailblazer::Option::KW( filter_for(input) ) ) )
 
       output = Output.new(
                 Output::Unscoped.new(
-                  Trailblazer::Option::KW( output ) ) )
+                  Trailblazer::Option::KW( filter_for(output) ) ) )
 
       Trailblazer::Activity::DSL::Extension.new(
         Merge.new(
@@ -79,9 +76,7 @@ class Trailblazer::Activity < Module
       private
 
       def apply_filter((ctx, original_flow_options), original_circuit_options)
-        new_ctx = @filter.( ctx, original_circuit_options )
-        raise new_ctx.inspect unless new_ctx.is_a?(Trailblazer::Context)
-        new_ctx
+        @filter.( ctx, original_circuit_options ) # returns {new_ctx}.
       end
 
       class Scoped
@@ -95,7 +90,9 @@ class Trailblazer::Activity < Module
           )
         end
       end
+    end
 
+    module DSL
       # The returned filter compiles a new hash for Scoped/Unscoped that only contains
       # the desired i/o variables.
       def self.filter_from_dsl(map)
@@ -104,9 +101,6 @@ class Trailblazer::Activity < Module
         ->(incoming_ctx, kwargs) { Hash[hsh.collect { |from_name, to_name| [to_name, incoming_ctx[from_name]] }] }
       end
 
-    end
-
-    module DSL
       def self.hash_for(ary)
         return ary if ary.instance_of?(::Hash)
         Hash[ary.collect { |name| [name, name] }]
@@ -117,7 +111,7 @@ class Trailblazer::Activity < Module
     # This allows renaming, filtering, hiding, of the options returned from the wrapped task.
     class Output
       def initialize(filter)
-        @filter   = filter
+        @filter = filter
       end
 
       # Runs the user filter and replaces the ctx in `wrap_ctx[:return_args]` with the filtered one.
