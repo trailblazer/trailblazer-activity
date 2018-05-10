@@ -100,6 +100,9 @@ module Trailblazer
 
         task Activity::TaskBuilder::Binary( method(:initialize_extension_option) ), id: "initialize_extension_option"
         task Activity::TaskBuilder::Binary( method(:normalize_for_macro) ),        id: "normalize_for_macro"
+
+        task Activity::TaskBuilder::Binary( Activity::TaskWrap::VariableMapping.method(:normalizer_step_for_input_output) )
+
         task Activity::TaskBuilder::Binary( method(:split_options) ),              id: "split_options"
         task Activity::TaskBuilder::Binary( method(:initialize_plus_poles) ),      id: "initialize_plus_poles"
         # task ->((ctx, _), **) { pp ctx; [Activity::Right, [ctx, _]] }

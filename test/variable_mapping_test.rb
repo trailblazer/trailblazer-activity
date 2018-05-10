@@ -267,7 +267,7 @@ class VariableMappingTest < Minitest::Spec
         extend Activity::Path()
 
         # a => a, ctx[:model].id => id
-        task task: Model,     input: ->(ctx, a:, **) { { :a => a+1 } }, output: ->(ctx, a:, **) { { :model_a=>a } }
+        task task: Model,     input: ->(ctx, a:, **) { { :a => a+1 } }, output: ->(ctx, a:, **) { { model_a: a } }
         task task: _nested,    _nested.outputs[:success] => Track(:success)
         task task: Uuid,      input: [:a, :model_a], output: { :a=>:uuid_a }
       end

@@ -2,6 +2,20 @@ require "trailblazer/context"
 
 class Trailblazer::Activity < Module
   module TaskWrap
+
+    module VariableMapping
+      # DSL step for Magnetic::Normalizer.
+      # Translates `:input` and `:output` into VariableMapping taskWrap extensions.
+      def self.normalizer_step_for_input_output(ctx, *)
+        options, io_config = Magnetic::Options.normalize( ctx[:options], [:input, :output] )
+
+        return true if io_config.empty?
+
+        ctx[:options] = options # without :input and :output
+        ctx[:options] = options.merge(Trailblazer::Activity::TaskWrap::VariableMapping(io_config) => true)
+      end
+    end
+
     # @private
     def self.filter_for(filter, constant)
       if filter.is_a?(Proc)
