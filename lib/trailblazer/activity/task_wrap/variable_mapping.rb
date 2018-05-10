@@ -5,15 +5,24 @@ class Trailblazer::Activity < Module
     # @private
     def self.filter_for(filter, constant)
       if filter.is_a?(Proc)
-        constant::Scoped( filter )
+        filter
       else
-        constant::FromDSL(filter)
+        constant::filter_from_dsl(filter)
       end
     end
 
     def self.VariableMapping(input:, output:)
       input  = filter_for(input, TaskWrap::Input)
+
+      input  = Input.new(
+                Input::Scoped.new(
+                  Trailblazer::Option::KW( input ) ) )
+
       output = filter_for(output, TaskWrap::Output)
+
+      output = Output.new(
+                Output::Unscoped.new(
+                  Trailblazer::Option::KW( output ) ) )
 
       Trailblazer::Activity::DSL::Extension.new(
         Merge.new(
@@ -65,12 +74,6 @@ class Trailblazer::Activity < Module
         new_ctx
       end
 
-      def self.Scoped(filter)
-        Input.new(
-          Scoped.new( Trailblazer::Option(filter) )
-        )
-      end
-
       class Scoped
         def initialize(filter)
           @filter = filter
@@ -84,10 +87,10 @@ class Trailblazer::Activity < Module
       end
 
       # Convert the DSL input into a hash (if it isn't already) and pass that into `Input::Scoped`.
-      def self.FromDSL(map)
+      def self.filter_from_dsl(map)
         hsh = DSL.hash_for(map)
 
-        Scoped( ->(original_ctx) { Hash[hsh.collect { |from_name, to_name| [to_name, original_ctx[from_name]] }] } )
+        ->(original_ctx, kwargs) { Hash[hsh.collect { |from_name, to_name| [to_name, original_ctx[from_name]] }] }
       end
 
     end
@@ -98,15 +101,6 @@ class Trailblazer::Activity < Module
         Hash[ary.collect { |name| [name, name] }]
       end
     end
-
-    def self.Input(filter)
-      Input.new( Trailblazer::Option(filter) )
-    end
-
-    def self.Output(filter)
-      Output.new( Trailblazer::Option(filter) )
-    end
-
 
     # TaskWrap step to compute the outgoing {Context} from the wrapped task.
     # This allows renaming, filtering, hiding, of the options returned from the wrapped task.
@@ -120,19 +114,10 @@ class Trailblazer::Activity < Module
         (original_ctx, original_flow_options), original_circuit_options = original_args
 
         returned_ctx, _ = wrap_ctx[:return_args] # this is the Context returned from `call`ing the task.
-
-        # returned_ctx is the Context object from the nested operation. In <=2.1, this might be a completely different one
-        # than "ours" we created in Input. We now need to compile a list of all added values. This is time-intensive and should
-        # be optimized by removing as many Context creations as possible (e.g. the one adding self[] stuff in Operation.__call__).
-        # _, mutable_data = returned_ctx.decompose # DISCUSS: this is a weak assumption. What if the task returns a deeply nested Context?
-
-        original_ctx = wrap_ctx[:vm_original_ctx]
+        original_ctx    = wrap_ctx[:vm_original_ctx]
 
         # let user compute the output.
         output_ctx = @filter.(original_ctx, returned_ctx, **original_circuit_options)
-        # output_ctx = apply_filter(returned_ctx, original_flow_options, original_circuit_options)
-
-        # new_ctx = @strategy.( original_ctx, output ) # here, we compute the "new" options {Context}.
 
         wrap_ctx = wrap_ctx.merge( return_args: [output_ctx, original_flow_options] )
 
@@ -142,25 +127,14 @@ class Trailblazer::Activity < Module
 
       private
 
-      def self.Unscoped(filter)
-        Output.new(
-          Unscoped.new( Trailblazer::Option(filter) )
-        )
-      end
-
-      def self.Scoped(filter)
-        Unscoped(filter)
-      end
-
+      # Merge the resulting {@filter.()} hash back into the original ctx.
+      # DISCUSS: do we need the original_ctx as a filter argument?
       class Unscoped
         def initialize(filter)
           @filter = filter
         end
 
         def call(original_ctx, new_ctx, **circuit_options)
-          _, mutable_data = new_ctx.decompose
-
-          #   # "strategy" and user block
           original_ctx.merge(
             @filter.(new_ctx, **circuit_options)
           )
@@ -168,11 +142,10 @@ class Trailblazer::Activity < Module
       end
 
       # Convert the DSL input into a hash (if it isn't already) and pass that into `Output::Unscoped`.
-      def self.FromDSL(map)
+      def self.filter_from_dsl(map)
         hsh = DSL.hash_for(map)
 
-        Unscoped( ->(new_ctx) { Hash[hsh.collect { |from_name, to_name|
-          [to_name, new_ctx[from_name]] }] } )
+        ->(new_ctx, **kws) { Hash[hsh.collect { |from_name, to_name| [to_name, new_ctx[from_name]] }] }
       end
     end
   end # Wrap
