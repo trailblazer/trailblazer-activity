@@ -25,6 +25,8 @@ class Trailblazer::Activity < Module
     def self.filter_for(filter)
       if filter.is_a?(Proc)
         filter
+      elsif filter.is_a?(Symbol)
+        filter # TODO: test this properly?
       else
         TaskWrap::DSL.filter_from_dsl(filter)
       end
@@ -90,7 +92,7 @@ class Trailblazer::Activity < Module
         end
 
         def call(original_ctx, circuit_options)
-          Trailblazer::Context(
+          Trailblazer::Context( # TODO: make this interchangeable so we can work on faster contexts?
             @filter.(original_ctx, **circuit_options)
           )
         end
