@@ -23,12 +23,10 @@ class Trailblazer::Activity < Module
 
     # @private
     def self.filter_for(filter)
-      if filter.is_a?(Proc)
-        filter
-      elsif filter.is_a?(Symbol)
-        filter # TODO: test this properly?
-      else
+      if filter.is_a?(::Array) || filter.is_a?(::Hash)
         TaskWrap::DSL.filter_from_dsl(filter)
+      else
+        filter
       end
     end
 
