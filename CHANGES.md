@@ -1,3 +1,7 @@
+# 0.6.2
+
+* Allow all `Option` types for input/output.
+
 # 0.6.1
 
 * Make `:input` and `:output` standard options of the DSL to create variable mappings.
