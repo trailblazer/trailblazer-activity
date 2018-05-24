@@ -5,7 +5,7 @@ class NormalizerTest < Minitest::Spec
     it "only knows sequence_options and default_options" do
       normalizer, _ = Trailblazer::Activity::Magnetic::DefaultNormalizer.build( some: "defaults", plus_poles: "default_plus_poles" )
 
-      task, locals, dsl, sequence_options = normalizer.( "aTask", id: "A", Activity::DSL::Helper.Output(:success) => "find", before: "B" )
+      task, locals, dsl, sequence_options = normalizer.( "aTask", id: "A", Activity::DSL.Output(:success) => "find", before: "B" )
 
       task.must_equal "aTask"
       locals.inspect.must_equal %{{:plus_poles=>\"default_plus_poles\", :id=>\"A\", #<struct Trailblazer::Activity::DSL::OutputSemantic value=:success>=>\"find\"}}
