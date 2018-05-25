@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary       = %q{The main element for Trailblazer's BPMN-compliant workflows.}
   spec.description   = %q{The main element for Trailblazer's BPMN-compliant workflows. Used in Trailblazer's Operation to implement the Railway.}
   spec.homepage      = "http://trailblazer.to/gems/workflow"
-  spec.licenses      = ["MIT"]
+  spec.licenses      = ["LGPL-3.0"]
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
