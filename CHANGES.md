@@ -1,3 +1,7 @@
+# 0.7.0
+
+* Remove `DSL::Helper`, "helper" methods now sit directly in the `DSL` namespace.
+
 # 0.6.2
 
 * Allow all `Option` types for input/output.
