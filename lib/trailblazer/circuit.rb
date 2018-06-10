@@ -59,7 +59,8 @@ module Trailblazer
       { map: @map, end_events: @stop_events, start_task: @start_task }
     end
 
-  private
+    private
+
     def next_for(last_task, signal)
       outputs = @map[last_task]
       outputs[signal]

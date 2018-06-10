@@ -4,7 +4,7 @@ class Trailblazer::Activity < Module
     #
     # It writes to wrap_ctx[:return_signal], wrap_ctx[:return_args]
     def self.call_task((wrap_ctx, original_args), **circuit_options)
-      task  = wrap_ctx[:task]
+      task = wrap_ctx[:task]
 
       # Call the actual task we're wrapping here.
       # puts "~~~~wrap.call: #{task}"

@@ -9,7 +9,7 @@ module Trailblazer
     # This class is experimental.
     class Dependencies
       def initialize
-        @groups  = {
+        @groups = {
           start:      Sequence.new,
           main:       Sequence.new, # normal steps
           end:        Sequence.new, # ends

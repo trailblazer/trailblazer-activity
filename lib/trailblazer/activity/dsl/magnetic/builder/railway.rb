@@ -17,12 +17,9 @@ module Trailblazer
 
           end_adds = adds(
             failure_end,
-
             Path::EndEventPolarizations(builder_options),
-
             {},
             { group: :end },
-
             magnetic_to:  [failure_color],
             id:           "End.#{failure_color}",
             plus_poles:   {},
@@ -90,7 +87,6 @@ module Trailblazer
             plus_poles.reconnect( :failure => @failure_color, :success => @failure_color )
           end
         end
-
       end # Railway
     end # Builder
   end
