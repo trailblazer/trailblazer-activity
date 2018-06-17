@@ -8,9 +8,9 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Nick Sutterer"]
   spec.email         = ["apotonick@gmail.com"]
 
-  spec.summary       = %q{The main element for Trailblazer's BPMN-compliant workflows.}
-  spec.description   = %q{The main element for Trailblazer's BPMN-compliant workflows. Used in Trailblazer's Operation to implement the Railway.}
-  spec.homepage      = "http://trailblazer.to/gems/workflow"
+  spec.summary       = %q{Define and run any desired circuit of business logic.}
+  spec.description   = %q{Define and run any desired circuit of business logic. Used in Trailblazer's Operation to implement the railway.}
+  spec.homepage      = "http://trailblazer.to"
   spec.licenses      = ["MIT"]
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
