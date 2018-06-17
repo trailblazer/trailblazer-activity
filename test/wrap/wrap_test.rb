@@ -194,7 +194,7 @@ class WrapTest < Minitest::Spec
       signal.must_equal activity.outputs[:success].signal # the actual activity's End signal.
       options.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
-      puts tree = Activity::Trace::Present.tree(flow[:stack].to_a)
+      puts tree = Activity::Trace::Present.(flow[:stack].to_a)
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{`-- #<Trailblazer::Activity: {top}>
     |-- Start.default
@@ -245,7 +245,7 @@ class WrapTest < Minitest::Spec
 
         ctx.must_equal({"model"=>String, "saved"=>true, "bits"=>64, "ok"=>true, "uuid"=>999})
 
-              puts tree = Activity::Trace::Present.tree(flow[:stack].to_a)
+              puts tree = Activity::Trace::Present.(flow[:stack].to_a)
       end
     end
   end

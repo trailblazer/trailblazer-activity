@@ -17,9 +17,9 @@ class Trailblazer::Activity < Module
       def capture_return((wrap_config, original_args), **circuit_options)
         (original_options, original_flow_options, _) = original_args[0]
 
-        original_flow_options[:stack] << Trailblazer::Activity::Trace::Entity.new(
-          wrap_config[:task], {}, :return, wrap_config[:return_signal]
-        )
+        original_flow_options[:stack] << Trailblazer::Activity::Trace::Entity::Output.new(
+          wrap_config[:task], {}, wrap_config[:return_signal]
+        ).freeze
 
         original_flow_options[:stack].unindent!
 
@@ -33,9 +33,9 @@ class Trailblazer::Activity < Module
       def capture_for(task, (ctx, flow), activity:, **circuit_options)
         flow[:stack].indent!
 
-        flow[:stack] << Trailblazer::Activity::Trace::Entity.new(
-          task, activity, :args, nil, {}
-        )
+        flow[:stack] << Trailblazer::Activity::Trace::Entity::Input.new(
+          task, activity
+        ).freeze
 
         return [ctx, flow], circuit_options.merge(activity: activity)
       end

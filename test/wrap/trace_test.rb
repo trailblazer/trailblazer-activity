@@ -9,7 +9,7 @@ class TraceTest < Minitest::Spec
   let(:activity) do
     nested = bc
     activity = Module.new do
-      extend Activity::Path()
+      extend Activity::Path(name: :top)
 
       task task: A, id: "A"
       task task: nested, nested.outputs[:success] => Track(:success), id: "<Nested>"
@@ -33,7 +33,7 @@ class TraceTest < Minitest::Spec
   end
 
   it "traces flat activity" do
-    stack, signal, (options, flow_options), _ = Trailblazer::Activity::Trace.( bc,
+    stack, signal, (options, flow_options), _ = Trailblazer::Activity::Trace.invoke( bc,
       [
         { content: "Let's start writing" },
         { flow: true }
@@ -44,7 +44,7 @@ class TraceTest < Minitest::Spec
     options.inspect.must_equal %{{:content=>\"Let's start writing\"}}
     flow_options[:flow].inspect.must_equal %{true}
 
-    output = Trailblazer::Activity::Trace::Present.tree(stack)
+    output = Trailblazer::Activity::Trace::Present.(stack)
 
     output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
@@ -56,18 +56,18 @@ class TraceTest < Minitest::Spec
   end
 
   it do
-    stack, _ = Trailblazer::Activity::Trace.( activity,
+    stack, _ = Trailblazer::Activity::Trace.invoke( activity,
       [
         { content: "Let's start writing" },
         {}
       ]
     )
 # pp stack
-    output = Trailblazer::Activity::Trace::Present.tree(stack)
+    output = Trailblazer::Activity::Trace::Present.(stack)
 
     puts output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
-    output.must_equal %{`-- #<Trailblazer::Activity: {}>
+    output.must_equal %{`-- #<Trailblazer::Activity: {top}>
     |-- Start.default
     |-- A
     |-- <Nested>
@@ -77,5 +77,25 @@ class TraceTest < Minitest::Spec
     |   `-- End.success
     |-- D
     `-- End.success}
+  end
+
+  it "allows to inject custom :stack" do
+    skip "this test goes to the developer gem"
+    stack = Trailblazer::Activity::Trace::Stack.new
+
+    begin
+    returned_stack, _ = Trailblazer::Activity::Trace.invoke( activity,
+      [
+        { content: "Let's start writing" },
+        { stack: stack }
+      ]
+    )
+  rescue
+    # pp stack
+        puts Trailblazer::Activity::Trace::Present.(stack)
+
+  end
+
+    returned_stack.must_equal stack
   end
 end

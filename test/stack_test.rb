@@ -3,7 +3,7 @@ require "test_helper"
 class StackTest < Minitest::Spec
   it do
     stack = Trailblazer::Activity::Trace::Stack.new
-    # stack.indent!
+    stack.indent!
     stack << 1
     stack << 2
     stack.indent!
@@ -20,6 +20,6 @@ class StackTest < Minitest::Spec
     stack << 10
     # stack.unindent!
 
-    stack.to_a.must_equal [1, 2, [3, 4, [5, 6], 7, 8], 9, 10]
+    stack.to_a.inspect.must_equal %{[<Task>[1, 2, <Task>[3, 4, <Task>[5, 6], 7, 8], 9, 10]]}
   end
 end

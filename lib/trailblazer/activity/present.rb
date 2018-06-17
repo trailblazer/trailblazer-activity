@@ -2,36 +2,57 @@ require "hirb"
 
 module Trailblazer
   class Activity < Module
+
+    # Task < Array
+    # [ input, ..., output ]
+
     module Trace
       # TODO: make this simpler.
       module Present
         module_function
 
-        def tree(stack, level=1, tree=[])
+        def call(stack, level=1, tree=[])
+          tree(stack.to_a, level, tree)
+        end
+
+        def tree(stack, level, tree)
           tree_for(stack, level, tree)
 
           Hirb::Console.format_output(tree, class: :tree, type: :directory)
         end
 
         def tree_for(stack, level, tree)
-          stack.each do |captured, *returned|
-            task = captured.task
+          stack.each do |task| # always a Stack::Task[input, ..., output]
+            input, output, nested = input_output_nested_for_task(task)
 
-            graph = Introspect::Graph(captured.activity)
+            task = input.task
+
+            graph = Introspect::Graph(input.activity)
 
             name = (node = graph.find { |node| node[:task] == task }) ? node[:id] : task
             name ||= task # FIXME: bullshit
 
-            if returned.size == 1 # flat
+            if nested.empty? # flat
               tree << [ level, name ]
             else # nesting
               tree << [ level, name ]
 
-              tree_for(returned[0..-2], level + 1, tree)
+              # tree_for(nested_and_output[0..-1], level + 1, tree)
+              tree_for(nested, level + 1, tree)
             end
 
             tree
           end
+        end
+
+        # DISCUSS: alternatively, we can have Task<input: output: data: >
+        def input_output_nested_for_task(task)
+          input  = task[0]
+          output = task[-1]
+
+          output, nested = output.is_a?(Entity::Output) ? [output, task-[input, output]] : [nil, task[1..-1]]
+
+          return input, output, nested
         end
 
         def to_name(debug_item)

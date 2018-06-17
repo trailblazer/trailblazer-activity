@@ -1,3 +1,10 @@
+# 0.7.1
+
+* Alias `Trace.call` to `Trace.invoke` for consistency.
+* Allow injecting your own stack into `Trace.invoke`. This enables us to provide tracing even when there's an exception (due to, well, mutability).
+* Minor changes in `Trace::Present` so that "unfinished" stacks can also be rendered.
+* `Trace::Present.tree` is now private and superseded by `Present.call`.
+
 # 0.7.0
 
 * Remove `DSL::Helper`, "helper" methods now sit directly in the `DSL` namespace.

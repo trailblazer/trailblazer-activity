@@ -123,9 +123,9 @@ class PathTest < Minitest::Spec
 
       task task: T.def_task(:a), id: "A"
       _end task: T.def_task(:b), id: "B"
-      task task: T.def_task(:c), id: "D", magnetic_to: [] # start event
-      _end task: T.def_task(:d), id: "I"
-      task task: T.def_task(:e), id: "G", magnetic_to: [] # start event
+      task task: T.def_task(:c), id: "C", magnetic_to: [] # start event
+      _end task: T.def_task(:d), id: "D"
+      task task: T.def_task(:e), id: "E", magnetic_to: [] # start event
     end
 
     Cct(activity.to_h[:circuit]).must_equal %{
