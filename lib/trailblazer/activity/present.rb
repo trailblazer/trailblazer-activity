@@ -32,12 +32,9 @@ module Trailblazer
             name = (node = graph.find { |node| node[:task] == task }) ? node[:id] : task
             name ||= task # FIXME: bullshit
 
-            if nested.empty? # flat
-              tree << [ level, name ]
-            else # nesting
-              tree << [ level, name ]
+            tree << [ level, name ]
 
-              # tree_for(nested_and_output[0..-1], level + 1, tree)
+            if nested.any? # nesting
               tree_for(nested, level + 1, tree)
             end
 
