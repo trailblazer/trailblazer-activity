@@ -7,7 +7,6 @@ class Trailblazer::Activity < Module
       # taskWrap step to capture incoming arguments of a step.
       # def self.capture_args(direction, options, flow_options, wrap_config, original_flow_options)
       def capture_args((wrap_config, original_args), **circuit_options)
-
         original_args = capture_for(wrap_config[:task], *original_args)
 
         return Trailblazer::Activity::Right, [wrap_config, original_args], circuit_options

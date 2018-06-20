@@ -1,7 +1,6 @@
 module Trailblazer
   module Activity::Magnetic
     class Builder
-
       class Path < Builder
           # strategy_options:
           #   :track_color
@@ -34,11 +33,8 @@ module Trailblazer
 
           adds(
             Activity::Start.new(semantic: :default),
-
             TaskPolarizations(builder_options),
-
             {}, { group: :start },
-
             id:           "Start.default",
             magnetic_to:  [],
             plus_poles:   PlusPoles.initial(start_outputs), # FIXME: this is actually redundant with Normalizer
@@ -50,19 +46,17 @@ module Trailblazer
           # an end can either be a reference to another task,
           # or a "real" end event.
           if end_id
-            [[:magnetic_to,
-              [ end_id, [track_color] ] ]
-            ]
+            [[
+              :magnetic_to,
+              [ end_id, [track_color] ]
+            ]]
           else
             builder_options={ track_color: track_color, end_semantic: end_semantic }
 
             adds(
               track_end,
-
               EndEventPolarizations(builder_options), # only sets :magnetic_to.
-
               {}, { group: :end },
-
               id:         "End.#{track_color}",
               plus_poles: {},
               magnetic_to: nil,

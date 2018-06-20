@@ -68,17 +68,17 @@ module Trailblazer
     module PublicAPI
       include Accessor
 
-    require "trailblazer/activity/dsl/add_task"
+      require "trailblazer/activity/dsl/add_task"
       include DSL::AddTask
 
-    require "trailblazer/activity/interface"
+      require "trailblazer/activity/interface"
       include Activity::Interface # DISCUSS
 
       include DSLHelper # DISCUSS
 
       include Activity::Inspect # DISCUSS
 
-    require "trailblazer/activity/dsl/magnetic/merge"
+      require "trailblazer/activity/dsl/magnetic/merge"
       include Magnetic::Merge # Activity#merge!
 
       # @private Note that {Activity.call} is considered private until the public API is stable.
@@ -86,7 +86,6 @@ module Trailblazer
         self[:circuit].( args, circuit_options.merge(activity: self) )
       end
     end
-
   end # Activity
 end
 

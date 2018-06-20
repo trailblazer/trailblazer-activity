@@ -2,7 +2,6 @@
 module Trailblazer
   module Activity::Magnetic
     class Builder
-
       class FastTrack < Builder
         def self.for(normalizer, builder_options={}) # Build the Builder.
           Activity::Magnetic::Builder(
@@ -87,24 +86,18 @@ module Trailblazer
           ends =
             adds(
               pass_fast_end,
-
               Path::EndEventPolarizations(builder_options),
-
               {},
               { group: :end },
-
               id:           "End.pass_fast",
               magnetic_to:  [:pass_fast],
               plus_poles:   {},
             )+
             adds(
               fail_fast_end,
-
               Path::EndEventPolarizations(builder_options),
-
               {},
               { group: :end },
-
               magnetic_to:  [:fail_fast],
               id:           "End.fail_fast",
               plus_poles:   {},

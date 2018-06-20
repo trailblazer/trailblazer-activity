@@ -65,8 +65,6 @@ module Trailblazer
           debug_item[4]
         end
 
-
-
         def colorify(string, color)
           "\e[#{color_table[color]}m#{string}\e[0m"
         end

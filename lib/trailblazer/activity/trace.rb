@@ -1,5 +1,5 @@
 module Trailblazer
-  class Activity < Module   # Trace#call will call the activities and trace what steps are called, options passed,
+  class Activity < Module # Trace#call will call the activities and trace what steps are called, options passed,
     # and the order and nesting.
     #
     #   stack, _ = Trailblazer::Activity::Trace.(activity, activity[:Start], { id: 1 })
@@ -88,6 +88,7 @@ module Trailblazer
         end
 
         private
+
         def current
           @stack.last
         end

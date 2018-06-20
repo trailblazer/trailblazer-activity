@@ -2,7 +2,6 @@ module Trailblazer
   module Activity::Magnetic
     class Builder
       module Finalizer
-
         def self.call(adds)
           tripletts = adds_to_tripletts(adds)
 

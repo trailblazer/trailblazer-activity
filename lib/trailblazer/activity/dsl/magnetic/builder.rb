@@ -1,6 +1,5 @@
 module Trailblazer
   module Activity::Magnetic
-
     # TODO: move?
     module Options
       # Produce two hashes, one "local" options with DSL-specific options such as `:fast_track`,
@@ -83,7 +82,8 @@ module Trailblazer
           options
         )
 
-        Add( id, task, magnetic_to, plus_poles,
+        Add(
+          id, task, magnetic_to, plus_poles,
           options,         #{ fast_track: true },
           sequence_options #{ group: :main }
         )

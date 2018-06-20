@@ -59,7 +59,6 @@ module Trailblazer
         end.flatten(1)
       end
 
-
       def self.inspect_task_builder(task)
         proc = task.instance_variable_get(:@user_proc)
         match = proc.inspect.match(/(\w+)>$/)
@@ -75,19 +74,18 @@ module Trailblazer
       end
 
       def self.circuit_hash(circuit_hash, show_ids:false, **options)
-        content =
-          circuit_hash.collect do |task, connections|
-            conns = connections.collect do |signal, target|
-              " {#{signal}} => #{inspect_with_matcher(target, **options)}"
-            end
-
-            [ inspect_with_matcher(task, **options), conns.join("\n") ]
+        content = circuit_hash.collect do |task, connections|
+          conns = connections.collect do |signal, target|
+            " {#{signal}} => #{inspect_with_matcher(target, **options)}"
           end
 
-          content = content.join("\n")
+          [ inspect_with_matcher(task, **options), conns.join("\n") ]
+        end
 
-          return "\n#{content}" if show_ids
-          return "\n#{content}".gsub(/0x\w+/, "0x").gsub(/0.\d+/, "0.")
+        content = content.join("\n")
+
+        return "\n#{content}" if show_ids
+        return "\n#{content}".gsub(/0x\w+/, "0x").gsub(/0.\d+/, "0.")
       end
 
       def self.Ends(activity)
@@ -95,7 +93,6 @@ module Trailblazer
         ends = end_events.collect { |evt| inspect_end(evt) }.join(",")
         "[#{ends}]".gsub(/\d\d+/, "")
       end
-
 
       def self.Outputs(outputs)
         outputs.collect { |semantic, output| "#{semantic}=> (#{output.signal}, #{output.semantic})" }.
@@ -160,8 +157,6 @@ module Trailblazer
         semantic = plus_pole.send(:output).semantic
         " (#{semantic})/#{signal} ==> #{plus_pole.color.inspect}"
       end
-
-
     end
   end
 end

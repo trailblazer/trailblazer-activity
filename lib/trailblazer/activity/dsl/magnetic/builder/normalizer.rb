@@ -77,7 +77,7 @@ module Trailblazer
               task.merge(options) # Note that the user options are merged over the macro options.
             else # user step
               { id: task }
-                .merge(options)                     # default :id
+                .merge(options) # default :id
                 .merge( task: task_builder.(task) )
             end
         end
@@ -99,7 +99,7 @@ module Trailblazer
         end
 
         task Activity::TaskBuilder::Binary( method(:initialize_extension_option) ), id: "initialize_extension_option"
-        task Activity::TaskBuilder::Binary( method(:normalize_for_macro) ),        id: "normalize_for_macro"
+        task Activity::TaskBuilder::Binary( method(:normalize_for_macro) ),         id: "normalize_for_macro"
 
         task Activity::TaskBuilder::Binary( Activity::TaskWrap::VariableMapping.method(:normalizer_step_for_input_output) )
 
@@ -108,6 +108,5 @@ module Trailblazer
         # task ->((ctx, _), **) { pp ctx; [Activity::Right, [ctx, _]] }
       end
     end # Normalizer
-
   end
 end

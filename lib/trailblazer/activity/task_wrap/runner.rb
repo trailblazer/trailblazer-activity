@@ -42,7 +42,7 @@ class Trailblazer::Activity < Module
         wrap_activity = TaskWrap.wrap_static_for(
           task,
           circuit_options
-        )  # find static wrap for this specific task, or default wrap activity.
+        ) # find static wrap for this specific task, or default wrap activity.
 
         # Apply runtime alterations.
         # Grab the additional wirings for the particular `task` from `wrap_runtime` (returns default otherwise).

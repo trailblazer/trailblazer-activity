@@ -17,12 +17,10 @@ module Trailblazer
         #
         def call(id, options, plus_poles, &block)
           polarization, adds =
-            options.
-              collect { |key, task|
-                # this method call is the only thing that really matters here. # TODO: make this transformation a bit more obvious.
-                process_tuple(id, key, task, plus_poles, &block)
-              }.
-              inject([[],[]]) { |memo, (polarization, adds)| memo[0]<<polarization; memo[1]<<adds; memo }
+            options.collect { |key, task|
+              # this method call is the only thing that really matters here. # TODO: make this transformation a bit more obvious.
+              process_tuple(id, key, task, plus_poles, &block)
+            }.inject([[],[]]) { |memo, (polarization, adds)| memo[0]<<polarization; memo[1]<<adds; memo }
 
           return polarization, adds.flatten(1)
         end
@@ -54,7 +52,7 @@ module Trailblazer
             [
               Polarization.new( output: output, color: task.color )
             ]
-          else  # ID: existing step
+          else # ID: existing step
             new_edge = "#{id}-#{output.signal}-#{task}" # edge from <id> to <target>
 
             [

@@ -44,16 +44,19 @@ class Trailblazer::Activity < Module
       end
     end
 
-
     # Returns an Extension instance to be thrown into the `step` DSL arguments.
     def self.VariableMapping(input:, output:)
-      input  = Input.new(
-                Input::Scoped.new(
-                  Trailblazer::Option::KW( filter_for(input) ) ) )
+      input = Input.new(
+        Input::Scoped.new(
+          Trailblazer::Option::KW( filter_for(input) )
+        )
+      )
 
       output = Output.new(
-                Output::Unscoped.new(
-                  Trailblazer::Option::KW( filter_for(output) ) ) )
+        Output::Unscoped.new(
+          Trailblazer::Option::KW( filter_for(output) )
+        )
+      )
 
       VariableMapping.extension_for(input, output)
     end

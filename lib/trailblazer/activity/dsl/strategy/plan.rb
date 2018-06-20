@@ -18,7 +18,7 @@ module Trailblazer
       end
 
       def self.merge!(activity, plan)
-        plan.record.each { |(dsl_method, args, block)| activity.send(dsl_method, *args, &block)  }
+        plan.record.each { |(dsl_method, args, block)| activity.send(dsl_method, *args, &block) }
         activity
       end
 
