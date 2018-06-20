@@ -1,7 +1,12 @@
+require "simplecov"
+SimpleCov.start do
+  add_group "Trailblazer-Activity", "lib"
+  add_group "Tests", "test"
+end
+
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require "pp"
 require "trailblazer-activity"
-
 require "minitest/autorun"
 
 
