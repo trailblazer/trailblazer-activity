@@ -8,12 +8,34 @@ module Trailblazer
       end
 
       # @private This API is still under construction.
+      # DISCUSS: should we have this class in trailblazer-developer
       class Graph
         def initialize(activity)
-          @activity = activity
-          @circuit  = activity.to_h[:circuit]
-          @adds     = activity.to_h[:adds].compact # FIXME: why are there nils in Adds?
+          @activity     = activity
+          @circuit      = activity.to_h[:circuit]
+          @adds         = activity.to_h[:adds].compact # FIXME: why are there nils in Adds?
+          @start_events = []
+          @end_events   = []
+          @tasks        = []
+
+          @adds.collect do |(op, (id, triplett))|
+            if triplett[0] == []
+              # triplett[0] is the predecessor
+              @start_events << Node(triplett[1], id, triplett[0])
+              next
+            end
+
+            if triplett[2] == []
+              # triplett[2] is where the next step is connected to so End is connected to []
+              @end_events << Node(triplett[1], id, triplett[0])
+              next
+            end
+
+            @tasks << Node(triplett[1], id, triplett[0])
+          end
         end
+
+        attr_reader :start_events, :end_events, :tasks
 
         def find(id=nil, &block)
           return find_by_id(id) unless block_given?

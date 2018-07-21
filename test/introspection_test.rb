@@ -56,17 +56,37 @@ class IntrospectionTest < Minitest::Spec
     end
   end
 
+  # TODO: test Activity::Railway() to make sure that works for Trailblazer::Operation
   describe "Introspect::Graph" do
     let(:activity) do
+      nested = bc
+
       Module.new do
         extend Activity::Path()
 
         task task: "I am not callable!"
+        task task: nested, Output(nested.outputs.keys.first, :success) => :success
         task task: B, id: "B"
       end
     end
 
-    let(:graph) { graph = Activity::Introspect::Graph(activity) }
+    let(:graph)        { graph = Activity::Introspect::Graph(activity) }
+    let(:start_events) { graph.start_events }
+    let(:end_events)   { graph.end_events }
+    let(:tasks)        { graph.tasks }
+
+    # start_events
+    it { assert_equal 1, start_events.count }
+    it { assert_equal "Start.default", start_events.first[:id] }
+    it { assert_equal [], start_events.first[:magnetic_to] }
+
+    # end_events
+    it { assert_equal 1, end_events.count }
+    it { assert_equal "End.success", end_events.first[:id] }
+    it { assert_equal [:success], end_events.first[:magnetic_to] }
+
+    # tasks
+    it { assert_equal 4, tasks.count }
 
     describe "#find" do
       let(:node) { graph.find("B") }
