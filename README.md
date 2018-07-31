@@ -76,4 +76,4 @@ With Activity, modeling business processes turns out to be ridiculously simple: 
 
 ## Operation
 
-Trailblazer's [`Operation`](http://trailblazer.to/2.1/operation) internally uses an activity to model the processes.
+Trailblazer's [`Operation`](http://trailblazer.to/gems/operation/2.0/) internally uses an activity to model the processes.
