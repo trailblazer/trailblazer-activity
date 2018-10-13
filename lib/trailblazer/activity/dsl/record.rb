@@ -4,7 +4,7 @@ module Trailblazer
       # {:extension API}
       # Record each DSL call (like #step) on the activity.
       def self.record(activity, *args, original_dsl_args:)
-        activity[:record, original_dsl_args[1]] = original_dsl_args
+        activity[:record, original_dsl_args[1].object_id] = original_dsl_args
       end
     end
   end

@@ -1,3 +1,7 @@
+# 0.7.2
+
+* When recording DSL calls, use the `object_id` as key, so cloned methods are considered as different recordings.
+
 # 0.7.1
 
 * Alias `Trace.call` to `Trace.invoke` for consistency.

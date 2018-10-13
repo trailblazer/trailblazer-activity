@@ -16,4 +16,19 @@ class RecordTest < Minitest::Spec
   it "what" do
     activity[:record].values.size.must_equal 3
   end
+
+  it "allows cloned methods" do
+    activity = Module.new do
+      extend Trailblazer::Activity::Railway()
+      module_function
+
+      def a(ctx, **)
+      end
+
+      step method(:a).clone
+      step method(:a).clone
+    end
+
+    activity[:record].values.size.must_equal 2
+  end
 end
