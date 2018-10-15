@@ -79,6 +79,32 @@ class TraceTest < Minitest::Spec
     `-- End.success}
   end
 
+  it "Present allows to inject :renderer" do
+    stack, _ = Trailblazer::Activity::Trace.invoke( activity,
+      [
+        { content: "Let's start writing" },
+        {}
+      ]
+    )
+
+    renderer = ->(level:, input:, name:, **) { [level, %{#{level}/#{input.task}/#{name}}] }
+
+    output = Trailblazer::Activity::Trace::Present.(stack, renderer: renderer)
+
+    output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
+
+    output.must_equal %{`-- 1/#<Trailblazer::Activity: {top}>/#<Trailblazer::Activity: {top}>
+    |-- 2/#<Trailblazer::Activity::Start semantic=:default>/Start.default
+    |-- 2/#<Proc:.rb:4 (lambda)>/A
+    |-- 2/#<Trailblazer::Activity: {}>/<Nested>
+    |   |-- 3/#<Trailblazer::Activity::Start semantic=:default>/Start.default
+    |   |-- 3/#<Proc:.rb:5 (lambda)>/B
+    |   |-- 3/#<Proc:.rb:6 (lambda)>/C
+    |   `-- 3/#<Trailblazer::Activity::End semantic=:success>/End.success
+    |-- 2/#<Proc:.rb:7 (lambda)>/D
+    `-- 2/#<Trailblazer::Activity::End semantic=:success>/End.success}
+  end
+
   it "allows to inject custom :stack" do
     skip "this test goes to the developer gem"
     stack = Trailblazer::Activity::Trace::Stack.new

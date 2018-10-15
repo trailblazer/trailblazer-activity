@@ -11,17 +11,21 @@ module Trailblazer
       module Present
         module_function
 
-        def call(stack, level=1, tree=[])
-          tree(stack.to_a, level, tree)
+        def default_renderer(stack:, level:, input:, name:)
+          [ level, %{#{name}} ]
         end
 
-        def tree(stack, level, tree)
-          tree_for(stack, level, tree)
+        def call(stack, level: 1, tree: [], renderer: method(:default_renderer))
+          tree(stack.to_a, level, tree: tree, renderer: renderer)
+        end
+
+        def tree(stack, level, tree: tree, **options)
+          tree_for(stack, level, options.merge(tree: tree))
 
           Hirb::Console.format_output(tree, class: :tree, type: :directory)
         end
 
-        def tree_for(stack, level, tree)
+        def tree_for(stack, level, tree:, renderer: ,**options)
           stack.each do |task| # always a Stack::Task[input, ..., output]
             input, output, nested = input_output_nested_for_task(task)
 
@@ -32,10 +36,10 @@ module Trailblazer
             name = (node = graph.find { |node| node[:task] == task }) ? node[:id] : task
             name ||= task # FIXME: bullshit
 
-            tree << [ level, name ]
+            tree << renderer.(stack: stack, level: level, input: input, name: name)
 
             if nested.any? # nesting
-              tree_for(nested, level + 1, tree)
+              tree_for(nested, level + 1, options.merge(tree: tree, renderer: renderer))
             end
 
             tree

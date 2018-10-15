@@ -33,7 +33,7 @@ class Trailblazer::Activity < Module
         flow[:stack].indent!
 
         flow[:stack] << Trailblazer::Activity::Trace::Entity::Input.new(
-          task, activity
+          task, activity, [ctx]
         ).freeze
 
         return [ctx, flow], circuit_options.merge(activity: activity)
