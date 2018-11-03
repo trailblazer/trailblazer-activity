@@ -79,6 +79,22 @@ module Trailblazer
       end
 
       # Structures used in {capture_args} and {capture_return}.
+      # These get pushed onto one {Level} in a {Stack}.
+      #
+      #   Level[
+      #     Level[              ==> this is a scalar task
+      #       Entity::Input
+      #       Entity::Output
+      #     ]
+      #     Level[              ==> nested task
+      #       Entity::Input
+      #       Level[
+      #         Entity::Input
+      #         Entity::Output
+      #       ]
+      #       Entity::Output
+      #     ]
+      #   ]
       Entity         = Struct.new(:task, :activity, :data)
       Entity::Input  = Class.new(Entity)
       Entity::Output = Class.new(Entity)
@@ -86,6 +102,16 @@ module Trailblazer
       class Level < Array
         def inspect
           %{<Level>#{super}}
+        end
+
+        # @param level {Trace::Level}
+        def self.input_output_nested_for_level(level)
+          input  = level[0]
+          output = level[-1]
+
+          output, nested = output.is_a?(Entity::Output) ? [output, level-[input, output]] : [nil, level[1..-1]]
+
+          return input, output, nested
         end
       end
 

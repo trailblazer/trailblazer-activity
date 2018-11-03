@@ -26,8 +26,8 @@ module Trailblazer
         end
 
         def tree_for(stack, level, tree:, renderer: ,**options)
-          stack.each do |task| # always a Stack::Task[input, ..., output]
-            input, output, nested = input_output_nested_for_task(task)
+          stack.each do |lvl| # always a Stack::Task[input, ..., output]
+            input, output, nested = Trace::Level.input_output_nested_for_level(lvl)
 
             task = input.task
 
@@ -44,17 +44,6 @@ module Trailblazer
 
             tree
           end
-        end
-
-        # DISCUSS: alternatively, we can have Task<input: output: data: >
-        # @param level {Trace::Level}
-        def input_output_nested_for_task(level)
-          input  = level[0]
-          output = level[-1]
-
-          output, nested = output.is_a?(Entity::Output) ? [output, level-[input, output]] : [nil, level[1..-1]]
-
-          return input, output, nested
         end
 
         def color_map
