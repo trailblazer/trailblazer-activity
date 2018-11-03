@@ -47,11 +47,12 @@ module Trailblazer
         end
 
         # DISCUSS: alternatively, we can have Task<input: output: data: >
-        def input_output_nested_for_task(task)
-          input  = task[0]
-          output = task[-1]
+        # @param level {Trace::Level}
+        def input_output_nested_for_task(level)
+          input  = level[0]
+          output = level[-1]
 
-          output, nested = output.is_a?(Entity::Output) ? [output, task-[input, output]] : [nil, task[1..-1]]
+          output, nested = output.is_a?(Entity::Output) ? [output, level-[input, output]] : [nil, level[1..-1]]
 
           return input, output, nested
         end

@@ -111,8 +111,8 @@ class WrapTest < Minitest::Spec
         Module.new do
           extend Activity::Path::Plan()
 
-          task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
-          task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
+          task Activity::Trace::TaskWrap.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
+          task Activity::Trace::TaskWrap.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
         end
       end
 
@@ -174,8 +174,8 @@ class WrapTest < Minitest::Spec
     it "trail" do
       wrap_alterations = Module.new do
         extend Activity::Path::Plan()
-        task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
-        task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
+        task Activity::Trace::TaskWrap.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
+        task Activity::Trace::TaskWrap.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
       end
 
       signal, (options, flow) = Activity::TaskWrap.invoke(activity,
@@ -217,8 +217,8 @@ class WrapTest < Minitest::Spec
       it "what" do
         wrap_alterations = Module.new do
           extend Activity::Path::Plan()
-          task Wrap::Trace.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
-          task Wrap::Trace.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
+          task Activity::Trace::TaskWrap.method(:capture_args),   id: "task_wrap.capture_args", before: "task_wrap.call_task"
+          task Activity::Trace::TaskWrap.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
         end
 
         # these options will never change anywhere.

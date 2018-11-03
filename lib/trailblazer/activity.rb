@@ -101,7 +101,6 @@ require "trailblazer/activity/dsl/strategy/fast_track"
 
 require "trailblazer/activity/task_wrap"
 require "trailblazer/activity/task_wrap/call_task"
-require "trailblazer/activity/task_wrap/trace"
 require "trailblazer/activity/task_wrap/runner"
 require "trailblazer/activity/task_wrap/merge"
 require "trailblazer/activity/task_wrap/variable_mapping"
