@@ -11,12 +11,12 @@ module Trailblazer
       module Present
         module_function
 
-        def default_renderer(stack:, level:, input:, name:)
+        def default_renderer(stack:, level:, input:, name:, **)
           [ level, %{#{name}} ]
         end
 
-        def call(stack, level: 1, tree: [], renderer: method(:default_renderer))
-          tree(stack.to_a, level, tree: tree, renderer: renderer)
+        def call(stack, level: 1, tree: [], renderer: method(:default_renderer), **options)
+          tree(stack.to_a, level, tree: tree, renderer: renderer, **options)
         end
 
         def tree(stack, level, tree: tree, **options)
@@ -36,7 +36,7 @@ module Trailblazer
             name = (node = graph.find { |node| node[:task] == task }) ? node[:id] : task
             name ||= task # FIXME: bullshit
 
-            tree << renderer.(stack: stack, level: level, input: input, name: name)
+            tree << renderer.(stack: stack, level: level, input: input, name: name, **options)
 
             if nested.any? # nesting
               tree_for(nested, level + 1, options.merge(tree: tree, renderer: renderer))
@@ -54,23 +54,6 @@ module Trailblazer
           output, nested = output.is_a?(Entity::Output) ? [output, task-[input, output]] : [nil, task[1..-1]]
 
           return input, output, nested
-        end
-
-        def to_name(debug_item)
-          track = debug_item[2]
-          klass = track.class == Class ? track : track.class
-          color = color_map[klass]
-
-          return debug_item[0].to_s unless color
-          colorify(debug_item[0], color)
-        end
-
-        def to_options(debug_item)
-          debug_item[4]
-        end
-
-        def colorify(string, color)
-          "\e[#{color_table[color]}m#{string}\e[0m"
         end
 
         def color_map
