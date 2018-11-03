@@ -57,9 +57,9 @@ module Trailblazer
       class Entity::Output < Entity
       end
 
-      class Task < Array
+      class Level < Array
         def inspect
-          %{<Task>#{super}}
+          %{<Level>#{super}}
         end
       end
 
@@ -71,7 +71,7 @@ module Trailblazer
         end
 
         def indent!
-          current << indented = Task.new
+          current << indented = Level.new
           @stack << indented
         end
 
