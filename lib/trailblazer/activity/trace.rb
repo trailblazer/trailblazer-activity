@@ -118,7 +118,7 @@ module Trailblazer
       # Mutable/stateful per design. We want a (global) stack!
       class Stack
         def initialize
-          @nested  = []
+          @nested  = Level.new
           @stack   = [ @nested ]
         end
 
