@@ -79,7 +79,7 @@ class TraceTest < Minitest::Spec
     `-- End.success}
   end
 
-  it "Present allows to inject :renderer" do
+  it "Present allows to inject :renderer and pass through additional arguments to the renderer" do
     stack, _ = Trailblazer::Activity::Trace.invoke( activity,
       [
         { content: "Let's start writing" },
@@ -87,22 +87,24 @@ class TraceTest < Minitest::Spec
       ]
     )
 
-    renderer = ->(level:, input:, name:, **) { [level, %{#{level}/#{input.task}/#{name}}] }
+    renderer = ->(level:, input:, name:, color:, **) { [level, %{#{level}/#{input.task}/#{name}/#{color}}] }
 
-    output = Trailblazer::Activity::Trace::Present.(stack, renderer: renderer)
+    output = Trailblazer::Activity::Trace::Present.(stack, renderer: renderer,
+      color: "pink" # additional options.
+    )
 
     output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
-    output.must_equal %{`-- 1/#<Trailblazer::Activity: {top}>/#<Trailblazer::Activity: {top}>
-    |-- 2/#<Trailblazer::Activity::Start semantic=:default>/Start.default
-    |-- 2/#<Proc:.rb:4 (lambda)>/A
-    |-- 2/#<Trailblazer::Activity: {}>/<Nested>
-    |   |-- 3/#<Trailblazer::Activity::Start semantic=:default>/Start.default
-    |   |-- 3/#<Proc:.rb:5 (lambda)>/B
-    |   |-- 3/#<Proc:.rb:6 (lambda)>/C
-    |   `-- 3/#<Trailblazer::Activity::End semantic=:success>/End.success
-    |-- 2/#<Proc:.rb:7 (lambda)>/D
-    `-- 2/#<Trailblazer::Activity::End semantic=:success>/End.success}
+    output.must_equal %{`-- 1/#<Trailblazer::Activity: {top}>/#<Trailblazer::Activity: {top}>/pink
+    |-- 2/#<Trailblazer::Activity::Start semantic=:default>/Start.default/pink
+    |-- 2/#<Proc:.rb:4 (lambda)>/A/pink
+    |-- 2/#<Trailblazer::Activity: {}>/<Nested>/pink
+    |   |-- 3/#<Trailblazer::Activity::Start semantic=:default>/Start.default/pink
+    |   |-- 3/#<Proc:.rb:5 (lambda)>/B/pink
+    |   |-- 3/#<Proc:.rb:6 (lambda)>/C/pink
+    |   `-- 3/#<Trailblazer::Activity::End semantic=:success>/End.success/pink
+    |-- 2/#<Proc:.rb:7 (lambda)>/D/pink
+    `-- 2/#<Trailblazer::Activity::End semantic=:success>/End.success/pink}
   end
 
   it "allows to inject custom :stack" do
