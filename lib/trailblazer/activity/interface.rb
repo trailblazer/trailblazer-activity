@@ -5,10 +5,6 @@ class Trailblazer::Activity < Module
       @state.to_h
     end
 
-    def debug # TODO: TEST ME
-      to_h[:debug]
-    end
-
     def outputs
       to_h[:outputs]
     end
