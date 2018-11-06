@@ -7,6 +7,16 @@ module Trailblazer
         Graph.new(*args)
       end
 
+      # Graph::Annotation
+
+      # we need
+      # original task
+      # id
+      #
+      #   to place them easier in the grid:
+      # output semantic/signal
+      # magnetic_to
+
       # @private This API is still under construction.
       class Graph
         def initialize(activity)

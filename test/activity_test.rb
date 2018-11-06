@@ -296,6 +296,8 @@ ActivityTest::A
 
       components = activity.to_h
 
+      assert components[:process]
+
       assert components[:circuit].frozen?
       assert components[:outputs].frozen?
       assert components[:adds].frozen?

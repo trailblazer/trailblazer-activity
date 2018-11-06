@@ -8,9 +8,9 @@ class Trailblazer::Activity < Module
     # @return [Builder, Adds, Process, Outputs, remaining options]
     # @api private
     def self.build_state_for(default_options, options)
-      options                                  = default_options.merge(options) # TODO: use Variables::Merge() here.
-      normalizer, options                      = build_normalizer(options)
-      builder, adds, circuit, outputs, options = build_state(normalizer, options)
+      options                         = default_options.merge(options) # TODO: use Variables::Merge() here.
+      normalizer, options             = build_normalizer(options)
+      builder, adds, process, outputs_map, options = build_state(normalizer, options)
     end
 
     # Builds the normalizer (to process options in DSL calls) unless {:normalizer} is already set.
@@ -24,9 +24,9 @@ class Trailblazer::Activity < Module
 
     # @api private
     def self.build_state(normalizer, builder_class:, builder_options: {}, **options)
-      builder, adds, circuit, outputs = Magnetic::Builder::State.build(builder_class, normalizer, options.merge(builder_options))
+      builder, adds, process, outputs_map = Magnetic::Builder::State.build(builder_class, normalizer, options.merge(builder_options))
 
-      return builder, adds, circuit, outputs, options
+      return builder, adds, process.freeze, outputs_map.freeze, options
     end
   end
 end

@@ -3,14 +3,14 @@ module Trailblazer
     attr_reader :initial_state
 
     def initialize(implementation, options)
-      builder, adds, circuit, outputs, options = BuildState.build_state_for( implementation.config, options)
+      builder, adds, process, outputs_map, options = BuildState.build_state_for( implementation.config, options)
 
       @initial_state = State::Config.build(
         builder: builder,
         options: options,
         adds:    adds,
-        circuit: circuit,
-        outputs: outputs,
+        circuit: process.circuit,
+        outputs: outputs_map,
       )
 
       include *options[:extend] # include the DSL methods.

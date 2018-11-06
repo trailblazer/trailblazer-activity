@@ -7,7 +7,7 @@ module Trailblazer
     def self.def_dsl(_name, strategy, polarizer)
       Module.new do
         define_method(_name) do |task, options={}, &block|
-          builder, adds, circuit, outputs, options = add_task!(strategy, polarizer, _name, task, options, &block)
+          builder, adds, process, options = add_task!(strategy, polarizer, _name, task, options, &block)
         end
       end
     end

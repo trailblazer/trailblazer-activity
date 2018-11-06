@@ -18,41 +18,13 @@ module Trailblazer
 
       private
 
-      # @return {builder, Adds, Process, outputs}, returned_options
       def self.recompile(builder, adds, *args)
-        circuit, outputs = recompile_circuit(adds)
+        process = Finalizer.(adds)
 
-        return builder, adds, circuit.freeze, outputs.freeze, *args
+        outputs_map = Hash[process.outputs.collect { |out| [out.semantic, out] }]
+
+        return builder, adds, process, outputs_map, *args
       end
-
-      def self.recompile_circuit(adds)
-        circuit, outputs = Recompile.( adds )
-      end
-
-      module Recompile
-        # Recompile the circuit and outputs from the {ADDS} instance that collects circuit tasks and connections.
-        #
-        # @return [Process, Hash] The {Process} instance and its outputs hash.
-        def self.call(adds)
-          circuit, end_events = Finalizer.(adds)
-          outputs             = recompile_outputs(end_events)
-
-          return circuit, outputs
-        end
-
-        private
-
-        def self.recompile_outputs(end_events)
-          ary = end_events.collect do |evt|
-            [
-              semantic = evt.to_h[:semantic],
-              Activity::Output(evt, semantic)
-            ]
-          end
-
-          ::Hash[ ary ]
-        end
-      end # Recompile
     end # State
   end
 end
