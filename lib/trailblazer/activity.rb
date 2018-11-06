@@ -9,6 +9,7 @@ module Trailblazer
         builder: builder,
         options: options,
         adds:    adds,
+        process: process,
         circuit: process.circuit,
         outputs: outputs_map,
       )

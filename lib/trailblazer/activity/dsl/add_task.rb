@@ -9,6 +9,7 @@ class Trailblazer::Activity < Module
         _builder, adds, process, outputs_map, returned_options = Magnetic::Builder::State.add( self[:builder], self[:adds], strategy, polarizer, task, options, &block ) # this could be an extension itself.
 
         self[:adds]    = adds
+        self[:process] = process
         self[:circuit] = process.circuit
         self[:outputs] = outputs_map
 

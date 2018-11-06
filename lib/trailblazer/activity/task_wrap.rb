@@ -29,7 +29,7 @@ module Trailblazer
           runner:       TaskWrap::Runner,
           wrap_runtime: wrap_runtime,
 
-          activity: { adds: [], circuit: {} }, # for Runner
+          activity: activity, # for Runner # FIXME: what is this?
         )
 
         # signal, (ctx, flow), circuit_options =

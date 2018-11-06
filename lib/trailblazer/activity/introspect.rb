@@ -21,8 +21,9 @@ module Trailblazer
       class Graph
         def initialize(activity)
           @activity = activity
-          @circuit  = activity.to_h[:circuit]
-          @adds     = activity.to_h[:adds].compact # FIXME: why are there nils in Adds?
+          @process  = activity.to_h[:process] or raise
+          @circuit  = @process.circuit
+          @configs  = @process.nodes
         end
 
         def find(id=nil, &block)
@@ -33,25 +34,22 @@ module Trailblazer
         private
 
         def find_by_id(id)
-          (_, (id, triplett)) = @adds.find { |(op, (_id, triplett))| _id == id }
+          node = @configs.find { |node| node.id == id } or return
 
-          Node(triplett[1], id, triplett[0])
+          Node(node.task, node.id, node.outputs)
         end
 
         def find_with_block(&block)
-          adds = @adds.find { |(op, (id, triplett))| yield( Node(triplett[1], id, triplett[0]) ) }
-          return nil unless adds
+          existing = @configs.find { |node| yield Node(node.task, node.id, node.outputs) } or return
 
-          (op, (id, triplett)) = adds
-
-          Node(triplett[1], id, triplett[0])
+          Node(existing.task, existing.id, existing.outputs)
         end
 
         def Node(*args)
           Node.new(*args).freeze
         end
 
-        Node = Struct.new(:task, :id, :magnetic_to)
+        Node = Struct.new(:task, :id, :outputs)
       end
 
 

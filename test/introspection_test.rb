@@ -6,6 +6,9 @@ class IntrospectionTest < Minitest::Spec
   C = ->(*args) { [ Activity::Right, *args ] }
   D = ->(*args) { [ Activity::Right, *args ] }
 
+  Right = Trailblazer::Activity::Right
+  Left  = Trailblazer::Activity::Left
+
   let(:activity) do
     nested = bc
 
@@ -71,13 +74,13 @@ class IntrospectionTest < Minitest::Spec
     describe "#find" do
       let(:node) { graph.find("B") }
       it { node[:id].must_equal "B" }
-      it { node[:magnetic_to].must_equal [:success] }
+      it { assert_outputs(node, success: Right, failure: Left) }
       it { node[:task].must_equal B }
 
       describe "with Start.default" do
         let(:node) { graph.find("Start.default") }
         it { node[:id].must_equal "Start.default" }
-        it { node[:magnetic_to].must_equal [] }
+        it { assert_outputs(node, success: Right) }
         it { node[:task].must_equal activity.to_h[:circuit].to_h[:start_task] }
       end
 
@@ -86,8 +89,14 @@ class IntrospectionTest < Minitest::Spec
 
         it { node[:id].must_equal "B" }
         it { node[:task].must_equal B }
-        it { node[:magnetic_to].must_equal [:success] }
+        it { assert_outputs(node, success: Right, failure: Left) }
       end
+    end
+
+    def assert_outputs(node, map)
+      Hash[
+        node.outputs.collect { |out| [out.semantic, out.signal] }
+      ].must_equal(map)
     end
   end
 end
