@@ -1,7 +1,120 @@
 require "test_helper"
 
+class NoStaticWrapTest < Minitest::Spec
+  Activity         = Trailblazer::Activity
+
+  module C
+    extend Activity::Railway(name: :C)
+    extend T.def_tasks(:c, :cc)
+
+    step task: method(:c)
+    step task: method(:cc)
+  end
+
+  module B
+    extend Activity::Railway(name: :B)
+    extend T.def_tasks(:b, :bb)
+
+    step task: method(:b)
+    step Subprocess(C)
+    step task: method(:bb)
+  end
+
+  module A
+    extend Activity::Railway(name: :A)
+    extend T.def_tasks(:a, :aa)
+
+    step task: method(:a)
+    step Subprocess(B)
+    step task: method(:aa)
+  end
+
+  it "runs without any {:wrap_static} configured" do
+    signal, (ctx, _) = Activity::TaskWrap.invoke(A, [{seq: []}])
+    ctx.must_equal({:seq=>[:a, :b, :c, :cc, :bb, :aa]})
+  end
+end
+
+# configure {:wrap_static} on A and C
+class StaticWrapTest < Minitest::Spec
+  Activity         = Trailblazer::Activity
+
+  # Helper to create taskWrap steps.
+  def self.def_taskWrap_tasks(*names)
+    Module.new do
+      module_function
+      names.each do |name|
+        define_method(name) do | (wrap_ctx, ((ctx, flow_options), circuit_options)), ** | # taskWrap steps have different interface.
+          ctx[:seq] << name
+
+          return Activity::Right, [wrap_ctx, [[ctx, flow_options], circuit_options]]
+        end
+      end
+    end
+  end
+
+  module C
+    extend Activity::Railway(name: :C)
+    extend T.def_tasks(:c, :cc)
+
+    step task: method(:c)
+    step task: method(:cc)
+
+
+    wrap_module = StaticWrapTest.def_taskWrap_tasks(:ccc, :cccc) # taskWrap
+    # Configure the taskWrap:
+    #   -- ccc
+    #   -- call(c)
+    #   -- cccc
+    c_wrap = Module.new do
+      extend Activity::Path::Plan()
+      task wrap_module.method(:ccc),  id: "task_wrap.ccc", before: "task_wrap.call_task"
+      task wrap_module.method(:cccc), id: "task_wrap.cccc", after: "task_wrap.call_task"
+    end
+
+    wrap_static             = Hash.new( Activity::TaskWrap.initial_activity )
+    wrap_static[method(:c)] = Activity::Path::Plan.merge( Activity::TaskWrap.initial_activity, c_wrap )
+
+    self[:wrap_static] = wrap_static
+  end
+
+  module B
+    extend Activity::Railway(name: :B)
+    extend T.def_tasks(:b, :bb)
+
+    step task: method(:b)
+    step Subprocess(C)
+    step task: method(:bb)
+  end
+
+  module A
+    extend Activity::Railway(name: :A)
+    extend T.def_tasks(:a, :aa)
+
+    step task: method(:a)
+    step Subprocess(B)
+    step task: method(:aa)
+
+    wrap_module = StaticWrapTest.def_taskWrap_tasks(:aaa, :aaaa) # taskWrap
+    c_wrap      = Module.new do
+      extend Activity::Path::Plan()
+      task wrap_module.method(:aaa),  before: "task_wrap.call_task"
+      task wrap_module.method(:aaaa), after:  "task_wrap.call_task"
+    end
+
+    wrap_static    = Hash.new( Activity::TaskWrap.initial_activity )
+    wrap_static[B] = Activity::Path::Plan.merge( Activity::TaskWrap.initial_activity, c_wrap )
+
+    self[:wrap_static] = wrap_static
+  end
+
+  it "runs using {:wrap_static} around :c and ......" do
+    signal, (ctx, _) = Activity::TaskWrap.invoke(A, [{seq: []}])
+    ctx.must_equal({:seq=>[:a, :aaa, :b, :ccc, :c, :cccc, :cc, :bb, :aaaa, :aa]})
+  end
+end
+
 class WrapTest < Minitest::Spec
-  Circuit          = Trailblazer::Circuit
   Activity         = Trailblazer::Activity
   SpecialDirection = Class.new
   Wrap             = Activity::TaskWrap
@@ -143,7 +256,7 @@ class WrapTest < Minitest::Spec
 
         _more_nested = more_nested
         more_nested = Module.new do
-          extend Trailblazer::Activity::Path()
+          extend Trailblazer::Activity::Path(name: :bla)
           merge! _more_nested
           self[:wrap_static] = wrap_static # we need to set :wrap_static on the activity.
         end
