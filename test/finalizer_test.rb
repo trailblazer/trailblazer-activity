@@ -49,27 +49,7 @@ class DrawGraphTest < Minitest::Spec
 
     hash = Trailblazer::Activity::Magnetic::Builder::Finalizer.tripletts_to_circuit_hash( tripletts )
 
-    circuit_hash(hash).must_equal %{
-DrawGraphTest::A
- {Trailblazer::Activity::Left} => DrawGraphTest::E
- {Trailblazer::Activity::Right} => DrawGraphTest::B
-DrawGraphTest::E
-
-DrawGraphTest::B
- {Trailblazer::Activity::Right} => DrawGraphTest::C
- {Trailblazer::Activity::Left} => DrawGraphTest::F
-DrawGraphTest::C
- {Trailblazer::Activity::Left} => DrawGraphTest::F
- {Trailblazer::Activity::Right} => DrawGraphTest::ES
-DrawGraphTest::F
- {bla} => DrawGraphTest::S
- {Trailblazer::Activity::Left} => DrawGraphTest::EF
-DrawGraphTest::S
-
-DrawGraphTest::ES
-
-DrawGraphTest::EF
-}
+    hash.inspect.must_equal %{{DrawGraphTest::A=>{Trailblazer::Activity::Left=>DrawGraphTest::E, Trailblazer::Activity::Right=>DrawGraphTest::B}, DrawGraphTest::E=>{}, DrawGraphTest::B=>{Trailblazer::Activity::Right=>DrawGraphTest::C, Trailblazer::Activity::Left=>DrawGraphTest::F}, DrawGraphTest::C=>{Trailblazer::Activity::Left=>DrawGraphTest::F, Trailblazer::Activity::Right=>DrawGraphTest::ES}, DrawGraphTest::F=>{\"bla\"=>DrawGraphTest::S, Trailblazer::Activity::Left=>DrawGraphTest::EF}, DrawGraphTest::S=>{}, DrawGraphTest::ES=>{}, DrawGraphTest::EF=>{}}}
   end
 
   # A points to C
@@ -87,20 +67,7 @@ DrawGraphTest::EF
 
     hash = Trailblazer::Activity::Magnetic::Builder::Finalizer.tripletts_to_circuit_hash( tripletts )
 
-    circuit_hash(hash).gsub(/0x\w+/, "").must_equal %{
-DrawGraphTest::A
- {bla} => DrawGraphTest::C
- {Trailblazer::Activity::Left} => DrawGraphTest::EF
-DrawGraphTest::B
- {Trailblazer::Activity::Right} => DrawGraphTest::C
- {Trailblazer::Activity::Left} => DrawGraphTest::EF
-DrawGraphTest::C
- {Trailblazer::Activity::Right} => DrawGraphTest::ES
- {Trailblazer::Activity::Left} => DrawGraphTest::EF
-DrawGraphTest::ES
-
-DrawGraphTest::EF
-}
+    hash.inspect.gsub(/0x\w+/, "").must_equal %{{DrawGraphTest::A=>{\"bla\"=>DrawGraphTest::C, Trailblazer::Activity::Left=>DrawGraphTest::EF}, DrawGraphTest::B=>{Trailblazer::Activity::Right=>DrawGraphTest::C, Trailblazer::Activity::Left=>DrawGraphTest::EF}, DrawGraphTest::C=>{Trailblazer::Activity::Right=>DrawGraphTest::ES, Trailblazer::Activity::Left=>DrawGraphTest::EF}, DrawGraphTest::ES=>{}, DrawGraphTest::EF=>{}}}
   end
 
   # circular
@@ -115,16 +82,7 @@ DrawGraphTest::EF
 
     hash = Trailblazer::Activity::Magnetic::Builder::Finalizer.tripletts_to_circuit_hash( tripletts )
 
-   circuit_hash(hash).gsub(/0x\w+/, "").must_equal %{
-DrawGraphTest::A
- {SIG} => DrawGraphTest::A
- {Trailblazer::Activity::Right} => DrawGraphTest::B
-DrawGraphTest::B
- {Trailblazer::Activity::Right} => DrawGraphTest::ES
-DrawGraphTest::ES
-
-DrawGraphTest::EF
-}
+   hash.inspect.gsub(/0x\w+/, "").must_equal %{{DrawGraphTest::A=>{\"SIG\"=>DrawGraphTest::A, Trailblazer::Activity::Right=>DrawGraphTest::B}, DrawGraphTest::B=>{Trailblazer::Activity::Right=>DrawGraphTest::ES}, DrawGraphTest::ES=>{}, DrawGraphTest::EF=>{}}}
   end
 
   describe "referencing a task coming ahead" do
@@ -139,9 +97,9 @@ DrawGraphTest::EF
       # pp adds
 
       # without magnetic_to: [], Find will reference itself due to the Finalizer algorithm.
-      activity, _ = Trailblazer::Activity::Magnetic::Builder::Finalizer.( adds )
+      activity, _ = Trailblazer::Activity::Magnetic::Builder::Finalizer.(adds)
 
-     Cct(activity).must_equal %{
+     Cct(process: activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => DrawGraphTest::A
 DrawGraphTest::A
