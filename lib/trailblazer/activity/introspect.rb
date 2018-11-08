@@ -27,6 +27,7 @@ module Trailblazer
           @activity = activity
           @process  = activity.to_h[:process] or raise
           @circuit  = @process.circuit
+          @map      = @circuit.to_h[:map]
           @configs  = @process.nodes
         end
 
@@ -35,18 +36,25 @@ module Trailblazer
           find_with_block(&block)
         end
 
+        def collect(strategy: :circuit, &block)
+          @map.keys.collect { |task| yield find_with_block { |node| node.task==task } }
+        end
+
         private
 
         def find_by_id(id)
           node = @configs.find { |node| node.id == id } or return
-
-          Node(node.task, node.id, node.outputs, outgoings_for(node))
+          node_for(node)
         end
 
         def find_with_block(&block)
           existing = @configs.find { |node| yield Node(node.task, node.id, node.outputs) } or return
 
-          Node(existing.task, existing.id, existing.outputs)
+          node_for(existing)
+        end
+
+        def node_for(config)
+          Node(config.task, config.id, config.outputs, outgoings_for(config))
         end
 
         def Node(*args)
@@ -58,7 +66,7 @@ module Trailblazer
 
         def outgoings_for(node)
           outputs     = node.outputs
-          connections = @circuit.to_h[:map][node.task]
+          connections = @map[node.task]
 
           connections.collect do |signal, target|
             output = outputs.find { |out| out.signal == signal }

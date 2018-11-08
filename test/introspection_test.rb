@@ -67,15 +67,28 @@ class IntrospectionTest < Minitest::Spec
       it do
         nodes = graph.collect { |node| node }
 
-        nodes.size.must_equal 2
-        nodes[0][:task].must_equal "I am not callable!"
-        nodes[0][:outgoings].must_equal ""
+        nodes.size.must_equal 4
+
+        nodes[0][:task].inspect.must_equal %{#<Trailblazer::Activity::Start semantic=:default>}
+        assert_outgoings nodes[0], Activity::Right=>"I am not callable!"
+        nodes[1][:task].must_equal "I am not callable!"
+        assert_outgoings nodes[1], Activity::Right=>B, Activity::Left=>B
+        nodes[2][:task].must_equal B
+        assert_outgoings nodes[2], Activity::Right=>nodes[3].task, Activity::Left=>nodes[3].task
+        nodes[3][:task].inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
+        assert_outgoings nodes[3], {}
       end
     end
 
     def assert_outputs(node, map)
       Hash[
         node.outputs.collect { |out| [out.semantic, out.signal] }
+      ].must_equal(map)
+    end
+
+    def assert_outgoings(node, map)
+      Hash[
+        node.outgoings.collect { |out| [out.output.signal, out.task] }
       ].must_equal(map)
     end
   end
