@@ -17,6 +17,10 @@ module Trailblazer
       # output semantic/signal
       # magnetic_to
 
+      # TODO: remove Finalizer namespace from NodeConfiguration
+      # TODO: order of step/fail/pass in Node would be cool to have
+
+
       # @private This API is still under construction.
       class Graph
         def initialize(activity)
@@ -36,7 +40,7 @@ module Trailblazer
         def find_by_id(id)
           node = @configs.find { |node| node.id == id } or return
 
-          Node(node.task, node.id, node.outputs)
+          Node(node.task, node.id, node.outputs, outgoings_for(node))
         end
 
         def find_with_block(&block)
@@ -49,24 +53,22 @@ module Trailblazer
           Node.new(*args).freeze
         end
 
-        Node = Struct.new(:task, :id, :outputs)
+        Node     = Struct.new(:task, :id, :outputs, :outgoings)
+        Outgoing = Struct.new(:output, :task)
+
+        def outgoings_for(node)
+          outputs     = node.outputs
+          connections = @circuit.to_h[:map][node.task]
+
+          connections.collect do |signal, target|
+            output = outputs.find { |out| out.signal == signal }
+            Outgoing.new(output, target)
+          end
+        end
       end
 
 
-      # FIXME: remove this
-      # @private This will be removed shortly.
-      def self.collect(activity, options={}, &block)
-        circuit      = activity.to_h[:circuit]
-        circuit_hash = circuit.to_h[:map]
-
-        locals = circuit_hash.collect do |task, connections|
-          [
-            yield(task, connections),
-            *options[:recursive] && task.is_a?(Activity::Interface) ? collect(task, options, &block) : []
-          ]
-        end.flatten(1)
-      end
-
+        # FIXME: clean up that shit below.
       def self.inspect_task_builder(task)
         proc = task.instance_variable_get(:@user_proc)
         match = proc.inspect.match(/(\w+)>$/)
@@ -74,59 +76,6 @@ module Trailblazer
         %{#<TaskBuilder{.#{match[1]}}>}
       end
 
-        # FIXME: clean up that shit below.
-
-# render
-      def self.Cct(circuit, **options)
-        circuit_hash( circuit.to_h[:map], **options )
-      end
-
-      def self.circuit_hash(circuit_hash, show_ids:false, **options)
-        content = circuit_hash.collect do |task, connections|
-          conns = connections.collect do |signal, target|
-            " {#{signal}} => #{inspect_with_matcher(target, **options)}"
-          end
-
-          [ inspect_with_matcher(task, **options), conns.join("\n") ]
-        end
-
-        content = content.join("\n")
-
-        return "\n#{content}" if show_ids
-        return "\n#{content}".gsub(/0x\w+/, "0x").gsub(/0.\d+/, "0.")
-      end
-
-      def self.Ends(activity)
-        end_events = activity.to_h[:end_events]
-        ends = end_events.collect { |evt| inspect_end(evt) }.join(",")
-        "[#{ends}]".gsub(/\d\d+/, "")
-      end
-
-      def self.Outputs(outputs)
-        outputs.collect { |semantic, output| "#{semantic}=> (#{output.signal}, #{output.semantic})" }.
-          join("\n").gsub(/0x\w+/, "").gsub(/\d\d+/, "")
-      end
-
-      # If Ruby had pattern matching, this function wasn't necessary.
-      def self.inspect_with_matcher(task, inspect_task: method(:inspect_task), inspect_end: method(:inspect_end))
-        return inspect_task.(task) unless task.kind_of?(Trailblazer::Activity::End)
-        inspect_end.(task)
-      end
-
-      def self.inspect_task(task)
-        task.inspect
-      end
-
-      def self.inspect_end(task)
-        class_name = strip(task.class)
-        options    = task.to_h
-
-        "#<#{class_name}/#{options[:semantic].inspect}>"
-      end
-
-      def self.strip(string)
-        string.to_s.sub("Trailblazer::Activity::", "")
-      end
     end #Introspect
   end
 

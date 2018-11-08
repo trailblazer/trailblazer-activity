@@ -4,16 +4,17 @@ require "trailblazer-activity"
 
 require "minitest/autorun"
 
+require "trailblazer/developer/render/circuit"
 
 Minitest::Spec::Activity = Trailblazer::Activity
 
 Minitest::Spec.class_eval do
-  def Inspect(*args)
-    Trailblazer::Activity::Inspect::Instance(*args)
+  def Cct(*args)
+    Trailblazer::Developer::Render::Circuit.(*args)
   end
 
   extend Forwardable
-  def_delegators Trailblazer::Activity::Introspect, :Seq, :Cct, :circuit_hash, :Ends, :Outputs
+  # def_delegators , :Seq, :Cct, :circuit_hash, :Ends, :Outputs
   def_delegators Trailblazer::Activity::Magnetic::Introspect, :Seq
 
   # builder for PlusPoles

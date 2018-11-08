@@ -26,7 +26,7 @@ class MergeTest < Minitest::Spec
     # the existing activity gets extended.
     activity.must_equal _activity
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => :b
 :b
@@ -60,7 +60,7 @@ class MergeTest < Minitest::Spec
       merged = Activity::Path::Plan.merge(activity, plan)
 
       # activity still has one step
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => :a
 :a
@@ -69,7 +69,7 @@ class MergeTest < Minitest::Spec
 #<End/:success>
 }
 
-      Cct(merged.to_h[:circuit]).must_equal %{
+      Cct(merged).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => :b
 :b
@@ -107,7 +107,7 @@ class MergeTest < Minitest::Spec
         merge! activity
       end
 
-      Cct(merging.to_h[:circuit]).must_equal %{
+      Cct(merging).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => :c
 :c

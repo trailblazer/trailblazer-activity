@@ -23,7 +23,7 @@ class ActivityBuildTest < Minitest::Spec
       task task: K, id: "validate", Output(Left, :failure) => End(:invalid)
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
@@ -55,7 +55,7 @@ ActivityBuildTest::K
       task task: K
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
@@ -92,7 +92,7 @@ ActivityBuildTest::K
       task task: K, id: "normal"
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::J
 ActivityBuildTest::J
@@ -127,7 +127,7 @@ ActivityBuildTest::K
       task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
@@ -179,7 +179,7 @@ ActivityBuildTest::L
       task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A

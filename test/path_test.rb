@@ -9,7 +9,7 @@ class PathTest < Minitest::Spec
         task task: T.def_task(:b)
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -32,7 +32,7 @@ class PathTest < Minitest::Spec
       task task: T.def_task(:b), id: "log_invalid_result"#, Output(Right, :success) => End("End.invalid_result", :invalid_result)
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -66,7 +66,7 @@ class PathTest < Minitest::Spec
       task task: T.def_task(:b)
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -87,7 +87,7 @@ class PathTest < Minitest::Spec
       task task: T.def_task(:b), id: "//b", Output(Activity::Right, :success) => End(:invalid_result)
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -128,7 +128,7 @@ class PathTest < Minitest::Spec
       task task: T.def_task(:e), id: "E", magnetic_to: [] # start event
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -167,7 +167,7 @@ class PathTest < Minitest::Spec
       task T.def_task(:d) # no :id.
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -201,7 +201,7 @@ class PathTest < Minitest::Spec
         task task: T.def_task(:b)
       end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
    {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -223,7 +223,7 @@ class PathTest < Minitest::Spec
         task task: T.def_task(:c), group:  :start
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.c>
 #<Method: #<Module:0x>.c>
@@ -249,7 +249,7 @@ class PathTest < Minitest::Spec
         task task: T.def_task(:a)
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -273,7 +273,7 @@ PathTest::MyEnd
         task task: T.def_task(:a), plus_poles: plus_poles, Output(:failure) => :something_completely_different
       end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -295,7 +295,7 @@ PathTest::MyEnd
         end
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -348,7 +348,7 @@ PathTest::MyEnd
         end
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -379,7 +379,7 @@ PathTest::MyEnd
         task task: T.def_task(:d)
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.b>
 #<Method: #<Module:0x>.b>
@@ -409,7 +409,7 @@ PathTest::MyEnd
         task task: T.def_task(:e)
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -444,7 +444,7 @@ PathTest::MyEnd
         task task: T.def_task(:a), Output(Activity::Right, :success) => End(:invalid_result)
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -463,7 +463,7 @@ PathTest::MyEnd
         task task: T.def_task(:a), Output(:success) => End(:invalid_result)
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -486,7 +486,7 @@ PathTest::MyEnd
                       ).freeze
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>
@@ -505,7 +505,7 @@ PathTest::MyEnd
         task task: T.def_task(:b), Output(Activity::Left, :failure) => End(:invalid)
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.a>
 #<Method: #<Module:0x>.a>

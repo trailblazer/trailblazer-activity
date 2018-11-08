@@ -128,7 +128,7 @@ class ActivityTest < Minitest::Spec
     end
 
     # puts Cct(activity.instance_variable_get(:@process))
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<End/:success>
 #<End/:success>
@@ -178,7 +178,7 @@ class ActivityTest < Minitest::Spec
   end
 
   it do
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityTest::A
 ActivityTest::A

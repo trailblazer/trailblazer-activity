@@ -10,7 +10,7 @@ class DocsOutputTest < Minitest::Spec
           Output(:success) => End(:my_pass_fast)
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
 #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
@@ -30,7 +30,7 @@ class DocsOutputTest < Minitest::Spec
           Output(:pass) => End(:my_pass), outputs: { pass: Activity.Output("Pass", :pass), fail: Activity.Output("Fail", :fail) }
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
 #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
@@ -62,7 +62,7 @@ class DocsOutputTest < Minitest::Spec
           Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
@@ -85,7 +85,7 @@ class DocsOutputTest < Minitest::Spec
           Output("Restart", :restart) => End(:restart) # references a plus pole from VV
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
@@ -110,7 +110,7 @@ class DocsOutputTest < Minitest::Spec
         _end task: Trailblazer::Activity::End(:failure), magnetic_to: [:failure]
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
@@ -140,7 +140,7 @@ class DocsOutputTest < Minitest::Spec
         _end task: Trailblazer::Activity::End(:failure), magnetic_to: [:failure]
       end
 
-      Cct(activity.to_h[:circuit]).must_equal %{
+      Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>

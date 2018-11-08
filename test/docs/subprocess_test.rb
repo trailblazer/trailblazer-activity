@@ -19,7 +19,7 @@ class SubprocessTest < Minitest::Spec
         Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
@@ -42,7 +42,7 @@ class SubprocessTest < Minitest::Spec
         Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
     end
 
-    Cct(activity.to_h[:circuit]).must_equal %{
+    Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>

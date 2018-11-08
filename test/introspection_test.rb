@@ -28,37 +28,6 @@ class IntrospectionTest < Minitest::Spec
     end
   end
 
-  describe "#collect" do
-    it "collects all tasks of a flat activity" do
-      all_tasks = Activity::Introspect.collect(bc) do |task, connections|
-        task
-      end
-
-      all_tasks.size.must_equal 4
-      all_tasks[1..2].must_equal [B, C]
-    end
-
-    it "iterates over each task element in the top activity" do
-      all_tasks = Activity::Introspect.collect(activity) do |task, connections|
-        task
-      end
-
-      all_tasks.size.must_equal 5
-      all_tasks[1..3].must_equal [A, bc, D]
-      # TODO: test start and end!
-    end
-
-    it "iterates over all task elements recursively" do
-      all_tasks = Activity::Introspect.collect(activity, recursive: true) do |task, connections|
-        task
-      end
-
-      all_tasks.size.must_equal 9
-      all_tasks[1..2].must_equal [A, bc]
-      all_tasks[4..5].must_equal [B, C]
-    end
-  end
-
   describe "Introspect::Graph" do
     let(:activity) do
       Module.new do
@@ -76,6 +45,7 @@ class IntrospectionTest < Minitest::Spec
       it { node[:id].must_equal "B" }
       it { assert_outputs(node, success: Right, failure: Left) }
       it { node[:task].must_equal B }
+      it { node[:outgoings].inspect.must_equal(%{[#<struct Trailblazer::Activity::Introspect::Graph::Outgoing output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Right, semantic=:success>, task=#<Trailblazer::Activity::End semantic=:success>>, #<struct Trailblazer::Activity::Introspect::Graph::Outgoing output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Left, semantic=:failure>, task=#<Trailblazer::Activity::End semantic=:success>>]}) }
 
       describe "with Start.default" do
         let(:node) { graph.find("Start.default") }
@@ -90,6 +60,16 @@ class IntrospectionTest < Minitest::Spec
         it { node[:id].must_equal "B" }
         it { node[:task].must_equal B }
         it { assert_outputs(node, success: Right, failure: Left) }
+      end
+    end
+
+    describe "#collect" do
+      it do
+        nodes = graph.collect { |node| node }
+
+        nodes.size.must_equal 2
+        nodes[0][:task].must_equal "I am not callable!"
+        nodes[0][:outgoings].must_equal ""
       end
     end
 
