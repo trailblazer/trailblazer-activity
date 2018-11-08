@@ -34,7 +34,7 @@ class DocsRailwayTest < Minitest::Spec
     end
 
     it do
-       Cct(Memo::Create, inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
+       Cct(Memo::Create, inspect_task: method(:inspect_task_builder)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.authenticate}>
 #<TaskBuilder{.authenticate}>
@@ -73,7 +73,7 @@ class DocsRailwayTest < Minitest::Spec
     #:custom end
 
     it do
-       Cct(Memo::Create, inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
+       Cct(Memo::Create, inspect_task: method(:inspect_task_builder)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.authenticate}>
 #<TaskBuilder{.authenticate}>
@@ -126,7 +126,7 @@ class DocsRailwayTest < Minitest::Spec
     #:path-simple end
 
     it do
-       Cct(Memo::Create, inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
+       Cct(Memo::Create, inspect_task: method(:inspect_task_builder)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.authenticate}>
 #<TaskBuilder{.authenticate}>
@@ -174,7 +174,7 @@ class DocsRailwayTest < Minitest::Spec
     #:path-output end
 
     it do
-       Cct(Memo::Create, inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
+       Cct(Memo::Create, inspect_task: method(:inspect_task_builder)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.authenticate}>
 #<TaskBuilder{.authenticate}>
@@ -224,7 +224,7 @@ class DocsRailwayTest < Minitest::Spec
     #:path-id-output end
 
     it do
-       Cct(Memo::Create, inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
+       Cct(Memo::Create, inspect_task: method(:inspect_task_builder)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.authenticate}>
 #<TaskBuilder{.authenticate}>
@@ -272,7 +272,7 @@ class DocsRailwayTest < Minitest::Spec
     #:path-end end
 
     it do
-       Cct(Memo::Create, inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
+       Cct(Memo::Create, inspect_task: method(:inspect_task_builder)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.authenticate}>
 #<TaskBuilder{.authenticate}>
@@ -325,7 +325,7 @@ Test referencing a task by ID as the end of the Path()
     #:path-to-id end
 
     it do
-       Cct(Memo::Create, inspect_task: Activity::Introspect.method(:inspect_task_builder)).must_equal %{
+       Cct(Memo::Create, inspect_task: method(:inspect_task_builder)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<TaskBuilder{.authenticate}>
 #<TaskBuilder{.authenticate}>

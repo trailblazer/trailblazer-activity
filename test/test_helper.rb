@@ -13,6 +13,14 @@ Minitest::Spec.class_eval do
     Trailblazer::Developer::Render::Circuit.(*args)
   end
 
+  def inspect_task_builder(task)
+    proc = task.instance_variable_get(:@user_proc)
+    match = proc.inspect.match(/(\w+)>$/)
+
+    %{#<TaskBuilder{.#{match[1]}}>}
+  end
+
+
   extend Forwardable
   # def_delegators , :Seq, :Cct, :circuit_hash, :Ends, :Outputs
   def_delegators Trailblazer::Activity::Magnetic::Introspect, :Seq
