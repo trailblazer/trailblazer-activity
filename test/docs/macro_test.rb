@@ -77,7 +77,7 @@ class DocsMacroTest < Minitest::Spec
 
 
     it "creates correct activity" do
-      Cct(activity.to_h[:circuit], inspect_task: method(:inspect_task_builder) ).must_equal branching
+      Cct(activity, inspect_task: method(:inspect_task_builder) ).must_equal branching
     end
   end
 

@@ -134,7 +134,9 @@ class ActivityTest < Minitest::Spec
 #<End/:success>
 }
 
-    Outputs(activity.outputs).must_equal %{success=> (#<Trailblazer::Activity::End semantic=:success>, success)}
+    # Outputs(activity.outputs).must_equal %{success=> (#<Trailblazer::Activity::End semantic=:success>, success)}
+    # Activity::Introspect::Graph(activity).stop_events.inspect.gsub(/\d{16}/, "")
+    activity.outputs.inspect.must_equal %{{:success=>#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>}}
 
     options = { id: 1 }
 
@@ -211,8 +213,7 @@ ActivityTest::L
 #<End/:invalid_result>
 }
 
-
-    Ends(activity.to_h[:circuit]).must_equal %{[#<ActivityTest::B/:resume_1>,#<End/:success>,#<End/\"track_0.\">,#<End/:invalid_result>]}
+    Activity::Introspect::Graph(activity).stop_events.inspect.gsub(/\d\d+/, "").must_equal %{[#<ActivityTest::B semantic=:resume_1>, #<Trailblazer::Activity::End semantic=:success>, #<Trailblazer::Activity::End semantic=\"track_0.\">, #<Trailblazer::Activity::End semantic=:invalid_result>]}
 
     # A -> B -> End.suspend
     options, flow_options, circuit_options = {id: 1, a_return: Activity::Left, b_return: Activity::Right }, {}, {}

@@ -21,9 +21,7 @@ class DSLPathTest < Minitest::Spec
       _adds, _ = builder.insert( Builder::Path, :TaskPolarizations, {task: I}, id: I, outputs: initial_outputs, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
       adds += _adds
 
-      sequence = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
-
-      Seq(sequence).must_equal %{
+      SEQ(adds).must_equal %{
 [] ==> #<Start/:default>
  (success)/Right ==> :pink
 [:pink] ==> DSLPathTest::G
@@ -52,9 +50,7 @@ class DSLPathTest < Minitest::Spec
       _adds, _ = builder.insert( Builder::Path, :TaskPolarizations, {task: I}, id: I, Activity.Output(Activity::Left, :failure) => Activity.End(:failure) )
       adds += _adds
 
-      sequence = Activity::Magnetic::Builder::Finalizer.adds_to_tripletts(adds)
-
-      Seq(sequence).must_equal %{
+      SEQ(adds).must_equal %{
 [] ==> #<Start/:default>
  (success)/Right ==> :success
 [:success] ==> DSLPathTest::G

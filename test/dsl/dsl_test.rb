@@ -127,7 +127,7 @@ ActivityBuildTest::K
       task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
-    Cct(activity).must_equal %{
+    Cct(activity).gsub(/\d{16}/, "").must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A
 ActivityBuildTest::A
@@ -158,7 +158,7 @@ ActivityBuildTest::L
 #<End/:invalid_result>
 }
 
-    Ends(activity.to_h[:circuit]).must_equal %{[#<End/:success>,#<End/\"track_0.\">,#<End/:invalid_result>]}
+    Activity::Introspect::Graph(activity).stop_events.inspect.gsub(/\d\d+/, "").must_equal %{[#<Trailblazer::Activity::End semantic=:success>, #<Trailblazer::Activity::End semantic="track_0.">, #<Trailblazer::Activity::End semantic=:invalid_result>]}
   end
 
   it "::build - THIS IS NOT THE GRAPH YOU MIGHT WANT " do # FIXME: what were we (or I, haha) testing in here?

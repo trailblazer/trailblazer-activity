@@ -311,17 +311,17 @@ class WrapTest < Minitest::Spec
 
       tree.gsub(/0x\w+/, "").gsub(/@.+_test/, "").must_equal %{`-- #<Trailblazer::Activity: {top}>
     |-- Start.default
-    |-- #<Proc:.rb:9 (lambda)>
+    |-- #<Proc:.rb:122 (lambda)>
     |-- A
     |   |-- Start.default
-    |   |-- #<Proc:.rb:11 (lambda)>
+    |   |-- #<Proc:.rb:124 (lambda)>
     |   |-- #<Trailblazer::Activity: {bottom}>
     |   |   |-- Start.default
-    |   |   |-- #<Proc:.rb:12 (lambda)>
+    |   |   |-- #<Proc:.rb:125 (lambda)>
     |   |   `-- End.success
-    |   |-- #<Proc:.rb:13 (lambda)>
+    |   |-- #<Proc:.rb:126 (lambda)>
     |   `-- End.success
-    |-- #<Proc:.rb:10 (lambda)>
+    |-- #<Proc:.rb:123 (lambda)>
     `-- End.success}
     end
 
