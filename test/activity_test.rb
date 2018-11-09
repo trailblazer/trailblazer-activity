@@ -356,5 +356,32 @@ ActivityTest::C
 }
     end
   end
+
+  describe "stop events" do
+    it "allows to define any task as stop event even though it's connected" do
+      activity = Module.new do
+        extend T.def_tasks(:a, :b, :c, :d)
+
+        extend Activity::Railway()
+
+        self[:circuit] = Trailblazer::Circuit.new(
+          {
+           start = Activity::Start.new(semantic: :default) => {Activity::Right => method(:a)},
+           method(:a) => {Activity::Right => method(:b)},
+           method(:b) => {Activity::Right => method(:c)},
+           method(:c) => {Activity::Right => method(:d)},
+          },
+
+          [method(:b), method(:d)],
+          start_task: start
+        )
+      end
+
+      signal, (ctx, _) = activity.([{seq: []}])
+
+      signal.must_equal Activity::Right
+      ctx.inspect.must_equal %{{:seq=>[:a, :b]}}
+    end
+  end
 end
 
