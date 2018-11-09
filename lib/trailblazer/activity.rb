@@ -38,7 +38,6 @@ module Trailblazer
     # Helpers such as Path, Output, End to be included into {Activity}.
     module DSLHelper
       extend Forwardable
-      def_delegators :@builder, :Path
       def_delegators DSL, :Output, :End, :Subprocess, :Track
 
       def Path(*args, &block)
