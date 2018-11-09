@@ -1,6 +1,7 @@
 class Trailblazer::Activity < Module
   module DSL
     module AddTask
+      # Entry point for DSL, called from #step and friends.
       def add_task!(strategy, polarizer, name, task, options, &block)
         # The beautiful thing about State.add is it doesn't mutate anything.
         # We're changing state here, on the outside, by overriding the ivars.

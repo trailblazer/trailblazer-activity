@@ -5,7 +5,7 @@ module Trailblazer
       def self.build(builder_class, normalizer, builder_options)
         builder, adds = builder_class.for(normalizer, builder_options) # e.g. Path.for(...) which creates a Builder::Path instance.
 
-        recompile(builder.freeze, adds.freeze)
+        recompile(builder, adds)
       end
 
       def self.add(builder, adds, strategy, polarizer, *args, &block)
@@ -13,7 +13,7 @@ module Trailblazer
 
         adds = adds + new_adds
 
-        recompile(builder, adds.freeze, returned_options)
+        recompile(builder, adds, returned_options)
       end
 
       private
