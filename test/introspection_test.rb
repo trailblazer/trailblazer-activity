@@ -80,6 +80,10 @@ class IntrospectionTest < Minitest::Spec
       end
     end
 
+    describe "#stop_events" do
+      it { graph.stop_events.inspect.must_equal %{[#<Trailblazer::Activity::End semantic=:success>]} }
+    end
+
     def assert_outputs(node, map)
       Hash[
         node.outputs.collect { |out| [out.semantic, out.signal] }
