@@ -50,15 +50,6 @@ Minitest::Spec.class_eval do
   end
 end
 
-Trailblazer::Activity.module_eval do
-  def self.build(&block)
-    Module.new do
-      extend Trailblazer::Activity[]
-      yield
-    end
-  end
-end
-
   # TODO: move to -magnetic
 module Trailblazer::Activity::Magnetic
   module Introspect
