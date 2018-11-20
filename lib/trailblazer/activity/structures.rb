@@ -50,8 +50,8 @@ module Trailblazer
     Output = Struct.new(:signal, :semantic)
 
     # Builds an {Activity::Output} instance.
-    def self.Output(signal, color)
-      Output.new(signal, color).freeze
+    def self.Output(signal, semantic)
+      Output.new(signal, semantic).freeze
     end
   end
 end
