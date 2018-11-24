@@ -70,4 +70,42 @@ class DocsActivityTest < Minitest::Spec
       pp event
     end
   end
+
+  # circuit interface
+  it do
+    #:circuit-interface-create
+    module Create
+      extend Trailblazer::Activity::Railway()
+      module_function
+
+      #:circuit-interface-validate
+      def validate((ctx, flow_options), **circuit_options)
+        #~method
+        is_valid = ctx[:name].nil? ? false : true
+
+        ctx    = ctx.merge(validate_outcome: is_valid) # you can change ctx
+        signal = is_valid ? Trailblazer::Activity::Right : Trailblazer::Activity::Left
+
+        #~method end
+        return signal, [ctx, flow_options]
+      end
+      #:circuit-interface-validate end
+
+      step task: method(:validate)
+    end
+    #:circuit-interface-create end
+
+    #:circuit-interface-call
+    ctx          = {name: "Face to Face"}
+    flow_options = {}
+
+    signal, (ctx, flow_options) = Create.([ctx, flow_options], {})
+
+    signal #=> #<Trailblazer::Activity::End semantic=:success>
+    ctx    #=> {:name=>\"Face to Face\", :validate_outcome=>true}
+    #:circuit-interface-call end
+
+    signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
+    ctx.inspect.must_equal %{{:name=>\"Face to Face\", :validate_outcome=>true}}
+  end
 end
