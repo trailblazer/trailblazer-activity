@@ -179,6 +179,16 @@ ActivityBuildTest::L
       task task: L, id: :notify_clerk#, Output(Right, :success) => :success
     end
 
+
+    # R(A), (Left, :failure) => "suspend_for_correct", (Right, :success) => "receive_process_id"
+    # R(B), (Left, :failure) => "inquiry_create", (Right, :success) => R()
+
+    # inquiry_create,      failure => Suspend() => inquiry_create
+    # receive_process_id
+    # process_result
+    # notify_clerk
+
+
     Cct(activity).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => ActivityBuildTest::A

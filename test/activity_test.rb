@@ -364,7 +364,7 @@ ActivityTest::C
 
         extend Activity::Railway()
 
-        self[:circuit] = Trailblazer::Circuit.new(
+        self[:circuit] = Trailblazer::Activity::Circuit.new(
           {
            start = Activity::Start.new(semantic: :default) => {Activity::Right => method(:a)},
            method(:a) => {Activity::Right => method(:b)},

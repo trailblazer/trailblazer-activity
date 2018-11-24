@@ -89,7 +89,8 @@ module Trailblazer
   end # Activity
 end
 
-require "trailblazer/circuit"
+require "trailblazer/activity/process"
+require "trailblazer/activity/circuit"
 require "trailblazer/activity/structures"
 require "trailblazer/activity/config"
 

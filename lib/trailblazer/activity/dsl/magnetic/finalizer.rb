@@ -59,7 +59,7 @@ module Trailblazer
         def self.circuit_hash_to_process(circuit_hash)
           end_events = end_events_for(circuit_hash)
 
-          return Circuit.new(circuit_hash, end_events, start_task: circuit_hash.keys.first), end_events
+          return Activity::Circuit.new(circuit_hash, end_events, start_task: circuit_hash.keys.first), end_events
         end
 
         # Find all end events that don't have outgoing connections.
