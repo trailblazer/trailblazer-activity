@@ -90,6 +90,8 @@ module Trailblazer
 end
 
 require "trailblazer/activity/process"
+require "trailblazer/activity/process/implementation"
+require "trailblazer/activity/process/intermediate"
 require "trailblazer/activity/circuit"
 require "trailblazer/activity/structures"
 require "trailblazer/activity/config"
