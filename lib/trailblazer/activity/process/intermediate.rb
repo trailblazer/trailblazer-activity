@@ -41,8 +41,6 @@ class Trailblazer::Activity
       def self.connections_for(outs, task_outputs, implementation)
         Hash[
           outs.collect { |required_out|
-            next if required_out.target.nil? # End
-
             [
               for_semantic(task_outputs, required_out.semantic).signal,
               implementation.fetch(required_out.target).circuit_task
