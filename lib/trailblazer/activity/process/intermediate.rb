@@ -25,14 +25,7 @@ class Trailblazer::Activity
 
             [
               task.circuit_task,
-              Hash[ # compute the connections for {circuit_task}.
-                outs.collect { |required_out|
-                  [
-                    for_semantic(task.outputs, required_out.semantic).signal,
-                    implementation.fetch(required_out.target).circuit_task
-                  ]
-                }
-              ]
+              task_ref.data[:stop_event] ? {} : connections_for(outs, task.outputs, implementation)
             ]
           end
         ]
@@ -42,6 +35,20 @@ class Trailblazer::Activity
           intermediate.stop_task_refs.collect { |task_ref| implementation.fetch(task_ref.id).circuit_task },
           start_task: intermediate.start_tasks.collect { |task_ref| implementation.fetch(task_ref.id).circuit_task }[0]
         )
+      end
+
+      # Compute the connections for {circuit_task}.
+      def self.connections_for(outs, task_outputs, implementation)
+        Hash[
+          outs.collect { |required_out|
+            next if required_out.target.nil? # End
+
+            [
+              for_semantic(task_outputs, required_out.semantic).signal,
+              implementation.fetch(required_out.target).circuit_task
+            ]
+          }.compact
+        ]
       end
 
       # DISCUSS: this is intermediate-independent?
@@ -62,8 +69,8 @@ class Trailblazer::Activity
       private
 
       # Apply to any array.
-      def self.for_semantic(ary, semantic)
-        ary.find { |out| out.semantic == semantic } or raise "`#{semantic}` not found"
+      def self.for_semantic(outputs, semantic)
+        outputs.find { |out| out.semantic == semantic } or raise "`#{semantic}` not found"
       end
     end # Intermediate
   end
