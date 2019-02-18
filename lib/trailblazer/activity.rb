@@ -67,8 +67,7 @@ module Trailblazer
     module PublicAPI
       include Accessor
 
-      require "trailblazer/activity/dsl/add_task"
-      include DSL::AddTask
+
 
       require "trailblazer/activity/interface"
       include Activity::Interface # DISCUSS
@@ -77,8 +76,8 @@ module Trailblazer
 
       include Activity::Inspect # DISCUSS
 
-      require "trailblazer/activity/dsl/magnetic/merge"
-      include Magnetic::Merge # Activity#merge!
+      # require "trailblazer/activity/dsl/magnetic/merge"
+      # include Magnetic::Merge # Activity#merge!
 
       # @private Note that {Activity.call} is considered private until the public API is stable.
       def call(args, circuit_options={})
@@ -109,11 +108,6 @@ require "trailblazer/activity/trace"
 require "trailblazer/activity/present"
 
 require "trailblazer/activity/introspect"
+require "trailblazer/activity/task_builder"
 
-require "trailblazer/activity/dsl/magnetic/builder/state"
-require "trailblazer/activity/dsl/magnetic" # the "magnetic" DSL
 
-require "trailblazer/activity/dsl/schema/sequence"
-require "trailblazer/activity/dsl/schema/dependencies"
-
-require "trailblazer/activity/dsl/record"
