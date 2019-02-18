@@ -34,16 +34,15 @@ module Trailblazer
     end
 
 
-    require "trailblazer/activity/dsl/helper"
     # Helpers such as Path, Output, End to be included into {Activity}.
-    module DSLHelper
-      extend Forwardable
-      def_delegators DSL, :Output, :End, :Subprocess, :Track
+    # module DSLHelper
+    #   extend Forwardable
+    #   def_delegators DSL, :Output, :End, :Subprocess, :Track
 
-      def Path(*args, &block)
-        self[:builder].Path(*args, &block)
-      end
-    end
+    #   def Path(*args, &block)
+    #     self[:builder].Path(*args, &block)
+    #   end
+    # end
 
     # Reader and writer method for DSL objects.
     # The writer {dsl[:key] = "value"} exposes immutable behavior and will replace the old
@@ -74,7 +73,7 @@ module Trailblazer
       require "trailblazer/activity/interface"
       include Activity::Interface # DISCUSS
 
-      include DSLHelper # DISCUSS
+      # include DSLHelper # DISCUSS
 
       include Activity::Inspect # DISCUSS
 
@@ -97,10 +96,8 @@ require "trailblazer/activity/structures"
 require "trailblazer/activity/config"
 
 require "trailblazer/activity/dsl/strategy/build_state"
-require "trailblazer/activity/dsl/strategy/path"
 require "trailblazer/activity/dsl/strategy/plan"
-require "trailblazer/activity/dsl/strategy/railway"
-require "trailblazer/activity/dsl/strategy/fast_track"
+# require "trailblazer/activity/dsl/strategy/fast_track"
 
 require "trailblazer/activity/task_wrap"
 require "trailblazer/activity/task_wrap/call_task"
@@ -118,7 +115,5 @@ require "trailblazer/activity/dsl/magnetic" # the "magnetic" DSL
 
 require "trailblazer/activity/dsl/schema/sequence"
 require "trailblazer/activity/dsl/schema/dependencies"
-
-require "trailblazer/activity/dsl/magnetic/builder/normalizer" # DISCUSS: name and location are odd. This one uses Activity ;)
 
 require "trailblazer/activity/dsl/record"

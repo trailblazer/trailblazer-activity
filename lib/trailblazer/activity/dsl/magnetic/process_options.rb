@@ -7,7 +7,7 @@ module Trailblazer
       # Returns PlusPoles and additional sequence alterations.
       module ProcessOptions
         module_function
-
+# TODO: remove me
         # Output => target (End/"id"/:color)
         # @return [PlusPole]
         # @return additional alterations
