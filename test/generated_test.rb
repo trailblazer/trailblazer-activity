@@ -35,13 +35,20 @@ class GeneratedTest < Minitest::Spec
       "End.failure" => Process::Implementation::Task(implementing::Failure, [Activity::Output(implementing::Failure, :failure)]),
     }
 
+    # DISCUSS: basically, this is a thin DSL that calls Intermediate.(;)
+    # you use this with a editor.
     mod = Module.new do
       extend Trailblazer::Activity::Generation(intermediate: intermediate)
 
-      step a: implementing.method(:a)
-      step "End.success" => implementing::Failure#, [Activity::Output(implementing::Failure, :failure)]),
+      implement true,
+        a: implementing.method(:a),
+        "End.success" => implementing::Failure#, [Activity::Output(implementing::Failure, :failure)]),
     end
 
+    # merge! ==> like inheritance without inheriting methods.
+
+    # Manu
+    # merge!(MyActivity, a: "different_method")
 
   end
 end
