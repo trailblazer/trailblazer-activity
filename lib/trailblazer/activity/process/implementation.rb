@@ -2,9 +2,9 @@ class Trailblazer::Activity
   class Process
     module Implementation
       # Implementation structures
-      Task = Struct.new(:circuit_task, :outputs)
+      Task = Struct.new(:circuit_task, :outputs, :extensions)
 
-      def self.Task(*args); Task.new(*args) end
+      def self.Task(task, outputs, extensions=[]); Task.new(task, outputs, extensions) end
     end
   end
 end

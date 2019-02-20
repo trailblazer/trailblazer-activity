@@ -26,6 +26,15 @@ class GeneratedTest < Minitest::Spec
       [Inter::TaskRef(:a)] # start
     )
 
+    # macro: {
+    #   task: ,
+    #   outputs: {}, connections: {},     # processed by DSL
+    #   extensions: [], # invoked by the Process
+    # }
+
+    # Implementation::Task(proc, outputs, extensions)
+
+
     implementation = {
       :a => Process::Implementation::Task(implementing.method(:a), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)]),
       :b => Process::Implementation::Task(implementing.method(:b), [Activity::Output("B/success", :success), Activity::Output("B/failure", :failure)]),

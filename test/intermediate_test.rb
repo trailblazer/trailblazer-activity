@@ -38,15 +38,19 @@ class IntermediateTest < Minitest::Spec
       [Inter::TaskRef(:a)] # start
     )
 
+    Config = Trailblazer::Activity::State::Config
+    a_extension_1 = ->(config:, **) { Config.send(:[]=, config, :a1, true)  }
+    a_extension_2 = ->(config:, **) { Config.send(:[]=, config, :a2, :yo)   }
+    b_extension_1 = ->(config:, **) { Config.send(:[]=, config, :b1, false) }
+
     implementation = {
-      :a => Process::Implementation::Task(implementing.method(:a), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)]),
-      :b => Process::Implementation::Task(implementing.method(:b), [Activity::Output("B/success", :success), Activity::Output("B/failure", :failure)]),
+      :a => Process::Implementation::Task(implementing.method(:a), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)],        [a_extension_1, a_extension_2]),
+      :b => Process::Implementation::Task(implementing.method(:b), [Activity::Output("B/success", :success), Activity::Output("B/failure", :failure)], [b_extension_1]),
       :c => Process::Implementation::Task(implementing.method(:c), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)]),
       :d => Process::Implementation::Task(implementing.method(:d), [Activity::Output("D/success", :success), Activity::Output(Left, :failure)]),
       "End.success" => Process::Implementation::Task(implementing::Success, [Activity::Output(implementing::Success, :success)]), # DISCUSS: End has one Output, signal is itself?
       "End.failure" => Process::Implementation::Task(implementing::Failure, [Activity::Output(implementing::Failure, :failure)]),
     }
-
 
     process = Inter.(intermediate, implementation)
 
@@ -70,5 +74,7 @@ class IntermediateTest < Minitest::Spec
 #<End/:failure>
 }
     process.to_h[:outputs].inspect.must_equal %{[#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:failure>, semantic=:failure>]}
+
+    process.to_h[:config].inspect.must_equal %{{:a1=>true, :a2=>:yo, :b1=>false}}
   end
 end

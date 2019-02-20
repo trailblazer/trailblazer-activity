@@ -14,7 +14,8 @@ class Trailblazer::Activity
         circuit = circuit(intermediate, implementation)
         nodes   = node_attributes(implementation)
         outputs = outputs(intermediate.stop_task_refs, nodes)
-        process = Process.new(circuit, outputs, nodes)
+        config  = config(implementation)
+        process = Process.new(circuit, outputs, nodes, config)
       end
 
       # From the intermediate "template" and the actual implementation, compile a {Circuit} instance.
@@ -62,6 +63,19 @@ class Trailblazer::Activity
           # Grab the {outputs} of the stop nodes.
           nodes_attributes.find { |node_attrs| task_ref.id == node_attrs.id }.outputs
         end.flatten(1)
+      end
+
+      # Invoke each task's extensions (usually coming from the DSL or some macro).
+
+
+      def self.config(implementation)
+        data = {}.freeze
+
+        implementation.each do |id, task|
+          task.extensions.each { |ext| data = ext.(config: data, id: id, task: task) } # DISCUSS: ext must return new {Config}.
+        end
+
+        data
       end
 
       private
