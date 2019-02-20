@@ -47,14 +47,8 @@ class IntermediateTest < Minitest::Spec
       "End.failure" => Process::Implementation::Task(implementing::Failure, [Activity::Output(implementing::Failure, :failure)]),
     }
 
-    circuit = Inter.circuit(intermediate, implementation)
 
-    nodes = Inter.node_attributes(implementation)
-    # generic NodeAttributes
-
-    outputs = Inter.outputs(intermediate.stop_task_refs, nodes)
-
-    process = Trailblazer::Activity::Process.new(circuit, outputs, nodes)
+    process = Inter.(intermediate, implementation)
 
     cct = Trailblazer::Developer::Render::Circuit.(process: process)
 
