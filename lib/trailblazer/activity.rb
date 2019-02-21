@@ -94,14 +94,10 @@ require "trailblazer/activity/circuit"
 require "trailblazer/activity/structures"
 require "trailblazer/activity/config"
 
-require "trailblazer/activity/dsl/strategy/build_state"
-require "trailblazer/activity/dsl/strategy/plan"
-# require "trailblazer/activity/dsl/strategy/fast_track"
-
 require "trailblazer/activity/task_wrap"
+require "trailblazer/activity/task_wrap/pipeline"
 require "trailblazer/activity/task_wrap/call_task"
 require "trailblazer/activity/task_wrap/runner"
-require "trailblazer/activity/task_wrap/merge"
 require "trailblazer/activity/task_wrap/variable_mapping"
 
 require "trailblazer/activity/trace"
