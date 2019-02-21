@@ -61,8 +61,8 @@ class IntermediateTest < Minitest::Spec
 
 #<End/:failure>
 }
-    schema.to_h[:outputs].inspect.must_equal %{[#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:failure>, semantic=:failure>]}
+    schema[:outputs].inspect.must_equal %{[#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:failure>, semantic=:failure>]}
 
-    schema.to_h[:config].inspect.must_equal %{{:a1=>true, :a2=>:yo, :b1=>false}}
+    schema[:config].inspect.must_equal %{{:a1=>true, :a2=>:yo, :b1=>false}}
   end
 end
