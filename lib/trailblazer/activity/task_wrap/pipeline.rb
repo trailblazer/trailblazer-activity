@@ -32,6 +32,17 @@ class Trailblazer::Activity
 
         Pipeline.new(seq.insert(index+1, insertion))
       end
+
+      class Merge
+        def initialize(*extension_rows)
+          @extension_rows = extension_rows
+        end
+
+        def call(task_wrap_pipeline)
+          @extension_rows.collect { |(insert_function, target_id, row)| task_wrap_pipeline = insert_function.(task_wrap_pipeline, target_id, row) }
+          task_wrap_pipeline
+        end
+      end
     end
   end
 end

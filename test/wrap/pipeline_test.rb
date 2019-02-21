@@ -16,15 +16,19 @@ class PipelineTest < Minitest::Spec
   it "one Runner() go" do
     task = implementing.method(:a)
 
-
+    Pipeline = Activity::TaskWrap::Pipeline
 
     # compile time
-    pipe1 = Activity::TaskWrap::Pipeline.new([["task_wrap.call_task", Activity::TaskWrap.method(:call_task)]]) # initial sequence
+    static_task_wrap = Pipeline.new([["task_wrap.call_task", Activity::TaskWrap.method(:call_task)]]) # initial sequence
 
     # run-time/compile time
-    pipe2 = Activity::TaskWrap::Pipeline.insert_before(pipe1, "task_wrap.call_task", ["user.add_1", method(:add_1)])
-    pipe2 = Activity::TaskWrap::Pipeline.insert_after(pipe2,  "task_wrap.call_task", ["user.add_2", method(:add_2)])
-    pp pipe2
+    merge = Pipeline::Merge.new(
+      [Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
+      [Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]],
+    )
+
+    pipe2 = merge.(static_task_wrap)
+
     # insert_after
     # prepend
     # append
@@ -37,7 +41,7 @@ class PipelineTest < Minitest::Spec
     original_args[0].inspect.must_equal %{{:seq=>[1, :a, 2]}}
 
     # no mutation!
-    wrap_ctx, original_args = pipe1.(wrap_ctx, [{seq: []}, {}])
+    wrap_ctx, original_args = static_task_wrap.(wrap_ctx, [{seq: []}, {}])
     original_args[0].inspect.must_equal %{{:seq=>[:a]}}
 
     # signal, args = wrap_ctx[:return_signal], wrap_ctx[:return_args]
