@@ -8,6 +8,7 @@ require "test_helper"
 #   DSL
 #   Instance (was {Process})
 class PipelineTest < Minitest::Spec
+  Pipeline = Activity::TaskWrap::Pipeline
 
   def add_1(wrap_ctx, original_args)
     ctx, _ = original_args[0]
@@ -20,36 +21,46 @@ class PipelineTest < Minitest::Spec
     return wrap_ctx, original_args # yay to mutable state. not.
   end
 
-  it "one Runner() go" do
-    task = implementing.method(:a)
+  describe "Runner" do
+    let(:task) { implementing.method(:a) }
 
-    Pipeline = Activity::TaskWrap::Pipeline
+    it "only calls task if no {wrap_static}" do
+      # compile time
+      static_task_wrap = Pipeline.new([["task_wrap.call_task", Activity::TaskWrap.method(:call_task)]]) # initial sequence
 
-    # compile time
-    static_task_wrap = Pipeline.new([["task_wrap.call_task", Activity::TaskWrap.method(:call_task)]]) # initial sequence
+      # run-time
+      original_args = [{seq: []}, {}]
 
-    # run-time/compile time
-    merge = Pipeline::Merge.new(
-      [Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
-      [Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]],
-    )
+  # no static_wrap
+      signal, args = Activity::TaskWrap::Runner.(task, original_args, {wrap_runtime: {}, activity: {wrap_static: {task => static_task_wrap}}})
 
-    # run-time
-    original_args = [{seq: []}, {}]
+      signal.inspect.must_equal %{Trailblazer::Activity::Right}
+      args.inspect.must_equal %{[{:seq=>[:a]}, {}]}
+    end
 
-# no static_wrap
-    signal, args = Activity::TaskWrap::Runner.(task, original_args, {wrap_runtime: {}, activity: {wrap_static: {task => static_task_wrap}}})
+    it "uses the {wrap_static} when available" do
+# compile time
+      static_task_wrap = Pipeline.new([["task_wrap.call_task", Activity::TaskWrap.method(:call_task)]]) # initial sequence
 
-    signal.inspect.must_equal %{Trailblazer::Activity::Right}
-    args.inspect.must_equal %{[{:seq=>[:a]}, {}]}
+      # run-time/compile time
+      merge = Pipeline::Merge.new(
+        [Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
+        [Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]],
+      )
+
+      wrap_static_for_task = merge.(static_task_wrap)
 
 # with static_wrap (implies a merge)
-    original_args = [{seq: []}, {}]
+      original_args = [{seq: []}, {}]
 
-    signal, args = Activity::TaskWrap::Runner.(task, original_args, {wrap_runtime: {}, activity: {wrap_static: {task => merge.(static_task_wrap)}}})
+      signal, args = Activity::TaskWrap::Runner.(task, original_args, {wrap_runtime: {}, activity: {wrap_static: {task => wrap_static_for_task}}})
 
-    signal.inspect.must_equal %{Trailblazer::Activity::Right}
-    args.inspect.must_equal %{[{:seq=>[1, :a, 2]}, {}]}
+      signal.inspect.must_equal %{Trailblazer::Activity::Right}
+      args.inspect.must_equal %{[{:seq=>[1, :a, 2]}, {}]}
+    end
+  end
+  it "one Runner() go" do
+
 
 
 
