@@ -87,7 +87,7 @@ module Trailblazer
   end # Activity
 end
 
-require "trailblazer/activity/process"
+require "trailblazer/activity/schema"
 require "trailblazer/activity/process/implementation"
 require "trailblazer/activity/process/intermediate"
 require "trailblazer/activity/circuit"

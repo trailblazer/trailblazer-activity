@@ -1,5 +1,5 @@
 class Trailblazer::Activity
-  class Process
+  class Schema
     class Intermediate < Struct.new(:wiring, :stop_task_refs, :start_tasks)
       # Intermediate structures
       TaskRef = Struct.new(:id, :data) # TODO: rename to NodeRef
@@ -8,14 +8,16 @@ class Trailblazer::Activity
       def self.TaskRef(id, data={}); TaskRef.new(id, data) end
       def self.Out(*args);           Out.new(*args)        end
 
-      # Compiles a {Process} instance from an {intermediate} structure and
+      # Compiles a {Schema} instance from an {intermediate} structure and
       # the {implementation} object references.
+      #
+      # Intermediate structure, Implementation, calls extensions, passes {}config # TODO
       def self.call(intermediate, implementation)
         circuit = circuit(intermediate, implementation)
         nodes   = node_attributes(implementation)
         outputs = outputs(intermediate.stop_task_refs, nodes)
         config  = config(implementation)
-        process = Process.new(circuit, outputs, nodes, config)
+        schema  = Schema.new(circuit, outputs, nodes, config)
       end
 
       # From the intermediate "template" and the actual implementation, compile a {Circuit} instance.

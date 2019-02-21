@@ -1,5 +1,5 @@
 class Trailblazer::Activity
-  class Process
+  class Schema
     module Implementation
       # Implementation structures
       Task = Struct.new(:circuit_task, :outputs, :extensions)

@@ -59,6 +59,7 @@ class PipelineTest < Minitest::Spec
       args.inspect.must_equal %{[{:seq=>[1, :a, 2]}, {}]}
     end
   end
+
   it "one Runner() go" do
 
 

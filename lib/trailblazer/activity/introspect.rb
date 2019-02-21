@@ -17,10 +17,10 @@ module Trailblazer
 
         def initialize(activity)
           @activity = activity
-          @process  = activity.to_h[:process] or raise
-          @circuit  = @process.circuit
+          @schema   = activity.to_h[:schema] or raise
+          @circuit  = @schema.circuit
           @map      = @circuit.to_h[:map]
-          @configs  = @process.nodes
+          @configs  = @schema.nodes
         end
 
         def find(id=nil, &block)
