@@ -1,14 +1,21 @@
 require "test_helper"
 
+# Activity::Instance
+#   .()
+#   self[:task_wrap, :bla]
+#
+# Activity::Path
+#   DSL
+#   Instance (was {Process})
 class PipelineTest < Minitest::Spec
 
   def add_1(wrap_ctx, original_args)
-    ctx, _ = original_args
+    ctx, _ = original_args[0]
     ctx[:seq] << 1
     return wrap_ctx, original_args # yay to mutable state. not.
   end
   def add_2(wrap_ctx, original_args)
-    ctx, _ = original_args
+    ctx, _ = original_args[0]
     ctx[:seq] << 2
     return wrap_ctx, original_args # yay to mutable state. not.
   end
@@ -27,22 +34,43 @@ class PipelineTest < Minitest::Spec
       [Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]],
     )
 
-    pipe2 = merge.(static_task_wrap)
+    # run-time
+    original_args = [{seq: []}, {}]
+
+# no static_wrap
+    signal, args = Activity::TaskWrap::Runner.(task, original_args, {wrap_runtime: {}, activity: {wrap_static: {task => static_task_wrap}}})
+
+    signal.inspect.must_equal %{Trailblazer::Activity::Right}
+    args.inspect.must_equal %{[{:seq=>[:a]}, {}]}
+
+# with static_wrap (implies a merge)
+    original_args = [{seq: []}, {}]
+
+    signal, args = Activity::TaskWrap::Runner.(task, original_args, {wrap_runtime: {}, activity: {wrap_static: {task => merge.(static_task_wrap)}}})
+
+    signal.inspect.must_equal %{Trailblazer::Activity::Right}
+    args.inspect.must_equal %{[{:seq=>[1, :a, 2]}, {}]}
+
+
+
+
+
+
+    # pipe2 = merge.(static_task_wrap)
 
     # insert_after
     # prepend
     # append
 
-    original_args = [{seq: []}, {}]
     # this happens in {TaskWrap::Runner}.
-    wrap_ctx      = {task: task}
+    # wrap_ctx      = {task: task}
 
-    wrap_ctx, original_args = pipe2.(wrap_ctx, original_args)
-    original_args[0].inspect.must_equal %{{:seq=>[1, :a, 2]}}
+    # wrap_ctx, original_args = pipe2.(wrap_ctx, original_args)
+    # original_args[0].inspect.must_equal %{{:seq=>[1, :a, 2]}}
 
-    # no mutation!
-    wrap_ctx, original_args = static_task_wrap.(wrap_ctx, [{seq: []}, {}])
-    original_args[0].inspect.must_equal %{{:seq=>[:a]}}
+    # # no mutation!
+    # wrap_ctx, original_args = static_task_wrap.(wrap_ctx, [{seq: []}, {}])
+    # original_args[0].inspect.must_equal %{{:seq=>[:a]}}
 
     # signal, args = wrap_ctx[:return_signal], wrap_ctx[:return_args]
 
