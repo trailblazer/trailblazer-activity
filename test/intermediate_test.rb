@@ -27,9 +27,9 @@ class IntermediateTest < Minitest::Spec
     )
 
     Config = Trailblazer::Activity::State::Config
-    a_extension_1 = ->(config:, **) { Config.send(:[]=, config, :a1, true)  }
-    a_extension_2 = ->(config:, **) { Config.send(:[]=, config, :a2, :yo)   }
-    b_extension_1 = ->(config:, **) { Config.send(:[]=, config, :b1, false) }
+    a_extension_1 = ->(config:, **) { Config.set(config, :a1, true)  }
+    a_extension_2 = ->(config:, **) { Config.set(config, :a2, :yo)   }
+    b_extension_1 = ->(config:, **) { Config.set(config, :b1, false) }
 
     implementation = {
       :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)],        [a_extension_1, a_extension_2]),

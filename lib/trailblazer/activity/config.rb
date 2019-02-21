@@ -3,12 +3,10 @@ module Trailblazer
     # Compile-time
     #
     # DISCUSS: we could replace parts with Hamster::Hash.
-    class Config
-      def self.build(variables={})
-        Hash[ variables.collect { |k,v| [k, v.freeze] } ].freeze
-      end
+    module Config
+      module_function
 
-      def self.[]=(state, *args)
+      def set(state, *args)
         if args.size == 2
           key, value = *args
 
@@ -25,7 +23,7 @@ module Trailblazer
         state
       end
 
-      def self.[](state, *args)
+      def get(state, *args)
         directive, key = *args
 
         return state[directive] if args.size == 1
