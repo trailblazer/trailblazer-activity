@@ -10,17 +10,6 @@ require "test_helper"
 class PipelineTest < Minitest::Spec
   Pipeline = Activity::TaskWrap::Pipeline
 
-  def add_1(wrap_ctx, original_args)
-    ctx, _ = original_args[0]
-    ctx[:seq] << 1
-    return wrap_ctx, original_args # yay to mutable state. not.
-  end
-  def add_2(wrap_ctx, original_args)
-    ctx, _ = original_args[0]
-    ctx[:seq] << 2
-    return wrap_ctx, original_args # yay to mutable state. not.
-  end
-
   describe "Runner" do
     let(:task) { implementing.method(:a) }
 

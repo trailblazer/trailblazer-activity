@@ -1,6 +1,5 @@
 class Trailblazer::Activity
   module TaskWrap
-    # DISCUSS: maybe a separate sequence and index map is faster?
     # This "circuit" is optimized for
     #   a) merging speed at run-time, since features like tracing will be applied here.
     #   b) execution speed. Every task in the real circuit is wrapped with one of us.
@@ -33,6 +32,8 @@ class Trailblazer::Activity
         Pipeline.new(seq.insert(index+1, insertion))
       end
 
+      # Merges {extension_rows} into the {task_wrap_pipeline}.
+      # This is usually used in step extensions or at runtime for {wrap_runtime}.
       class Merge
         def initialize(*extension_rows)
           @extension_rows = extension_rows

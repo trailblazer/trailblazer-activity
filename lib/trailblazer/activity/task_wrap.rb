@@ -10,30 +10,41 @@ module Trailblazer
         #   |-- Trace.capture_return [optional]
         #   |-- Wrap::End
     module TaskWrap
-      # The actual activity that implements the taskWrap.
-      def self.initial_activity
-        Module.new do
-          extend Trailblazer::Activity::Path(
-            name:             "taskWrap",
-            normalizer_class: Magnetic::DefaultNormalizer,
-            plus_poles:       Magnetic::PlusPoles.initial( :success => Magnetic::Builder::Path.default_outputs[:success] ) # DefaultNormalizer doesn't give us default PlusPoles.
-          )
-
-          task TaskWrap.method(:call_task), id: "task_wrap.call_task" # ::call_task is defined in task_wrap/call_task.
-        end
-      end
+      module_function
 
       # Compute runtime arguments necessary to execute a taskWrap per task of the activity.
-      def self.invoke(activity, args, wrap_runtime: {}, **circuit_options)
+      def invoke(activity, args, wrap_runtime: {}, **circuit_options)
         circuit_options = circuit_options.merge(
           runner:       TaskWrap::Runner,
           wrap_runtime: wrap_runtime,
 
-          activity: activity, # for Runner # FIXME: what is this?
+          activity: activity, # for Runner
         )
 
         # signal, (ctx, flow), circuit_options =
-        Runner.(activity, args, circuit_options)
+        activity.(args, circuit_options)
+      end
+
+      # {:extension} API
+      # Extend the static taskWrap from a macro or DSL call.
+      # Gets executed in {Intermediate.call} which also provides {config}.
+
+      # Use this in your macros if you want to extend the {taskWrap}.
+      def Extension(task:, merge:)
+        Extension.new(task: task, merge: Pipeline::Merge.new(*merge))
+      end
+
+      class Extension
+        def initialize(task:, merge:)
+          @task    = task
+          @merge = merge
+        end
+
+        def call(config:, **)
+          before_pipe = State::Config.get(config, :wrap_static, @task)
+
+          State::Config.set(config, :wrap_static, @task, @merge.(before_pipe))
+        end
       end
     end # TaskWrap
   end

@@ -7,7 +7,9 @@ require "minitest/autorun"
 require "trailblazer/developer/render/circuit"
 
 Minitest::Spec.class_eval do
-  Activity = Trailblazer::Activity
+  Activity  = Trailblazer::Activity
+  Inter     = Trailblazer::Activity::Schema::Intermediate
+  Schema    = Trailblazer::Activity::Schema
 
   def Cct(*args)
     Trailblazer::Developer::Render::Circuit.(*args)
@@ -39,6 +41,19 @@ Minitest::Spec.class_eval do
 
     implementing
   end
+
+  # taskWrap tester :)
+  def add_1(wrap_ctx, original_args)
+    ctx, _ = original_args[0]
+    ctx[:seq] << 1
+    return wrap_ctx, original_args # yay to mutable state. not.
+  end
+  def add_2(wrap_ctx, original_args)
+    ctx, _ = original_args[0]
+    ctx[:seq] << 2
+    return wrap_ctx, original_args # yay to mutable state. not.
+  end
+
 end
 
 require "trailblazer/activity/testing"
