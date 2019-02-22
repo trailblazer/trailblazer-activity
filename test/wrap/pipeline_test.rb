@@ -49,65 +49,16 @@ class PipelineTest < Minitest::Spec
     end
   end
 
-  it "one Runner() go" do
+  describe "Pipeline" do
+    it do
+      pipe1 = Activity::TaskWrap::Pipeline.new([["task_wrap.call_task", Activity::TaskWrap.method(:call_task)]]) # initial sequence
+      pipe2 = Activity::TaskWrap::Pipeline.insert_before(pipe1, "task_wrap.call_task", ["user.add_1", 2])
+      pipe3 = Activity::TaskWrap::Pipeline.insert_after(pipe2,  "task_wrap.call_task", ["user.add_2", 3])
+      pipe4 = Activity::TaskWrap::Pipeline.append(pipe3,  nil, ["user.add_2", "Last!"])
 
-
-
-
-
-
-
-    # pipe2 = merge.(static_task_wrap)
-
-    # insert_after
-    # prepend
-    # append
-
-    # this happens in {TaskWrap::Runner}.
-    # wrap_ctx      = {task: task}
-
-    # wrap_ctx, original_args = pipe2.(wrap_ctx, original_args)
-    # original_args[0].inspect.must_equal %{{:seq=>[1, :a, 2]}}
-
-    # # no mutation!
-    # wrap_ctx, original_args = static_task_wrap.(wrap_ctx, [{seq: []}, {}])
-    # original_args[0].inspect.must_equal %{{:seq=>[:a]}}
-
-    # signal, args = wrap_ctx[:return_signal], wrap_ctx[:return_args]
-
-=begin
-gem "benchmark-ips"
-require "benchmark/ips"
-
-    pipe__ = Activity::TaskWrap::Pipeline2.new([["task_wrap.call_task", Activity::TaskWrap.method(:call_task)]]) # initial sequence
-
-Benchmark.ips do |x|
-  x.report("insert") {
-    pipe2 = Activity::TaskWrap::Pipeline2.insert_before(pipe__, "task_wrap.call_task", ["user.add_1", method(:add_1)])
-    pipe2 = Activity::TaskWrap::Pipeline2.insert_after(pipe2,  "task_wrap.call_task", ["user.add_2", method(:add_2)])
-    pipe2 = Activity::TaskWrap::Pipeline2.insert_before(pipe2, "task_wrap.call_task", ["user.add_1", method(:add_1)])
-    pipe2 = Activity::TaskWrap::Pipeline2.insert_after(pipe2,  "task_wrap.call_task", ["user.add_2", method(:add_2)])
-    pipe2 = Activity::TaskWrap::Pipeline2.insert_before(pipe2, "task_wrap.call_task", ["user.add_1", method(:add_1)])
-    pipe2 = Activity::TaskWrap::Pipeline2.insert_after(pipe2,  "task_wrap.call_task", ["user.add_2", method(:add_2)])
-# pp pipe2
-# raise
-   }
-  x.report("+") {
-    pipe2 = Activity::TaskWrap::Pipeline.insert_before(pipe1, "task_wrap.call_task", ["user.add_1", method(:add_1)])
-    pipe2 = Activity::TaskWrap::Pipeline.insert_after(pipe2,  "task_wrap.call_task", ["user.add_2", method(:add_2)])
-    pipe2 = Activity::TaskWrap::Pipeline.insert_before(pipe2, "task_wrap.call_task", ["user.add_1", method(:add_1)])
-    pipe2 = Activity::TaskWrap::Pipeline.insert_after(pipe2,  "task_wrap.call_task", ["user.add_2", method(:add_2)])
-    pipe2 = Activity::TaskWrap::Pipeline.insert_before(pipe2, "task_wrap.call_task", ["user.add_1", method(:add_1)])
-    pipe2 = Activity::TaskWrap::Pipeline.insert_after(pipe2,  "task_wrap.call_task", ["user.add_2", method(:add_2)])
-# pp pipe2
-# raise
-   }
-
-  x.compare!
-end
-=end
-
-
-
+      pipe1.sequence.inspect.must_equal %{[[\"task_wrap.call_task\", #<Method: Trailblazer::Activity::TaskWrap.call_task>]]}
+      pipe4.sequence.inspect.must_equal %{[[\"user.add_1\", 2], [\"task_wrap.call_task\", #<Method: Trailblazer::Activity::TaskWrap.call_task>], [\"user.add_2\", 3], [\"user.add_2\", \"Last!\"]]}
+    end
   end
+
 end
