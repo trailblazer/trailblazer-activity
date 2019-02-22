@@ -23,6 +23,10 @@ module Trailblazer
       @schema[:config][*key]
     end
 
+    def to_h
+      @schema
+    end
+
 
 
 

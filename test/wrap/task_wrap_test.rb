@@ -2,8 +2,6 @@ require "test_helper"
 
 # Test taskWrap concepts along with {Instance}s.
 class TaskWrapTest < Minitest::Spec
-  TaskWrap  = Trailblazer::Activity::TaskWrap
-
   it "populates activity[:wrap_static] and uses it at run-time" do
     intermediate = Inter.new(
       {

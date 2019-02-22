@@ -32,6 +32,10 @@ class Trailblazer::Activity
         Pipeline.new(seq.insert(index+1, insertion))
       end
 
+      def self.append(pipe, _, insertion) # TODO: test me.
+        Pipeline.new(pipe.sequence + [insertion])
+      end
+
       # Merges {extension_rows} into the {task_wrap_pipeline}.
       # This is usually used in step extensions or at runtime for {wrap_runtime}.
       class Merge

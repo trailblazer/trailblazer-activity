@@ -19,63 +19,59 @@ module Trailblazer
           }
 
           tracing_circuit_options = {
-            wrap_runtime:  ::Hash.new(Trace::TaskWrap.plan), # FIXME: this still overrides existing :wrap_runtime.
+            wrap_runtime:  ::Hash.new(Trace.merge_plan), # FIXME: this still overrides existing :wrap_runtime.
           }
 
           return activity, [ options, tracing_flow_options.merge(flow_options) ], circuit_options.merge(tracing_circuit_options)
         end
       end
 
-      module TaskWrap
-        module_function
-        # Insertions for the trace tasks that capture the arguments just before calling the task,
-        # and before the TaskWrap is finished.
-        #
-        # Note that the TaskWrap steps are implemented in Activity::TaskWrap::Trace.
-        #
-        # @private
-        def plan
-          Module.new do
-            extend Activity::Path::Plan()
+      module_function
+      # Insertions for the trace tasks that capture the arguments just before calling the task,
+      # and before the TaskWrap is finished.
+      #
+      # Note that the TaskWrap steps are implemented in Activity::TaskWrap::Trace.
+      #
+      # @private
+      def merge_plan
+        TaskWrap::Pipeline::Merge.new(
+          [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.capture_args",   Trace.method(:capture_args)]],
+          [TaskWrap::Pipeline.method(:append),        nil,                   ["task_wrap.capture_return", Trace.method(:capture_return)]],
+        )
+      end
 
-            task Trace::TaskWrap.method(:capture_args),   id: "task_wrap.capture_args",   before: "task_wrap.call_task"
-            task Trace::TaskWrap.method(:capture_return), id: "task_wrap.capture_return", before: "End.success", group: :end
-          end
-        end
+      # taskWrap step to capture incoming arguments of a step.
+      def capture_args(wrap_config, original_args)
+        original_args = capture_for(wrap_config[:task], *original_args)
 
-        # taskWrap step to capture incoming arguments of a step.
-        def capture_args((wrap_config, original_args), **circuit_options)
-          original_args = capture_for(wrap_config[:task], *original_args)
+        return wrap_config, original_args
+      end
 
-          return Trailblazer::Activity::Right, [wrap_config, original_args], circuit_options
-        end
+      # taskWrap step to capture outgoing arguments from a step.
+      def capture_return(wrap_config, original_args)
+        (original_options, original_flow_options, _) = original_args[0]
 
-        # taskWrap step to capture outgoing arguments from a step.
-        def capture_return((wrap_config, original_args), **circuit_options)
-          (original_options, original_flow_options, _) = original_args[0]
+        original_flow_options[:stack] << Entity::Output.new(
+          wrap_config[:task], {}, wrap_config[:return_signal]
+        ).freeze
 
-          original_flow_options[:stack] << Entity::Output.new(
-            wrap_config[:task], {}, wrap_config[:return_signal]
-          ).freeze
-
-          original_flow_options[:stack].unindent!
+        original_flow_options[:stack].unindent!
 
 
-          return Trailblazer::Activity::Right, [wrap_config, original_args], circuit_options
-        end
+        return wrap_config, original_args
+      end
 
-        # It's important to understand that {flow[:stack]} is mutated by design. This is needed so
-        # in case of exceptions we still have a "global" trace - unfortunately Ruby doesn't allow
-        # us a better way.
-        def capture_for(task, (ctx, flow), activity:, **circuit_options)
-          flow[:stack].indent!
+      # It's important to understand that {flow[:stack]} is mutated by design. This is needed so
+      # in case of exceptions we still have a "global" trace - unfortunately Ruby doesn't allow
+      # us a better way.
+      def capture_for(task, (ctx, flow), activity:, **circuit_options)
+        flow[:stack].indent!
 
-          flow[:stack] << Entity::Input.new(
-            task, activity, [ctx, ctx.inspect]
-          ).freeze
+        flow[:stack] << Entity::Input.new(
+          task, activity, [ctx, ctx.inspect]
+        ).freeze
 
-          return [ctx, flow], circuit_options.merge(activity: activity)
-        end
+        return [ctx, flow], circuit_options.merge(activity: activity)
       end
 
       # Structures used in {capture_args} and {capture_return}.

@@ -7,25 +7,47 @@ class TraceTest < Minitest::Spec
   D = ->(*args) { [ Activity::Right, *args ] }
 
   let(:activity) do
-    nested = bc
-    activity = Module.new do
-      extend Activity::Path(name: :top)
+    intermediate = Inter.new(
+      {
+        Inter::TaskRef(:B) => [Inter::Out(:success, :c)],
+        Inter::TaskRef(:C) => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+      },
+      [Inter::TaskRef("End.success")],
+      [Inter::TaskRef(:B)] # start
+    )
 
-      task task: A, id: "A"
-      task task: nested, nested.outputs[:success] => Track(:success), id: "<Nested>"
-      task task: D, id: "D"
-    end
-    activity
+    implementation = {
+      :B => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: b, merge: TaskWrap.method(:initial_wrap_static))]),
+      :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+    }
+
+    # schema = Inter.(intermediate, implementation)
+
+
   end
 
   let(:bc) do
-    activity = Module.new do
-      extend Activity::Path()
+     intermediate = Inter.new(
+      {
+        Inter::TaskRef(:B) => [Inter::Out(:success, :C)],
+        Inter::TaskRef(:C) => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+      },
+      [Inter::TaskRef("End.success")],
+      [Inter::TaskRef(:B)] # start
+    )
 
-      task task: B, id: "B"
-      task task: C, id: "C"
-    end
-    activity
+    implementation = {
+      :B => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: b, merge: TaskWrap.method(:initial_wrap_static))]),
+      :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+    }
+
+    schema = Inter.(intermediate, implementation)
+
+    Activity.new(schema)
   end
 
   it do
@@ -35,13 +57,13 @@ class TraceTest < Minitest::Spec
   it "traces flat activity" do
     stack, signal, (options, flow_options), _ = Trailblazer::Activity::Trace.invoke( bc,
       [
-        { content: "Let's start writing" },
+        { seq: [] },
         { flow: true }
       ]
     )
 
     signal.class.inspect.must_equal %{Trailblazer::Activity::End}
-    options.inspect.must_equal %{{:content=>\"Let's start writing\"}}
+    options.inspect.must_equal %{{:seq=>[:b, :c]}}
     flow_options[:flow].inspect.must_equal %{true}
 
     output = Trailblazer::Activity::Trace::Present.(stack)
@@ -58,7 +80,7 @@ class TraceTest < Minitest::Spec
   it do
     stack, _ = Trailblazer::Activity::Trace.invoke( activity,
       [
-        { content: "Let's start writing" },
+        { seq: [] },
         {}
       ]
     )

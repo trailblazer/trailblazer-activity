@@ -10,6 +10,7 @@ Minitest::Spec.class_eval do
   Activity  = Trailblazer::Activity
   Inter     = Trailblazer::Activity::Schema::Intermediate
   Schema    = Trailblazer::Activity::Schema
+  TaskWrap  = Trailblazer::Activity::TaskWrap
 
   def Cct(*args)
     Trailblazer::Developer::Render::Circuit.(*args)
