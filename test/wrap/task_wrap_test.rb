@@ -50,5 +50,10 @@ class TaskWrapTest < Minitest::Spec
     signal, (ctx, flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
 
     ctx.inspect.must_equal %{{:seq=>[:a, 1, :a, 2, :b, :c, 1, :c, 2]}}
+
+# it works nested plus allows {wrap_runtime}
+
+
   end
+}
 end
