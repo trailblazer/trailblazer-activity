@@ -109,7 +109,7 @@ class TraceTest < Minitest::Spec
   it "Present allows to inject :renderer and pass through additional arguments to the renderer" do
     stack, _ = Trailblazer::Activity::Trace.invoke( activity,
       [
-        { content: "Let's start writing" },
+        { seq: [] },
         {}
       ]
     )
@@ -122,15 +122,15 @@ class TraceTest < Minitest::Spec
 
     output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
-    output.must_equal %{`-- 1/#<Trailblazer::Activity: {top}>/#<Trailblazer::Activity: {top}>/pink
+    output.must_equal %{`-- 1/#<Trailblazer::Activity:>/#<Trailblazer::Activity:>/pink
     |-- 2/#<Trailblazer::Activity::Start semantic=:default>/Start.default/pink
-    |-- 2/#<Proc:.rb:4 (lambda)>/A/pink
-    |-- 2/#<Trailblazer::Activity: {}>/<Nested>/pink
+    |-- 2/#<Method: #<Module:>.b>/B/pink
+    |-- 2/#<Trailblazer::Activity:>/D/pink
     |   |-- 3/#<Trailblazer::Activity::Start semantic=:default>/Start.default/pink
-    |   |-- 3/#<Proc:.rb:5 (lambda)>/B/pink
-    |   |-- 3/#<Proc:.rb:6 (lambda)>/C/pink
+    |   |-- 3/#<Method: #<Module:>.b>/B/pink
+    |   |-- 3/#<Method: #<Module:>.c>/C/pink
     |   `-- 3/#<Trailblazer::Activity::End semantic=:success>/End.success/pink
-    |-- 2/#<Proc:.rb:7 (lambda)>/D/pink
+    |-- 2/#<Method: #<Module:>.f>/E/pink
     `-- 2/#<Trailblazer::Activity::End semantic=:success>/End.success/pink}
   end
 
