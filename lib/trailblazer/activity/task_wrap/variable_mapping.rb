@@ -77,7 +77,7 @@ class Trailblazer::Activity < Module
       # {input.call()} is invoked in the circuit.
       # `original_args` are the actual args passed to the wrapped task: [ [options, ..], circuit_options ]
       #
-      def call( (wrap_ctx, original_args), circuit_options )
+      def call(wrap_ctx, original_args)
         # let user compute new ctx for the wrapped task.
         input_ctx = apply_filter(*original_args)
 
@@ -87,7 +87,7 @@ class Trailblazer::Activity < Module
         (original_ctx, original_flow_options), original_circuit_options = original_args
 
         # instead of the original Context, pass on the filtered `input_ctx` in the wrap.
-        return Trailblazer::Activity::Right, [ wrap_ctx, [[input_ctx, original_flow_options], original_circuit_options] ]
+        return wrap_ctx, [[input_ctx, original_flow_options], original_circuit_options]
       end
 
       private
@@ -132,7 +132,7 @@ class Trailblazer::Activity < Module
       end
 
       # Runs your filter and replaces the ctx in `wrap_ctx[:return_args]` with the filtered one.
-      def call( (wrap_ctx, original_args), **circuit_options )
+      def call(wrap_ctx, original_args)
         (original_ctx, original_flow_options), original_circuit_options = original_args
 
         returned_ctx, _ = wrap_ctx[:return_args]     # this is the Context returned from `call`ing the wrapped user task.
@@ -143,7 +143,7 @@ class Trailblazer::Activity < Module
         wrap_ctx = wrap_ctx.merge( return_args: [output_ctx, original_flow_options] )
 
         # and then pass on the "new" context.
-        return Trailblazer::Activity::Right, [ wrap_ctx, original_args ]
+        return wrap_ctx, original_args
       end
 
       private

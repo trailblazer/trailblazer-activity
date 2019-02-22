@@ -26,23 +26,51 @@ class VariableMappingTest < Minitest::Spec
   end
 
   let(:nested) do
-    Module.new do
-      extend Activity::Path()
+    intermediate = Inter.new(
+      {
+        Inter::TaskRef("Start.default") => [Inter::Out(:success, :C)],
+        Inter::TaskRef(:C) => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+      },
+      [Inter::TaskRef("End.success")],
+      [Inter::TaskRef("Start.default")], # start
+    )
 
-      task task: C
-    end
+    implementation = {
+      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        [TaskWrap::Extension.new(task: st, merge: TaskWrap.method(:initial_wrap_static))]),
+      :C => Schema::Implementation::Task(c = C, [Activity::Output(Activity::Right, :success)],                                        [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+    }
+
+    schema = Inter.(intermediate, implementation)
+
+    Activity.new(schema)
   end
 
   let (:activity) do
-    _nested = nested
+    intermediate = Inter.new(
+      {
+        Inter::TaskRef("Start.default") => [Inter::Out(:success, :Model)],
+        Inter::TaskRef(:Model)  => [Inter::Out(:success, :Nested)],
+        Inter::TaskRef(:Nested) => [Inter::Out(:success, :Uuid)],
+        Inter::TaskRef(:Uuid)   => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+      },
+      [Inter::TaskRef("End.success")],
+      [Inter::TaskRef("Start.default")], # start
+    )
 
-    Module.new do
-      extend Activity::Path()
+    implementation = {
+      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        [TaskWrap::Extension.new(task: st, merge: TaskWrap.method(:initial_wrap_static))]),
+      :Model => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: b, merge: TaskWrap.method(:initial_wrap_static))]),
+      :Nested => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)],                  [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
+      :Uuid => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: d, merge: TaskWrap.method(:initial_wrap_static))]),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+    }
 
-      task task: Model
-      task task: _nested, _nested.outputs[:success] => Track(:success)
-      task task: Uuid
-    end
+    schema = Inter.(intermediate, implementation)
+
+    Activity.new(schema)
   end
 
   describe "pure Input/Output" do
@@ -69,20 +97,20 @@ class VariableMappingTest < Minitest::Spec
       runtime = {}
 
       # add filters around Model.
-      runtime[ Model ] = Module.new do
-        extend Activity::Path::Plan()
+      merge = [
+        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new( Trailblazer::Option(model_input) )]],
+        [TaskWrap::Pipeline.method(:append),  nil, ["task_wrap.output", TaskWrap::Output.new( Trailblazer::Option(model_output) )]],
+      ]
 
-        task Activity::TaskWrap::Input.new( Trailblazer::Option(model_input) ),   id: "task_wrap.input", before: "task_wrap.call_task"
-        task Activity::TaskWrap::Output.new( Trailblazer::Option(model_output) ), id: "task_wrap.output", before: "End.success", group: :end
-      end
+      runtime[ Model ] = TaskWrap::Pipeline::Merge.new(*merge)
 
       # add filters around Uuid.
-      runtime[ Uuid ] = Module.new do
-        extend Activity::Path::Plan()
+      merge = [
+        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new( Trailblazer::Option(uuid_input) )]],
+        [TaskWrap::Pipeline.method(:append),  nil, ["task_wrap.output", TaskWrap::Output.new( Trailblazer::Option(uuid_output) )]],
+      ]
 
-        task Activity::TaskWrap::Input.new( Trailblazer::Option(uuid_input) ),   id: "task_wrap.input", before: "task_wrap.call_task"
-        task Activity::TaskWrap::Output.new( Trailblazer::Option(uuid_output) ), id: "task_wrap.output", before: "End.success", group: :end
-      end
+      runtime[ Uuid ] = TaskWrap::Pipeline::Merge.new(*merge)
 
       signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
         [
@@ -93,7 +121,7 @@ class VariableMappingTest < Minitest::Spec
         wrap_runtime: runtime, # dynamic additions from the outside (e.g. tracing), also per task.
       )
 
-      signal.must_equal activity.outputs[:success].signal
+      signal.must_equal activity.to_h[:outputs][0].signal
       options.must_equal({:a=>1, :model_a=>4, :c=>1, :uuid_a => 7 })
     end
   end
