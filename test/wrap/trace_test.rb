@@ -57,7 +57,7 @@ class TraceTest < Minitest::Spec
   end
 
   it do
-    activity.({})
+    activity.([{seq: []}])
   end
 
   it "traces flat activity" do
