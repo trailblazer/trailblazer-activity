@@ -26,20 +26,6 @@ module Trailblazer
     def to_h
       @schema
     end
-
-
-
-
-
-
-    module Inspect
-      def inspect
-        "#<Trailblazer::Activity: {#{name || self[:options][:name]}}>"
-      end
-
-      alias_method :to_s, :inspect
-    end
-
   end # Activity
 end
 

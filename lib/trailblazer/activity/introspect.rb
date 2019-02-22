@@ -7,7 +7,6 @@ module Trailblazer
         Graph.new(*args)
       end
 
-      # TODO: remove Finalizer namespace from NodeConfiguration
       # TODO: order of step/fail/pass in Node would be cool to have
       # TODO: #outputs
 
@@ -17,10 +16,10 @@ module Trailblazer
 
         def initialize(activity)
           @activity = activity
-          @schema   = activity.to_h[:schema] or raise
-          @circuit  = @schema.circuit
+          @schema   = activity.to_h or raise
+          @circuit  = @schema[:circuit]
           @map      = @circuit.to_h[:map]
-          @configs  = @schema.nodes
+          @configs  = @schema[:nodes]
         end
 
         def find(id=nil, &block)
