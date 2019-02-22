@@ -53,7 +53,11 @@ class TaskWrapTest < Minitest::Spec
 
 # it works nested plus allows {wrap_runtime}
 
+    wrap_runtime = {c => TaskWrap::Pipeline::Merge.new(*merge)}
 
+    signal, (ctx, flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{wrap_runtime: wrap_runtime})
+
+    ctx.inspect.must_equal %{{:seq=>[:a, 1, :a, 2, :b, 1, :c, 2, 1, 1, :c, 2, 2]}}
   end
-}
+
 end
