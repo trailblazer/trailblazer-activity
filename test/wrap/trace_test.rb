@@ -31,15 +31,17 @@ class TraceTest < Minitest::Spec
   let(:bc) do
      intermediate = Inter.new(
       {
+        Inter::TaskRef("Start.default") => [Inter::Out(:success, :B)],
         Inter::TaskRef(:B) => [Inter::Out(:success, :C)],
         Inter::TaskRef(:C) => [Inter::Out(:success, "End.success")],
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
       },
       [Inter::TaskRef("End.success")],
-      [Inter::TaskRef(:B)] # start
+      [Inter::TaskRef("Start.default")], # start
     )
 
     implementation = {
+      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        [TaskWrap::Extension.new(task: st, merge: TaskWrap.method(:initial_wrap_static))]),
       :B => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: b, merge: TaskWrap.method(:initial_wrap_static))]),
       :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
       "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
@@ -67,10 +69,9 @@ class TraceTest < Minitest::Spec
     flow_options[:flow].inspect.must_equal %{true}
 
     output = Trailblazer::Activity::Trace::Present.(stack)
-
     output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
-    output.must_equal %{`-- #<Trailblazer::Activity: {}>
+    output.must_equal %{`-- #<Trailblazer::Activity:>
     |-- Start.default
     |-- B
     |-- C

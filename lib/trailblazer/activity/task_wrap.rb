@@ -17,11 +17,11 @@ module Trailblazer
         circuit_options = circuit_options.merge(
           runner:       TaskWrap::Runner,
           wrap_runtime: wrap_runtime,
-          # activity:   activity, # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
+          activity:     {wrap_static: {activity => initial_wrap_static}, nodes: {}}, # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
         )
 
         # signal, (ctx, flow), circuit_options =
-        activity.(args, circuit_options)
+        Runner.(activity, args, circuit_options)
       end
 
       # {:extension} API

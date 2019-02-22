@@ -19,7 +19,7 @@ module Trailblazer
           }
 
           tracing_circuit_options = {
-            wrap_runtime:  ::Hash.new(Trace.merge_plan), # FIXME: this still overrides existing :wrap_runtime.
+            wrap_runtime:  ::Hash.new(Trace.merge_plan), # DISCUSS: this overrides existing {:wrap_runtime}.
           }
 
           return activity, [ options, tracing_flow_options.merge(flow_options) ], circuit_options.merge(tracing_circuit_options)
@@ -29,8 +29,6 @@ module Trailblazer
       module_function
       # Insertions for the trace tasks that capture the arguments just before calling the task,
       # and before the TaskWrap is finished.
-      #
-      # Note that the TaskWrap steps are implemented in Activity::TaskWrap::Trace.
       #
       # @private
       def merge_plan
