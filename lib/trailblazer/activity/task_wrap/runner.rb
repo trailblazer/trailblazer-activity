@@ -47,7 +47,7 @@ class Trailblazer::Activity
     # Retrieve the static wrap config from {activity}.
     def self.wrap_static_for(task, activity:, **)
       wrap_static = activity[:wrap_static]
-      wrap_static[task] or raise "ficken #{task}"
+      wrap_static[task] or raise "#{task}"
     end
   end
 end

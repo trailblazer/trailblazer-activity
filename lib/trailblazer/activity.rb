@@ -1,5 +1,7 @@
 module Trailblazer
   class Activity
+    # include Activity::Interface # TODO
+
     def initialize(schema)
       @schema = schema
     end
@@ -34,29 +36,10 @@ module Trailblazer
       alias_method :to_s, :inspect
     end
 
-
-
-
-
-    # FIXME: still to be decided
-    # By including those modules, we create instance methods.
-    # Later, this module is `extended` in Path, Railway and FastTrack, and
-    # imports the DSL methods as class methods.
-    module PublicAPI
-      require "trailblazer/activity/interface"
-      include Activity::Interface # DISCUSS
-
-      include Activity::Inspect # DISCUSS
-
-      # require "trailblazer/activity/dsl/magnetic/merge"
-      # include Magnetic::Merge # Activity#merge!
-
-      # @private Note that {Activity.call} is considered private until the public API is stable.
-
-    end
   end # Activity
 end
 
+require "trailblazer/activity/interface"
 require "trailblazer/activity/schema"
 require "trailblazer/activity/process/implementation"
 require "trailblazer/activity/process/intermediate"

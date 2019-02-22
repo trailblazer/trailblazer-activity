@@ -14,7 +14,7 @@ module Trailblazer
     # a) maintains a semantic that is used to further connect that very event
     # b) its `End#call` method returns the end instance itself as the signal.
     class End
-      def initialize(semantic:, **options)
+      def initialize(semantic:, **options) # FIXME: does an End really need {semantic}? isn't that set from the outside?
         @options = options.merge(semantic: semantic)
       end
 
