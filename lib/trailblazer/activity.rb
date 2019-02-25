@@ -31,8 +31,8 @@ end
 
 require "trailblazer/activity/interface"
 require "trailblazer/activity/schema"
-require "trailblazer/activity/process/implementation"
-require "trailblazer/activity/process/intermediate"
+require "trailblazer/activity/schema/implementation"
+require "trailblazer/activity/schema/intermediate"
 require "trailblazer/activity/circuit"
 require "trailblazer/activity/structures"
 require "trailblazer/activity/config"
