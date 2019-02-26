@@ -13,7 +13,6 @@ module Trailblazer
 
       # @private This API is still under construction.
       class Graph
-
         def initialize(activity)
           @activity = activity
           @schema   = activity.to_h or raise

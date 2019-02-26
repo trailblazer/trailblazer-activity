@@ -104,7 +104,10 @@ Minitest::Spec.class_eval do
 
     Activity.new(schema)
   end
+
+  require "trailblazer/activity/testing"
+  include Trailblazer::Activity::Testing::Assertions
+
 end
 
-require "trailblazer/activity/testing"
 T = Trailblazer::Activity::Testing

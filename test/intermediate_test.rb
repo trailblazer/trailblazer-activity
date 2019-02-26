@@ -63,6 +63,61 @@ class IntermediateTest < Minitest::Spec
     schema[:config].inspect.must_equal %{{:a1=>true, :a2=>:yo, :b1=>false}}
   end
 
+
+    def implementation(c_extensions)
+      {
+        :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  c_extensions),
+        "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []),
+      }
+    end
+
+  it "start and stop can be arbitrary" do
+    intermediate =
+      Inter.new(
+        {
+          Inter::TaskRef("Start.default")                 => [Inter::Out(:success, :C)],
+          Inter::TaskRef(:C)                              => [Inter::Out(:success, :D)],
+          Inter::TaskRef(:D)                              => [Inter::Out(:win,     :E)],
+          Inter::TaskRef(:E)                              => [Inter::Out(:success, "End.success")],
+          Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+        },
+  # arbitrary start and end event.
+        [Inter::TaskRef(:D)], # end events
+        [Inter::TaskRef(:C)], # start
+      )
+
+    implementation =
+      {
+        "Start.default" => Schema::Implementation::Task(implementing::Start, [Activity::Output(Activity::Right, :success)], []),
+        :C => Schema::Implementation::Task(implementing.method(:c), [Activity::Output(Activity::Right, :success)], []),
+        :D => Schema::Implementation::Task(implementing.method(:d), [Activity::Output("D/stop", :win)], []),
+        :E => Schema::Implementation::Task(implementing.method(:f), [Activity::Output(Activity::Right, :success)], []),
+        "End.success" => Schema::Implementation::Task(implementing::Success, [Activity::Output(implementing::Success, :success)], []),
+      }
+
+    schema = Inter.(intermediate, implementation)
+
+    schema[:outputs].inspect.must_equal %{[#<struct Trailblazer::Activity::Output signal="D/stop", semantic=:win>]}
+
+    assert_circuit( schema, %{
+#<Start/:default>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.c>
+#<Method: #<Module:0x>.c>
+ {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
+#<Method: #<Module:0x>.d>
+ {D/stop} => #<Method: #<Module:0x>.f>
+#<Method: #<Module:0x>.f>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
+})
+
+    signal, (ctx, _) = schema[:circuit].([{seq: []}])
+
+    signal.inspect.must_equal %{Trailblazer::Activity::Right}
+# stop at :D.
+    ctx.inspect.must_equal %{{:seq=>[:c, :d]}}
+  end
+
   describe ":extension API: Config::State" do
     let(:intermediate) {
       Inter.new(
