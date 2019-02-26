@@ -68,8 +68,6 @@ class Trailblazer::Activity
       end
 
       # Invoke each task's extensions (usually coming from the DSL or some macro).
-
-
       def self.config(implementation)
         data = {}.freeze
 

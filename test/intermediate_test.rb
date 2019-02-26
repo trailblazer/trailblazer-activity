@@ -62,4 +62,41 @@ class IntermediateTest < Minitest::Spec
 #   test it works with and without [bla_ext], and more than one per line
     schema[:config].inspect.must_equal %{{:a1=>true, :a2=>:yo, :b1=>false}}
   end
+
+  describe ":extension API: Config::State" do
+    let(:intermediate) {
+      Inter.new(
+        {
+          Inter::TaskRef(:C)                              => [Inter::Out(:success, "End.success")],
+          Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+        },
+        [Inter::TaskRef("End.success")],
+        [Inter::TaskRef(:C)], # start
+      )
+    }
+
+    def implementation(c_extensions)
+      {
+        :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  c_extensions),
+        "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []),
+      }
+    end
+
+    it "doesn't allow mutations" do
+      ext_a = ->(config:, **) { config[:a] = "bla" }
+
+      assert_raises FrozenError do
+        schema = Inter.(intermediate, implementation([ext_a]))
+      end
+    end
+
+    it "allows using the {Config} API" do
+      ext_a = ->(config:, **) { Activity::State::Config.set(config, :a, "bla") }
+      ext_b = ->(config:, **) { Activity::State::Config.set(config, :b, "blubb") }
+
+      schema = Inter.(intermediate, implementation([ext_a, ext_b]))
+
+      schema[:config].to_h.inspect.must_equal %{{:a=>\"bla\", :b=>\"blubb\"}}
+    end
+  end
 end
