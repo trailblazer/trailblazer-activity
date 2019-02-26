@@ -1,4 +1,5 @@
 module Trailblazer
+  # This is considered DSL-independent code
   class Activity
     # include Activity::Interface # TODO
 
