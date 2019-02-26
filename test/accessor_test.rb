@@ -1,7 +1,7 @@
 require "test_helper"
 
 class AccessorTest < Minitest::Spec
-  let(:activity) do
+  let(:activity_) do
     Module.new { extend Activity::Path() }
   end
 

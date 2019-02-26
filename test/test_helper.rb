@@ -55,6 +55,55 @@ Minitest::Spec.class_eval do
     return wrap_ctx, original_args # yay to mutable state. not.
   end
 
+  let(:nested_activity) do
+    intermediate = Inter.new(
+      {
+        Inter::TaskRef("Start.default") => [Inter::Out(:success, :B)],
+        Inter::TaskRef(:B) => [Inter::Out(:success, :D)],
+        Inter::TaskRef(:D) => [Inter::Out(:success, :E)],
+        Inter::TaskRef(:E) => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+      },
+      [Inter::TaskRef("End.success")],
+      [Inter::TaskRef("Start.default")] # start
+    )
+
+    implementation = {
+      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        [TaskWrap::Extension.new(task: st, merge: TaskWrap.method(:initial_wrap_static))]),
+      :B => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: b, merge: TaskWrap.method(:initial_wrap_static))]),
+      :D => Schema::Implementation::Task(c = bc, [Activity::Output(implementing::Success, :success)],                  [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
+      :E => Schema::Implementation::Task(e = implementing.method(:f), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: e, merge: TaskWrap.method(:initial_wrap_static))]),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+    }
+
+    schema = Inter.(intermediate, implementation)
+
+    Activity.new(schema)
+  end
+
+  let(:bc) do
+     intermediate = Inter.new(
+      {
+        Inter::TaskRef("Start.default") => [Inter::Out(:success, :B)],
+        Inter::TaskRef(:B) => [Inter::Out(:success, :C)],
+        Inter::TaskRef(:C) => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+      },
+      [Inter::TaskRef("End.success")],
+      [Inter::TaskRef("Start.default")], # start
+    )
+
+    implementation = {
+      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        [TaskWrap::Extension.new(task: st, merge: TaskWrap.method(:initial_wrap_static))]),
+      :B => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: b, merge: TaskWrap.method(:initial_wrap_static))]),
+      :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+    }
+
+    schema = Inter.(intermediate, implementation)
+
+    Activity.new(schema)
+  end
 end
 
 require "trailblazer/activity/testing"
