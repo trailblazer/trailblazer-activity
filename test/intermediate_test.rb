@@ -37,7 +37,7 @@ class IntermediateTest < Minitest::Spec
 
     schema = Inter.(intermediate, implementation)
 
-    cct = Trailblazer::Developer::Render::Circuit.(schema: schema)
+    cct = Trailblazer::Developer::Render::Circuit.(schema)
 
     cct.must_equal %{
 #<Method: #<Module:0x>.a>
