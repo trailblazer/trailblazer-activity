@@ -128,6 +128,7 @@ class VariableMappingTest < Minitest::Spec
 
   describe "Input/Output with scope" do
     it do
+      skip
 
       model_input  = ->(options) { { :a       => options[:a]+1 } }
       model_output = ->(options) { { :model_a => options[:a] } }
@@ -208,6 +209,8 @@ class VariableMappingTest < Minitest::Spec
 
   describe "Input/Output via VariableMapping DSL" do
     it "allows hash and array" do
+      skip
+
       _nested = nested
 
       activity = Module.new do
@@ -236,6 +239,8 @@ class VariableMappingTest < Minitest::Spec
     end
 
     it "allows procs with kwargs" do
+      skip "lower api"
+
       _nested = nested
 
       activity = Module.new do
@@ -266,6 +271,8 @@ class VariableMappingTest < Minitest::Spec
 
   describe "via DSL" do
     it "allows array and hash" do
+      skip "move me to DSL"
+
       _nested = nested
 
       activity = Module.new do
@@ -289,6 +296,8 @@ class VariableMappingTest < Minitest::Spec
     end
 
     it "allows procs, too" do
+      skip "move me to DSL"
+
       _nested = nested
 
       activity = Module.new do
