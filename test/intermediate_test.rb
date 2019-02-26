@@ -82,6 +82,8 @@ class IntermediateTest < Minitest::Spec
       }
     end
 
+# Accessor API
+
     it "doesn't allow mutations" do
       ext_a = ->(config:, **) { config[:a] = "bla" }
 
@@ -91,12 +93,16 @@ class IntermediateTest < Minitest::Spec
     end
 
     it "allows using the {Config} API" do
-      ext_a = ->(config:, **) { Activity::State::Config.set(config, :a, "bla") }
-      ext_b = ->(config:, **) { Activity::State::Config.set(config, :b, "blubb") }
+      ext_a = ->(config:, **)       { Activity::State::Config.set(config, :a, "bla") }
+      ext_b = ->(config:, **)       { Activity::State::Config.set(config, :b, "blubb") }
+      ext_c = ->(config:, **)       { Activity::State::Config.set(config, :c, "key", "value") } # initializes {:c} with hash.
+      ext_d = ->(config:, id:, **)  { Activity::State::Config.set(config, id, 1) }              # provides :id
+      ext_e = ->(config:, **)       { Activity::State::Config.set(config, :e, config[:C]+1) }   # allows reading new {Config} instance.
 
-      schema = Inter.(intermediate, implementation([ext_a, ext_b]))
+      schema = Inter.(intermediate, implementation([ext_a, ext_b, ext_c, ext_d, ext_e]))
 
-      schema[:config].to_h.inspect.must_equal %{{:a=>\"bla\", :b=>\"blubb\"}}
+      schema[:config].to_h.inspect.must_equal %{{:a=>\"bla\", :b=>\"blubb\", :c=>{\"key\"=>\"value\"}, :C=>1, :e=>2}}
     end
+
   end
 end
