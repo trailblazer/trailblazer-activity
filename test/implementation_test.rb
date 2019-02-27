@@ -24,23 +24,14 @@ class GeneratedTest < Minitest::Spec
 
     # Implementation::Task(proc, outputs, extensions)
 
-=begin
-    implementation = {
-      :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)]),
-      :b => Schema::Implementation::Task(implementing.method(:b), [Activity::Output("B/success", :success), Activity::Output("B/failure", :failure)]),
-      :c => Schema::Implementation::Task(implementing.method(:c), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)]),
-      :d => Schema::Implementation::Task(implementing.method(:d), [Activity::Output("D/success", :success), Activity::Output(Left, :failure)]),
-      "End.success" => Schema::Implementation::Task(implementing::Success, [Activity::Output(implementing::Success, :success)]), # DISCUSS: End has one Output, signal is itself?
-      "End.failure" => Schema::Implementation::Task(implementing::Failure, [Activity::Output(implementing::Failure, :failure)]),
-    }
-=end
 
     _implementing = implementing
     # DISCUSS: basically, this is a thin DSL that calls Intermediate.(;)
     # you use this with a editor.
     impl = Class.new(Trailblazer::Activity::Implementation) do
       implement intermediate,
-        a: _implementing.method(:a),
+        a: _implementing.method(:a),    # TODO: :method
+      # a: {task: .., outputs: .., }
         b: MyMacro(:User, :find_by),
         "End.success" => implementing::Failure#, [Activity::Output(implementing::Failure, :failure)]),
     end
