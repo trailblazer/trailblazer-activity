@@ -47,7 +47,11 @@ class GeneratedTest < Minitest::Spec
     end
 
     assert_process_for impl, :success, %{
-
+<*#<Method: #<Module:0x>.a>>
+ {Trailblazer::Activity::Right} => <*#<Method: #<Module:0x>.b>>
+<*#<Method: #<Module:0x>.b>>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
 }
 
     # merge! ==> like inheritance without inheriting methods.

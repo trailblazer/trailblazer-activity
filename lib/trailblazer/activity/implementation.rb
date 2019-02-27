@@ -20,8 +20,14 @@ module Trailblazer
         # automatically create {End}s.
         ends = intermediate.stop_task_refs
         ends_outputs = ends.collect { |ref| wiring.find { |_ref, connections| _ref.id == ref.id } } # FIXME
-        ends = ends_outputs.collect { |ref, (output, _)| [ref.id, {output.semantic => Activity::Output(Activity::End(output.semantic), output.semantic)}] }
-        ends = Hash[ends]
+        ends = ends_outputs.collect { |ref, (output, _)|
+          {
+            id:         ref.id,
+            outputs:    {output.semantic => Activity::Output(end_task = Activity::End(output.semantic), output.semantic)},
+            task:       end_task,
+            extensions: [],
+          }
+        }
 
         # raise ends.inspect
 
@@ -36,32 +42,33 @@ module Trailblazer
 
           task = step_interface_builder.(cfg)
 
-          outputs = outputs_for_task(wiring, task: task, id: id, outputs_defaults: outputs_defaults, task_outputs: ends)
+          custom_cfg = ends.find { |row| row[:id] == id }
+
+          id, task, outputs, extensions = outputs_for_task(wiring, **{task: task, id: id, outputs: outputs_defaults, extensions: []}.merge(custom_cfg || {}))
 
           [id, Schema::Implementation::Task(task, outputs)]
         end
 
         implementation = Hash[implementation]
 
-        pp implementation
+        # pp implementation
 
         schema = Schema::Intermediate.(intermediate, implementation)
 
         @activity = Activity.new(schema)
       end
 
-      def self.outputs_for_task(wiring, task:, id:, outputs_defaults:, task_outputs:)
-        connections = find_outputs(wiring, id)
+      def self.outputs_for_task(wiring, task:, id:, outputs:, extensions:)
+        connections = find_outputs_from_intermediate(wiring, id)
 
         outputs = connections.collect { |connection|
-          semantic = connection.semantic
-# FIXME:
-          output   = task_outputs[id]&&task_outputs[id][semantic]
-          output ||= outputs_defaults[semantic] or raise
+          output   = outputs[connection.semantic]
         }
+
+        return id, task, outputs, extensions
       end
 
-      def self.find_outputs(wiring, id)
+      def self.find_outputs_from_intermediate(wiring, id)
         ref, connections = wiring.find { |ref, connections| ref.id == id }
         connections
       end
