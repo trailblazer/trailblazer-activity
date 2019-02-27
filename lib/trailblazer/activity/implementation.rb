@@ -10,6 +10,8 @@ module Trailblazer
     class Implementation
       def self.implement(intermediate, id2cfg)
 
+        wiring = intermediate.wiring
+
         outputs_defaults = { # TODO: make this injectable and allow passing more.
           success: Activity::Output(Activity::Right, :success),
           failure: Activity::Output(Activity::Left,  :failure),
@@ -17,21 +19,24 @@ module Trailblazer
 
         # automatically create {End}s.
         ends = intermediate.stop_task_refs
-        ends_outputs = ends.collect { |ref| intermediate.wiring.find { |_ref, connections| _ref.id == ref.id } } # FIXME
+        ends_outputs = ends.collect { |ref| wiring.find { |_ref, connections| _ref.id == ref.id } } # FIXME
         ends = ends_outputs.collect { |ref, (output, _)| [ref.id, {output.semantic => Activity::Output(Activity::End(output.semantic), output.semantic)}] }
         ends = Hash[ends]
 
         # raise ends.inspect
 
-        step_interface_builder = TaskBuilder.method(:Binary)
+        step_interface_builder = TaskBuilder.method(:Binary) # FIXME
 
-        implementation = id2cfg.collect do |id, cfg|
+        implementation = wiring.collect do |ref, connections|
+          id  = ref.id
+          cfg = id2cfg[id] #or raise "No task passed for #{id.inspect}"
+
           # TODO: ALLOW macro
           task = cfg
 
           task = step_interface_builder.(cfg)
 
-          outputs = outputs_for_task(intermediate, task: task, id: id, outputs_defaults: outputs_defaults, task_outputs: ends)
+          outputs = outputs_for_task(wiring, task: task, id: id, outputs_defaults: outputs_defaults, task_outputs: ends)
 
           [id, Schema::Implementation::Task(task, outputs)]
         end
@@ -40,23 +45,24 @@ module Trailblazer
 
         pp implementation
 
-        implementation
+        schema = Schema::Intermediate.(intermediate, implementation)
+
+        @activity = Activity.new(schema)
       end
 
-      def self.outputs_for_task(intermediate, task:, id:, outputs_defaults:, task_outputs:)
-        connections = find_outputs(intermediate, id)
+      def self.outputs_for_task(wiring, task:, id:, outputs_defaults:, task_outputs:)
+        connections = find_outputs(wiring, id)
 
         outputs = connections.collect { |connection|
           semantic = connection.semantic
 # FIXME:
           output   = task_outputs[id]&&task_outputs[id][semantic]
           output ||= outputs_defaults[semantic] or raise
-
         }
       end
 
-      def self.find_outputs(intermediate, id)
-        ref, connections = intermediate.wiring.find { |ref, connections| ref.id == id }
+      def self.find_outputs(wiring, id)
+        ref, connections = wiring.find { |ref, connections| ref.id == id }
         connections
       end
 
@@ -74,6 +80,9 @@ module Trailblazer
 
       def self.call(*args) # FIXME: shouldn't this be coming from Activity::Interface?
         @activity.(*args)
+      end
+      def self.to_h
+        @activity.to_h
       end
     end
 
