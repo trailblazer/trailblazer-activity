@@ -12,7 +12,10 @@ class GeneratedTest < Minitest::Spec
         Inter::TaskRef(:b) => [Inter::Out(:success, "End.success")],
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)], # this is how the End semantic is defined.
       },
-      [Inter::TaskRef("End.success"), Inter::TaskRef("End.failure")],
+      [Inter::TaskRef("End.success")
+# TODO: test with more than one End
+        #, Inter::TaskRef("End.failure")
+      ],
       [Inter::TaskRef(:a)] # start
     )
 
@@ -32,8 +35,8 @@ class GeneratedTest < Minitest::Spec
       implement intermediate,
         a: _implementing.method(:a),    # TODO: :method
       # a: {task: .., outputs: .., }
-        b: MyMacro(:User, :find_by),
-        "End.success" => implementing::Failure#, [Activity::Output(implementing::Failure, :failure)]),
+        # b: MyMacro(:User, :find_by),
+        "End.success" => _implementing::Failure#, [Activity::Output(implementing::Failure, :failure)]),
     end
 
     # merge! ==> like inheritance without inheriting methods.
