@@ -37,14 +37,18 @@ module Trailblazer
           id  = ref.id
           cfg = id2cfg[id] #or raise "No task passed for #{id.inspect}"
 
-          # TODO: ALLOW macro
+          # macro
+          ends = ends + [cfg.merge(id: id)] if cfg.is_a?(Hash)
+
           task = cfg
 
-          task = step_interface_builder.(cfg)
+          task = step_interface_builder.(task)
 
           custom_cfg = ends.find { |row| row[:id] == id }
 
-          id, task, outputs, extensions = outputs_for_task(wiring, **{task: task, id: id, outputs: outputs_defaults, extensions: []}.merge(custom_cfg || {}))
+          # pp ends
+
+          id, task, outputs, extensions = outputs_for_task(wiring, **{id: id, task: task, outputs: outputs_defaults, extensions: []}.merge(custom_cfg || {}))
 
           [id, Schema::Implementation::Task(task, outputs)]
         end
