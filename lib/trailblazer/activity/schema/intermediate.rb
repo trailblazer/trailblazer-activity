@@ -13,10 +13,12 @@ class Trailblazer::Activity
       #
       # Intermediate structure, Implementation, calls extensions, passes {}config # TODO
       def self.call(intermediate, implementation)
+        config_default = {wrap_static: Hash.new(Activity::TaskWrap.initial_wrap_static)}.freeze # DISCUSS: this really doesn't have to be here, but works for now and we want it in 99%.
+
         circuit = circuit(intermediate, implementation)
         nodes   = node_attributes(implementation)
         outputs = outputs(intermediate.stop_task_refs, nodes)
-        config  = config(implementation)
+        config  = config(implementation, config: config_default)
         schema  = Schema.new(circuit, outputs, nodes, config)
       end
 
@@ -68,14 +70,12 @@ class Trailblazer::Activity
       end
 
       # Invoke each task's extensions (usually coming from the DSL or some macro).
-      def self.config(implementation)
-        data = {}.freeze
-
+      def self.config(implementation, config:)
         implementation.each do |id, task|
-          task.extensions.each { |ext| data = ext.(config: data, id: id, task: task) } # DISCUSS: ext must return new {Config}.
+          task.extensions.each { |ext| config = ext.(config: config, id: id, task: task) } # DISCUSS: ext must return new {Config}.
         end
 
-        data
+        config
       end
 
       private

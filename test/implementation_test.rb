@@ -77,7 +77,7 @@ class GeneratedTest < Minitest::Spec
       outputs: {success: Activity::Output(Activity::Right, :success)},
       task: t= Activity::TaskBuilder.Binary(_implementing.method(:f)),
       extensions: [
-        TaskWrap::Extension.new(task: t, merge: TaskWrap.method(:initial_wrap_static)),
+        # TaskWrap::Extension.new(task: t, merge: TaskWrap.method(:initial_wrap_static)),
         TaskWrap::Extension(task: t, merge: merge)
       ]
     } }

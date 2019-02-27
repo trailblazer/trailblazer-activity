@@ -60,7 +60,7 @@ class IntermediateTest < Minitest::Spec
 
 # :extension API
 #   test it works with and without [bla_ext], and more than one per line
-    schema[:config].inspect.must_equal %{{:a1=>true, :a2=>:yo, :b1=>false}}
+    schema[:config].inspect.must_equal %{{:wrap_static=>{}, :a1=>true, :a2=>:yo, :b1=>false}}
   end
 
 
@@ -156,7 +156,7 @@ class IntermediateTest < Minitest::Spec
 
       schema = Inter.(intermediate, implementation([ext_a, ext_b, ext_c, ext_d, ext_e]))
 
-      schema[:config].to_h.inspect.must_equal %{{:a=>\"bla\", :b=>\"blubb\", :c=>{\"key\"=>\"value\"}, :C=>1, :e=>2}}
+      schema[:config].to_h.inspect.must_equal %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :c=>{\"key\"=>\"value\"}, :C=>1, :e=>2}}
     end
 
   end

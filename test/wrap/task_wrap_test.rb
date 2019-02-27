@@ -20,11 +20,10 @@ class TaskWrapTest < Minitest::Spec
     ]
 
     implementation = {
-      :a => Schema::Implementation::Task(a = implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.new(task: a, merge: TaskWrap.method(:initial_wrap_static)),
-                                                                                                                                      TaskWrap::Extension(merge: merge, task: a)]),
-      :b => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.new(task: b, merge: TaskWrap.method(:initial_wrap_static))]),
-      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
-      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+      :a => Schema::Implementation::Task(a = implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension(merge: merge, task: a)]),
+      :b => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success)],                 []),
+      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 []),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, implementation)
@@ -36,11 +35,10 @@ class TaskWrapTest < Minitest::Spec
 # it works nested as well
 
     top_implementation = {
-      :a => Schema::Implementation::Task(a = implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.new(task: a, merge: TaskWrap.method(:initial_wrap_static))]),
-      :b => Schema::Implementation::Task(b = Activity.new(schema),     [Activity::Output(_es, :success)],                            [TaskWrap::Extension.new(task: b, merge: TaskWrap.method(:initial_wrap_static))]),
-      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static)),
-                                                                                                                                      TaskWrap::Extension(merge: merge, task: c)]),
-      "End.success" => Schema::Implementation::Task(es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+      :a => Schema::Implementation::Task(a = implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 []),
+      :b => Schema::Implementation::Task(b = Activity.new(schema),     [Activity::Output(_es, :success)],                            []),
+      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension(merge: merge, task: c)]),
+      "End.success" => Schema::Implementation::Task(es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, top_implementation)

@@ -37,9 +37,9 @@ class VariableMappingTest < Minitest::Spec
     )
 
     implementation = {
-      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        [TaskWrap::Extension.new(task: st, merge: TaskWrap.method(:initial_wrap_static))]),
-      :C => Schema::Implementation::Task(c = C, [Activity::Output(Activity::Right, :success)],                                        [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
-      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
+      :C => Schema::Implementation::Task(c = C, [Activity::Output(Activity::Right, :success)],                                        []),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, implementation)
@@ -61,11 +61,11 @@ class VariableMappingTest < Minitest::Spec
     )
 
     implementation = {
-      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        [TaskWrap::Extension.new(task: st, merge: TaskWrap.method(:initial_wrap_static))]),
-      :Model => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: b, merge: TaskWrap.method(:initial_wrap_static))]),
-      :Nested => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)],                  [TaskWrap::Extension.new(task: c, merge: TaskWrap.method(:initial_wrap_static))]),
-      :Uuid => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)],                  [TaskWrap::Extension.new(task: d, merge: TaskWrap.method(:initial_wrap_static))]),
-      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [TaskWrap::Extension.new(task: _es, merge: TaskWrap.method(:initial_wrap_static))]), # DISCUSS: End has one Output, signal is itself?
+      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
+      :Model => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)],                  []),
+      :Nested => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)],                  []),
+      :Uuid => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)],                  []),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, implementation)
