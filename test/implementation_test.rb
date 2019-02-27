@@ -101,7 +101,7 @@ class GeneratedTest < Minitest::Spec
 #<End/:success>
 }
 
-    signal, (ctx, _) = impl.([seq: []])
+    signal, (ctx, _) = Activity::TaskWrap.invoke(impl, [seq: []])
 
     signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
     ctx.inspect.must_equal %{{:seq=>[:a, 1, :f, 2]}}

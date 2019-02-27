@@ -46,11 +46,9 @@ module Trailblazer
 
           custom_cfg = ends.find { |row| row[:id] == id }
 
-          # pp ends
-
           id, task, outputs, extensions = outputs_for_task(wiring, **{id: id, task: task, outputs: outputs_defaults, extensions: []}.merge(custom_cfg || {}))
 
-          [id, Schema::Implementation::Task(task, outputs)]
+          [id, Schema::Implementation::Task(task, outputs, extensions)]
         end
 
         implementation = Hash[implementation]
@@ -94,6 +92,9 @@ module Trailblazer
       end
       def self.to_h
         @activity.to_h
+      end
+      def self.[](*key)
+        to_h[:config][*key]
       end
     end
 
