@@ -26,7 +26,8 @@ module Trailblazer
                 cfg.merge(id: id)
               # task, **options
               elsif cfg
-                task = step_interface_builder.(cfg)
+                option = Trailblazer::Option(cfg)
+                task = step_interface_builder.(option)
                 {id: id, task: task, outputs: output_defaults, extensions: []}
               # Start, End, etc.
               else
