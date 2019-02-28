@@ -142,7 +142,7 @@ class IntermediateTest < Minitest::Spec
     it "doesn't allow mutations" do
       ext_a = ->(config:, **) { config[:a] = "bla" }
 
-      exception = Object.const_defined?(:FrozenError) ? FrozenError : RuntimeError
+      exception = Object.const_defined?(:FrozenError) ? FrozenError : RuntimeError # < Ruby 2.5
 
       assert_raises exception do
         schema = Inter.(intermediate, implementation([ext_a]))
