@@ -88,6 +88,7 @@ class GeneratedTest < Minitest::Spec
 
     impl = Class.new(Trailblazer::Activity::Implementation) do
       implement _intermediate,
+        start: false,
         a: _implementing.method(:a),    # TODO: :method
         b: MyMacro.(:User, :find_by)
         # "End.success" => _implementing::Failure#, [Activity::Output(implementing::Failure, :failure)]),
@@ -105,5 +106,39 @@ class GeneratedTest < Minitest::Spec
 
     signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
     ctx.inspect.must_equal %{{:seq=>[:a, 1, :f, 2]}}
+  end
+
+  it "adds a {Start.default} when {start: false} not set" do
+    _implementing = implementing
+
+    _intermediate = Inter.new(
+      {
+        Inter::TaskRef("Start.default") => [Inter::Out(:success, :a)],
+        Inter::TaskRef(:a) => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)], # this is how the End semantic is defined.
+      },
+      [
+        Inter::TaskRef("End.success"),
+      ],
+      [Inter::TaskRef("Start.default")] # start
+    )
+
+    impl = Class.new(Trailblazer::Activity::Implementation) do
+      implement _intermediate,
+        a: _implementing.method(:a)
+    end
+
+    assert_process_for impl, :success, %{
+#<Start/:success>
+ {Trailblazer::Activity::Right} => <*#<Method: #<Module:0x>.a>>
+<*#<Method: #<Module:0x>.a>>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
+}
+
+    signal, (ctx, _) = impl.([seq: []])
+
+    signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
+    ctx.inspect.must_equal %{{:seq=>[:a]}}
   end
 end

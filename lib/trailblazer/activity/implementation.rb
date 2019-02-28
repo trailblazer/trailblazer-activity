@@ -8,73 +8,96 @@ module Trailblazer
     #
     # NOTE: Work in progress!
     class Implementation
-      def self.implement(intermediate, user_options)
+      class << self
+        def implement(intermediate, user_options)
+          with_start = user_options[:start]
 
-        wiring = intermediate.wiring
+          wiring = intermediate.wiring
 
-        outputs_defaults = { # TODO: make this injectable and allow passing more.
-          success: Activity::Output(Activity::Right, :success),
-          failure: Activity::Output(Activity::Left,  :failure),
-        }
+          step_interface_builder = TaskBuilder.method(:Binary) # FIXME
 
-        # automatically create {End}s.
-        defaults = intermediate.stop_task_refs
-        ends_outputs = defaults.collect { |ref| wiring.find { |_ref, connections| _ref.id == ref.id } } # FIXME
-        defaults = ends_outputs.collect { |ref, (output, _)|
-          {
-            id:         ref.id,
-            outputs:    {output.semantic => Activity::Output(end_task = Activity::End(output.semantic), output.semantic)},
-            task:       end_task,
-            extensions: [],
-          }
-        }
+          implementation = wiring.collect do |ref, connections|
+            id  = ref.id
+            cfg = user_options[id] #or raise "No task passed for #{id.inspect}"
 
-        step_interface_builder = TaskBuilder.method(:Binary) # FIXME
+            task_options =
+              # macro
+              if cfg.is_a?(Hash)
+                cfg.merge(id: id)
+              # task, **options
+              elsif cfg
+                task = step_interface_builder.(cfg)
+                {id: id, task: task, outputs: output_defaults, extensions: []}
+              # Start, End, etc.
+              else
+                default_tasks(intermediate, with_start).find { |row| row[:id] == id }
+              end
 
-        implementation = wiring.collect do |ref, connections|
-          id  = ref.id
-          cfg = user_options[id] #or raise "No task passed for #{id.inspect}"
+            id, task, outputs, extensions = outputs_for_task(wiring, task_options)
 
-          task_options =
-            # macro
-            if cfg.is_a?(Hash)
-              cfg.merge(id: id)
-            # task, **options
-            elsif cfg
-              task = step_interface_builder.(cfg)
-              {id: id, task: task, outputs: outputs_defaults, extensions: []}
-            # Start, End, etc.
-            else
-              defaults.find { |row| row[:id] == id }
-            end
+            [id, Schema::Implementation::Task(task, outputs, extensions)]
+          end
 
-          id, task, outputs, extensions = outputs_for_task(wiring, task_options)
+          implementation = Hash[implementation]
 
-          [id, Schema::Implementation::Task(task, outputs, extensions)]
+          # pp implementation
+
+          schema = Schema::Intermediate.(intermediate, implementation)
+
+          @activity = Activity.new(schema)
         end
 
-        implementation = Hash[implementation]
+        private
 
-        # pp implementation
+        # TODO: make this injectable and allow passing more.
+        def output_defaults
+          {
+            success: Activity::Output(Activity::Right, :success),
+            failure: Activity::Output(Activity::Left,  :failure),
+          }
+        end
 
-        schema = Schema::Intermediate.(intermediate, implementation)
+        # automatically create {End}s etc.
+        def default_tasks(intermediate, with_start)
+          start_task    = Activity::Start.new(semantic: :success)
+          start_options = {
+            id:         "Start.default",
+            outputs:    {:success => Activity::Output(Activity::Right, :success)},
+            task:       start_task,
+            extensions: [],
+          }
 
-        @activity = Activity.new(schema)
-      end
+          end_tasks    = intermediate.stop_task_refs
+          ends_outputs = end_tasks.collect { |ref| intermediate.wiring.find { |_ref, connections| _ref.id == ref.id } } # FIXME
 
-      def self.outputs_for_task(wiring, task:, id:, outputs:, extensions:)
-        connections = find_outputs_from_intermediate(wiring, id)
+          end_options =
+            ends_outputs.collect { |ref, (output, _)|
+              {
+                id:         ref.id,
+                outputs:    {output.semantic => Activity::Output(end_task = Activity::End(output.semantic), output.semantic)},
+                task:       end_task,
+                extensions: [],
+              }
+            }
 
-        outputs = connections.collect { |connection|
-          output   = outputs[connection.semantic]
-        }
+          return end_options if with_start === false
+          return end_options + [start_options]
+        end
 
-        return id, task, outputs, extensions
-      end
+        def outputs_for_task(wiring, task:, id:, outputs:, extensions:)
+          connections = find_outputs_from_intermediate(wiring, id)
 
-      def self.find_outputs_from_intermediate(wiring, id)
-        ref, connections = wiring.find { |ref, connections| ref.id == id }
-        connections
+          outputs = connections.collect { |connection|
+            output   = outputs[connection.semantic]
+          }
+
+          return id, task, outputs, extensions
+        end
+
+        def find_outputs_from_intermediate(wiring, id)
+          ref, connections = wiring.find { |ref, connections| ref.id == id }
+          connections
+        end
       end
 
 =begin
