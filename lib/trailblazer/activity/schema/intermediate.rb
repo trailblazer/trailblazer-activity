@@ -13,7 +13,7 @@ class Trailblazer::Activity
       #
       # Intermediate structure, Implementation, calls extensions, passes {}config # TODO
       def self.call(intermediate, implementation)
-        config_default = {wrap_static: Hash.new(Activity::TaskWrap.initial_wrap_static)}.freeze # DISCUSS: this really doesn't have to be here, but works for now and we want it in 99%.
+        config_default = {wrap_static: Hash.new(TaskWrap.initial_wrap_static)}.freeze # DISCUSS: this really doesn't have to be here, but works for now and we want it in 99%.
 
         circuit = circuit(intermediate, implementation)
         nodes   = node_attributes(implementation)
