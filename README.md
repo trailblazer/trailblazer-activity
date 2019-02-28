@@ -1,5 +1,7 @@
 # Activity
 
+implements Intermediate, Implementation, compiler and `Activity::Implementation`, Activity::Interface
+
 The `activity` gem brings a light-weight DSL to define business processes, and the runtime logic to run those activities.
 
 A process is a set of arbitrary pieces of logic you define, chained together and put into a meaningful context by an activity. Activity lets you focus on the implementation of steps while Trailblazer takes care of the control flow.
