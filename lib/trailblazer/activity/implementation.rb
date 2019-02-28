@@ -8,7 +8,7 @@ module Trailblazer
     #
     # NOTE: Work in progress!
     class Implementation
-      def self.implement(intermediate, id2cfg)
+      def self.implement(intermediate, user_options)
 
         wiring = intermediate.wiring
 
@@ -18,9 +18,9 @@ module Trailblazer
         }
 
         # automatically create {End}s.
-        ends = intermediate.stop_task_refs
-        ends_outputs = ends.collect { |ref| wiring.find { |_ref, connections| _ref.id == ref.id } } # FIXME
-        ends = ends_outputs.collect { |ref, (output, _)|
+        defaults = intermediate.stop_task_refs
+        ends_outputs = defaults.collect { |ref| wiring.find { |_ref, connections| _ref.id == ref.id } } # FIXME
+        defaults = ends_outputs.collect { |ref, (output, _)|
           {
             id:         ref.id,
             outputs:    {output.semantic => Activity::Output(end_task = Activity::End(output.semantic), output.semantic)},
@@ -29,24 +29,26 @@ module Trailblazer
           }
         }
 
-        # raise ends.inspect
-
         step_interface_builder = TaskBuilder.method(:Binary) # FIXME
 
         implementation = wiring.collect do |ref, connections|
           id  = ref.id
-          cfg = id2cfg[id] #or raise "No task passed for #{id.inspect}"
+          cfg = user_options[id] #or raise "No task passed for #{id.inspect}"
 
-          # macro
-          ends = ends + [cfg.merge(id: id)] if cfg.is_a?(Hash)
+          task_options =
+            # macro
+            if cfg.is_a?(Hash)
+              cfg.merge(id: id)
+            # task, **options
+            elsif cfg
+              task = step_interface_builder.(cfg)
+              {id: id, task: task, outputs: outputs_defaults, extensions: []}
+            # Start, End, etc.
+            else
+              defaults.find { |row| row[:id] == id }
+            end
 
-          task = cfg
-
-          task = step_interface_builder.(task)
-
-          custom_cfg = ends.find { |row| row[:id] == id }
-
-          id, task, outputs, extensions = outputs_for_task(wiring, **{id: id, task: task, outputs: outputs_defaults, extensions: []}.merge(custom_cfg || {}))
+          id, task, outputs, extensions = outputs_for_task(wiring, task_options)
 
           [id, Schema::Implementation::Task(task, outputs, extensions)]
         end
