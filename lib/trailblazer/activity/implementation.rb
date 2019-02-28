@@ -26,8 +26,7 @@ module Trailblazer
                 cfg.merge(id: id)
               # task, **options
               elsif cfg
-                option = Trailblazer::Option(cfg)
-                task = step_interface_builder.(option)
+                task = step_interface_builder.(cfg)
                 {id: id, task: task, outputs: output_defaults, extensions: []}
               # Start, End, etc.
               else
@@ -40,8 +39,6 @@ module Trailblazer
           end
 
           implementation = Hash[implementation]
-
-          # pp implementation
 
           schema = Schema::Intermediate.(intermediate, implementation)
 
@@ -113,8 +110,8 @@ module Trailblazer
 =end
 
 
-      def self.call(*args) # FIXME: shouldn't this be coming from Activity::Interface?
-        @activity.(*args)
+      def self.call(args, **circuit_options)
+        @activity.(args, circuit_options.merge(exec_context: new))
       end
       def self.to_h
         @activity.to_h

@@ -63,7 +63,6 @@ class GeneratedTest < Minitest::Spec
   end
 
   it "allows :instance_method tasks" do
-    _implementing = implementing
     _intermediate = intermediate
 
     impl = Class.new(Trailblazer::Activity::Implementation) do
@@ -81,23 +80,17 @@ class GeneratedTest < Minitest::Spec
     end
 
     assert_process_for impl, :success, %{
-<*#<Method: #<Module:0x>.a>>
- {Trailblazer::Activity::Right} => <*#<Method: #<Module:0x>.b>>
-<*#<Method: #<Module:0x>.b>>
+<*a>
+ {Trailblazer::Activity::Right} => <*b>
+<*b>
  {Trailblazer::Activity::Right} => #<End/:success>
 #<End/:success>
 }
-
 
     signal, (ctx, _) = impl.([seq: []])
 
     signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
     ctx.inspect.must_equal %{{:seq=>[:a, :b]}}
-    # merge! ==> like inheritance without inheriting methods.
-
-    # Manu
-    # merge!(MyActivity, a: "different_method")
-
   end
 
   it "allows Macro()" do
