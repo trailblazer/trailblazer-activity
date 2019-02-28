@@ -132,6 +132,21 @@ class GeneratedTest < Minitest::Spec
 
       signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
       ctx.inspect.must_equal %{{:seq=>[:A, :a, :b, :C]}}
+
+# tracing
+      stack, signal, (ctx, flow_options), _ = Trailblazer::Activity::Trace.invoke( impl, [{seq: []}, {}] )
+
+      signal.class.inspect.must_equal %{Trailblazer::Activity::End}
+      ctx.inspect.must_equal %{{:seq=>[:A, :a, :b, :C]}}
+      output = Trailblazer::Activity::Trace::Present.(stack)
+      output.gsub(/0x\w+/, "").must_equal %{`-- #<Class:>
+    |-- a
+    |-- b
+    |   |-- a
+    |   |-- b
+    |   `-- End.success
+    |-- c
+    `-- End.success}
     end
   end
 
