@@ -64,8 +64,8 @@ Minitest::Spec.class_eval do
         Inter::TaskRef(:E) => [Inter::Out(:success, "End.success")],
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
       },
-      [Inter::TaskRef("End.success")],
-      [Inter::TaskRef("Start.default")] # start
+      ["End.success"],
+      ["Start.default"] # start
     )
 
     implementation = {
@@ -89,8 +89,8 @@ Minitest::Spec.class_eval do
         Inter::TaskRef(:C) => [Inter::Out(:success, "End.success")],
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
       },
-      [Inter::TaskRef("End.success")],
-      [Inter::TaskRef("Start.default")], # start
+      ["End.success"],
+      ["Start.default"], # start
     )
 
     implementation = {

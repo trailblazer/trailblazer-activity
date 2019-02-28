@@ -23,10 +23,10 @@ class GeneratedTest < Minitest::Spec
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)], # this is how the End semantic is defined.
       },
       [
-        Inter::TaskRef("End.success"),
-        # Inter::TaskRef("End.failure"),
+        "End.success",
+        # "End.failure",
       ],
-      [Inter::TaskRef(:a)] # start
+      [:a] # start
     )
   end
 
@@ -98,10 +98,10 @@ class GeneratedTest < Minitest::Spec
           Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)], # this is how the End semantic is defined.
         },
         [
-          Inter::TaskRef("End.success"),
+          "End.success",
           # Inter::TaskRef("End.failure"),
         ],
-        [Inter::TaskRef(:a)] # start
+        [:a] # start
       )
 
       _nested_implementation = nested_implementation
@@ -201,9 +201,9 @@ class GeneratedTest < Minitest::Spec
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)], # this is how the End semantic is defined.
       },
       [
-        Inter::TaskRef("End.success"),
+        "End.success",
       ],
-      [Inter::TaskRef("Start.default")] # start
+      ["Start.default"] # start
     )
 
     impl = Class.new(Trailblazer::Activity::Implementation) do

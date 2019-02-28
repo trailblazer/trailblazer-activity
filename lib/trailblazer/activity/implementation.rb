@@ -65,8 +65,8 @@ module Trailblazer
             extensions: [],
           }
 
-          end_tasks    = intermediate.stop_task_refs
-          ends_outputs = end_tasks.collect { |ref| intermediate.wiring.find { |_ref, connections| _ref.id == ref.id } } # FIXME
+          end_ids    = intermediate.stop_task_ids
+          ends_outputs = end_ids.collect { |id| intermediate.wiring.find { |_ref, connections| _ref.id == id } } # FIXME
 
           end_options =
             ends_outputs.collect { |ref, (output, _)|

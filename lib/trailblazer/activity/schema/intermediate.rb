@@ -1,6 +1,6 @@
 class Trailblazer::Activity
   class Schema
-    class Intermediate < Struct.new(:wiring, :stop_task_refs, :start_tasks)
+    class Intermediate < Struct.new(:wiring, :stop_task_ids, :start_task_ids)
       # Intermediate structures
       TaskRef = Struct.new(:id, :data) # TODO: rename to NodeRef
       Out     = Struct.new(:semantic, :target)
@@ -17,7 +17,7 @@ class Trailblazer::Activity
 
         circuit = circuit(intermediate, implementation)
         nodes   = node_attributes(implementation)
-        outputs = outputs(intermediate.stop_task_refs, nodes)
+        outputs = outputs(intermediate.stop_task_ids, nodes)
         config  = config(implementation, config: config_default)
         schema  = Schema.new(circuit, outputs, nodes, config)
       end
@@ -37,8 +37,8 @@ class Trailblazer::Activity
 
         Circuit.new(
           wiring,
-          intermediate.stop_task_refs.collect { |task_ref| implementation.fetch(task_ref.id).circuit_task },
-          start_task: intermediate.start_tasks.collect { |task_ref| implementation.fetch(task_ref.id).circuit_task }[0]
+          intermediate.stop_task_ids.collect { |id| implementation.fetch(id).circuit_task },
+          start_task: intermediate.start_task_ids.collect { |id| implementation.fetch(id).circuit_task }[0]
         )
       end
 
@@ -62,10 +62,10 @@ class Trailblazer::Activity
       end
 
       # intermediate/implementation independent.
-      def self.outputs(stop_task_refs, nodes_attributes)
-        stop_task_refs.collect do |task_ref|
+      def self.outputs(stop_task_ids, nodes_attributes)
+        stop_task_ids.collect do |id|
           # Grab the {outputs} of the stop nodes.
-          nodes_attributes.find { |node_attrs| task_ref.id == node_attrs.id }.outputs
+          nodes_attributes.find { |node_attrs| id == node_attrs.id }.outputs
         end.flatten(1)
       end
 

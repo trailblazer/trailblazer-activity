@@ -10,8 +10,8 @@ class TaskWrapTest < Minitest::Spec
         Inter::TaskRef(:c) => [Inter::Out(:success, "End.success")],
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
       },
-      [Inter::TaskRef("End.success")],
-      [Inter::TaskRef(:a)] # start
+      ["End.success"],
+      [:a] # start
     )
 
     merge = [

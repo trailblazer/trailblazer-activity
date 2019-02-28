@@ -17,8 +17,8 @@ class IntermediateTest < Minitest::Spec
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)], # this is how the End semantic is defined.
         Inter::TaskRef("End.failure", stop_event: true) => [Inter::Out(:failure, nil)],
       },
-      [Inter::TaskRef("End.success"), Inter::TaskRef("End.failure")],
-      [Inter::TaskRef(:a)] # start
+      ["End.success", "End.failure"],
+      [:a] # start
     )
 
     Config = Trailblazer::Activity::State::Config
@@ -82,8 +82,8 @@ class IntermediateTest < Minitest::Spec
           Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
         },
   # arbitrary start and end event.
-        [Inter::TaskRef(:D)], # end events
-        [Inter::TaskRef(:C)], # start
+        [:D], # end events
+        [:C], # start
       )
 
     implementation =
@@ -125,8 +125,8 @@ class IntermediateTest < Minitest::Spec
           Inter::TaskRef(:C)                              => [Inter::Out(:success, "End.success")],
           Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
         },
-        [Inter::TaskRef("End.success")],
-        [Inter::TaskRef(:C)], # start
+        ["End.success"],
+        [:C], # start
       )
     }
 

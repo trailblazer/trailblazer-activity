@@ -32,8 +32,8 @@ class VariableMappingTest < Minitest::Spec
         Inter::TaskRef(:C) => [Inter::Out(:success, "End.success")],
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
       },
-      [Inter::TaskRef("End.success")],
-      [Inter::TaskRef("Start.default")], # start
+      ["End.success"],
+      ["Start.default"], # start
     )
 
     implementation = {
@@ -56,8 +56,8 @@ class VariableMappingTest < Minitest::Spec
         Inter::TaskRef(:Uuid)   => [Inter::Out(:success, "End.success")],
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
       },
-      [Inter::TaskRef("End.success")],
-      [Inter::TaskRef("Start.default")], # start
+      ["End.success"],
+      ["Start.default"], # start
     )
 
     implementation = {
