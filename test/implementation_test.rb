@@ -62,24 +62,29 @@ class GeneratedTest < Minitest::Spec
 
   end
 
-  it "allows :instance_method tasks" do
-    _intermediate = intermediate
+  describe ":method" do
+    let(:nested_implementation) do
 
-    impl = Class.new(Trailblazer::Activity::Implementation) do
-      implement _intermediate,
-        a: :a,
-        b: :b
+      _intermediate = intermediate
 
-      def a(ctx, seq:, **)
-        seq << :a
+      impl = Class.new(Trailblazer::Activity::Implementation) do
+        implement _intermediate,
+          a: :a,
+          b: :b
+
+        def a(ctx, seq:, **)
+          seq << :a
+        end
+
+        def b(ctx, seq:, **)
+          seq << :b
+        end
       end
 
-      def b(ctx, seq:, **)
-        seq << :b
-      end
     end
 
-    assert_process_for impl, :success, %{
+    it "allows :instance_method tasks" do
+      assert_process_for nested_implementation, :success, %{
 <*a>
  {Trailblazer::Activity::Right} => <*b>
 <*b>
@@ -87,10 +92,59 @@ class GeneratedTest < Minitest::Spec
 #<End/:success>
 }
 
-    signal, (ctx, _) = impl.([seq: []])
+      signal, (ctx, _) = nested_implementation.([seq: []])
 
-    signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
-    ctx.inspect.must_equal %{{:seq=>[:a, :b]}}
+      signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
+      ctx.inspect.must_equal %{{:seq=>[:a, :b]}}
+    end
+
+    it "allows nesting" do
+      nester = Inter.new(
+        {
+          Inter::TaskRef(:a) => [Inter::Out(:success, :b)],
+          Inter::TaskRef(:b) => [Inter::Out(:success, :c)],
+          Inter::TaskRef(:c) => [Inter::Out(:success, "End.success")],
+          Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)], # this is how the End semantic is defined.
+        },
+        [
+          Inter::TaskRef("End.success"),
+          # Inter::TaskRef("End.failure"),
+        ],
+        [Inter::TaskRef(:a)] # start
+      )
+
+      _nested_implementation = nested_implementation
+
+      impl = Class.new(Trailblazer::Activity::Implementation) do
+        implement nester,
+          a: :a,
+          b: _nested_implementation,
+          c: :c
+
+        def a(ctx, seq:, **)
+          seq << :A
+        end
+
+        def c(ctx, seq:, **)
+          seq << :C
+        end
+      end
+
+      assert_process_for impl, :success, %{
+<*a>
+ {Trailblazer::Activity::Right} => <*#<Class:0x>>
+<*#<Class:0x>>
+ {Trailblazer::Activity::Right} => <*c>
+<*c>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
+}
+
+      signal, (ctx, _) = impl.([seq: []])
+
+      signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
+      ctx.inspect.must_equal %{{:seq=>[:A, :a, :b, :C]}}
+    end
   end
 
   it "allows Macro()" do
