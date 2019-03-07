@@ -167,17 +167,17 @@ class VariableMappingTest < Minitest::Spec
 
 
   describe "Default injection" do
-    let(:activity) do
-      macro = Module.new do
-
+    let(:macro) do
+       Module.new do
         def self.model((ctx, flow_options), *)
           ctx[:model] = ctx[:model_class].new
 
           return Activity::Right, [ctx, flow_options]
         end
-
       end
+    end
 
+    def activity_for(a:, b:, a_extensions:, b_extensions:)
       intermediate = Inter.new(
         {
           Inter::TaskRef("Model_a")                       => [Inter::Out(:success, "capture_a")],
@@ -192,8 +192,6 @@ class VariableMappingTest < Minitest::Spec
 
 
 
-      coffee = Array
-      rakia  = Hash
 
 # todo: make this TaskWrap::Defaulter
 
@@ -205,12 +203,10 @@ class VariableMappingTest < Minitest::Spec
         return Activity::Right, [ctx, flow_options]
       end
 
-      model_b = ->(*args) { macro.model(*args) }
-
       implementation = {
-        "Model_a"       => Schema::Implementation::Task(a = macro.method(:model),    [Activity::Output(Activity::Right, :success)],       [TaskWrap::VariableMapping::Extension(a, *Model_io(:model_a, coffee))]),
+        "Model_a"       => Schema::Implementation::Task(a,    [Activity::Output(Activity::Right, :success)],       a_extensions),
         # :Nested         => Schema::Implementation::Task(nested, [Activity::Output(implementing::Success, :success)],                  []),
-        "Model_b"       => Schema::Implementation::Task(b= model_b, [Activity::Output(Activity::Right, :success)],                        [TaskWrap::VariableMapping::Extension(b, *Model_io(:model_b, rakia))]),
+        "Model_b"       => Schema::Implementation::Task(b, [Activity::Output(Activity::Right, :success)],                        b_extensions),
         "End.success"   => Schema::Implementation::Task(implementing::Success, [Activity::Output(implementing::Success, :success)], []),
 
         "capture_a"     => Schema::Implementation::Task(capture_a, [Activity::Output(Activity::Right, :success)],                  []),
@@ -221,18 +217,29 @@ class VariableMappingTest < Minitest::Spec
       Activity.new(schema)
     end
 
-    def Model_io(name, default_class)
+    def Model_defaults(default_class)
       input  = ->(original_ctx) { new_ctx = Trailblazer.Context(model_class: original_ctx[:model_class] || default_class) }  # NOTE how we, so far, don't pass anything of original_ctx here.
       output = ->(original_ctx, new_ctx) {
         _, mutable_data = new_ctx.decompose
 
-        original_ctx.merge(:model => mutable_data[:model])
-      } # return the "total" ctx
+        # we are only interested in the {mutable_data} part since the disposed part is the {:input}.
+        original_ctx.merge(mutable_data)
+      }
 
       return input, output
     end
 
-    it "calls both {Model()} macros correctly, but saves both values under {:model}" do
+    # Two identical macros with different defaults, but no output mapping.
+    it "calls both {Model()} macros correctly, but overrides {a} value of {:model} with {b}'s" do
+      a = macro.method(:model)
+      b = ->(*args) { macro.model(*args) }
+
+      activity = activity_for(a: a, b: b,
+        a_extensions: [TaskWrap::VariableMapping::Extension(a, *Model_defaults(Array))],
+        b_extensions: [TaskWrap::VariableMapping::Extension(b, *Model_defaults(Hash ))],
+
+      )
+
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
 
       signal.must_equal activity.to_h[:outputs][0].signal
