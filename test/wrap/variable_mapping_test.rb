@@ -197,7 +197,6 @@ class VariableMappingTest < Minitest::Spec
 
 
 
-
       capture_a = ->((ctx, flow_options), *) do
         ctx[:capture_a] = ctx.inspect
         return Activity::Right, [ctx, flow_options]
@@ -218,8 +217,9 @@ class VariableMappingTest < Minitest::Spec
     end
 
     def Model_defaults(default_class)
-      input  = ->(original_ctx) { new_ctx = Trailblazer.Context(model_class: original_ctx[:model_class] || default_class) }  # NOTE how we, so far, don't pass anything of original_ctx here.
+      input  = ->(original_ctx) { puts "m>"; new_ctx = Trailblazer.Context(model_class: original_ctx[:model_class] || default_class) }  # NOTE how we, so far, don't pass anything of original_ctx here.
       output = ->(original_ctx, new_ctx) {
+        puts ">m"
         _, mutable_data = new_ctx.decompose
 
         # we are only interested in the {mutable_data} part since the disposed part is the {:input}.
@@ -229,7 +229,7 @@ class VariableMappingTest < Minitest::Spec
       return input, output
     end
 
-    # Two identical macros with different defaults, but no output mapping.
+    # Two identical macros with different defaults, but no output mapping, hence the overriding.
     it "calls both {Model()} macros correctly, but overrides {a} value of {:model} with {b}'s" do
       a = macro.method(:model)
       b = ->(*args) { macro.model(*args) }
@@ -239,6 +239,35 @@ class VariableMappingTest < Minitest::Spec
         b_extensions: [TaskWrap::VariableMapping::Extension(b, *Model_defaults(Hash ))],
 
       )
+
+      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
+
+      signal.must_equal activity.to_h[:outputs][0].signal
+      ctx.inspect.must_equal %{{:model=>{}, :capture_a=>\"{:model=>[]}\"}}
+    end
+
+    it "calls both {Model()} macros correctly and maps each model to a different attribute" do
+      a = macro.method(:model)
+      b = ->(*args) { macro.model(*args) }
+
+      a_input  = ->(original_ctx) { puts "a> #{original_ctx.object_id}"; new_ctx = Trailblazer.Context(original_ctx) }
+
+      a_output = ->(original_ctx, new_ctx) {
+        puts ">a"
+        _, mutable_data = new_ctx.decompose
+
+        puts "@@@@@ #{original_ctx.object_id.inspect}"
+        puts "@@@@@ #{_.object_id.inspect}"
+
+        original_ctx.merge(:model_a => mutable_data[:model])
+      }
+
+      activity = activity_for(a: a, b: b,
+        a_extensions: [TaskWrap::VariableMapping::Extension(a, a_input, a_output), TaskWrap::VariableMapping::Extension(a, *Model_defaults(Array))],
+        b_extensions: [TaskWrap::VariableMapping::Extension(b, *Model_defaults(Hash))],
+      )
+
+      pp activity[:wrap_static]
 
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
 
