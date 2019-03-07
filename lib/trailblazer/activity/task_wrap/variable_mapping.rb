@@ -81,10 +81,10 @@ class Trailblazer::Activity < Module
         # let user compute new ctx for the wrapped task.
         input_ctx = apply_filter(*original_args)
 
-          wrap_ctx = wrap_ctx.merge( vm_original_ctx: original_args[0][0] ) # remember the original ctx
-
         # decompose the original_args since we want to modify them.
         (original_ctx, original_flow_options), original_circuit_options = original_args
+
+        wrap_ctx = wrap_ctx.merge(vm_original_ctx: original_ctx) # remember the original ctx
 
         # instead of the original Context, pass on the filtered `input_ctx` in the wrap.
         return wrap_ctx, [[input_ctx, original_flow_options], original_circuit_options]
