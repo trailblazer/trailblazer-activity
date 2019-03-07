@@ -21,7 +21,7 @@ class Trailblazer::Activity < Module
       end
 
       # The taskWrap extension that's included into the static taskWrap for a task.
-      def self.Extension(task, input, output, id: 1)
+      def self.Extension(task, input, output, id: input.object_id)
         input  = Trailblazer::Option(input)
         output = Trailblazer::Option(output)
 
@@ -32,10 +32,10 @@ class Trailblazer::Activity < Module
       end
 
       # DISCUSS: do we want the automatic wrapping of {input} and {output}?
-      def self.merge_for(input, output) # TODO: rename
+      def self.merge_for(input, output, id:) # TODO: rename
         [
-          [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(input)]],
-          [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["task_wrap.output", TaskWrap::Output.new(output)]],
+          [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(input, id: id)]],
+          [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["task_wrap.output", TaskWrap::Output.new(output, id: id)]],
         ]
       end
     end
@@ -75,8 +75,9 @@ class Trailblazer::Activity < Module
 
     # Calls your {@filter} and replaces the original ctx with your returned one.
     class Input
-      def initialize(filter)
+      def initialize(filter, id:)
         @filter = filter
+        @id     = id
       end
 
       # {input.call()} is invoked in the circuit.
@@ -89,7 +90,7 @@ class Trailblazer::Activity < Module
         # decompose the original_args since we want to modify them.
         (original_ctx, original_flow_options), original_circuit_options = original_args
 
-        wrap_ctx = wrap_ctx.merge(vm_original_ctx: original_ctx) # remember the original ctx
+        wrap_ctx = wrap_ctx.merge(@id => original_ctx) # remember the original ctx by the key {@id}.
 
         # instead of the original Context, pass on the filtered `input_ctx` in the wrap.
         return wrap_ctx, [[input_ctx, original_flow_options], original_circuit_options]
@@ -132,16 +133,17 @@ class Trailblazer::Activity < Module
     # TaskWrap step to compute the outgoing {Context} from the wrapped task.
     # This allows renaming, filtering, hiding, of the options returned from the wrapped task.
     class Output
-      def initialize(filter)
+      def initialize(filter, id:)
         @filter = filter
+        @id     = id
       end
 
       # Runs your filter and replaces the ctx in `wrap_ctx[:return_args]` with the filtered one.
       def call(wrap_ctx, original_args)
         (original_ctx, original_flow_options), original_circuit_options = original_args
 
-        returned_ctx, _ = wrap_ctx[:return_args]     # this is the Context returned from `call`ing the wrapped user task.
-        original_ctx    = wrap_ctx[:vm_original_ctx] # and this is from before the {:input} filter.
+        returned_ctx, _ = wrap_ctx[:return_args]  # this is the Context returned from {call}ing the wrapped user task.
+        original_ctx    = wrap_ctx[@id]           # grab the original ctx from before which was set in the {:input} filter.
         # let user compute the output.
         output_ctx = @filter.(original_ctx, returned_ctx, **original_circuit_options)
 

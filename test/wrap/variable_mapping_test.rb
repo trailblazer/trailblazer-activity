@@ -133,16 +133,16 @@ class VariableMappingTest < Minitest::Spec
 
       # add filters around Model.
       merge = [
-        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new( Trailblazer::Option(model_input) )]],
-        [TaskWrap::Pipeline.method(:append),  nil, ["task_wrap.output", TaskWrap::Output.new( Trailblazer::Option(model_output) )]],
+        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new( Trailblazer::Option(model_input), id: 1 )]],
+        [TaskWrap::Pipeline.method(:append),  nil, ["task_wrap.output", TaskWrap::Output.new( Trailblazer::Option(model_output), id: 1 )]],
       ]
 
       runtime[ Model ] = TaskWrap::Pipeline::Merge.new(*merge)
 
       # add filters around Uuid.
       merge = [
-        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new( Trailblazer::Option(uuid_input) )]],
-        [TaskWrap::Pipeline.method(:append),  nil, ["task_wrap.output", TaskWrap::Output.new( Trailblazer::Option(uuid_output) )]],
+        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new( Trailblazer::Option(uuid_input), id: 1 )]],
+        [TaskWrap::Pipeline.method(:append),  nil, ["task_wrap.output", TaskWrap::Output.new( Trailblazer::Option(uuid_output), id: 1 )]],
       ]
 
       runtime[ Uuid ] = TaskWrap::Pipeline::Merge.new(*merge)
@@ -217,9 +217,8 @@ class VariableMappingTest < Minitest::Spec
     end
 
     def Model_defaults(default_class)
-      input  = ->(original_ctx) { puts "m>"; new_ctx = Trailblazer.Context(model_class: original_ctx[:model_class] || default_class) }  # NOTE how we, so far, don't pass anything of original_ctx here.
+      input  = ->(original_ctx) { new_ctx = Trailblazer.Context(model_class: original_ctx[:model_class] || default_class) }  # NOTE how we, so far, don't pass anything of original_ctx here.
       output = ->(original_ctx, new_ctx) {
-        puts ">m"
         _, mutable_data = new_ctx.decompose
 
         # we are only interested in the {mutable_data} part since the disposed part is the {:input}.
@@ -250,14 +249,10 @@ class VariableMappingTest < Minitest::Spec
       a = macro.method(:model)
       b = ->(*args) { macro.model(*args) }
 
-      a_input  = ->(original_ctx) { puts "a> #{original_ctx.object_id}"; new_ctx = Trailblazer.Context(original_ctx) }
+      a_input  = ->(original_ctx) { new_ctx = Trailblazer.Context(original_ctx) }
 
       a_output = ->(original_ctx, new_ctx) {
-        puts ">a"
         _, mutable_data = new_ctx.decompose
-
-        puts "@@@@@ #{original_ctx.object_id.inspect}"
-        puts "@@@@@ #{_.object_id.inspect}"
 
         original_ctx.merge(:model_a => mutable_data[:model])
       }
@@ -267,12 +262,10 @@ class VariableMappingTest < Minitest::Spec
         b_extensions: [TaskWrap::VariableMapping::Extension(b, *Model_defaults(Hash))],
       )
 
-      pp activity[:wrap_static]
-
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
 
       signal.must_equal activity.to_h[:outputs][0].signal
-      ctx.inspect.must_equal %{{:model=>{}, :capture_a=>\"{:model=>[]}\"}}
+      ctx.inspect.must_equal %{{:model_a=>[], :capture_a=>\"{:model_a=>[]}\", :model=>{}}}
     end
   end
 
