@@ -38,7 +38,9 @@ class Trailblazer::Activity
 
       # Merges {extension_rows} into the {task_wrap_pipeline}.
       # This is usually used in step extensions or at runtime for {wrap_runtime}.
-      class Merge
+      #
+      # {Extension} API
+      class Merge # TODO: RENAME TO TaskWrap::Extension(::Merge)
         def initialize(*extension_rows)
           @extension_rows = extension_rows
         end

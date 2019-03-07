@@ -62,10 +62,10 @@ class VariableMappingTest < Minitest::Spec
 
     implementation = {
       "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
-      :Model => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)],                  []),
-      :Nested => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)],                  []),
-      :Uuid => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)],                  []),
-      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
+      :Model          => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)],                  []),
+      :Nested         => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)],                  []),
+      :Uuid           => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)],                  []),
+      "End.success"   => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, implementation)
@@ -125,6 +125,94 @@ class VariableMappingTest < Minitest::Spec
       options.must_equal({:a=>1, :model_a=>4, :c=>1, :uuid_a => 7 })
     end
   end
+
+
+
+
+
+
+  describe "Default injection" do
+    let(:activity) do
+      macro = Module.new do
+
+        def self.model((ctx, flow_options), *)
+          ctx[:model] = ctx[:model_class].new
+
+          return Activity::Right, [ctx, flow_options]
+        end
+
+      end
+
+      intermediate = Inter.new(
+        {
+          Inter::TaskRef("Model_a")                       => [Inter::Out(:success, "capture_a")],
+          Inter::TaskRef("capture_a")                     => [Inter::Out(:success, "Model_b")],
+          # Inter::TaskRef(:Nested)                       => [Inter::Out(:success, :Uuid)],
+          Inter::TaskRef("Model_b")                       => [Inter::Out(:success, "End.success")],
+          Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+        },
+        ["End.success"],
+        ["Model_a"], # start
+      )
+
+
+
+      coffee = Array
+      rakia  = Hash
+
+# todo: make this TaskWrap::Defaulter
+
+
+
+
+      capture_a = ->((ctx, flow_options), *) do
+        ctx[:capture_a] = ctx.inspect
+        return Activity::Right, [ctx, flow_options]
+      end
+
+      model_b = ->(*args) { macro.model(*args) }
+
+      implementation = {
+        "Model_a"       => Schema::Implementation::Task(a = macro.method(:model),    [Activity::Output(Activity::Right, :success)],       [TaskWrap::Extension(merge: merge_for(:model_a, coffee), task: a)]),
+        # :Nested         => Schema::Implementation::Task(nested, [Activity::Output(implementing::Success, :success)],                  []),
+        "Model_b"       => Schema::Implementation::Task(b= model_b, [Activity::Output(Activity::Right, :success)],                        [TaskWrap::Extension(merge: merge_for(:model_b, rakia), task: b)]),
+        "End.success"   => Schema::Implementation::Task(implementing::Success, [Activity::Output(implementing::Success, :success)], []),
+
+        "capture_a"     => Schema::Implementation::Task(capture_a, [Activity::Output(Activity::Right, :success)],                  []),
+      }
+
+      schema = Inter.(intermediate, implementation)
+
+      Activity.new(schema)
+    end
+
+    def merge_for(name, default_class)
+      model_input  = ->(original_ctx) { new_ctx = Trailblazer.Context(model_class: original_ctx[:model_class] || default_class) }  # NOTE how we, so far, don't pass anything of original_ctx here.
+      model_output = ->(original_ctx, new_ctx) {
+        _, mutable_data = new_ctx.decompose
+
+        original_ctx.merge(:model => mutable_data[:model])
+      } # return the "total" ctx
+
+      [
+        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["defaulter.input", TaskWrap::Input.new( Trailblazer::Option(model_input) )]],
+        [TaskWrap::Pipeline.method(:append),  nil,                         ["defaulter.output", TaskWrap::Output.new( Trailblazer::Option(model_output) )]],
+      ]
+    end
+
+    it "calls both {Model()} macros correctly, but saves both values under {:model}" do
+      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
+
+      signal.must_equal activity.to_h[:outputs][0].signal
+      ctx.inspect.must_equal %{{:model=>{}, :capture_a=>\"{:model=>[]}\"}}
+    end
+  end
+
+
+
+
+
+
 
   describe "Input/Output with scope" do
     it do
