@@ -208,9 +208,9 @@ class VariableMappingTest < Minitest::Spec
       model_b = ->(*args) { macro.model(*args) }
 
       implementation = {
-        "Model_a"       => Schema::Implementation::Task(a = macro.method(:model),    [Activity::Output(Activity::Right, :success)],       [TaskWrap::Extension(merge: merge_for(:model_a, coffee), task: a)]),
+        "Model_a"       => Schema::Implementation::Task(a = macro.method(:model),    [Activity::Output(Activity::Right, :success)],       [TaskWrap::VariableMapping::Extension(a, *Model_io(:model_a, coffee))]),
         # :Nested         => Schema::Implementation::Task(nested, [Activity::Output(implementing::Success, :success)],                  []),
-        "Model_b"       => Schema::Implementation::Task(b= model_b, [Activity::Output(Activity::Right, :success)],                        [TaskWrap::Extension(merge: merge_for(:model_b, rakia), task: b)]),
+        "Model_b"       => Schema::Implementation::Task(b= model_b, [Activity::Output(Activity::Right, :success)],                        [TaskWrap::VariableMapping::Extension(b, *Model_io(:model_b, rakia))]),
         "End.success"   => Schema::Implementation::Task(implementing::Success, [Activity::Output(implementing::Success, :success)], []),
 
         "capture_a"     => Schema::Implementation::Task(capture_a, [Activity::Output(Activity::Right, :success)],                  []),
@@ -221,18 +221,15 @@ class VariableMappingTest < Minitest::Spec
       Activity.new(schema)
     end
 
-    def merge_for(name, default_class)
-      model_input  = ->(original_ctx) { new_ctx = Trailblazer.Context(model_class: original_ctx[:model_class] || default_class) }  # NOTE how we, so far, don't pass anything of original_ctx here.
-      model_output = ->(original_ctx, new_ctx) {
+    def Model_io(name, default_class)
+      input  = ->(original_ctx) { new_ctx = Trailblazer.Context(model_class: original_ctx[:model_class] || default_class) }  # NOTE how we, so far, don't pass anything of original_ctx here.
+      output = ->(original_ctx, new_ctx) {
         _, mutable_data = new_ctx.decompose
 
         original_ctx.merge(:model => mutable_data[:model])
       } # return the "total" ctx
 
-      [
-        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["defaulter.input", TaskWrap::Input.new( Trailblazer::Option(model_input) )]],
-        [TaskWrap::Pipeline.method(:append),  nil,                         ["defaulter.output", TaskWrap::Output.new( Trailblazer::Option(model_output) )]],
-      ]
+      return input, output
     end
 
     it "calls both {Model()} macros correctly, but saves both values under {:model}" do

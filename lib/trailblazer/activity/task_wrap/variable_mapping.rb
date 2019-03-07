@@ -31,6 +31,7 @@ class Trailblazer::Activity < Module
         )
       end
 
+      # DISCUSS: do we want the automatic wrapping of {input} and {output}?
       def self.merge_for(input, output) # TODO: rename
         [
           [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(input)]],
