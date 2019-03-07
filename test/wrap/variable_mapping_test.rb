@@ -47,7 +47,7 @@ class VariableMappingTest < Minitest::Spec
     Activity.new(schema)
   end
 
-  let (:activity) do
+  def activity_for(model_extensions: [], uuid_extensions: [])
     intermediate = Inter.new(
       {
         Inter::TaskRef("Start.default") => [Inter::Out(:success, :Model)],
@@ -61,10 +61,10 @@ class VariableMappingTest < Minitest::Spec
     )
 
     implementation = {
-      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
-      :Model          => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)],                  []),
-      :Nested         => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)],                  []),
-      :Uuid           => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)],                  []),
+      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],  []),
+      :Model          => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)],                 model_extensions),
+      :Nested         => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)],          []),
+      :Uuid           => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)],                  uuid_extensions),
       "End.success"   => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
     }
 
@@ -73,26 +73,61 @@ class VariableMappingTest < Minitest::Spec
     Activity.new(schema)
   end
 
+  let (:activity) do
+    activity_for()
+  end
+
+  let(:model_io) do
+      # a => a+1
+    input  = ->(original_ctx) { new_ctx = Trailblazer.Context({ :a       => original_ctx[:a]+1 }) } # a = 2   # DISCUSS: how do we access, say. model.class from a container now?
+      # a -> model.a
+    output = ->(original_ctx, new_ctx) {
+      _, mutable_data = new_ctx.decompose
+
+      # "strategy" and user block
+      original_ctx.merge(:model_a => mutable_data[:a])
+    } # return the "total" ctx
+
+    [input, output]
+  end
+
+  let(:uuid_io) do
+      # a => a*3, model.a => model.a
+    input   = ->(original_ctx) { new_ctx = Trailblazer.Context({ :a       => original_ctx[:a]*3, :model_a => original_ctx[:model_a] }) }
+    output  = ->(original_ctx, new_ctx) {
+      _, mutable_data = new_ctx.decompose
+
+      # "strategy" and user block
+      original_ctx.merge({ :uuid_a  => mutable_data[:a] })
+    }
+
+    [input, output]
+  end
+
   describe "pure Input/Output" do
-    it do
-        # a => a+1
-      model_input  = ->(original_ctx) { new_ctx = Trailblazer.Context({ :a       => original_ctx[:a]+1 }) } # a = 2   # DISCUSS: how do we access, say. model.class from a container now?
-        # a -> model.a
-      model_output = ->(original_ctx, new_ctx) {
-        _, mutable_data = new_ctx.decompose
+    it "added via {wrap_static}, manually" do
+      model_input, model_output = model_io
+      uuid_input, uuid_output   = uuid_io
 
-        # "strategy" and user block
-        original_ctx.merge(:model_a => mutable_data[:a])
-      } # return the "total" ctx
+      activity = activity_for(
+        model_extensions: [Activity::TaskWrap::Extension(task: Model, merge: Activity::TaskWrap::VariableMapping.merge_for(model_input, model_output))],
+        uuid_extensions: [Activity::TaskWrap::Extension(task:  Uuid, merge: Activity::TaskWrap::VariableMapping.merge_for(uuid_input, uuid_output))],
+      )
 
-        # a => a*3, model.a => model.a
-      uuid_input   = ->(original_ctx) { new_ctx = Trailblazer.Context({ :a       => original_ctx[:a]*3, :model_a => original_ctx[:model_a] }) }
-      uuid_output  = ->(original_ctx, new_ctx) {
-        _, mutable_data = new_ctx.decompose
+      signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
+        [
+          options = { :a => 1 }.freeze,
+          {},
+        ],
+      )
 
-        # "strategy" and user block
-        original_ctx.merge({ :uuid_a  => mutable_data[:a] })
-      }
+      signal.must_equal activity.to_h[:outputs][0].signal
+      options.must_equal({:a=>1, :model_a=>4, :c=>1, :uuid_a => 7 })
+    end
+
+    it "added via {wrap_runtime}" do
+      model_input, model_output = model_io
+      uuid_input, uuid_output   = uuid_io
 
       runtime = {}
 
