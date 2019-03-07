@@ -110,8 +110,8 @@ class VariableMappingTest < Minitest::Spec
       uuid_input, uuid_output   = uuid_io
 
       activity = activity_for(
-        model_extensions: [Activity::TaskWrap::Extension(task: Model, merge: Activity::TaskWrap::VariableMapping.merge_for(model_input, model_output))],
-        uuid_extensions: [Activity::TaskWrap::Extension(task:  Uuid, merge: Activity::TaskWrap::VariableMapping.merge_for(uuid_input, uuid_output))],
+        model_extensions: [Activity::TaskWrap::VariableMapping::Extension(Model, model_input, model_output)],
+        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(Uuid, uuid_input, uuid_output)],
       )
 
       signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,

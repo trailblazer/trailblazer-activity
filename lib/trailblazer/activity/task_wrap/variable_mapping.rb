@@ -21,23 +21,20 @@ class Trailblazer::Activity < Module
       end
 
       # The taskWrap extension that's included into the static taskWrap for a task.
-      def self.extension_for(input, output)
-        Trailblazer::Activity::TaskWrap::Extension.new(
-          Merge.new(
-            Module.new do
-              extend Path::Plan()
+      def self.Extension(task, input, output)
+        input  = Trailblazer::Option(input)
+        output = Trailblazer::Option(output)
 
-              task input,  id: "task_wrap.input", before: "task_wrap.call_task"
-              task output, id: "task_wrap.output", before: "End.success", group: :end
-            end
-          )
+        Trailblazer::Activity::TaskWrap::Extension(
+          task: task,
+          merge: merge_for(input, output),
         )
       end
 
       def self.merge_for(input, output) # TODO: rename
         [
-          [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new( Trailblazer::Option(input) )]],
-          [TaskWrap::Pipeline.method(:append),  nil,                         ["task_wrap.output", TaskWrap::Output.new( Trailblazer::Option(output) )]],
+          [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(input)]],
+          [TaskWrap::Pipeline.method(:append),  nil,                         ["task_wrap.output", TaskWrap::Output.new(output)]],
         ]
       end
     end
