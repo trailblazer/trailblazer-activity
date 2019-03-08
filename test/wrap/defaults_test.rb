@@ -75,27 +75,34 @@ class DefaultsTest < Minitest::Spec
       ctx.inspect.must_equal %{{:model_class=>DefaultsTest::Whatever, :model=>#<Whatever args={:id=>1}>, :capture_a=>\"{:model_class=>DefaultsTest::Whatever, :model=>#<Whatever args=\\\"99\\\">}\"}}
     end
 
-    # it "calls both {Model()} macros correctly and maps each model to a different attribute" do
-    #   a = macro.method(:model)
-    #   b = ->(*args) { macro.model(*args) }
+    it "provides the above plus output mapping" do
+      a = macro.method(:model)
+      b = ->(*args) { macro.model(*args) }
 
-    #   a_input  = ->(original_ctx) { new_ctx = Trailblazer.Context(original_ctx) }
+      a_input  = ->(original_ctx) { new_ctx = Trailblazer.Context(original_ctx) }
 
-    #   a_output = ->(original_ctx, new_ctx) {
-    #     _, mutable_data = new_ctx.decompose
+      a_output = ->(original_ctx, new_ctx) {
+        _, mutable_data = new_ctx.decompose
 
-    #     original_ctx.merge(:model_a => mutable_data[:model])
-    #   }
+        original_ctx.merge(:model_a => mutable_data[:model])
+      }
 
-    #   activity = activity_for(a: a, b: b,
-    #     a_extensions: [TaskWrap::VariableMapping::Extension(a, a_input, a_output), TaskWrap::VariableMapping::Extension(a, *Model_defaults(Array))],
-    #     b_extensions: [TaskWrap::VariableMapping::Extension(b, *Model_defaults(Hash))],
-    #   )
+      activity = activity_for(a: a, b: b,
+        a_extensions: [TaskWrap::VariableMapping::Extension(a, a_input, a_output), TaskWrap::Inject::Defaults::Extension(a, model_class: Regexp, args: "99")],
+        b_extensions: [TaskWrap::Inject::Defaults::Extension(b, model_class: OpenStruct, args: {id: 1})],
+      )
 
-    #   signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
+# defaults are applied
+      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
 
-    #   signal.must_equal activity.to_h[:outputs][0].signal
-    #   ctx.inspect.must_equal %{{:model_a=>[], :capture_a=>\"{:model_a=>[]}\", :model=>{}}}
-    # end
+      signal.must_equal activity.to_h[:outputs][0].signal
+      ctx.inspect.must_equal %{{:model_a=>/99/, :capture_a=>\"{:model_a=>/99/}\", :model=>#<OpenStruct id=1>}}
+
+# inject one value from outside, the other is still defaulted.
+      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{model_class: Whatever}.freeze, {}])
+
+      signal.must_equal activity.to_h[:outputs][0].signal
+      ctx.inspect.must_equal %{{:model_class=>DefaultsTest::Whatever, :model_a=>#<Whatever args=\"99\">, :capture_a=>\"{:model_class=>DefaultsTest::Whatever, :model_a=>#<Whatever args=\\\"99\\\">}\", :model=>#<Whatever args={:id=>1}>}}
+    end
   end
 end
