@@ -43,6 +43,7 @@ require "trailblazer/activity/task_wrap/pipeline"
 require "trailblazer/activity/task_wrap/call_task"
 require "trailblazer/activity/task_wrap/runner"
 require "trailblazer/activity/task_wrap/variable_mapping"
+require "trailblazer/activity/task_wrap/inject"
 
 require "trailblazer/activity/trace"
 require "trailblazer/activity/present"
