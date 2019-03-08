@@ -126,6 +126,37 @@ class VariableMappingTest < Minitest::Spec
       ctx.must_equal({:seq=>[], :seq_from_model=>[:model_in, "model", :model_out], :c=>nil, :seq_from_uuid=>[:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
     end
 
+    it "allows adding multiple I/Os" do
+      model_input, model_output = model_io
+      uuid_input, uuid_output   = uuid_io
+
+      model_input_2  = ->(original_ctx) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2]) }
+      model_output_2 = ->(original_ctx, new_ctx) {
+        _, mutable_data = new_ctx.decompose
+
+        seq = mutable_data[:seq_from_model] + [:model_out_2]
+
+        original_ctx.merge(seq_from_model: seq)
+      }
+
+      activity = activity_for(
+        model_extensions: [
+          Activity::TaskWrap::VariableMapping::Extension(Model, model_input_2, model_output_2),
+          Activity::TaskWrap::VariableMapping::Extension(Model, model_input, model_output)
+        ],
+        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(Uuid, uuid_input, uuid_output)],
+      )
+
+      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity,
+        [
+          { seq: [] }.freeze, {},
+        ],
+      )
+
+      signal.must_equal activity.to_h[:outputs][0].signal
+      ctx.must_equal({:seq=>[], :seq_from_model=>[:model_in_2, :model_in, "model", :model_out, :model_out_2], :c=>nil, :seq_from_uuid=>[:model_in_2, :model_in, "model", :model_out, :model_out_2, :uuid_in, "uuid", :uuid_out]})
+    end
+
     it "added via {wrap_runtime}" do
       model_input, model_output = model_io
       uuid_input, uuid_output   = uuid_io
