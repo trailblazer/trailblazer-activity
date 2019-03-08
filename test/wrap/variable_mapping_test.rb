@@ -4,19 +4,19 @@ require "test_helper"
 # These are task wrap steps added before and after the task.
 class VariableMappingTest < Minitest::Spec
   # first task
-  Model = ->((options, flow), **o) do
-    options[:a]        = options[:a] * 2 # rename to model.a
-    options[:model_nonsense] = true       # filter me out
+  Model = ->((ctx, flow), **) do
+    ctx[:seq]            = ctx[:seq] + ["model"] # rename to model.a
+    ctx[:model_nonsense] = true       # filter me out
 
-    [Activity::Right, [options, flow]]
+    [Activity::Right, [ctx, flow]]
   end
 
   # second task
-  Uuid = ->((options, flow), **o) do
-    options[:a]             = options[:a] + options[:model_a] # rename to uuid.a
-    options[:uuid_nonsense] = false                             # filter me out
+  Uuid = ->((ctx, flow), **) do
+    ctx[:seq] = ctx[:seq] + ["uuid"] # rename to uuid.a
+    ctx[:uuid_nonsense] = false                             # filter me out
 
-    [Activity::Right, [options, flow]]
+    [Activity::Right, [ctx, flow]]
   end
 
   C = ->((ctx, flow), **) do
@@ -79,13 +79,14 @@ class VariableMappingTest < Minitest::Spec
 
   let(:model_io) do
       # a => a+1
-    input  = ->(original_ctx) { new_ctx = Trailblazer.Context({ :a       => original_ctx[:a]+1 }) } # a = 2   # DISCUSS: how do we access, say. model.class from a container now?
+    input  = ->(original_ctx) { new_ctx = Trailblazer.Context(seq: original_ctx[:seq] + [:model_in]) }
       # a -> model.a
     output = ->(original_ctx, new_ctx) {
       _, mutable_data = new_ctx.decompose
 
-      # "strategy" and user block
-      original_ctx.merge(:model_a => mutable_data[:a])
+      seq = mutable_data[:seq] + [:model_out]
+
+      original_ctx.merge(seq_from_model: seq)
     } # return the "total" ctx
 
     [input, output]
@@ -93,12 +94,13 @@ class VariableMappingTest < Minitest::Spec
 
   let(:uuid_io) do
       # a => a*3, model.a => model.a
-    input   = ->(original_ctx) { new_ctx = Trailblazer.Context({ :a       => original_ctx[:a]*3, :model_a => original_ctx[:model_a] }) }
+    input   = ->(original_ctx) { new_ctx = Trailblazer.Context(seq: original_ctx[:seq_from_model] + [:uuid_in]) }
     output  = ->(original_ctx, new_ctx) {
       _, mutable_data = new_ctx.decompose
 
-      # "strategy" and user block
-      original_ctx.merge({ :uuid_a  => mutable_data[:a] })
+      seq = mutable_data[:seq] + [:uuid_out]
+
+      original_ctx.merge({ seq_from_uuid: seq })
     }
 
     [input, output]
@@ -114,15 +116,14 @@ class VariableMappingTest < Minitest::Spec
         uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(Uuid, uuid_input, uuid_output)],
       )
 
-      signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
+      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity,
         [
-          options = { :a => 1 }.freeze,
-          {},
+          { seq: [] }.freeze, {},
         ],
       )
 
       signal.must_equal activity.to_h[:outputs][0].signal
-      options.must_equal({:a=>1, :model_a=>4, :c=>1, :uuid_a => 7 })
+      ctx.must_equal({:seq=>[], :seq_from_model=>[:model_in, "model", :model_out], :c=>nil, :seq_from_uuid=>[:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
     end
 
     it "added via {wrap_runtime}" do
@@ -149,15 +150,14 @@ class VariableMappingTest < Minitest::Spec
 
       signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
         [
-          options = { :a => 1 }.freeze,
-          {},
+          options = { seq: [] }.freeze, {},
         ],
 
         wrap_runtime: runtime, # dynamic additions from the outside (e.g. tracing), also per task.
       )
 
       signal.must_equal activity.to_h[:outputs][0].signal
-      options.must_equal({:a=>1, :model_a=>4, :c=>1, :uuid_a => 7 })
+      options.must_equal({:seq=>[], :seq_from_model=>[:model_in, "model", :model_out], :c=>nil, :seq_from_uuid=>[:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
     end
   end
 
