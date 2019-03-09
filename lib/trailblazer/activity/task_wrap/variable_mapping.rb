@@ -26,7 +26,6 @@ class Trailblazer::Activity < Module
         output = Trailblazer::Option(output)
 
         Trailblazer::Activity::TaskWrap::Extension(
-          task: task,
           merge: merge_for(input, output, id: id),
         )
       end

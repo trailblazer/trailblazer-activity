@@ -33,20 +33,19 @@ module Trailblazer
       end
 
       # Use this in your macros if you want to extend the {taskWrap}.
-      def Extension(task:, merge:)
-        Extension.new(task: task, merge: Pipeline::Merge.new(*merge))
+      def Extension(merge:)
+        Extension.new(merge: Pipeline::Merge.new(*merge))
       end
 
       class Extension
-        def initialize(task:, merge:)
-          @task    = task
+        def initialize(merge:)
           @merge = merge
         end
 
-        def call(config:, **)
-          before_pipe = State::Config.get(config, :wrap_static, @task)
+        def call(config:, task:, **)
+          before_pipe = State::Config.get(config, :wrap_static, task.circuit_task)
 
-          State::Config.set(config, :wrap_static, @task, @merge.(before_pipe))
+          State::Config.set(config, :wrap_static, task.circuit_task, @merge.(before_pipe))
         end
       end
     end # TaskWrap

@@ -20,9 +20,9 @@ class TaskWrapTest < Minitest::Spec
     ]
 
     implementation = {
-      :a => Schema::Implementation::Task(a = implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension(merge: merge, task: a)]),
-      :b => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success)],                 []),
-      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 []),
+      :a => Schema::Implementation::Task( implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension(merge: merge)]),
+      :b => Schema::Implementation::Task(implementing.method(:b), [Activity::Output(Activity::Right, :success)],                 []),
+      :c => Schema::Implementation::Task(implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 []),
       "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
     }
 
@@ -35,9 +35,9 @@ class TaskWrapTest < Minitest::Spec
 # it works nested as well
 
     top_implementation = {
-      :a => Schema::Implementation::Task(a = implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 []),
-      :b => Schema::Implementation::Task(b = Activity.new(schema),     [Activity::Output(_es, :success)],                            []),
-      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension(merge: merge, task: c)]),
+      :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 []),
+      :b => Schema::Implementation::Task(Activity.new(schema),     [Activity::Output(_es, :success)],                            []),
+      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension(merge: merge)]),
       "End.success" => Schema::Implementation::Task(es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
     }
 

@@ -163,10 +163,10 @@ class GeneratedTest < Minitest::Spec
     MyMacro = ->(*) { {
       id: "MyMacro_id", # ignored
       outputs: {success: Activity::Output(Activity::Right, :success)},
-      task: t= Activity::TaskBuilder.Binary(_implementing.method(:f)),
+      task: Activity::TaskBuilder.Binary(_implementing.method(:f)),
       extensions: [
         # TaskWrap::Extension.new(task: t, merge: TaskWrap.method(:initial_wrap_static)),
-        TaskWrap::Extension(task: t, merge: merge)
+        TaskWrap::Extension(merge: merge)
       ]
     } }
 
