@@ -21,7 +21,7 @@ class Trailblazer::Activity < Module
       end
 
       # The taskWrap extension that's included into the static taskWrap for a task.
-      def self.Extension(task, input, output, id: input.object_id)
+      def self.Extension(input, output, id: input.object_id)
         input  = Trailblazer::Option(input)
         output = Trailblazer::Option(output)
 

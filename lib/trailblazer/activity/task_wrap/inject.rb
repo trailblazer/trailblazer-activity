@@ -7,7 +7,7 @@ class Trailblazer::Activity < Module
       module Defaults
         module_function
 
-        def Extension(task, defaults)
+        def Extension(defaults)
           # Returns new ctx.
           input  = ->(original_ctx) do
             defaulted_options = defaults_for(defaults, original_ctx)
@@ -23,7 +23,7 @@ class Trailblazer::Activity < Module
             original_ctx.merge(mutable_data)
           }
 
-          VariableMapping::Extension(task, input, output, id: input)
+          VariableMapping::Extension(input, output, id: input)
         end
 
         # go through all defaultable options and default them if appropriate.

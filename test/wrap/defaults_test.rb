@@ -58,8 +58,8 @@ class DefaultsTest < Minitest::Spec
       b = ->(*args) { macro.model(*args) }
 
       activity = activity_for(a: a, b: b,
-        a_extensions: [TaskWrap::Inject::Defaults::Extension(a, model_class: Regexp, args: "99")],
-        b_extensions: [TaskWrap::Inject::Defaults::Extension(b, model_class: OpenStruct, args: {id: 1})],
+        a_extensions: [TaskWrap::Inject::Defaults::Extension(model_class: Regexp, args: "99")],
+        b_extensions: [TaskWrap::Inject::Defaults::Extension(model_class: OpenStruct, args: {id: 1})],
       )
 
 # defaults are applied
@@ -88,8 +88,8 @@ class DefaultsTest < Minitest::Spec
       }
 
       activity = activity_for(a: a, b: b,
-        a_extensions: [TaskWrap::VariableMapping::Extension(a, a_input, a_output), TaskWrap::Inject::Defaults::Extension(a, model_class: Regexp, args: "99")],
-        b_extensions: [TaskWrap::Inject::Defaults::Extension(b, model_class: OpenStruct, args: {id: 1})],
+        a_extensions: [TaskWrap::VariableMapping::Extension(a_input, a_output), TaskWrap::Inject::Defaults::Extension(model_class: Regexp, args: "99")],
+        b_extensions: [TaskWrap::Inject::Defaults::Extension(model_class: OpenStruct, args: {id: 1})],
       )
 
 # defaults are applied

@@ -112,8 +112,8 @@ class VariableMappingTest < Minitest::Spec
       uuid_input, uuid_output   = uuid_io
 
       activity = activity_for(
-        model_extensions: [Activity::TaskWrap::VariableMapping::Extension(Model, model_input, model_output)],
-        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(Uuid, uuid_input, uuid_output)],
+        model_extensions: [Activity::TaskWrap::VariableMapping::Extension(model_input, model_output)],
+        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(uuid_input, uuid_output)],
       )
 
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity,
@@ -141,10 +141,10 @@ class VariableMappingTest < Minitest::Spec
 
       activity = activity_for(
         model_extensions: [
-          Activity::TaskWrap::VariableMapping::Extension(Model, model_input_2, model_output_2),
-          Activity::TaskWrap::VariableMapping::Extension(Model, model_input, model_output)
+          Activity::TaskWrap::VariableMapping::Extension(model_input_2, model_output_2),
+          Activity::TaskWrap::VariableMapping::Extension(model_input, model_output)
         ],
-        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(Uuid, uuid_input, uuid_output)],
+        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(uuid_input, uuid_output)],
       )
 
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity,
