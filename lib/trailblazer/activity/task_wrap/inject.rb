@@ -1,5 +1,4 @@
-
-class Trailblazer::Activity < Module
+class Trailblazer::Activity
   module TaskWrap
     # Allows to inject attributes for a task and defaults them if not.
     # Per default, the defaulting is scoped, meaning only the task will see it.
