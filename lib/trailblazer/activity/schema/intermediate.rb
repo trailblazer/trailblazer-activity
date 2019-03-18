@@ -16,7 +16,7 @@ class Trailblazer::Activity
         config_default = {wrap_static: Hash.new(TaskWrap.initial_wrap_static)}.freeze # DISCUSS: this really doesn't have to be here, but works for now and we want it in 99%.
 
         circuit = circuit(intermediate, implementation)
-        nodes   = node_attributes(implementation)
+        nodes   = node_attributes(intermediate, implementation)
         outputs = outputs(intermediate.stop_task_ids, nodes)
         config  = config(implementation, config: config_default)
         schema  = Schema.new(circuit, outputs, nodes, config)
@@ -54,10 +54,12 @@ class Trailblazer::Activity
         ]
       end
 
-      # DISCUSS: this is intermediate-independent?
-      def self.node_attributes(implementation, nodes_data={}) # TODO: process {nodes_data}
-        implementation.collect do |id, task| # id, Task{circuit_task, outputs}
-          NodeAttributes.new(id, task.outputs, task.circuit_task, {})
+      def self.node_attributes(intermediate, implementation)
+        intermediate.wiring.collect do |task_ref, outputs| # id, Task{circuit_task, outputs}
+          task = implementation.fetch(task_ref.id)
+          data = task_ref[:data] # TODO: allow adding data from implementation.
+
+          NodeAttributes.new(task_ref.id, task.outputs, task.circuit_task, data)
         end
       end
 

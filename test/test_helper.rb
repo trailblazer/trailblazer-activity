@@ -84,9 +84,9 @@ Minitest::Spec.class_eval do
   let(:bc) do
      intermediate = Inter.new(
       {
-        Inter::TaskRef("Start.default") => [Inter::Out(:success, :B)],
-        Inter::TaskRef(:B) => [Inter::Out(:success, :C)],
-        Inter::TaskRef(:C) => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef("Start.default")      => [Inter::Out(:success, :B)],
+        Inter::TaskRef(:B, additional: true) => [Inter::Out(:success, :C)],
+        Inter::TaskRef(:C)                   => [Inter::Out(:success, "End.success")],
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
       },
       ["End.success"],

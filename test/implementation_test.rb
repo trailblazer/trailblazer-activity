@@ -74,6 +74,8 @@ class GeneratedTest < Minitest::Spec
 
     end
 
+    # FIXME: test with taskWrap
+
     it "allows :instance_method tasks" do
       assert_process_for nested_implementation, :success, %{
 <*a>
@@ -176,6 +178,7 @@ class GeneratedTest < Minitest::Spec
         a: _implementing.method(:a),
         b: MyMacro.(:User, :find_by)
     end
+    # TODO: {:method}
 
     assert_process_for impl, :success, %{
 <*#<Method: #<Module:0x>.a>>
