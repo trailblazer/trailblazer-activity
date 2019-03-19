@@ -8,8 +8,6 @@ module Trailblazer
       end
 
       # TODO: order of step/fail/pass in Node would be cool to have
-      # TODO: #outputs
-
 
       # @private This API is still under construction.
       class Graph
