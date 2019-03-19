@@ -42,20 +42,20 @@ module Trailblazer
         end
 
         def find_with_block(&block)
-          existing = @configs.find { |node| yield Node(node.task, node.id, node.outputs) } or return
+          existing = @configs.find { |node| yield Node(node.task, node.id, node.outputs, node.data) } or return
 
           node_for(existing)
         end
 
-        def node_for(config)
-          Node(config.task, config.id, config.outputs, outgoings_for(config))
+        def node_for(node_attributes)
+          Node(node_attributes.task, node_attributes.id, node_attributes.outputs, outgoings_for(node_attributes), node_attributes.data)
         end
 
         def Node(*args)
           Node.new(*args).freeze
         end
 
-        Node     = Struct.new(:task, :id, :outputs, :outgoings)
+        Node     = Struct.new(:task, :id, :outputs, :outgoings, :data)
         Outgoing = Struct.new(:output, :task)
 
         def outgoings_for(node)
