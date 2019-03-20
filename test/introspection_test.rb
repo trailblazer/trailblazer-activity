@@ -30,7 +30,7 @@ class IntrospectionTest < Minitest::Spec
     end
 
     describe "#collect" do
-      it do
+      it "provides 1-arg {node}" do
         nodes = graph.collect { |node| node }
 
         nodes.size.must_equal 5
@@ -45,6 +45,17 @@ class IntrospectionTest < Minitest::Spec
         assert_outgoings nodes[3], Activity::Right => nested_activity.to_h[:outputs][0].signal
         nodes[4][:task].inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
         assert_outgoings nodes[4], {}
+      end
+
+      it "provides 2-arg {node, index}" do
+        nodes = graph.collect { |node, i| [node, i] }
+
+        nodes.size.must_equal 5
+
+        nodes[0][0][:task].inspect.must_equal %{#<Trailblazer::Activity::Start semantic=:default>}
+        nodes[0][1].must_equal 0
+        nodes[4][0][:task].inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
+        nodes[4][1].must_equal 4
       end
     end
 

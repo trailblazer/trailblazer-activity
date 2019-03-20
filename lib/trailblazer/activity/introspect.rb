@@ -25,7 +25,7 @@ module Trailblazer
         end
 
         def collect(strategy: :circuit, &block)
-          @map.keys.collect { |task| yield find_with_block { |node| node.task==task } }
+          @map.keys.each_with_index.collect { |task, i| yield find_with_block { |node| node.task==task }, i }
         end
 
         def stop_events
