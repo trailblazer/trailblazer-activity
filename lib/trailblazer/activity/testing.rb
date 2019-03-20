@@ -9,6 +9,7 @@ module Trailblazer
     #   extend T.def_steps(:create, :save)
     def self.def_steps(*names)
       Module.new do
+        module_function
         names.each do |name|
           define_method(name) do | ctx, ** |
             ctx[:seq] << name
