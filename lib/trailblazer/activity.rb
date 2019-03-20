@@ -1,5 +1,5 @@
 module Trailblazer
-  # This is considered DSL-independent code
+  # This is DSL-independent code, focusing only on run-time.
   class Activity
     # include Activity::Interface # TODO
 
@@ -31,11 +31,11 @@ module Trailblazer
 end
 
 # require "trailblazer/activity/interface"
+require "trailblazer/activity/structures"
 require "trailblazer/activity/schema"
 require "trailblazer/activity/schema/implementation"
 require "trailblazer/activity/schema/intermediate"
 require "trailblazer/activity/circuit"
-require "trailblazer/activity/structures"
 require "trailblazer/activity/config"
 
 require "trailblazer/activity/task_wrap"
