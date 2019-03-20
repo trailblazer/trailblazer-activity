@@ -30,7 +30,7 @@ module Trailblazer
   end # Activity
 end
 
-require "trailblazer/activity/interface"
+# require "trailblazer/activity/interface"
 require "trailblazer/activity/schema"
 require "trailblazer/activity/schema/implementation"
 require "trailblazer/activity/schema/intermediate"
