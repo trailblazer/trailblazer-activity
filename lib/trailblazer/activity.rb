@@ -50,6 +50,7 @@ require "trailblazer/activity/present"
 
 require "trailblazer/activity/introspect"
 require "trailblazer/option"
+require "trailblazer/context"
 require "trailblazer/activity/task_builder"
 require "trailblazer/activity/implementation"
 
