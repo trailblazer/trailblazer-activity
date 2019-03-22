@@ -7,17 +7,6 @@ class Trailblazer::Activity < Module
     # Note that the two options are not the only way to create filters, you can use the
     # more low-level {Scoped()} etc., too, and write your own filter logic.
     module VariableMapping
-      # DSL step for Magnetic::Normalizer.
-      # Translates `:input` and `:output` into VariableMapping taskWrap extensions.
-      def self.normalizer_step_for_input_output(ctx, *)
-        options, io_config = Magnetic::Options.normalize( ctx[:options], [:input, :output] )
-
-        return if io_config.empty?
-
-        ctx[:options] = options # without :input and :output
-        ctx[:options] = options.merge(Trailblazer::Activity::TaskWrap::VariableMapping(io_config) => true)
-      end
-
       # The taskWrap extension that's included into the static taskWrap for a task.
       def self.Extension(input, output, id: input.object_id)
         input  = Trailblazer::Option(input)
