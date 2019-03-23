@@ -51,6 +51,7 @@ module Trailblazer
           cct = Trailblazer::Developer::Render::Circuit.(activity)
         end
 
+        # Tests {:circuit} and {:outputs} fields so far.
         def assert_process_for(process, *args)
           semantics, circuit = args[0..-2], args[-1]
 
