@@ -1,3 +1,9 @@
+# 0.8.0
+
+* Separate the [DSL](https://github.com/trailblazer/trailblazer-activity-dsl-linear) from the runtime code. The latter sits in this gem.
+* Separate the runtime {Activity} from its compilation, which happens through {Intermediate} (the structure) and {Implementation} (the runtime implementation) now.
+* Introduce {Pipeline} which is a simpler and much fast type of activity, mostly for the taskWrap.
+
 # 0.7.2
 
 * When recording DSL calls, use the `object_id` as key, so cloned methods are considered as different recordings.
