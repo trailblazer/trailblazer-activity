@@ -227,4 +227,38 @@ class GeneratedTest < Minitest::Spec
     signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
     ctx.inspect.must_equal %{{:seq=>[:a]}}
   end
+
+  it "allows different start id {Start.success}" do
+    _implementing = implementing
+
+    _intermediate = Inter.new(
+      {
+        Inter::TaskRef("Start.success") => [Inter::Out(:success, :a)],
+        Inter::TaskRef(:a) => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)], # this is how the End semantic is defined.
+      },
+      [
+        "End.success",
+      ],
+      ["Start.success"] # start
+    )
+
+    impl = Class.new(Trailblazer::Activity::Implementation) do
+      implement _intermediate,
+        a: _implementing.method(:a)
+    end
+
+    assert_process_for impl, :success, %{
+#<Start/:success>
+ {Trailblazer::Activity::Right} => <*#<Method: #<Module:0x>.a>>
+<*#<Method: #<Module:0x>.a>>
+ {Trailblazer::Activity::Right} => #<End/:success>
+#<End/:success>
+}
+
+    signal, (ctx, _) = impl.([seq: []])
+
+    signal.inspect.must_equal %{#<Trailblazer::Activity::End semantic=:success>}
+    ctx.inspect.must_equal %{{:seq=>[:a]}}
+  end
 end

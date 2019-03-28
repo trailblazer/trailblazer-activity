@@ -16,6 +16,8 @@ module Trailblazer
 
           step_interface_builder = TaskBuilder.method(:Binary) # FIXME
 
+          default_events = default_tasks(intermediate, with_start, *intermediate.start_task_ids)
+
           implementation = wiring.collect do |ref, connections|
             id  = ref.id
             cfg = user_options[id] #or raise "No task passed for #{id.inspect}"
@@ -30,7 +32,7 @@ module Trailblazer
                 {id: id, task: task, outputs: output_defaults, extensions: []}
               # Start, End, etc.
               else
-                default_tasks(intermediate, with_start).find { |row| row[:id] == id }
+                default_events.find { |row| row[:id] == id } or raise
               end
 
             id, task, outputs, extensions = outputs_for_task(wiring, task_options)
@@ -56,10 +58,10 @@ module Trailblazer
         end
 
         # automatically create {End}s etc.
-        def default_tasks(intermediate, with_start)
+        def default_tasks(intermediate, with_start, start_id="Start.default", *)
           start_task    = Activity::Start.new(semantic: :success)
           start_options = {
-            id:         "Start.default",
+            id:         start_id,
             outputs:    {:success => Activity::Output(Activity::Right, :success)},
             task:       start_task,
             extensions: [],

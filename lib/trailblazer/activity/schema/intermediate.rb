@@ -28,9 +28,9 @@ class Trailblazer::Activity
           intermediate.wiring.collect do |task_ref, outs|
             task = implementation.fetch(task_ref.id)
 
-            [
+            [ # FIXME: remove the stop_event shit
               task.circuit_task,
-              task_ref.data[:stop_event] ? {} : connections_for(outs, task.outputs, implementation)
+              task_ref.data[:stop_event]||task_ref.data["stop_event"] ? {} : connections_for(outs, task.outputs, implementation)
             ]
           end
         ]
