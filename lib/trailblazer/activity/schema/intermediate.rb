@@ -1,7 +1,8 @@
 class Trailblazer::Activity
   class Schema
+    # An {Intermediate} structure defines the *structure* of the circuit. It usually
+    # comes from a DSL or a visual editor.
     class Intermediate < Struct.new(:wiring, :stop_task_ids, :start_task_ids)
-      # Intermediate structures
       TaskRef = Struct.new(:id, :data) # TODO: rename to NodeRef
       Out     = Struct.new(:semantic, :target)
 
@@ -24,13 +25,15 @@ class Trailblazer::Activity
 
       # From the intermediate "template" and the actual implementation, compile a {Circuit} instance.
       def self.circuit(intermediate, implementation)
+        end_events = intermediate.stop_task_ids
+
         wiring = Hash[
           intermediate.wiring.collect do |task_ref, outs|
             task = implementation.fetch(task_ref.id)
 
-            [ # FIXME: remove the stop_event shit
+            [
               task.circuit_task,
-              task_ref.data[:stop_event]||task_ref.data["stop_event"] ? {} : connections_for(outs, task.outputs, implementation)
+              end_events.include?(task_ref.id) ? {} : connections_for(outs, task.outputs, implementation)
             ]
           end
         ]

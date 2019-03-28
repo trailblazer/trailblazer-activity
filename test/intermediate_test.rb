@@ -72,6 +72,14 @@ class IntermediateTest < Minitest::Spec
     end
 
   it "start and stop can be arbitrary" do
+    # D returns "D/stop" signal.
+    module D
+      def self.d_end((ctx, flow_options), *)
+        ctx[:seq] << :d
+        return "D/stop", [ctx, flow_options]
+      end
+    end
+
     intermediate =
       Inter.new(
         {
@@ -82,7 +90,7 @@ class IntermediateTest < Minitest::Spec
           Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
         },
   # arbitrary start and end event.
-        [:D], # end events
+        [:D, "End.success"], # end events
         [:C], # start
       )
 
@@ -90,22 +98,22 @@ class IntermediateTest < Minitest::Spec
       {
         "Start.default" => Schema::Implementation::Task(implementing::Start, [Activity::Output(Activity::Right, :success)], []),
         :C => Schema::Implementation::Task(implementing.method(:c), [Activity::Output(Activity::Right, :success)], []),
-        :D => Schema::Implementation::Task(implementing.method(:d), [Activity::Output("D/stop", :win)], []),
+        :D => Schema::Implementation::Task(D.method(:d_end),        [Activity::Output("D/stop", :win)], []),
         :E => Schema::Implementation::Task(implementing.method(:f), [Activity::Output(Activity::Right, :success)], []),
         "End.success" => Schema::Implementation::Task(implementing::Success, [Activity::Output(implementing::Success, :success)], []),
       }
 
     schema = Inter.(intermediate, implementation)
 
-    schema[:outputs].inspect.must_equal %{[#<struct Trailblazer::Activity::Output signal="D/stop", semantic=:win>]}
+    schema[:outputs].inspect.must_equal %{[#<struct Trailblazer::Activity::Output signal="D/stop", semantic=:win>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>]}
 
     assert_circuit( schema, %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.c>
 #<Method: #<Module:0x>.c>
- {Trailblazer::Activity::Right} => #<Method: #<Module:0x>.d>
-#<Method: #<Module:0x>.d>
- {D/stop} => #<Method: #<Module:0x>.f>
+ {Trailblazer::Activity::Right} => #<Method: IntermediateTest::D.d_end>
+#<Method: IntermediateTest::D.d_end>
+
 #<Method: #<Module:0x>.f>
  {Trailblazer::Activity::Right} => #<End/:success>
 #<End/:success>
@@ -113,7 +121,7 @@ class IntermediateTest < Minitest::Spec
 
     signal, (ctx, _) = schema[:circuit].([{seq: []}])
 
-    signal.inspect.must_equal %{Trailblazer::Activity::Right}
+    signal.inspect.must_equal %{"D/stop"}
 # stop at :D.
     ctx.inspect.must_equal %{{:seq=>[:c, :d]}}
   end
