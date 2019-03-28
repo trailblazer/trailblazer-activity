@@ -1,4 +1,4 @@
-class Trailblazer::Activity < Module
+class Trailblazer::Activity
   module TaskWrap
     # Creates taskWrap steps to map variables before and after the actual step.
     # We hook into the Normalizer, process `:input` and `:output` directives and

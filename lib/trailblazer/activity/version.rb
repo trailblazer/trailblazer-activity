@@ -1,5 +1,7 @@
 module Trailblazer
-  class Activity < Module
-    VERSION = "0.7.1"
+  module Version
+    module Activity
+      VERSION = "0.8.0"
+    end
   end
 end

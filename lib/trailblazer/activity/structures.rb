@@ -1,5 +1,5 @@
 module Trailblazer
-  class Activity < Module
+  class Activity
     # Generic run-time structures that are built via the DSL.
 
     # Builds an {Activity::End} instance.

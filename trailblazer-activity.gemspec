@@ -4,12 +4,11 @@ require 'trailblazer/activity/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "trailblazer-activity"
-  spec.version       = Trailblazer::Activity::VERSION
+  spec.version       = Trailblazer::Version::Activity::VERSION
   spec.authors       = ["Nick Sutterer"]
   spec.email         = ["apotonick@gmail.com"]
 
-  spec.summary       = %q{Define and run any desired circuit of business logic.}
-  spec.description   = %q{Define and run any desired circuit of business logic. Used in Trailblazer's Operation to implement the railway.}
+  spec.summary       = %q{Runtime code for Trailblazer activities.}
   spec.homepage      = "http://trailblazer.to"
   spec.licenses      = ["MIT"]
 

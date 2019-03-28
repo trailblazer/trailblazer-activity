@@ -10,7 +10,7 @@ class IntrospectionTest < Minitest::Spec
       it { node[:id].must_equal :B }
       it { assert_outputs(node, success: Activity::Right) }
       it { node[:task].must_equal implementing.method(:b) }
-      it { node[:outgoings].inspect.must_equal(%{[#<struct Trailblazer::Activity::Introspect::Graph::Outgoing output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Right, semantic=:success>, task=#{bc}>]}) }
+      it { node[:outgoings].inspect.must_equal(%{[#<struct Trailblazer::Activity::Introspect::Graph::Outgoing output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Right, semantic=:success>, task=#{bc.inspect}>]}) }
       it { node[:data].inspect.must_equal %{{:more=>true}} }
 
       describe "with Start.default" do

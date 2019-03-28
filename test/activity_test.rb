@@ -1,6 +1,9 @@
 require "test_helper"
 
 class ActivityTest < Minitest::Spec
+  it "provides {#inspect}" do
+    Trailblazer::Activity.new({}).inspect.gsub(/0x\w+/, "0x").must_equal %{#<Trailblazer::Activity:0x>}
+  end
 
   it "empty Activity" do
     skip

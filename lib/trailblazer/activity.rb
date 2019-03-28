@@ -27,6 +27,10 @@ module Trailblazer
     def to_h
       @schema
     end
+
+    def inspect
+      %{#<Trailblazer::Activity:0x#{object_id}>}
+    end
   end # Activity
 end
 

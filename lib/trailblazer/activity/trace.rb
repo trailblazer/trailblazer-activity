@@ -1,5 +1,5 @@
 module Trailblazer
-  class Activity < Module
+  class Activity
     module Trace
       class << self
         # Public entry point to activate tracing when running {activity}.

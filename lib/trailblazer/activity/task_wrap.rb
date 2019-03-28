@@ -1,5 +1,5 @@
 module Trailblazer
-  class Activity < Module
+  class Activity
     #
     # Example with tracing:
     #

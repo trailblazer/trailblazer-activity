@@ -1,7 +1,7 @@
 require "hirb"
 
 module Trailblazer
-  class Activity < Module
+  class Activity
 
     # Task < Array
     # [ input, ..., output ]

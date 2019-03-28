@@ -1,5 +1,5 @@
 module Trailblazer
-  class Activity < Module
+  class Activity
     # Running a Circuit instance will run all tasks sequentially depending on the former's result.
     # Each task is called and retrieves the former task's return values.
     #

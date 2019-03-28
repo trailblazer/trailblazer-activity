@@ -1,5 +1,5 @@
 module Trailblazer
-  class Activity < Module
+  class Activity
     # The Introspect API abstracts internals about circuits and provides a convenient API
     # to third-parties such as tracing, rendering activities, etc.
     module Introspect
