@@ -1,8 +1,5 @@
-require "hirb"
-
 module Trailblazer
   class Activity
-
     # Task < Array
     # [ input, ..., output ]
 
@@ -10,6 +7,9 @@ module Trailblazer
       # TODO: make this simpler.
       module Present
         module_function
+
+        INDENTATION = "   |".freeze
+        STEP_PREFIX = "-- ".freeze
 
         def default_renderer(stack:, level:, input:, name:, **)
           [ level, %{#{name}} ]
@@ -19,13 +19,17 @@ module Trailblazer
           tree(stack.to_a, level, tree: tree, renderer: renderer, **options)
         end
 
-        def tree(stack, level, tree: tree, **options)
+        def tree(stack, level, tree:, **options)
           tree_for(stack, level, options.merge(tree: tree))
 
-          Hirb::Console.format_output(tree, class: :tree, type: :directory)
+          tree.map { |level, step|
+            indentation = INDENTATION * (level -1)
+            indentation = indentation[0...-1] if level == 1 || /End./.match?(step) # start or end step
+            indentation + STEP_PREFIX + step
+          }.join("\n")
         end
 
-        def tree_for(stack, level, tree:, renderer: ,**options)
+        def tree_for(stack, level, tree:, renderer:, **options)
           stack.each do |lvl| # always a Stack::Task[input, ..., output]
             input, output, nested = Trace::Level.input_output_nested_for_level(lvl)
 
