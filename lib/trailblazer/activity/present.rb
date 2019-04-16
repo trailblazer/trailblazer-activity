@@ -22,9 +22,13 @@ module Trailblazer
         def tree(stack, level, tree:, **options)
           tree_for(stack, level, options.merge(tree: tree))
 
+          render_tree(tree: tree, level: level)
+        end
+
+        def render_tree(tree:, level:)
           tree.map { |level, step|
             indentation = INDENTATION * (level -1)
-            indentation = indentation[0...-1] if level == 1 || /End./.match?(step) # start or end step
+            indentation = indentation[0...-1] + "`" if level == 1 || /End./.match?(step) # start or end step
             indentation + STEP_PREFIX + step
           }.join("\n")
         end
