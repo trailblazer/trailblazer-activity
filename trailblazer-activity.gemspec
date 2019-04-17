@@ -17,7 +17,6 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "hirb"
   spec.add_dependency "trailblazer-context"
 
   spec.add_development_dependency "bundler"
