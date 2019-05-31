@@ -12,7 +12,7 @@ class DocsActivityTest < Minitest::Spec
                                              Intermediate::Out(:failure, :C)],
         Intermediate::TaskRef(:B)        => [Intermediate::Out(:success, :"End")],
         Intermediate::TaskRef(:C)        => [Intermediate::Out(:success, :B)],
-        Intermediate::TaskRef(:"End", stop_event: true) => [Intermediate::Out(:success, nil)]
+        Intermediate::TaskRef(:"End", stop_event: true) => [Intermediate::Out(:success, nil)] # :)
       },
       [:"End"],   # end events
       [:"Start"], # start
@@ -48,12 +48,14 @@ class DocsActivityTest < Minitest::Spec
                                                             Activity::Output(Activity::Left, :failure)],  []),
       :B        => Implementation::Task(Upsert.method(:c), [Activity::Output(Activity::Right, :success)], []),
       :C        => Implementation::Task(Upsert.method(:c), [Activity::Output(Activity::Right, :success)], []),
-      :"End"    => Implementation::Task(_end, [Activity::Output(_end, :success)],                         []),
+      :"End"    => Implementation::Task(_end, [Activity::Output(_end, :success)],                         []), # :)
     }
     #:impl end
 
-    schema = Inter.(intermediate, implementation)
+    #:comp
+    schema = Intermediate.(intermediate, implementation)
 
     activity = Activity.new(schema)
+    #:comp end
   end
 end
