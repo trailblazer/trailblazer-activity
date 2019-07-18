@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{Runtime code for Trailblazer activities.}
   spec.homepage      = "http://trailblazer.to"
-  spec.licenses      = ["LGPLv3"]
+  spec.licenses      = ["LGPL-3.0"]
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test)/})
