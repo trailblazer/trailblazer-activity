@@ -59,7 +59,14 @@ class TraceTest < Minitest::Spec
       ]
     )
 
-    renderer = ->(level:, input:, name:, color:, **) { [level, %{#{level}/#{input.task}/#{name}/#{color}}] }
+    renderer = ->(task_node:, position:, tree:) do
+      assert tree[position] == task_node
+
+      [
+        task_node[:level],
+        %{#{task_node[:level]}/#{task_node[:input].task}/#{task_node[:output].data}/#{task_node[:name]}/#{task_node[:color]}}
+      ]
+    end
 
     output = Trailblazer::Activity::Trace::Present.(stack, renderer: renderer,
       color: "pink" # additional options.
@@ -67,16 +74,16 @@ class TraceTest < Minitest::Spec
 
     output = output.gsub(/0x\w+/, "").gsub(/0x\w+/, "").gsub(/@.+_test/, "")
 
-    output.must_equal %{`-- 1/#<Trailblazer::Activity:>/#<Trailblazer::Activity:>/pink
-   |-- 2/#<Trailblazer::Activity::Start semantic=:default>/Start.default/pink
-   |-- 2/#<Method: #<Module:>.b>/B/pink
-   |-- 2/#<Trailblazer::Activity:>/D/pink
-   |   |-- 3/#<Trailblazer::Activity::Start semantic=:default>/Start.default/pink
-   |   |-- 3/#<Method: #<Module:>.b>/B/pink
-   |   |-- 3/#<Method: #<Module:>.c>/C/pink
-   |   `-- 3/#<Trailblazer::Activity::End semantic=:success>/End.success/pink
-   |-- 2/#<Method: #<Module:>.f>/E/pink
-   `-- 2/#<Trailblazer::Activity::End semantic=:success>/End.success/pink}
+    output.must_equal %{`-- 1/#<Trailblazer::Activity:>/#<Trailblazer::Activity::End semantic=:success>/#<Trailblazer::Activity:>/pink
+   |-- 2/#<Trailblazer::Activity::Start semantic=:default>/Trailblazer::Activity::Right/Start.default/pink
+   |-- 2/#<Method: #<Module:>.b>/Trailblazer::Activity::Right/B/pink
+   `-- 2/#<Trailblazer::Activity:>/#<Trailblazer::Activity::End semantic=:success>/D/pink
+   |   |-- 3/#<Trailblazer::Activity::Start semantic=:default>/Trailblazer::Activity::Right/Start.default/pink
+   |   |-- 3/#<Method: #<Module:>.b>/Trailblazer::Activity::Right/B/pink
+   |   |-- 3/#<Method: #<Module:>.c>/Trailblazer::Activity::Right/C/pink
+   |   `-- 3/#<Trailblazer::Activity::End semantic=:success>/#<Trailblazer::Activity::End semantic=:success>/End.success/pink
+   |-- 2/#<Method: #<Module:>.f>/Trailblazer::Activity::Right/E/pink
+   `-- 2/#<Trailblazer::Activity::End semantic=:success>/#<Trailblazer::Activity::End semantic=:success>/End.success/pink}
   end
 
   it "allows to inject custom :stack" do
