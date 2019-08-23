@@ -1,3 +1,6 @@
+# 0.8.4
+* Update `Present` to render `Developer.wtf?` for given activity fearlessly
+
 # 0.8.3
 
 * Use `Context.for` to create contexts.
