@@ -9,9 +9,6 @@ class Trailblazer::Activity
     module VariableMapping
       # The taskWrap extension that's included into the static taskWrap for a task.
       def self.Extension(input, output, id: input.object_id)
-        input  = Trailblazer::Option(input)
-        output = Trailblazer::Option(output)
-
         Trailblazer::Activity::TaskWrap::Extension(
           merge: merge_for(input, output, id: id),
         )
@@ -58,8 +55,9 @@ class Trailblazer::Activity
 
       private
 
+      # Invoke the @filter callable with the original circuit interface.
       def apply_filter((ctx, original_flow_options), original_circuit_options)
-        @filter.( ctx, original_circuit_options ) # returns {new_ctx}.
+        @filter.([ctx, original_flow_options], original_circuit_options) # returns {new_ctx}.
       end
     end
 
@@ -78,7 +76,7 @@ class Trailblazer::Activity
         returned_ctx, _ = wrap_ctx[:return_args]  # this is the Context returned from {call}ing the wrapped user task.
         original_ctx    = wrap_ctx[@id]           # grab the original ctx from before which was set in the {:input} filter.
         # let user compute the output.
-        output_ctx = @filter.(original_ctx, returned_ctx, **original_circuit_options)
+        output_ctx = @filter.(returned_ctx, [original_ctx, original_flow_options], original_circuit_options)
 
         wrap_ctx = wrap_ctx.merge( return_args: [output_ctx, original_flow_options] )
 

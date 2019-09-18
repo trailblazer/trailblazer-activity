@@ -79,9 +79,9 @@ class DefaultsTest < Minitest::Spec
       a = macro.method(:model)
       b = ->(*args) { macro.model(*args) }
 
-      a_input  = ->(original_ctx) { new_ctx = Trailblazer.Context(original_ctx) }
+      a_input  = ->((original_ctx, flow_options), *) { new_ctx = Trailblazer.Context(original_ctx) }
 
-      a_output = ->(original_ctx, new_ctx) {
+      a_output = ->(new_ctx, (original_ctx, flow_options), *) {
         _, mutable_data = new_ctx.decompose
 
         original_ctx.merge(:model_a => mutable_data[:model])

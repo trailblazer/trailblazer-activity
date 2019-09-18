@@ -8,7 +8,7 @@ class Trailblazer::Activity
 
         def Extension(defaults)
           # Returns new ctx.
-          input  = ->(original_ctx) do
+          input  = ->((original_ctx, flow_options), circuit_options) do
             defaulted_options = defaults_for(defaults, original_ctx)
 
             ctx = original_ctx.merge(defaulted_options)
@@ -16,7 +16,7 @@ class Trailblazer::Activity
             Trailblazer::Context.for(ctx, [original_ctx, {}], {})
           end
 
-          output = ->(original_ctx, new_ctx) { # FIXME: use Unscope
+          output = ->(new_ctx, (original_ctx, flow_options), circuit_options) { # FIXME: use Unscope
             _, mutable_data = new_ctx.decompose
 
             # we are only interested in the {mutable_data} part since the disposed part

@@ -1,3 +1,9 @@
+# 0.9.0
+
+* Change API of `Input`/`Output` filters. Instead of calling them with `original_ctx, circuit_options` they're now called with the complete (original!) circuit interface. This simplifies calling and provides all circuit arguments to the filter which can then filter-out what is not needed.
+    * `:input` is now called with `((original_ctx, flow_options), circuit_options)`
+    * `:output` is now called with `(new_ctx, (original_ctx, flow_options), circuit_options)`
+
 # 0.8.4
 * Update `Present` to render `Developer.wtf?` for given activity fearlessly
 
