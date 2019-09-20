@@ -13,7 +13,7 @@ class Trailblazer::Activity
 
             ctx = original_ctx.merge(defaulted_options)
 
-            Trailblazer::Context.for(ctx, [original_ctx, {}], {})
+            Trailblazer::Context.for_circuit(ctx, {}, [original_ctx, flow_options], circuit_options) # TODO: test if Inject and :context_class work.
           end
 
           output = ->(new_ctx, (original_ctx, flow_options), circuit_options) { # FIXME: use Unscope
