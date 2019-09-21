@@ -1,3 +1,7 @@
+# 0.9.2
+
+Remove tracing modules, it'll be part of the `Dev` tools now.
+
 # 0.9.1
 
 Use `context-0.9.1`.
