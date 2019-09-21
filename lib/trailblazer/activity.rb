@@ -49,7 +49,6 @@ require "trailblazer/activity/task_wrap/runner"
 require "trailblazer/activity/task_wrap/variable_mapping"
 require "trailblazer/activity/task_wrap/inject"
 
-require "trailblazer/activity/introspect"
 require "trailblazer/option"
 require "trailblazer/context"
 require "trailblazer/activity/task_builder"
