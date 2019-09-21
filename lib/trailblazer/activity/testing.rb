@@ -47,9 +47,84 @@ module Trailblazer
     end
 
     module Assertions
+        Activity  = Trailblazer::Activity
+        Inter     = Trailblazer::Activity::Schema::Intermediate
+        Schema    = Trailblazer::Activity::Schema
+        TaskWrap  = Trailblazer::Activity::TaskWrap
+
+        module Implementing
+          extend Activity::Testing.def_tasks(:a, :b, :c, :d, :f, :g)
+
+          Start = Activity::Start.new(semantic: :default)
+          Failure = Activity::End(:failure)
+          Success = Activity::End(:success)
+        end
+
         def Cct(activity)
           cct = Trailblazer::Developer::Render::Circuit.(activity)
         end
+
+        # TODO: Remove this once all it's references are removed
+        def implementing
+          Implementing
+        end
+
+        def flat_activity
+          return @_flat_activity if defined?(@_flat_activity)
+
+          intermediate = Inter.new(
+            {
+              Inter::TaskRef("Start.default")      => [Inter::Out(:success, :B)],
+              Inter::TaskRef(:B, additional: true) => [Inter::Out(:success, :C)],
+              Inter::TaskRef(:C)                   => [Inter::Out(:success, "End.success")],
+              Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+            },
+            ["End.success"],
+            ["Start.default"], # start
+          )
+
+          implementation = {
+            "Start.default" => Schema::Implementation::Task(st = Implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
+            :B => Schema::Implementation::Task(b = Implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  []),
+            :C => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  []),
+            "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
+          }
+
+          schema = Inter.(intermediate, implementation)
+
+          @_flat_activity = Activity.new(schema)
+        end
+
+        def nested_activity
+          return @_nested_activity if defined?(@_nested_activity)
+
+          intermediate = Inter.new(
+            {
+              Inter::TaskRef("Start.default") => [Inter::Out(:success, :B)],
+              Inter::TaskRef(:B, more: true)  => [Inter::Out(:success, :D)],
+              Inter::TaskRef(:D) => [Inter::Out(:success, :E)],
+              Inter::TaskRef(:E) => [Inter::Out(:success, "End.success")],
+              Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+            },
+            ["End.success"],
+            ["Start.default"] # start
+          )
+
+          implementation = {
+            "Start.default" => Schema::Implementation::Task(st = Implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
+            :B => Schema::Implementation::Task(b = Implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  []),
+            :D => Schema::Implementation::Task(c = bc, [Activity::Output(Implementing::Success, :success)],                  []),
+            :E => Schema::Implementation::Task(e = Implementing.method(:f), [Activity::Output(Activity::Right, :success)],                  []),
+            "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
+          }
+
+          schema = Inter.(intermediate, implementation)
+
+          @_nested_activity = Activity.new(schema)
+        end
+
+        alias_method :bc, :flat_activity
+        alias_method :bde, :nested_activity
 
         # Tests {:circuit} and {:outputs} fields so far.
         def assert_process_for(process, *args)
