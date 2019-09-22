@@ -1,3 +1,7 @@
+# 0.9.4
+
+Move some test helpers to `Activity::Testing` to export them to other gems
+
 # 0.9.3
 
 Remove introspection modules, it'll also be part of the `Dev` tools now.
