@@ -1,18 +1,20 @@
 # 0.9.4
 
-Move some test helpers to `Activity::Testing` to export them to other gems
+* Move some test helpers to `Activity::Testing` to export them to other gems
+* Remove introspection modules, it'll also be part of the `Dev` tools now.
+* Remove tracing modules, it'll be part of the `Dev` tools now.
 
 # 0.9.3
 
-Remove introspection modules, it'll also be part of the `Dev` tools now.
+Unreleased.
 
 # 0.9.2
 
-Remove tracing modules, it'll be part of the `Dev` tools now.
+Unreleased.
 
 # 0.9.1
 
-Use `context-0.9.1`.
+* Use `context-0.9.1`.
 
 # 0.9.0
 
