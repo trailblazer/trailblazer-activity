@@ -41,6 +41,7 @@ require "trailblazer/activity/schema/implementation"
 require "trailblazer/activity/schema/intermediate"
 require "trailblazer/activity/circuit"
 require "trailblazer/activity/config"
+require "trailblazer/activity/introspect"
 
 require "trailblazer/activity/task_wrap"
 require "trailblazer/activity/task_wrap/pipeline"
