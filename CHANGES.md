@@ -1,3 +1,9 @@
+# 0.10.0
+
+* Require `developer` >= 0.0.7.
+* Move `Activity::Introspect` back to this very gem.
+* This is hopefully the last release before 2.1.0. :trollface:
+
 # 0.9.4
 
 * Move some test helpers to `Activity::Testing` to export them to other gems
