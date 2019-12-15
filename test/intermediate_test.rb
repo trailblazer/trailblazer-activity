@@ -40,7 +40,7 @@ class IntermediateTest < Minitest::Spec
 
     cct = Trailblazer::Developer::Render::Circuit.(schema)
 
-    cct.must_equal %{
+    expect(cct).must_equal %{
 #<Method: #<Module:0x>.a>
  {IntermediateTest::Right} => #<Method: #<Module:0x>.b>
  {IntermediateTest::Left} => #<Method: #<Module:0x>.c>
@@ -57,11 +57,11 @@ class IntermediateTest < Minitest::Spec
 
 #<End/:failure>
 }
-    schema[:outputs].inspect.must_equal %{[#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:failure>, semantic=:failure>]}
+    expect(schema[:outputs].inspect).must_equal %{[#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:failure>, semantic=:failure>]}
 
 # :extension API
 #   test it works with and without [bla_ext], and more than one per line
-    schema[:config].inspect.must_equal %{{:wrap_static=>{}, :a1=>true, :a2=>:yo, :b1=>false}}
+    expect(schema[:config].inspect).must_equal %{{:wrap_static=>{}, :a1=>true, :a2=>:yo, :b1=>false}}
   end
 
 
@@ -107,7 +107,7 @@ class IntermediateTest < Minitest::Spec
 
     schema = Inter.(intermediate, implementation)
 
-    schema[:outputs].inspect.must_equal %{[#<struct Trailblazer::Activity::Output signal="D/stop", semantic=:win>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>]}
+    expect(schema[:outputs].inspect).must_equal %{[#<struct Trailblazer::Activity::Output signal="D/stop", semantic=:win>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>]}
 
     assert_circuit( schema, %{
 #<Start/:default>
@@ -123,9 +123,9 @@ class IntermediateTest < Minitest::Spec
 
     signal, (ctx, _) = schema[:circuit].([{seq: []}])
 
-    signal.inspect.must_equal %{"D/stop"}
+    expect(signal.inspect).must_equal %{"D/stop"}
 # stop at :D.
-    ctx.inspect.must_equal %{{:seq=>[:c, :d]}}
+    expect(ctx.inspect).must_equal %{{:seq=>[:c, :d]}}
   end
 
   describe ":extension API: Config::State" do
@@ -168,7 +168,7 @@ class IntermediateTest < Minitest::Spec
 
       schema = Inter.(intermediate, implementation([ext_a, ext_b, ext_c, ext_d, ext_e]))
 
-      schema[:config].to_h.inspect.must_equal %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :c=>{\"key\"=>\"value\"}, :C=>1, :e=>2}}
+      expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :c=>{\"key\"=>\"value\"}, :C=>1, :e=>2}}
     end
 
   end

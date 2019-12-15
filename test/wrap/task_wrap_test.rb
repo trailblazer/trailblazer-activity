@@ -30,7 +30,7 @@ class TaskWrapTest < Minitest::Spec
 
     signal, (ctx, flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
 
-    ctx.inspect.must_equal %{{:seq=>[1, :a, 2, :b, :c]}}
+    expect(ctx.inspect).must_equal %{{:seq=>[1, :a, 2, :b, :c]}}
 
 # it works nested as well
 
@@ -45,7 +45,7 @@ class TaskWrapTest < Minitest::Spec
 
     signal, (ctx, flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
 
-    ctx.inspect.must_equal %{{:seq=>[:a, 1, :a, 2, :b, :c, 1, :c, 2]}}
+    expect(ctx.inspect).must_equal %{{:seq=>[:a, 1, :a, 2, :b, :c, 1, :c, 2]}}
 
 # it works nested plus allows {wrap_runtime}
 
@@ -53,7 +53,7 @@ class TaskWrapTest < Minitest::Spec
 
     signal, (ctx, flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{wrap_runtime: wrap_runtime})
 
-    ctx.inspect.must_equal %{{:seq=>[:a, 1, :a, 2, :b, 1, :c, 2, 1, 1, :c, 2, 2]}}
+    expect(ctx.inspect).must_equal %{{:seq=>[:a, 1, :a, 2, :b, 1, :c, 2, 1, 1, :c, 2, 2]}}
   end
 
 end
