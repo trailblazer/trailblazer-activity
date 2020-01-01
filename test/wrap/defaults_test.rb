@@ -65,14 +65,14 @@ class DefaultsTest < Minitest::Spec
 # defaults are applied
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
 
-      signal.must_equal activity.to_h[:outputs][0].signal
-      ctx.inspect.must_equal %{{:model=>#<OpenStruct id=1>, :capture_a=>\"{:model=>/99/}\"}}
+      expect(signal).must_equal activity.to_h[:outputs][0].signal
+      expect(ctx.inspect).must_equal %{{:model=>#<OpenStruct id=1>, :capture_a=>\"{:model=>/99/}\"}}
 
 # inject one value from outside, the other is still defaulted.
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{model_class: Whatever}.freeze, {}])
 
-      signal.must_equal activity.to_h[:outputs][0].signal
-      ctx.inspect.must_equal %{{:model_class=>DefaultsTest::Whatever, :model=>#<Whatever args={:id=>1}>, :capture_a=>\"{:model_class=>DefaultsTest::Whatever, :model=>#<Whatever args=\\\"99\\\">}\"}}
+      expect(signal).must_equal activity.to_h[:outputs][0].signal
+      expect(ctx.inspect).must_equal %{{:model_class=>DefaultsTest::Whatever, :model=>#<Whatever args={:id=>1}>, :capture_a=>\"{:model_class=>DefaultsTest::Whatever, :model=>#<Whatever args=\\\"99\\\">}\"}}
     end
 
     it "provides the above plus output mapping" do
@@ -95,14 +95,14 @@ class DefaultsTest < Minitest::Spec
 # defaults are applied
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
 
-      signal.must_equal activity.to_h[:outputs][0].signal
-      ctx.inspect.must_equal %{{:model_a=>/99/, :capture_a=>\"{:model_a=>/99/}\", :model=>#<OpenStruct id=1>}}
+      expect(signal).must_equal activity.to_h[:outputs][0].signal
+      expect(ctx.inspect).must_equal %{{:model_a=>/99/, :capture_a=>\"{:model_a=>/99/}\", :model=>#<OpenStruct id=1>}}
 
 # inject one value from outside, the other is still defaulted.
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{model_class: Whatever}.freeze, {}])
 
-      signal.must_equal activity.to_h[:outputs][0].signal
-      ctx.inspect.must_equal %{{:model_class=>DefaultsTest::Whatever, :model_a=>#<Whatever args=\"99\">, :capture_a=>\"{:model_class=>DefaultsTest::Whatever, :model_a=>#<Whatever args=\\\"99\\\">}\", :model=>#<Whatever args={:id=>1}>}}
+      expect(signal).must_equal activity.to_h[:outputs][0].signal
+      expect(ctx.inspect).must_equal %{{:model_class=>DefaultsTest::Whatever, :model_a=>#<Whatever args=\"99\">, :capture_a=>\"{:model_class=>DefaultsTest::Whatever, :model_a=>#<Whatever args=\\\"99\\\">}\", :model=>#<Whatever args={:id=>1}>}}
     end
   end
 end

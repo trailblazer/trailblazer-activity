@@ -20,11 +20,11 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, i, j, *bla) = circuit.( [ ctx, 1, 2 ], task: Start )
 
-    ctx.inspect.must_equal %{{:start=>1, :a=>2, :b=>3, :_end=>4}}
-    last_signal.must_equal "the end"
-    i.must_equal 1
-    j.must_equal 2
-    bla.must_equal []
+    expect(ctx.inspect).must_equal %{{:start=>1, :a=>2, :b=>3, :_end=>4}}
+    expect(last_signal).must_equal "the end"
+    expect(i).must_equal 1
+    expect(j).must_equal 2
+    expect(bla).must_equal []
 
     # ---
 
@@ -33,7 +33,7 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, i, j, *bla) = circuit.( [ ctx, flow_options, 2 ], task: Start, runner: MyRunner )
 
-    flow_options.must_equal( stack: [ Start, A, B, End ] )
+    expect(flow_options).must_equal( stack: [ Start, A, B, End ] )
   end
 
   MyRunner = ->( task, args, **circuit_options ) do
@@ -76,11 +76,11 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, i, j, *bla) = outer.( [ ctx, {}, 2 ], task: Start )
 
-    ctx.inspect.must_equal %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
-    last_signal.must_equal "the end"
-    i.must_equal( {} )
-    j.must_equal 2
-    bla.must_equal []
+    expect(ctx.inspect).must_equal %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
+    expect(last_signal).must_equal "the end"
+    expect(i).must_equal( {} )
+    expect(j).must_equal 2
+    expect(bla).must_equal []
   end
 
   it "allows using a custom :runner" do
@@ -89,10 +89,10 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, flow_options, j, *bla) = outer.( [ ctx, flow_options, 2 ], task: Start, runner: MyRunner )
 
-    ctx.inspect.must_equal %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
-    last_signal.must_equal "the end"
-    flow_options.must_equal( stack: [ Start, A, nestable, Start, C, End, B, End ], runner: MyRunner )
-    j.must_equal 2
-    bla.must_equal []
+    expect(ctx.inspect).must_equal %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
+    expect(last_signal).must_equal "the end"
+    expect(flow_options).must_equal( stack: [ Start, A, nestable, Start, C, End, B, End ], runner: MyRunner )
+    expect(j).must_equal 2
+    expect(bla).must_equal []
   end
 end

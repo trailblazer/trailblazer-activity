@@ -23,8 +23,8 @@ class PipelineTest < Minitest::Spec
   # no static_wrap
       signal, args = Activity::TaskWrap::Runner.(task, original_args, {wrap_runtime: {}, activity: {wrap_static: {task => static_task_wrap}}})
 
-      signal.inspect.must_equal %{Trailblazer::Activity::Right}
-      args.inspect.must_equal %{[{:seq=>[:a]}, {}]}
+      expect(signal.inspect).must_equal %{Trailblazer::Activity::Right}
+      expect(args.inspect).must_equal %{[{:seq=>[:a]}, {}]}
     end
 
     it "uses the {wrap_static} when available" do
@@ -44,8 +44,8 @@ class PipelineTest < Minitest::Spec
 
       signal, args = Activity::TaskWrap::Runner.(task, original_args, {wrap_runtime: {}, activity: {wrap_static: {task => wrap_static_for_task}}})
 
-      signal.inspect.must_equal %{Trailblazer::Activity::Right}
-      args.inspect.must_equal %{[{:seq=>[1, :a, 2]}, {}]}
+      expect(signal.inspect).must_equal %{Trailblazer::Activity::Right}
+      expect(args.inspect).must_equal %{[{:seq=>[1, :a, 2]}, {}]}
     end
   end
 
@@ -56,8 +56,8 @@ class PipelineTest < Minitest::Spec
       pipe3 = Activity::TaskWrap::Pipeline.insert_after(pipe2,  "task_wrap.call_task", ["user.add_2", 3])
       pipe4 = Activity::TaskWrap::Pipeline.append(pipe3,  nil, ["user.add_2", "Last!"])
 
-      pipe1.sequence.inspect.must_equal %{[[\"task_wrap.call_task\", #<Method: Trailblazer::Activity::TaskWrap.call_task>]]}
-      pipe4.sequence.inspect.must_equal %{[[\"user.add_1\", 2], [\"task_wrap.call_task\", #<Method: Trailblazer::Activity::TaskWrap.call_task>], [\"user.add_2\", 3], [\"user.add_2\", \"Last!\"]]}
+      expect(pipe1.sequence.inspect).must_equal %{[[\"task_wrap.call_task\", #<Method: Trailblazer::Activity::TaskWrap.call_task>]]}
+      expect(pipe4.sequence.inspect).must_equal %{[[\"user.add_1\", 2], [\"task_wrap.call_task\", #<Method: Trailblazer::Activity::TaskWrap.call_task>], [\"user.add_2\", 3], [\"user.add_2\", \"Last!\"]]}
     end
   end
 

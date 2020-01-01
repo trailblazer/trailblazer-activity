@@ -123,8 +123,8 @@ class VariableMappingTest < Minitest::Spec
         ],
       )
 
-      signal.must_equal activity.to_h[:outputs][0].signal
-      ctx.must_equal({:seq=>[], :seq_from_model=>[:model_in, "model", :model_out], :c=>nil, :seq_from_uuid=>[:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
+      expect(signal).must_equal activity.to_h[:outputs][0].signal
+      expect(ctx).must_equal({:seq=>[], :seq_from_model=>[:model_in, "model", :model_out], :c=>nil, :seq_from_uuid=>[:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
     end
 
     it "allows adding multiple I/Os" do
@@ -154,8 +154,8 @@ class VariableMappingTest < Minitest::Spec
         ],
       )
 
-      signal.must_equal activity.to_h[:outputs][0].signal
-      ctx.must_equal({:seq=>[], :seq_from_model=>[:model_in_2, :model_in, "model", :model_out, :model_out_2], :c=>nil, :seq_from_uuid=>[:model_in_2, :model_in, "model", :model_out, :model_out_2, :uuid_in, "uuid", :uuid_out]})
+      expect(signal).must_equal activity.to_h[:outputs][0].signal
+      expect(ctx).must_equal({:seq=>[], :seq_from_model=>[:model_in_2, :model_in, "model", :model_out, :model_out_2], :c=>nil, :seq_from_uuid=>[:model_in_2, :model_in, "model", :model_out, :model_out_2, :uuid_in, "uuid", :uuid_out]})
     end
 
     it "added via {:wrap_runtime}" do
@@ -189,8 +189,8 @@ class VariableMappingTest < Minitest::Spec
         wrap_runtime: runtime, # dynamic additions from the outside (e.g. tracing), also per task.
       )
 
-      signal.must_equal activity.to_h[:outputs][0].signal
-      options.must_equal({:seq=>[], :seq_from_model=>[:model_in, "model", :model_out], :c=>nil, :seq_from_uuid=>[:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
+      expect(signal).must_equal activity.to_h[:outputs][0].signal
+      expect(options).must_equal({:seq=>[], :seq_from_model=>[:model_in, "model", :model_out], :c=>nil, :seq_from_uuid=>[:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
     end
 
     it "passes through {flow_options} and {circuit_options} to both filters" do
@@ -213,8 +213,8 @@ class VariableMappingTest < Minitest::Spec
         ],
       )
 
-      signal.must_equal activity.to_h[:outputs][0].signal
-      ctx.must_equal({:seq=>[:model_in_2, "uuid"], :input_flow_options=>{:yo=>1}, :input_circuit_options=>[:wrap_runtime, :activity, :runner], :output_flow_options=>{:yo=>1}, :output_circuit_options=>[:wrap_runtime, :activity, :runner], :c=>nil, :uuid_nonsense=>false})
+      expect(signal).must_equal activity.to_h[:outputs][0].signal
+      expect(ctx).must_equal({:seq=>[:model_in_2, "uuid"], :input_flow_options=>{:yo=>1}, :input_circuit_options=>[:wrap_runtime, :activity, :runner], :output_flow_options=>{:yo=>1}, :output_circuit_options=>[:wrap_runtime, :activity, :runner], :c=>nil, :uuid_nonsense=>false})
     end
   end
 
@@ -260,8 +260,8 @@ class VariableMappingTest < Minitest::Spec
         wrap_runtime: runtime, # dynamic additions from the outside (e.g. tracing), also per task.
       )
 
-      signal.must_equal activity.outputs[:success].signal
-      options.must_equal({:a=>1, :model_a=>4, :c=>1, :uuid_a => 7 })
+      expect(signal).must_equal activity.outputs[:success].signal
+      expect(options).must_equal({:a=>1, :model_a=>4, :c=>1, :uuid_a => 7 })
     end
   end
 end

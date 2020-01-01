@@ -2,7 +2,7 @@ require "test_helper"
 
 class ActivityTest < Minitest::Spec
   it "provides {#inspect}" do
-    Trailblazer::Activity.new({}).inspect.gsub(/0x\w+/, "0x").must_equal %{#<Trailblazer::Activity:0x>}
+    expect(Trailblazer::Activity.new({}).inspect.gsub(/0x\w+/, "0x")).must_equal %{#<Trailblazer::Activity:0x>}
   end
 
   it "empty Activity" do
@@ -12,7 +12,7 @@ class ActivityTest < Minitest::Spec
     end
 
     # puts Cct(activity.instance_variable_get(:@process))
-    Cct(activity).must_equal %{
+    expect(Cct(activity)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<End/:success>
 #<End/:success>
@@ -23,13 +23,13 @@ class ActivityTest < Minitest::Spec
     skip
     signal, (options, _) = activity.( [{}], start_task: L )
 
-    signal.must_equal activity.outputs[:success].signal
-    options.inspect.must_equal %{{:L=>1}}
+    expect(signal).must_equal activity.outputs[:success].signal
+    expect(options.inspect).must_equal %{{:L=>1}}
   end
 
 # TODO: test {to_h} properly
   it "exposes {:data} attributes in {#to_h}" do
-    bc.to_h[:nodes][1][:data].inspect.must_equal %{{:additional=>true}}
+    expect(bc.to_h[:nodes][1][:data].inspect).must_equal %{{:additional=>true}}
   end
 
   it "{:activity}" do
@@ -67,6 +67,6 @@ class ActivityTest < Minitest::Spec
     signal, (ctx, _) = activity.([[], {}])
 
     # each task receives the containing {:activity}
-    ctx.must_equal [activity, nested_activity, nested_activity, nested_activity, nested_activity, activity, activity]
+    expect(ctx).must_equal [activity, nested_activity, nested_activity, nested_activity, nested_activity, activity, activity]
   end
 end
