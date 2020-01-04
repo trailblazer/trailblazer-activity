@@ -81,7 +81,7 @@ With Activity, modeling business processes turns out to be ridiculously simple: 
 Trailblazer's [`Operation`](https://2019.trailblazer.to/2.1/docs/operation.html#operation-overview) internally uses an activity to model the processes.
 
 ## Workflow
-Activities can be formed into bigger compounds and using workflow, you can build long-running processes such as a moderated blog post or a parcel delivery. Also, you don't have to use the DSL but can use the [`editor`](https://2019.trailblazer.to/2.1/docs/pro.html#pro-editor) instead(also, cool for more complex, long-running flows). Here comes a sample screenshot.
+Activities can be formed into bigger compounds and using workflow, you can build long-running processes such as a moderated blog post or a parcel delivery. Also, you don't have to use the DSL but can use the [`editor`](https://2019.trailblazer.to/2.1/docs/pro.html#pro-editor)instead(cool for more complex, long-running flows). Here comes a sample screenshot.
 
 <img src="http://2019.trailblazer.to/2.1/dist/img/flow.png">
 
@@ -89,4 +89,4 @@ Activities can be formed into bigger compounds and using workflow, you can build
 
 © Copyright 2018, Trailblazer GmbH
 
-Licensed under the LGPLv3 license. We also offer a commercial-friendly license.
+Licensed under the LGPLv3 license. We also offer a commercial-friendly [license](https://2019.trailblazer.to/2.1/docs/pro.html#pro-license).
