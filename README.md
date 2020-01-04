@@ -1,22 +1,22 @@
 # Activity
 
-implements Intermediate, Implementation, compiler and `Activity::Implementation`, Activity::Interface
+Implements Intermediate, Implementation and compiler
 
 The `activity` gem brings a light-weight DSL to define business processes, and the runtime logic to run those activities.
 
 A process is a set of arbitrary pieces of logic you define, chained together and put into a meaningful context by an activity. Activity lets you focus on the implementation of steps while Trailblazer takes care of the control flow.
 
-Please find the [full documentation on the Trailblazer website](http://trailblazer.to/api-docs). [Note that the docs are WIP.]
+Please find the [full documentation on the Trailblazer website](https://2019.trailblazer.to/2.1/docs/activity.html). [Note that the docs are WIP.]
 
 ## Example
 
-The `activity` gem provides three default patterns to model processes: `Path`, `Railway` and `FastTrack`. Here's an example what a railway activity could look like, along with some more complex connections.
+In conjunction with [`dsl-linear`](https://github.com/trailblazer/trailblazer-activity-dsl-linear), the `activity` gem provides three default patterns to model processes: `Path`, `Railway` and `FastTrack`. Here's an example of what a railway activity could look like, along with some more complex connections (you can read more about Railway strategy in the [docs](https://2019.trailblazer.to/2.1/docs/activity.html#activity-strategy-railway)).
 
 ```ruby
-module Memo::Update
-  extend Trailblazer::Activity::Railway()
-  module_function
+require "trailblazer-activity"
+require "trailblazer-activity-dsl-linear"
 
+class Memo::Update < Trailblazer::Activity::Railway
   # here goes your business logic
   #
   def find_model(ctx, id:, **)
@@ -39,10 +39,10 @@ module Memo::Update
 
   # here comes the DSL describing the layout of the activity
   #
-  step method(:find_model)
-  step method(:validate), Output(:failure) => End(:validation_error)
-  step method(:save)
-  fail method(:log_error)
+  step :find_model
+  step :validate, Output(:failure) => End(:validation_error)
+  step :save
+  fail :log_error
 end
 ```
 
@@ -71,17 +71,17 @@ With Activity, modeling business processes turns out to be ridiculously simple: 
 ## Features
 
 * Activities can model any process with arbitrary flow and connections.
-* Nesting and compositions are allowed and encouraged.
+* Nesting and compositions are allowed and encouraged (via Trailblazer's [`dsl-linear`](https://github.com/trailblazer/trailblazer-activity-dsl-linear) gem).
 * Different step interfaces, manual processing of DSL options, etc is all possible.
 * Steps can be any kind of callable objects.
-* Tracing!
+* Tracing! (via Trailblazer's [`developer`](https://github.com/trailblazer/trailblazer-developer) gem)
 
 ## Operation
 
-Trailblazer's [`Operation`](http://trailblazer.to/2.1/operation) internally uses an activity to model the processes.
+Trailblazer's [`Operation`](https://2019.trailblazer.to/2.1/docs/operation.html#operation-overview) internally uses an activity to model the processes.
 
 ## License
 
 © Copyright 2018, Trailblazer GmbH
 
-Licensed under the LGPLv3 license. We also offer a [commercial-friendly license](http://trailblazer.to/pro).
+Licensed under the LGPLv3 license. We also offer a commercial-friendly license.
