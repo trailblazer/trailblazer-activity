@@ -51,7 +51,16 @@ module Trailblazer
           # Stop execution of the circuit when we hit a stop event (< End). This could be an task's End or Suspend.
           return [ last_signal, args ] if @stop_events.include?(task) # DISCUSS: return circuit_options here?
 
-          task = next_for(task, last_signal) or raise IllegalSignalError.new("<#{@name}>[#{task}][ #{last_signal.inspect} ]")
+          if (next_task = next_for(task, last_signal))
+            task = next_task
+          else
+            raise IllegalSignalError.new(
+              task,
+              signal: last_signal,
+              outputs: @map[task],
+              exec_context: circuit_options[:exec_context], # passed at run-time from DSL
+            )
+          end
         end
       end
 
@@ -67,7 +76,26 @@ module Trailblazer
         outputs[signal]
       end
 
+      # Common reasons to raise IllegalSignalError are
+      #   * Returning invalid signal from custom Macros
+      #   * Returning invalid signal from steps which are not taskWrapped, for example: `step task: method(:validate)`
+      #
+      # Rest assured, it won't be raised in case of below scenarios where they can return any value,
+      #   * Steps with instance method signature, for example, `step :load_user`
+      #   * Steps with proc signature, for example `step ->(ctx, **){}`
       class IllegalSignalError < RuntimeError
+        attr_reader :task, :signal
+
+        def initialize(task, signal:, outputs:, exec_context:)
+          @task = task
+          @signal = signal
+
+          message = "#{exec_context.class}: \n\t" \
+            "\sUnrecognized Signal `#{signal.inspect}` returned from #{task.inspect}. Registered signals are, \n" \
+            "- #{outputs.keys.join("\n- ")}"
+
+          super(message)
+        end
       end
     end
   end
