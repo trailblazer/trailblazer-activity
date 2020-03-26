@@ -1,3 +1,7 @@
+# 0.10.1
+
+* Update IllegalSignalError exception for more clarity
+
 # 0.10.0
 
 * Require `developer` >= 0.0.7.
