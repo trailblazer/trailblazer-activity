@@ -4,10 +4,6 @@ module Trailblazer
     # It abstracts internals about circuits and provides a convenient API to third-parties such as
     # tracing, rendering an activity, or finding particular tasks.
     module Introspect
-      def self.Graph(*args)
-        Graph.new(*args)
-      end
-
       # TODO: order of step/fail/pass in Node would be cool to have
 
       # @private This API is still under construction.
@@ -20,13 +16,14 @@ module Trailblazer
           @configs  = @schema[:nodes]
         end
 
-        def find(id=nil, &block)
+        def find(id = nil, &block)
           return find_by_id(id) unless block_given?
+
           find_with_block(&block)
         end
 
-        def collect(strategy: :circuit, &block)
-          @map.keys.each_with_index.collect { |task, i| yield find_with_block { |node| node.task==task }, i }
+        def collect(strategy: :circuit)
+          @map.keys.each_with_index.collect { |task, i| yield find_with_block { |node| node.task == task }, i }
         end
 
         def stop_events
@@ -36,11 +33,11 @@ module Trailblazer
         private
 
         def find_by_id(id)
-          node = @configs.find { |node| node.id == id } or return
+          node = @configs.find { |_node| _node.id == id } or return
           node_for(node)
         end
 
-        def find_with_block(&block)
+        def find_with_block
           existing = @configs.find { |node| yield Node(node.task, node.id, node.outputs, node.data) } or return
 
           node_for(existing)
@@ -67,6 +64,10 @@ module Trailblazer
           end
         end
       end
-    end #Introspect
+
+      def self.Graph(*args)
+        Graph.new(*args)
+      end
+    end # Introspect
   end
 end

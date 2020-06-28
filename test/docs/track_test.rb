@@ -1,7 +1,6 @@
 require "test_helper"
 
 class DocsOutputToIdTest < Minitest::Spec
-
   class CustomTest < Minitest::Spec
     module User
     end
@@ -10,17 +9,18 @@ class DocsOutputToIdTest < Minitest::Spec
       #:track-ref
       module User::Signin
         extend Trailblazer::Activity::Railway()
-        #~methods
+        # ~methods
         extend T.def_steps(:sign_in, :create)
-        def self.find_by_omniauth( ctx, ** )
+        def self.find_by_omniauth(ctx, **)
           ctx[:seq] << :find_by_omniauth
           ctx[:find_by_omniauth_return]
         end
-        def self.find_by_email( ctx, ** )
+
+        def self.find_by_email(ctx, **)
           ctx[:seq] << :find_by_email
           ctx[:find_by_email_return]
         end
-        #~methods end
+        # ~methods end
         step method(:find_by_omniauth)
         fail method(:find_by_email), Output(:success) => Track(:success)
         step method(:sign_in)
@@ -32,17 +32,16 @@ class DocsOutputToIdTest < Minitest::Spec
       # }
 
       # user known by Omniauth
-      signal, (ctx, _) = User::Signin.( [{ seq: [], find_by_omniauth_return: true }] )
-      ctx.must_equal({:seq=>[:find_by_omniauth, :sign_in], :find_by_omniauth_return=>true})
+      signal, (ctx,) = User::Signin.([{seq: [], find_by_omniauth_return: true}])
+      _(ctx).must_equal({:seq => %i[find_by_omniauth sign_in], :find_by_omniauth_return => true})
 
       # user known via email
-      signal, (ctx, _) = User::Signin.( [{ seq: [], find_by_omniauth_return: false, find_by_email_return: true }] )
-      ctx.must_equal({:seq=>[:find_by_omniauth, :find_by_email, :sign_in], :find_by_omniauth_return=>false, :find_by_email_return=>true})
+      signal, (ctx,) = User::Signin.([{seq: [], find_by_omniauth_return: false, find_by_email_return: true}])
+      _(ctx).must_equal({:seq => %i[find_by_omniauth find_by_email sign_in], :find_by_omniauth_return => false, :find_by_email_return => true})
 
       # user unknown
-      signal, (ctx, _) = User::Signin.( [{ seq: [], find_by_omniauth_return: false, find_by_email_return: false }] )
-      ctx.must_equal({:seq=>[:find_by_omniauth, :find_by_email, :create], :find_by_omniauth_return=>false, :find_by_email_return=>false})
+      signal, (ctx,) = User::Signin.([{seq: [], find_by_omniauth_return: false, find_by_email_return: false}])
+      _(ctx).must_equal({:seq => %i[find_by_omniauth find_by_email create], :find_by_omniauth_return => false, :find_by_email_return => false})
     end
   end
-
 end

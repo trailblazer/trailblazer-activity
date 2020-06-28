@@ -3,43 +3,42 @@ require "test_helper"
 gem "benchmark-ips"
 require "benchmark/ips"
 
-=begin
-## Learning
+# ## Learning
+#
+# array decompose is only slightly slower.
+# splat is super slow
+# old "complicated" API is more versatile as it doesn't enforce a set of positional args,
+# we only have one and the circuit_options
+#
 
-array decompose is only slightly slower.
-splat is super slow
-old "complicated" API is more versatile as it doesn't enforce a set of positional args,
-we only have one and the circuit_options
-
-=end
-
-def old_circuit_api_doublesplat((ctx, flow_options), **circuit_options)
+def old_circuit_api_doublesplat((ctx, flow_options), **_circuit_options)
   ctx[:in] = 1
   return 1, [ctx, flow_options]
 end
 
-def old_circuit_api_return((ctx, flow_options), circuit_options)
+def old_circuit_api_return((ctx, flow_options), _circuit_options)
   ctx[:in] = 1
   return 1, [ctx, flow_options]
 end
 
-def old_circuit_api((ctx, flow_options), circuit_options)
+def old_circuit_api((ctx, flow_options), _circuit_options)
   ctx[:in] = 1
   [1, [ctx, flow_options]]
 end
 
-
-def new_circuit_api(ctx, flow_options, circuit_options)
+def new_circuit_api(ctx, flow_options, _circuit_options)
   ctx[:in] = 1
-  [1, [ ctx, flow_options ]]
+  [1, [ctx, flow_options]]
 end
 
 def new_circuit_api_shortened(ctx, *args)
   ctx[:in] = 1
-  [1, [ ctx, *args ]]
+  [1, [ctx, *args]]
 end
 
-ctx, flow_options, circuit_options = {}, {}, {}
+ctx = {}
+flow_options = {}
+circuit_options = {}
 
 Benchmark.ips do |x|
   old_signature = [ctx, flow_options]
@@ -52,5 +51,3 @@ Benchmark.ips do |x|
 
   x.compare!
 end
-
-

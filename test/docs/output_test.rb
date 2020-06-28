@@ -7,10 +7,10 @@ class DocsOutputTest < Minitest::Spec
         extend Activity::Path()
 
         task "A",
-          Output(:success) => End(:my_pass_fast)
+             Output(:success) => End(:my_pass_fast)
       end
 
-      Cct(activity).must_equal %{
+      _(Cct(activity)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
 #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
@@ -27,10 +27,10 @@ class DocsOutputTest < Minitest::Spec
         extend Activity::Path()
 
         task "A",
-          Output(:pass) => End(:my_pass), outputs: { pass: Activity.Output("Pass", :pass), fail: Activity.Output("Fail", :fail) }
+             Output(:pass) => End(:my_pass), outputs: {pass: Activity.Output("Pass", :pass), fail: Activity.Output("Fail", :fail)}
       end
 
-      Cct(activity).must_equal %{
+      _(Cct(activity)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
 #<Trailblazer::Activity::TaskBuilder::Task user_proc=A>
@@ -41,7 +41,6 @@ class DocsOutputTest < Minitest::Spec
 }
     end
   end
-
 
   describe "Subprocess" do
     let(:nested) do
@@ -59,10 +58,10 @@ class DocsOutputTest < Minitest::Spec
         extend Activity::Path()
 
         task Subprocess(nested),
-          Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
+             Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
       end
 
-      Cct(activity).must_equal %{
+      _(Cct(activity)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
@@ -82,10 +81,10 @@ class DocsOutputTest < Minitest::Spec
         extend Activity::Path()
 
         task Subprocess(nested),
-          Output("Restart", :restart) => End(:restart) # references a plus pole from VV
+             Output("Restart", :restart) => End(:restart) # references a plus pole from VV
       end
 
-      Cct(activity).must_equal %{
+      _(Cct(activity)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
@@ -110,7 +109,7 @@ class DocsOutputTest < Minitest::Spec
         _end task: Trailblazer::Activity::End(:failure), magnetic_to: [:failure]
       end
 
-      Cct(activity).must_equal %{
+      _(Cct(activity)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
@@ -140,7 +139,7 @@ class DocsOutputTest < Minitest::Spec
         _end task: Trailblazer::Activity::End(:failure), magnetic_to: [:failure]
       end
 
-      Cct(activity).must_equal %{
+      _(Cct(activity)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>

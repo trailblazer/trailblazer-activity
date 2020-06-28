@@ -20,7 +20,7 @@ class Trailblazer::Activity
         nodes   = node_attributes(intermediate, implementation)
         outputs = outputs(intermediate.stop_task_ids, nodes)
         config  = config(implementation, config: config_default)
-        schema  = Schema.new(circuit, outputs, nodes, config)
+        Schema.new(circuit, outputs, nodes, config)
       end
 
       # From the intermediate "template" and the actual implementation, compile a {Circuit} instance.
@@ -83,10 +83,10 @@ class Trailblazer::Activity
         config
       end
 
-      private
+
 
       # Apply to any array.
-      def self.for_semantic(outputs, semantic)
+      private_class_method def self.for_semantic(outputs, semantic)
         outputs.find { |out| out.semantic == semantic } or raise "`#{semantic}` not found"
       end
     end # Intermediate

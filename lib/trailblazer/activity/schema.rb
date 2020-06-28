@@ -11,3 +11,5 @@ module Trailblazer
     end # Schema
   end
 end
+require "trailblazer/activity/schema/implementation"
+require "trailblazer/activity/schema/intermediate"

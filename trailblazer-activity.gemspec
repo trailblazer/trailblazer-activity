@@ -1,4 +1,4 @@
-lib = File.expand_path('../lib', __FILE__)
+lib = File.expand_path("lib", __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'trailblazer/activity/version'
 
@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "trailblazer-context", ">= 0.2.0", "< 0.3.0"
+  spec.add_dependency "trailblazer-context", ">= 0.3.0", "< 0.4.0"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "minitest", "~> 5.0"

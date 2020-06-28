@@ -1,7 +1,6 @@
 require "test_helper"
 
 class IntrospectionTest < Minitest::Spec
-
   describe "Introspect::Graph" do
     let(:graph) { Activity::Introspect::Graph(nested_activity) }
 
@@ -36,9 +35,9 @@ class IntrospectionTest < Minitest::Spec
         expect(nodes.size).must_equal 5
 
         expect(nodes[0][:task].inspect).must_equal %{#<Trailblazer::Activity::Start semantic=:default>}
-        assert_outgoings nodes[0], Activity::Right=>implementing.method(:b)
+        assert_outgoings nodes[0], Activity::Right => implementing.method(:b)
         expect(nodes[1][:task]).must_equal implementing.method(:b)
-        assert_outgoings nodes[1], Activity::Right=>bc
+        assert_outgoings nodes[1], Activity::Right => bc
         expect(nodes[2][:task]).must_equal bc
         assert_outgoings nodes[2], bc.to_h[:outputs][0].signal => nodes[3].task
         expect(nodes[3][:task]).must_equal implementing.method(:f)

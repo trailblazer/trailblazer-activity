@@ -21,13 +21,13 @@ class ActivityTest < Minitest::Spec
 
   it "can start with any task" do
     skip
-    signal, (options, _) = activity.( [{}], start_task: L )
+    signal, (options,) = activity.([{}], start_task: L)
 
     expect(signal).must_equal activity.outputs[:success].signal
     expect(options.inspect).must_equal %{{:L=>1}}
   end
 
-# TODO: test {to_h} properly
+  # TODO: test {to_h} properly
   it "exposes {:data} attributes in {#to_h}" do
     expect(bc.to_h[:nodes][1][:data].inspect).must_equal %{{:additional=>true}}
   end
@@ -35,10 +35,10 @@ class ActivityTest < Minitest::Spec
   it "{:activity}" do
     intermediate = Inter.new(
       {
-        Inter::TaskRef(:a)  => [Inter::Out(:success, :b)],
+        Inter::TaskRef(:a) => [Inter::Out(:success, :b)],
         Inter::TaskRef(:b) => [Inter::Out(:success, :c)],
         Inter::TaskRef(:c) => [Inter::Out(:success, :d)],
-        Inter::TaskRef(:d) => [Inter::Out(:success, nil)],
+        Inter::TaskRef(:d) => [Inter::Out(:success, nil)]
       },
       [:d],
       [:a] # start
@@ -50,7 +50,7 @@ class ActivityTest < Minitest::Spec
       :a => Schema::Implementation::Task(track, [Activity::Output(Activity::Right, :success)], []),
       :b => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], []),
       :c => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], []),
-      :d => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], []),
+      :d => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], [])
     }
 
     nested_activity = Activity.new(Inter.(intermediate, implementation))
@@ -59,12 +59,12 @@ class ActivityTest < Minitest::Spec
       :a => Schema::Implementation::Task(track, [Activity::Output(Activity::Right, :success)], []),
       :b => Schema::Implementation::Task(nested_activity, [Activity::Output(Activity::Right, :success)], []),
       :c => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], []),
-      :d => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], []),
+      :d => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], [])
     }
 
     activity = Activity.new(Inter.(intermediate, implementation))
 
-    signal, (ctx, _) = activity.([[], {}])
+    _signal, (ctx,) = activity.([[], {}])
 
     # each task receives the containing {:activity}
     expect(ctx).must_equal [activity, nested_activity, nested_activity, nested_activity, nested_activity, activity, activity]

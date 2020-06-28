@@ -6,15 +6,14 @@ class DocsMacroTest < Minitest::Spec
       Module.new do
         extend Activity::Path()
 
-        module_function
-        def self.MyNested(target: "mine", &block)
+        def self.MyNested(target: "mine")
           task = ->((ctx, flow_options), *) do
             ctx[:my_nested] = yield(target) # use the block.
 
             return Trailblazer::Activity::Right, [ctx, flow_options]
           end
 
-          { task: task }
+          {task: task}
         end
 
         task MyNested(target: "yours") { |target|
@@ -24,8 +23,8 @@ class DocsMacroTest < Minitest::Spec
     end
 
     it "allows to claim and call the block that would usually go to the DSL" do
-      end_event, (ctx, _) = activity.( [{}] )
-      ctx.must_equal(:my_nested=>"this block's content is all yours!")
+      end_event, (ctx,) = activity.([{}])
+      _(ctx).must_equal(:my_nested => "this block's content is all yours!")
     end
   end
 
@@ -55,15 +54,19 @@ class DocsMacroTest < Minitest::Spec
         extend Activity::Path()
 
         module_function
+
         def find_model(ctx, id:, **)
           ctx[:model] = Memo.find_by(id: id)
         end
+
         def create(ctx, id:, **)
           ctx[:model] = Memo.find_by(id: id)
         end
+
         def update(ctx, id:, **)
           ctx[:model] = Memo.find_by(id: id)
         end
+
         def save(ctx, id:, **)
           ctx[:model] = Memo.find_by(id: id)
         end
@@ -75,9 +78,8 @@ class DocsMacroTest < Minitest::Spec
       end
     end
 
-
     it "creates correct activity" do
-      Cct(activity, inspect_task: method(:inspect_task_builder) ).must_equal branching
+      _(Cct(activity, inspect_task: method(:inspect_task_builder))).must_equal branching
     end
   end
 
@@ -87,22 +89,26 @@ class DocsMacroTest < Minitest::Spec
         extend Activity::Path()
 
         module_function
+
         def find_model(ctx, id:, **)
           ctx[:model] = Memo.find_by(id: id)
         end
+
         def create(ctx, id:, **)
           ctx[:model] = Memo.find_by(id: id)
         end
+
         def update(ctx, id:, **)
           ctx[:model] = Memo.find_by(id: id)
         end
+
         def save(ctx, id:, **)
           ctx[:model] = Memo.find_by(id: id)
         end
 
         task method(:find_model),
-          Output(:failure) => task(method(:create)),
-          Output(:success) => task(method(:update))
+             Output(:failure) => task(method(:create)),
+             Output(:success) => task(method(:update))
 
         task method(:save)
       end
@@ -110,7 +116,7 @@ class DocsMacroTest < Minitest::Spec
 
     it "creates correct activity" do
       skip "think about me"
-      Cct(activity.to_h[:circuit], inspect_task: method(:inspect_task_builder) ).must_equal branching
+      _(Cct(activity.to_h[:circuit], inspect_task: method(:inspect_task_builder))).must_equal branching
     end
   end
 end
