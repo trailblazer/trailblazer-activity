@@ -7,10 +7,10 @@ module Trailblazer
       @schema = schema
     end
 
-    def call(args, circuit_options={})
+    def call(args, **circuit_options)
       @schema[:circuit].(
         args,
-        circuit_options.merge(activity: self)
+        **circuit_options.merge(activity: self)
       )
     end
 
@@ -34,24 +34,15 @@ module Trailblazer
   end # Activity
 end
 
-# require "trailblazer/activity/interface"
 require "trailblazer/activity/structures"
 require "trailblazer/activity/schema"
-require "trailblazer/activity/schema/implementation"
-require "trailblazer/activity/schema/intermediate"
 require "trailblazer/activity/circuit"
 require "trailblazer/activity/config"
 require "trailblazer/activity/introspect"
-
 require "trailblazer/activity/task_wrap"
-require "trailblazer/activity/task_wrap/pipeline"
-require "trailblazer/activity/task_wrap/call_task"
-require "trailblazer/activity/task_wrap/runner"
-require "trailblazer/activity/task_wrap/variable_mapping"
-require "trailblazer/activity/task_wrap/inject"
+require "trailblazer/activity/task_builder"
 
 require "trailblazer/option"
 require "trailblazer/context"
-require "trailblazer/activity/task_builder"
 
 

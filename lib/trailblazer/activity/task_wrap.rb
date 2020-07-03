@@ -3,12 +3,12 @@ module Trailblazer
     #
     # Example with tracing:
     #
-          # Call the task_wrap circuit:
-        #   |-- Start
-        #   |-- Trace.capture_args   [optional]
-        #   |-- Call (call actual task) id: "task_wrap.call_task"
-        #   |-- Trace.capture_return [optional]
-        #   |-- Wrap::End
+    # Call the task_wrap circuit:
+    #   |-- Start
+    #   |-- Trace.capture_args   [optional]
+    #   |-- Call (call actual task) id: "task_wrap.call_task"
+    #   |-- Trace.capture_return [optional]
+    #   |-- Wrap::End
     module TaskWrap
       module_function
 
@@ -21,7 +21,7 @@ module Trailblazer
         )
 
         # signal, (ctx, flow), circuit_options =
-        Runner.(activity, args, circuit_options)
+        Runner.(activity, args, **circuit_options)
       end
 
       # {:extension} API
@@ -29,7 +29,8 @@ module Trailblazer
       # Gets executed in {Intermediate.call} which also provides {config}.
 
       def initial_wrap_static(*)
-        initial_sequence = TaskWrap::Pipeline.new([["task_wrap.call_task", TaskWrap.method(:call_task)]])
+        # return initial_sequence
+        TaskWrap::Pipeline.new([["task_wrap.call_task", TaskWrap.method(:call_task)]])
       end
 
       # Use this in your macros if you want to extend the {taskWrap}.
@@ -51,3 +52,8 @@ module Trailblazer
     end # TaskWrap
   end
 end
+require "trailblazer/activity/task_wrap/pipeline"
+require "trailblazer/activity/task_wrap/call_task"
+require "trailblazer/activity/task_wrap/runner"
+require "trailblazer/activity/task_wrap/variable_mapping"
+require "trailblazer/activity/task_wrap/inject"

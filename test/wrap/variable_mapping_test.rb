@@ -6,7 +6,7 @@ class VariableMappingTest < Minitest::Spec
   # first task
   Model = ->((ctx, flow), **) do
     ctx[:seq]            = ctx[:seq] + ["model"] # rename to model.a
-    ctx[:model_nonsense] = true       # filter me out
+    ctx[:model_nonsense] = true # filter me out
 
     [Activity::Right, [ctx, flow]]
   end
@@ -14,13 +14,13 @@ class VariableMappingTest < Minitest::Spec
   # second task
   Uuid = ->((ctx, flow), **) do
     ctx[:seq] = ctx[:seq] + ["uuid"] # rename to uuid.a
-    ctx[:uuid_nonsense] = false                             # filter me out
+    ctx[:uuid_nonsense] = false # filter me out
 
     [Activity::Right, [ctx, flow]]
   end
 
   C = ->((ctx, flow), **) do
-    ctx[:c] = ctx[:a]#.dup
+    ctx[:c] = ctx[:a] # .dup
 
     [Activity::Right, [ctx, flow]]
   end
@@ -33,13 +33,13 @@ class VariableMappingTest < Minitest::Spec
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
       },
       ["End.success"],
-      ["Start.default"], # start
+      ["Start.default"] # start
     )
 
     implementation = {
       "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
       :C => Schema::Implementation::Task(c = C, [Activity::Output(Activity::Right, :success)],                                        []),
-      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, implementation)
@@ -51,21 +51,21 @@ class VariableMappingTest < Minitest::Spec
     intermediate = Inter.new(
       {
         Inter::TaskRef("Start.default") => [Inter::Out(:success, :Model)],
-        Inter::TaskRef(:Model)  => [Inter::Out(:success, :Nested)],
+        Inter::TaskRef(:Model) => [Inter::Out(:success, :Nested)],
         Inter::TaskRef(:Nested) => [Inter::Out(:success, :Uuid)],
-        Inter::TaskRef(:Uuid)   => [Inter::Out(:success, "End.success")],
+        Inter::TaskRef(:Uuid) => [Inter::Out(:success, "End.success")],
         Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
       },
       ["End.success"],
-      ["Start.default"], # start
+      ["Start.default"] # start
     )
 
     implementation = {
-      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)],  []),
-      :Model          => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)],                 model_extensions),
-      :Nested         => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)],          []),
-      :Uuid           => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)],                  uuid_extensions),
-      "End.success"   => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
+      "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)], []),
+      :Model => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)], model_extensions),
+      :Nested => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)], []),
+      :Uuid => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)], uuid_extensions),
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, implementation)
@@ -73,16 +73,17 @@ class VariableMappingTest < Minitest::Spec
     Activity.new(schema)
   end
 
-  let (:activity) do
-    activity_for()
+  let(:activity) do
+    activity_for
   end
 
   let(:model_io) do
-      # a => a+1
-    input  = ->((original_ctx, flow_options), circuit_options) {
-      new_ctx = Trailblazer.Context(seq: original_ctx[:seq] + [:model_in]) }
-      # a -> model.a
-    output = ->(new_ctx, (original_ctx, flow_options), circuit_options) {
+    # a => a+1
+    input = ->((original_ctx, _flow_options), _circuit_options) {
+      Trailblazer.Context(seq: original_ctx[:seq] + [:model_in])
+    }
+    # a -> model.a
+    output = ->(new_ctx, (original_ctx, _flow_options), _circuit_options) {
       _, mutable_data = new_ctx.decompose
 
       seq = mutable_data[:seq] + [:model_out]
@@ -94,14 +95,14 @@ class VariableMappingTest < Minitest::Spec
   end
 
   let(:uuid_io) do
-      # a => a*3, model.a => model.a
-    input   = ->((original_ctx, flow_options), circuit_options) { new_ctx = Trailblazer.Context(seq: original_ctx[:seq_from_model] + [:uuid_in]) }
-    output  = ->(new_ctx, (original_ctx, flow_options), circuit_options) {
+    # a => a*3, model.a => model.a
+    input   = ->((original_ctx, _flow_options), _circuit_options) { Trailblazer.Context(seq: original_ctx[:seq_from_model] + [:uuid_in]) }
+    output  = ->(new_ctx, (original_ctx, _flow_options), _circuit_options) {
       _, mutable_data = new_ctx.decompose
 
       seq = mutable_data[:seq] + [:uuid_out]
 
-      original_ctx.merge({ seq_from_uuid: seq })
+      original_ctx.merge({seq_from_uuid: seq})
     }
 
     [input, output]
@@ -114,25 +115,26 @@ class VariableMappingTest < Minitest::Spec
 
       activity = activity_for(
         model_extensions: [Activity::TaskWrap::VariableMapping::Extension(model_input, model_output)],
-        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(uuid_input, uuid_output)],
+        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(uuid_input, uuid_output)]
       )
 
-      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity,
+      signal, (ctx, _) = Activity::TaskWrap.invoke(
+        activity,
         [
-          { seq: [] }.freeze, {},
-        ],
+          {seq: []}.freeze, {}
+        ]
       )
 
       expect(signal).must_equal activity.to_h[:outputs][0].signal
-      expect(ctx).must_equal({:seq=>[], :seq_from_model=>[:model_in, "model", :model_out], :c=>nil, :seq_from_uuid=>[:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
+      expect(ctx).must_equal({:seq => [], :seq_from_model => [:model_in, "model", :model_out], :c => nil, :seq_from_uuid => [:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
     end
 
     it "allows adding multiple I/Os" do
       model_input, model_output = model_io
       uuid_input, uuid_output   = uuid_io
 
-      model_input_2  = ->((original_ctx, flow_options), circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2]) }
-      model_output_2 = ->(new_ctx, (original_ctx, flow_options), circuit_options) {
+      model_input_2  = ->((original_ctx, _flow_options), _circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2]) }
+      model_output_2 = ->(new_ctx, (original_ctx, _flow_options), _circuit_options) {
         _, mutable_data = new_ctx.decompose
 
         seq = mutable_data[:seq_from_model] + [:model_out_2]
@@ -145,17 +147,18 @@ class VariableMappingTest < Minitest::Spec
           Activity::TaskWrap::VariableMapping::Extension(model_input_2, model_output_2),
           Activity::TaskWrap::VariableMapping::Extension(model_input, model_output)
         ],
-        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(uuid_input, uuid_output)],
+        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(uuid_input, uuid_output)]
       )
 
-      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity,
+      signal, (ctx, _) = Activity::TaskWrap.invoke(
+        activity,
         [
-          { seq: [] }.freeze, {},
-        ],
+          {seq: []}.freeze, {}
+        ]
       )
 
       expect(signal).must_equal activity.to_h[:outputs][0].signal
-      expect(ctx).must_equal({:seq=>[], :seq_from_model=>[:model_in_2, :model_in, "model", :model_out, :model_out_2], :c=>nil, :seq_from_uuid=>[:model_in_2, :model_in, "model", :model_out, :model_out_2, :uuid_in, "uuid", :uuid_out]})
+      expect(ctx).must_equal({:seq => [], :seq_from_model => [:model_in_2, :model_in, "model", :model_out, :model_out_2], :c => nil, :seq_from_uuid => [:model_in_2, :model_in, "model", :model_out, :model_out_2, :uuid_in, "uuid", :uuid_out]})
     end
 
     it "added via {:wrap_runtime}" do
@@ -166,72 +169,67 @@ class VariableMappingTest < Minitest::Spec
 
       # add filters around Model.
       merge = [
-        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new( model_input, id: 1 )]],
-        [TaskWrap::Pipeline.method(:append),  nil, ["task_wrap.output", TaskWrap::Output.new( model_output, id: 1 )]],
+        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(model_input, id: 1)]],
+        [TaskWrap::Pipeline.method(:append), nil, ["task_wrap.output", TaskWrap::Output.new(model_output, id: 1)]]
       ]
 
-      runtime[ Model ] = TaskWrap::Pipeline::Merge.new(*merge)
+      runtime[Model] = TaskWrap::Pipeline::Merge.new(*merge)
 
       # add filters around Uuid.
       merge = [
-        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new( uuid_input, id: 1 )]],
-        [TaskWrap::Pipeline.method(:append),  nil, ["task_wrap.output", TaskWrap::Output.new( uuid_output, id: 1 )]],
+        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(uuid_input, id: 1)]],
+        [TaskWrap::Pipeline.method(:append), nil, ["task_wrap.output", TaskWrap::Output.new(uuid_output, id: 1)]]
       ]
 
-      runtime[ Uuid ] = TaskWrap::Pipeline::Merge.new(*merge)
+      runtime[Uuid] = TaskWrap::Pipeline::Merge.new(*merge)
 
-      signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
+      signal, (options, _) = Activity::TaskWrap.invoke(
+        activity,
         [
-          options = { seq: [] }.freeze,
-          {},
+          options = {seq: []}.freeze,
+          {}
         ],
-
-        wrap_runtime: runtime, # dynamic additions from the outside (e.g. tracing), also per task.
-      )
+        wrap_runtime: runtime
+      ) # dynamic additions from the outside (e.g. tracing), also per task.
 
       expect(signal).must_equal activity.to_h[:outputs][0].signal
-      expect(options).must_equal({:seq=>[], :seq_from_model=>[:model_in, "model", :model_out], :c=>nil, :seq_from_uuid=>[:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
+      expect(options).must_equal({:seq => [], :seq_from_model => [:model_in, "model", :model_out], :c => nil, :seq_from_uuid => [:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
     end
 
     it "passes through {flow_options} and {circuit_options} to both filters" do
       model_input_2  = ->((original_ctx, flow_options), circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2], input_flow_options: flow_options, input_circuit_options: circuit_options.keys) }
       model_output_2 = ->(new_ctx, (original_ctx, flow_options), circuit_options) {
-        original, _ = new_ctx.decompose
+        original, = new_ctx.decompose
 
         original_ctx.merge(original).merge(output_flow_options: flow_options, output_circuit_options: circuit_options.keys)
       }
 
       activity = activity_for(
         model_extensions: [
-          Activity::TaskWrap::VariableMapping::Extension(model_input_2, model_output_2),
+          Activity::TaskWrap::VariableMapping::Extension(model_input_2, model_output_2)
         ]
       )
 
-      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity,
+      signal, (ctx, _) = Activity::TaskWrap.invoke(
+        activity,
         [
-          { seq: [] }.freeze, {yo: 1},
-        ],
+          {seq: []}.freeze, {yo: 1}
+        ]
       )
 
       expect(signal).must_equal activity.to_h[:outputs][0].signal
-      expect(ctx).must_equal({:seq=>[:model_in_2, "uuid"], :input_flow_options=>{:yo=>1}, :input_circuit_options=>[:wrap_runtime, :activity, :runner], :output_flow_options=>{:yo=>1}, :output_circuit_options=>[:wrap_runtime, :activity, :runner], :c=>nil, :uuid_nonsense=>false})
+      expect(ctx).must_equal({:seq => [:model_in_2, "uuid"], :input_flow_options => {:yo => 1}, :input_circuit_options => %i[wrap_runtime activity runner], :output_flow_options => {:yo => 1}, :output_circuit_options => %i[wrap_runtime activity runner], :c => nil, :uuid_nonsense => false})
     end
   end
-
-
-
-
-
-
 
   describe "Input/Output with scope" do
     it do
       skip
 
-      model_input  = ->(options) { { :a       => options[:a]+1 } }
-      model_output = ->(options) { { :model_a => options[:a] } }
-      uuid_input   = ->(options) { { :a       => options[:a]*3, :model_a => options[:model_a] } }
-      uuid_output  = ->(options) { { :uuid_a  => options[:a] } }
+      model_input  = ->(options) { {:a       => options[:a] + 1} }
+      model_output = ->(options) { {:model_a => options[:a]} }
+      uuid_input   = ->(options) { {:a       => options[:a] * 3, :model_a => options[:model_a]} }
+      uuid_output  = ->(options) { {:uuid_a  => options[:a]} }
 
       runtime = {}
 
@@ -239,33 +237,32 @@ class VariableMappingTest < Minitest::Spec
       runtime[ Model ] = Module.new do
         extend Activity::Path::Plan()
 
-        task Activity::TaskWrap::Input.new(Activity::TaskWrap::Input::Scoped.new( Trailblazer::Option(model_input) )),   id: "task_wrap.input", before: "task_wrap.call_task"
-        task Activity::TaskWrap::Output.new(Activity::TaskWrap::Output::Unscoped.new( Trailblazer::Option(model_output) )), id: "task_wrap.output", before: "End.success", group: :end
+        task Activity::TaskWrap::Input.new(Activity::TaskWrap::Input::Scoped.new(Trailblazer::Option(model_input))), id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::TaskWrap::Output.new(Activity::TaskWrap::Output::Unscoped.new(Trailblazer::Option(model_output))), id: "task_wrap.output", before: "End.success", group: :end
       end
 
       # add filters around Uuid.
       runtime[ Uuid ] = Module.new do
         extend Activity::Path::Plan()
 
-        task Activity::TaskWrap::Input.new(Activity::TaskWrap::Input::Scoped.new( Trailblazer::Option(uuid_input) )),   id: "task_wrap.input", before: "task_wrap.call_task"
-        task Activity::TaskWrap::Output.new(Activity::TaskWrap::Output::Unscoped.new( Trailblazer::Option(uuid_output) )), id: "task_wrap.output", before: "End.success", group: :end
+        task Activity::TaskWrap::Input.new(Activity::TaskWrap::Input::Scoped.new(Trailblazer::Option(uuid_input))), id: "task_wrap.input", before: "task_wrap.call_task"
+        task Activity::TaskWrap::Output.new(Activity::TaskWrap::Output::Unscoped.new(Trailblazer::Option(uuid_output))), id: "task_wrap.output", before: "End.success", group: :end
       end
 
-      signal, (options, flow_options) = Activity::TaskWrap.invoke(activity,
+      signal, (options, _) = Activity::TaskWrap.invoke(
+        activity,
         [
-          options = { :a => 1 },
-          {},
+          options = {:a => 1},
+          {}
         ],
-
-        wrap_runtime: runtime, # dynamic additions from the outside (e.g. tracing), also per task.
-      )
+        wrap_runtime: runtime
+      ) # dynamic additions from the outside (e.g. tracing), also per task.
 
       expect(signal).must_equal activity.outputs[:success].signal
-      expect(options).must_equal({:a=>1, :model_a=>4, :c=>1, :uuid_a => 7 })
+      expect(options).must_equal({:a => 1, :model_a => 4, :c => 1, :uuid_a => 7})
     end
   end
 end
-
 
 # step Tyrant::Signup, #scope: :auth
 #   input do

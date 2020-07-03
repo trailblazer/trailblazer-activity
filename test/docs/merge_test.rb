@@ -6,9 +6,9 @@ class DocsMergeTest < Minitest::Spec
   #:simple-find
   module Memo::Find
     extend Trailblazer::Activity::Railway()
-    #~methods
+    # ~methods
     extend T.def_steps(:id_present?, :find_model)
-    #~methods end
+    # ~methods end
     step method(:id_present?)
     step method(:find_model)
   end
@@ -20,9 +20,9 @@ class DocsMergeTest < Minitest::Spec
     #:merge
     module Memo::Update
       extend Trailblazer::Activity::Railway()
-      #~methods
+      # ~methods
       extend T.def_steps(:policy, :update)
-      #~methods end
+      # ~methods end
       step method(:policy)
 
       merge!(Memo::Find)
@@ -33,8 +33,8 @@ class DocsMergeTest < Minitest::Spec
 
     it do
       # happy update path
-      signal, (ctx, _) = Memo::Update.( [{ seq: [] }] )
-      ctx.must_equal({:seq=>[:policy, :id_present?, :find_model, :update] })
+      signal, (ctx,) = Memo::Update.([{seq: []}])
+      _(ctx).must_equal({:seq => %i[policy id_present? find_model update]})
     end
   end
 
@@ -47,9 +47,9 @@ class DocsMergeTest < Minitest::Spec
     #:logger
     module Lib::Logger
       extend Trailblazer::Activity::Railway()
-      #~methods
+      # ~methods
       extend T.def_steps(:log_error, :log_success)
-      #~methods end
+      # ~methods end
       fail method(:log_error),   group: :end, before: "End.failure" # always as last.
       pass method(:log_success), group: :end, before: "End.success" # always as last.
     end
@@ -58,9 +58,9 @@ class DocsMergeTest < Minitest::Spec
     #:merge-two
     module Memo::Update
       extend Trailblazer::Activity::Railway()
-      #~methods
+      # ~methods
       extend T.def_steps(:policy, :update)
-      #~methods end
+      # ~methods end
       merge! Lib::Logger
       step method(:policy)
 
@@ -73,8 +73,8 @@ class DocsMergeTest < Minitest::Spec
       # puts Cct(Memo::Update.to_h[:circuit])
 
       # happy update path, with logger
-      signal, (ctx, _) = Memo::Update.( [{ seq: [] }] )
-      ctx.must_equal({:seq=>[:policy, :id_present?, :find_model, :update, :log_success] })
+      signal, (ctx,) = Memo::Update.([{seq: []}])
+      _(ctx).must_equal({:seq => %i[policy id_present? find_model update log_success]})
     end
   end
 end

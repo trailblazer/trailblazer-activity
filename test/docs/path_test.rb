@@ -9,13 +9,13 @@ class DocsPathTest < Minitest::Spec
       #:join
       module Memo::Upsert
         extend Trailblazer::Activity::Path()
-        #~methods
+        # ~methods
         extend T.def_steps(:save, :create, :populate)
-        def self.find( ctx, ** )
+        def self.find(ctx, **)
           ctx[:seq] << :find
           ctx[:find_return]
         end
-        #~methods end
+        # ~methods end
 
         task method(:find), Output(Trailblazer::Activity::Left, :failure) => Path() do
           task Memo::Upsert.method(:create)
@@ -28,12 +28,12 @@ class DocsPathTest < Minitest::Spec
       # Cct(Memo::Upsert.to_h[:circuit]).must_equal %{
       # }
 
-      signal, (ctx, _) = Memo::Upsert.( [{ seq: [], find_return: true }] )
-      ctx.must_equal({:seq=>[:find, :save], :find_return=>true})
+      signal, (ctx,) = Memo::Upsert.([{seq: [], find_return: true}])
+      _(ctx).must_equal({:seq => %i[find save], :find_return => true})
 
       # take the extra Path and merge
-      signal, (ctx, _) = Memo::Upsert.( [{ seq: [], find_return: false }] )
-      ctx.must_equal({:seq=>[:find, :create, :populate, :save], :find_return=>false})
+      signal, (ctx,) = Memo::Upsert.([{seq: [], find_return: false}])
+      _(ctx).must_equal({:seq => %i[find create populate save], :find_return => false})
     end
   end
 
@@ -42,13 +42,13 @@ class DocsPathTest < Minitest::Spec
       skip "we don't have pass yet"
       module Memo::Create
         extend Trailblazer::Activity::Path()
-        #~methods
+        # ~methods
         extend T.def_steps(:save)
-        def self.find(ctx, find_return:, seq:, **)
+        def self.find(_ctx, find_return:, seq:, **)
           seq << :find
           find_return
         end
-        #~methods end
+        # ~methods end
 
         pass method(:find)
         pass method(:save)
@@ -56,12 +56,12 @@ class DocsPathTest < Minitest::Spec
 
       pp Memo::Create.to_h[:circuit]
 
-      signal, (ctx, _) = Memo::Create.( [{ seq: [], find_return: true }] )
-      ctx.must_equal({:seq=>[:find, :save], :find_return=>true})
+      signal, (ctx,) = Memo::Create.([{seq: [], find_return: true}])
+      _(ctx).must_equal({:seq => %i[find save], :find_return => true})
 
       # both return values go straight to the next task
-      signal, (ctx, _) = Memo::Create.( [{ seq: [], find_return: false }] )
-      ctx.must_equal({:seq=>[:find, :save], :find_return=>true})
+      signal, (ctx,) = Memo::Create.([{seq: [], find_return: false}])
+      _(ctx).must_equal({:seq => %i[find save], :find_return => true})
     end
   end
 end

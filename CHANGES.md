@@ -1,3 +1,7 @@
+# 0.11.0
+
+* Support for Ruby 2.7
+
 # 0.10.1
 
 * Update IllegalSignalError exception for more clarity

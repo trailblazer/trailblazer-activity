@@ -28,6 +28,7 @@ module Trailblazer
 
         return state[directive] if args.size == 1
         return state[directive][key] if state.key?(directive)
+
         nil
       end
     end

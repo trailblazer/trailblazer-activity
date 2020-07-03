@@ -61,7 +61,7 @@ module Trailblazer
         end
 
         def Cct(activity)
-          cct = Trailblazer::Developer::Render::Circuit.(activity)
+          Trailblazer::Developer::Render::Circuit.(activity)
         end
 
         # TODO: Remove this once all it's references are removed
@@ -132,7 +132,7 @@ module Trailblazer
 
           inspects = semantics.collect { |semantic| %{#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=#{semantic.inspect}>, semantic=#{semantic.inspect}>} }
 
-          process.to_h[:outputs].inspect.must_equal %{[#{inspects.join(", ")}]}
+          assert_equal %{[#{inspects.join(", ")}]}, process.to_h[:outputs].inspect
 
           assert_circuit(process, circuit)
 
@@ -142,7 +142,7 @@ module Trailblazer
         def assert_circuit(schema, circuit)
           cct = Cct(schema)
           cct = cct.gsub("#<Trailblazer::Activity::TaskBuilder::Task user_proc=", "<*")
-          cct.must_equal %{#{circuit}}
+          assert_equal %{#{circuit}}, cct
         end
     end
   end

@@ -11,7 +11,11 @@ module Trailblazer
     # Translates the return value of the user step into a valid signal.
     # Note that it passes through subclasses of {Signal}.
     def self.binary_signal_for(result, on_true, on_false)
-      result.is_a?(Class) && result < Activity::Signal ? result : (result ? on_true : on_false)
+      if result.is_a?(Class) && result < Activity::Signal
+        result
+      else
+        result ? on_true : on_false
+      end
     end
 
     class Task

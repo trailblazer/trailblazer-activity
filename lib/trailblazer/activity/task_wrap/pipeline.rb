@@ -9,7 +9,7 @@ class Trailblazer::Activity
       end
 
       def call(wrap_ctx, original_args)
-        @sequence.each { |(id, task)| wrap_ctx, original_args = task.(wrap_ctx, original_args) }
+        @sequence.each { |(_id, task)| wrap_ctx, original_args = task.(wrap_ctx, original_args) }
 
         return wrap_ctx, original_args
       end

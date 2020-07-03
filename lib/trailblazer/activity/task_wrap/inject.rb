@@ -16,7 +16,7 @@ class Trailblazer::Activity
             Trailblazer::Context.for_circuit(ctx, {}, [original_ctx, flow_options], circuit_options) # TODO: test if Inject and :context_class work.
           end
 
-          output = ->(new_ctx, (original_ctx, flow_options), circuit_options) { # FIXME: use Unscope
+          output = ->(new_ctx, (original_ctx, _flow_options), _circuit_options) { # FIXME: use Unscope
             _, mutable_data = new_ctx.decompose
 
             # we are only interested in the {mutable_data} part since the disposed part

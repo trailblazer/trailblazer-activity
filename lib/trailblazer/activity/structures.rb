@@ -2,13 +2,7 @@ module Trailblazer
   class Activity
     # Generic run-time structures that are built via the DSL.
 
-    # Builds an {Activity::End} instance.
-    def self.End(semantic)
-      End.new(semantic: semantic)
-    end
-
     # Any instance of subclass of End will halt the circuit's execution when hit.
-
     # An End event is a simple structure typically found as the last task invoked
     # in an activity. The special behavior is that it
     # a) maintains a semantic that is used to further connect that very event
@@ -18,8 +12,8 @@ module Trailblazer
         @options = options.merge(semantic: semantic)
       end
 
-      def call(args, circuit_options)
-        return self, args, circuit_options
+      def call(args, **circuit_options)
+        return self, args, **circuit_options
       end
 
       def to_h
@@ -27,15 +21,15 @@ module Trailblazer
       end
 
       def to_s
-        %{#<#{self.class.name} #{@options.collect{ |k,v| "#{k}=#{v.inspect}" }.join(" ")}>}
+        %{#<#{self.class.name} #{@options.collect { |k, v| "#{k}=#{v.inspect}" }.join(" ")}>}
       end
 
-      alias_method :inspect, :to_s
+      alias inspect to_s
     end
 
     class Start < End
-      def call(args, circuit_options)
-        return Activity::Right, args, circuit_options
+      def call(args, **circuit_options)
+        return Activity::Right, args, **circuit_options
       end
     end
 
@@ -52,6 +46,11 @@ module Trailblazer
     # Builds an {Activity::Output} instance.
     def self.Output(signal, semantic)
       Output.new(signal, semantic).freeze
+    end
+
+    # Builds an {Activity::End} instance.
+    def self.End(semantic)
+      End.new(semantic: semantic)
     end
   end
 end

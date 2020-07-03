@@ -16,10 +16,10 @@ class SubprocessTest < Minitest::Spec
       extend Activity::Path()
 
       task Subprocess(nested),
-        Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
+           Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
     end
 
-    Cct(activity).must_equal %{
+    _(Cct(activity)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
@@ -39,10 +39,10 @@ class SubprocessTest < Minitest::Spec
       extend Activity::Railway()
 
       step Subprocess(nested),
-        Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
+           Output(:pass_fast) => End(:my_pass_fast) # references a plus pole from VV
     end
 
-    Cct(activity).must_equal %{
+    _(Cct(activity)).must_equal %{
 #<Start/:default>
  {Trailblazer::Activity::Right} => #<Trailblazer::Activity: {}>
 #<Trailblazer::Activity: {}>
@@ -58,7 +58,7 @@ class SubprocessTest < Minitest::Spec
   end
 
   it "allows to reconnect nested outputs by grabbing those" do
-        # collection.outputs[:failure] => :failure,
+    # collection.outputs[:failure] => :failure,
     # collection.outputs[:success] => :success
   end
 end

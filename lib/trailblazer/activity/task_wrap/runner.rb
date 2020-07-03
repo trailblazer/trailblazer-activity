@@ -13,7 +13,7 @@ class Trailblazer::Activity
         wrap_ctx = { task: task }
 
         # this pipeline is "wrapped around" the actual `task`.
-        task_wrap_pipeline = merge_static_with_runtime(task, circuit_options) || raise
+        task_wrap_pipeline = merge_static_with_runtime(task, **circuit_options) || raise
 
         # We save all original args passed into this Runner.call, because we want to return them later after this wrap
         # is finished.
@@ -28,15 +28,14 @@ class Trailblazer::Activity
         return wrap_ctx[:return_signal], wrap_ctx[:return_args]
       end
 
-      private
 
       # Compute the task's wrap by applying alterations both static and from runtime.
       #
       # NOTE: this is for performance reasons: we could have only one hash containing everything but that'd mean
       # unnecessary computations at `call`-time since steps might not even be executed.
       # TODO: make this faster.
-      def self.merge_static_with_runtime(task, wrap_runtime:, **circuit_options)
-        static_wrap = TaskWrap.wrap_static_for(task, circuit_options) # find static wrap for this specific task [, or default wrap activity].
+      private_class_method def self.merge_static_with_runtime(task, wrap_runtime:, **circuit_options)
+        static_wrap = TaskWrap.wrap_static_for(task, **circuit_options) # find static wrap for this specific task [, or default wrap activity].
 
         # Apply runtime alterations.
         # Grab the additional wirings for the particular `task` from `wrap_runtime`.

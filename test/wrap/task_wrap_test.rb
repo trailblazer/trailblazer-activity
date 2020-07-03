@@ -16,44 +16,43 @@ class TaskWrapTest < Minitest::Spec
 
     merge = [
       [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
-      [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]],
+      [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]]
     ]
 
     implementation = {
-      :a => Schema::Implementation::Task( implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension(merge: merge)]),
+      :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Activity::Right, :success)], [TaskWrap::Extension(merge: merge)]),
       :b => Schema::Implementation::Task(implementing.method(:b), [Activity::Output(Activity::Right, :success)],                 []),
       :c => Schema::Implementation::Task(implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 []),
-      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
+      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, implementation)
 
-    signal, (ctx, flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
+    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
 
     expect(ctx.inspect).must_equal %{{:seq=>[1, :a, 2, :b, :c]}}
 
-# it works nested as well
+    # it works nested as well
 
     top_implementation = {
-      :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Activity::Right, :success)],                 []),
-      :b => Schema::Implementation::Task(Activity.new(schema),     [Activity::Output(_es, :success)],                            []),
+      :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Activity::Right, :success)], []),
+      :b => Schema::Implementation::Task(Activity.new(schema), [Activity::Output(_es, :success)], []),
       :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension(merge: merge)]),
-      "End.success" => Schema::Implementation::Task(es = implementing::Success, [Activity::Output(implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
+      "End.success" => Schema::Implementation::Task(es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, top_implementation)
 
-    signal, (ctx, flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
+    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
 
     expect(ctx.inspect).must_equal %{{:seq=>[:a, 1, :a, 2, :b, :c, 1, :c, 2]}}
 
-# it works nested plus allows {wrap_runtime}
+    # it works nested plus allows {wrap_runtime}
 
     wrap_runtime = {c => TaskWrap::Pipeline::Merge.new(*merge)}
 
-    signal, (ctx, flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{wrap_runtime: wrap_runtime})
+    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{wrap_runtime: wrap_runtime})
 
     expect(ctx.inspect).must_equal %{{:seq=>[:a, 1, :a, 2, :b, 1, :c, 2, 1, 1, :c, 2, 2]}}
   end
-
 end

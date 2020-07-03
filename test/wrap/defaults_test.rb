@@ -4,7 +4,7 @@ require "test_helper"
 class DefaultsTest < Minitest::Spec
   describe "Default injection" do
     let(:macro) do
-       Module.new do
+      Module.new do
         def self.model((ctx, flow_options), *)
           ctx[:model] = ctx[:model_class].new(ctx[:args])
 
@@ -22,7 +22,7 @@ class DefaultsTest < Minitest::Spec
           Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
         },
         ["End.success"],
-        ["Model_a"], # start
+        ["Model_a"] # start
       )
 
       capture_a = ->((ctx, flow_options), *) do
@@ -57,19 +57,20 @@ class DefaultsTest < Minitest::Spec
       a = macro.method(:model)
       b = ->(*args) { macro.model(*args) }
 
-      activity = activity_for(a: a, b: b,
+      activity = activity_for(
+        a: a, b: b,
         a_extensions: [TaskWrap::Inject::Defaults::Extension(model_class: Regexp, args: "99")],
-        b_extensions: [TaskWrap::Inject::Defaults::Extension(model_class: OpenStruct, args: {id: 1})],
+        b_extensions: [TaskWrap::Inject::Defaults::Extension(model_class: OpenStruct, args: {id: 1})]
       )
 
-# defaults are applied
-      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
+      # defaults are applied
+      signal, (ctx, _flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
 
       expect(signal).must_equal activity.to_h[:outputs][0].signal
       expect(ctx.inspect).must_equal %{{:model=>#<OpenStruct id=1>, :capture_a=>\"{:model=>/99/}\"}}
 
-# inject one value from outside, the other is still defaulted.
-      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{model_class: Whatever}.freeze, {}])
+      # inject one value from outside, the other is still defaulted.
+      signal, (ctx, _flow_options) = Activity::TaskWrap.invoke(activity, [{model_class: Whatever}.freeze, {}])
 
       expect(signal).must_equal activity.to_h[:outputs][0].signal
       expect(ctx.inspect).must_equal %{{:model_class=>DefaultsTest::Whatever, :model=>#<Whatever args={:id=>1}>, :capture_a=>\"{:model_class=>DefaultsTest::Whatever, :model=>#<Whatever args=\\\"99\\\">}\"}}
@@ -79,27 +80,28 @@ class DefaultsTest < Minitest::Spec
       a = macro.method(:model)
       b = ->(*args) { macro.model(*args) }
 
-      a_input  = ->((original_ctx, flow_options), *) { new_ctx = Trailblazer.Context(original_ctx) }
+      a_input = ->((original_ctx, _flow_options), *) { Trailblazer.Context(original_ctx) }
 
-      a_output = ->(new_ctx, (original_ctx, flow_options), *) {
+      a_output = ->(new_ctx, (original_ctx, _flow_options), *) {
         _, mutable_data = new_ctx.decompose
 
         original_ctx.merge(:model_a => mutable_data[:model])
       }
 
-      activity = activity_for(a: a, b: b,
+      activity = activity_for(
+        a: a, b: b,
         a_extensions: [TaskWrap::VariableMapping::Extension(a_input, a_output), TaskWrap::Inject::Defaults::Extension(model_class: Regexp, args: "99")],
-        b_extensions: [TaskWrap::Inject::Defaults::Extension(model_class: OpenStruct, args: {id: 1})],
+        b_extensions: [TaskWrap::Inject::Defaults::Extension(model_class: OpenStruct, args: {id: 1})]
       )
 
-# defaults are applied
-      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
+      # defaults are applied
+      signal, (ctx, _flow_options) = Activity::TaskWrap.invoke(activity, [{}.freeze, {}])
 
       expect(signal).must_equal activity.to_h[:outputs][0].signal
       expect(ctx.inspect).must_equal %{{:model_a=>/99/, :capture_a=>\"{:model_a=>/99/}\", :model=>#<OpenStruct id=1>}}
 
-# inject one value from outside, the other is still defaulted.
-      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(activity, [{model_class: Whatever}.freeze, {}])
+      # inject one value from outside, the other is still defaulted.
+      signal, (ctx, _flow_options) = Activity::TaskWrap.invoke(activity, [{model_class: Whatever}.freeze, {}])
 
       expect(signal).must_equal activity.to_h[:outputs][0].signal
       expect(ctx.inspect).must_equal %{{:model_class=>DefaultsTest::Whatever, :model_a=>#<Whatever args=\"99\">, :capture_a=>\"{:model_class=>DefaultsTest::Whatever, :model_a=>#<Whatever args=\\\"99\\\">}\", :model=>#<Whatever args={:id=>1}>}}
