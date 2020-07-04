@@ -1,6 +1,6 @@
 # 0.11.0
 
-* Support for Ruby 2.7
+* Support for Ruby 2.7. All warnings are gone.
 
 # 0.10.1
 
