@@ -9,7 +9,7 @@ class Trailblazer::Activity
       #
       # @api private
       # @interface Runner
-      def self.call(task, args, circuit_options)
+      def self.call(task, args, **circuit_options)
         wrap_ctx = { task: task }
 
         # this pipeline is "wrapped around" the actual `task`.
