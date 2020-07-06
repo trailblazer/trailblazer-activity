@@ -1,7 +1,7 @@
 module Trailblazer
   module Version
     module Activity
-      VERSION = '0.11.0'.freeze
+      VERSION = '0.11.1'.freeze
     end
   end
 end

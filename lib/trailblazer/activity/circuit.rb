@@ -45,7 +45,7 @@ module Trailblazer
           last_signal, args, _discarded_circuit_options = runner.(
             task,
             args,
-            circuit_options
+            **circuit_options
           )
 
           # Stop execution of the circuit when we hit a stop event (< End). This could be an task's End or Suspend.
