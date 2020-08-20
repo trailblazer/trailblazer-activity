@@ -1,3 +1,7 @@
+# 0.11.2
+
+* Updrading `trailblazer-context` version :drum:
+
 # 0.11.1
 
 * Internal warning fixes.
