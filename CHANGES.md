@@ -1,3 +1,7 @@
+# 0.11.3
+
+* Allow `Testing.def_task` & `Testing.def_tasks` to return custom signals
+
 # 0.11.2
 
 * Updrading `trailblazer-context` version :drum:
