@@ -27,7 +27,9 @@ module Trailblazer
       Module.new do
         define_singleton_method(name) do | (ctx, flow_options), ** |
           ctx[:seq] << name
-          return Activity::Right, [ctx, flow_options]
+          signal = ctx.key?(name) ? ctx[name] : Activity::Right
+
+          return signal, [ctx, flow_options]
         end
       end.method(name)
     end
@@ -38,9 +40,9 @@ module Trailblazer
         names.each do |name|
           define_method(name) do | (ctx, flow_options), ** |
             ctx[:seq] << name
-            result = ctx.key?(name) ? ctx[name] : true
+            signal = ctx.key?(name) ? ctx[name] : Activity::Right
 
-            return (result ? Activity::Right : Activity::Left), [ctx, flow_options]
+            return signal, [ctx, flow_options]
           end
         end
       end
