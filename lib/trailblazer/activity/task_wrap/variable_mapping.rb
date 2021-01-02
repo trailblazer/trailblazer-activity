@@ -38,7 +38,7 @@ class Trailblazer::Activity
       end
 
       # {input.call()} is invoked in the circuit.
-      # `original_args` are the actual args passed to the wrapped task: [ [options, ..], circuit_options ]
+      # `original_args` are the actual args passed to the wrapped task: [ [ctx, ..], circuit_options ]
       #
       def call(wrap_ctx, original_args)
         # let user compute new ctx for the wrapped task.
