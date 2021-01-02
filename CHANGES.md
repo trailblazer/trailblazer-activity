@@ -1,3 +1,7 @@
+# 0.11.4
+
+* Introduce the `config_wrap:` option in `Intermediate.call(intermediate, implementation, config_merge: {})` to allow injecting data into the activity's `:config` field.
+
 # 0.11.3
 
 * Allow `Testing.def_task` & `Testing.def_tasks` to return custom signals
