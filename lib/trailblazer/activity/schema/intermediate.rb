@@ -12,14 +12,16 @@ class Trailblazer::Activity
       # Compiles a {Schema} instance from an {intermediate} structure and
       # the {implementation} object references.
       #
-      # Intermediate structure, Implementation, calls extensions, passes {}config # TODO
-      def self.call(intermediate, implementation)
-        config_default = {wrap_static: Hash.new(TaskWrap.initial_wrap_static)}.freeze # DISCUSS: this really doesn't have to be here, but works for now and we want it in 99%.
+      # Intermediate structure, Implementation, calls extensions, passes {config} # TODO
+      def self.call(intermediate, implementation, config_merge: {})
+        config_default = {wrap_static: Hash.new(TaskWrap.initial_wrap_static)} # DISCUSS: this really doesn't have to be here, but works for now and we want it in 99%.
+        config         = config_default.merge(config_merge)
+        config.freeze
 
         circuit = circuit(intermediate, implementation)
         nodes   = node_attributes(intermediate, implementation)
         outputs = outputs(intermediate.stop_task_ids, nodes)
-        config  = config(implementation, config: config_default)
+        config  = config(implementation, config: config)
         Schema.new(circuit, outputs, nodes, config)
       end
 

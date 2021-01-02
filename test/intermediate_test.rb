@@ -172,5 +172,20 @@ class IntermediateTest < Minitest::Spec
 
       expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :c=>{\"key\"=>\"value\"}, :C=>1, :e=>2}}
     end
+
+  # {Implementation.call()} allows to pass {config} data
+    describe "{Implementation.call()}" do
+      it "accepts {config_merge:} data that is merged into {config}" do
+        schema = Inter.(intermediate, implementation([]), config_merge: {beer: "yes"})
+
+        expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>{}, :beer=>\"yes\"}}
+      end
+
+      it "{:config_merge} overrides values in {default_config}" do
+        schema = Inter.(intermediate, implementation([]), config_merge: {beer: "yes", wrap_static: "yo"})
+
+        expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>"yo", :beer=>\"yes\"}}
+      end
+    end
   end
 end
