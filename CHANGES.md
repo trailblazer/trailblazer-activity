@@ -1,3 +1,8 @@
+# 0.11.5
+
+* Bug fix: `:output` filter from `TaskWrap::VariableMapping` wasn't returning the correct `flow_options`. If the wrapped task changed
+  its `flow_options`, the original one was still returned from the taskWrap run, not the updated one.
+
 # 0.11.4
 
 * Introduce the `config_wrap:` option in `Intermediate.call(intermediate, implementation, config_merge: {})` to allow injecting data into the activity's `:config` field.
