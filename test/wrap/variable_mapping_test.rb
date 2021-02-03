@@ -47,7 +47,7 @@ class VariableMappingTest < Minitest::Spec
     Activity.new(schema)
   end
 
-  def activity_for(model_extensions: [], uuid_extensions: [])
+  def activity_for(model_extensions: [], uuid_extensions: [], model_task: Model)
     intermediate = Inter.new(
       {
         Inter::TaskRef("Start.default") => [Inter::Out(:success, :Model)],
@@ -62,7 +62,7 @@ class VariableMappingTest < Minitest::Spec
 
     implementation = {
       "Start.default" => Schema::Implementation::Task(st = implementing::Start, [Activity::Output(Activity::Right, :success)], []),
-      :Model => Schema::Implementation::Task(b = Model, [Activity::Output(Activity::Right, :success)], model_extensions),
+      :Model => Schema::Implementation::Task(model_task, [Activity::Output(Activity::Right, :success)], model_extensions),
       :Nested => Schema::Implementation::Task(c = nested, [Activity::Output(implementing::Success, :success)], []),
       :Uuid => Schema::Implementation::Task(d = Uuid, [Activity::Output(Activity::Right, :success)], uuid_extensions),
       "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
@@ -219,6 +219,35 @@ class VariableMappingTest < Minitest::Spec
 
       expect(signal).must_equal activity.to_h[:outputs][0].signal
       expect(ctx).must_equal({:seq => [:model_in_2, "uuid"], :input_flow_options => {:yo => 1}, :input_circuit_options => %i[wrap_runtime activity runner], :output_flow_options => {:yo => 1}, :output_circuit_options => %i[wrap_runtime activity runner], :c => nil, :uuid_nonsense => false})
+    end
+
+    it "uses and returns correct {flow_options}" do
+      lets_change_flow_options = ->((ctx, flow_options), circuit_options) do
+        ctx[:seq] << :lets_change_flow_options
+
+      # allows to change flow_options in the task.
+        flow_options = flow_options.merge(coffee: true)
+
+        [Trailblazer::Activity::Right, [ctx, flow_options]]
+      end
+
+      model_input  = ->((original_ctx, _flow_options), _circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_input]) }
+      model_output = ->(new_ctx, (original_ctx, _flow_options), _circuit_options) { original, _ = new_ctx.decompose; original }
+
+      activity = activity_for(
+        model_task: lets_change_flow_options,
+        model_extensions: [Activity::TaskWrap::VariableMapping::Extension(model_input, model_output)],
+      )
+
+      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(
+        activity,
+        [
+          {seq: []}, {yo: 1}
+        ]
+      )
+
+      _(ctx.inspect).must_equal %{{:seq=>[:model_input, :lets_change_flow_options, \"uuid\"], :c=>nil, :uuid_nonsense=>false}}
+      _(flow_options.inspect).must_equal %{{:yo=>1, :coffee=>true}}
     end
   end
 
