@@ -54,7 +54,7 @@ class CircuitTest < Minitest::Spec
 
     # FIXME: FROM Activity#call
     nest_call = ->((options, flow_options, *args), **circuit_options) {
-      nest.([options, flow_options, *args], circuit_options.merge(task: Start))
+      nest.([options, flow_options, *args], **circuit_options.merge(task: Start))
     }
 
     nest_call

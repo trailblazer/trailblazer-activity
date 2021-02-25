@@ -21,7 +21,7 @@ class PipelineTest < Minitest::Spec
       original_args = [{seq: []}, {}]
 
       # no static_wrap
-      signal, args = Activity::TaskWrap::Runner.(task, original_args, {wrap_runtime: {}, activity: {wrap_static: {task => static_task_wrap}}})
+      signal, args = Activity::TaskWrap::Runner.(task, original_args, wrap_runtime: {}, activity: {wrap_static: {task => static_task_wrap}})
 
       expect(signal.inspect).must_equal %{Trailblazer::Activity::Right}
       expect(args.inspect).must_equal %{[{:seq=>[:a]}, {}]}

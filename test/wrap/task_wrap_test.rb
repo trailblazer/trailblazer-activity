@@ -96,9 +96,11 @@ class TaskWrapTest < Minitest::Spec
 
     outer_schema = Inter.(outer_intermediate, outer_implementation)
 
-    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(outer_schema), [{seq: [], start_at: implementing.method(:b)}], **{})
+    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(outer_schema), [{seq: [], start_at: start_at=implementing.method(:b)}], **{})
 
-    expect(ctx.inspect).must_equal %{{:seq=>[:b, :c, :a, :b, :c, :c], :start_at=>#<Method: Trailblazer::Activity::Testing::Assertions::Implementing.b>}}
+    assert_equal [:seq, :start_at], ctx.keys
+    assert_equal [:b, :c, :a, :b, :c, :c], ctx[:seq]
+    assert_equal start_at, ctx[:start_at]
   end
 
   def change_start_task(wrap_ctx, original_args)
