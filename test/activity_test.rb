@@ -44,22 +44,29 @@ class ActivityTest < Minitest::Spec
       [:a] # start
     )
 
-    track = ->((ctx, flow), circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
+    # DISCUSS: in Ruby 3, procs created from the same block are identical: https://rubyreferences.github.io/rubychanges/3.0.html#proc-and-eql
+    step = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
+    step2 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
+    step3 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
+    step4 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
+    step5 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
+    step6 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
+    step7 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
 
     implementation = {
-      :a => Schema::Implementation::Task(track, [Activity::Output(Activity::Right, :success)], []),
-      :b => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], []),
-      :c => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], []),
-      :d => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], [])
+      :a => Schema::Implementation::Task(step, [Activity::Output(Activity::Right, :success)], []),
+      :b => Schema::Implementation::Task(step2, [Activity::Output(Activity::Right, :success)], []),
+      :c => Schema::Implementation::Task(step3.clone, [Activity::Output(Activity::Right, :success)], []),
+      :d => Schema::Implementation::Task(step4.clone, [Activity::Output(Activity::Right, :success)], [])
     }
 
     nested_activity = Activity.new(Inter.(intermediate, implementation))
 
     implementation = {
-      :a => Schema::Implementation::Task(track, [Activity::Output(Activity::Right, :success)], []),
+      :a => Schema::Implementation::Task(step5, [Activity::Output(Activity::Right, :success)], []),
       :b => Schema::Implementation::Task(nested_activity, [Activity::Output(Activity::Right, :success)], []),
-      :c => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], []),
-      :d => Schema::Implementation::Task(track.clone, [Activity::Output(Activity::Right, :success)], [])
+      :c => Schema::Implementation::Task(step6, [Activity::Output(Activity::Right, :success)], []),
+      :d => Schema::Implementation::Task(step7.clone, [Activity::Output(Activity::Right, :success)], [])
     }
 
     activity = Activity.new(Inter.(intermediate, implementation))

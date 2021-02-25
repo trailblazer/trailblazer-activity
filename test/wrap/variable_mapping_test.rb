@@ -79,11 +79,11 @@ class VariableMappingTest < Minitest::Spec
 
   let(:model_io) do
     # a => a+1
-    input = ->((original_ctx, _flow_options), _circuit_options) {
+    input = ->((original_ctx, _flow_options), **_circuit_options) {
       Trailblazer.Context(seq: original_ctx[:seq] + [:model_in])
     }
     # a -> model.a
-    output = ->(new_ctx, (original_ctx, _flow_options), _circuit_options) {
+    output = ->(new_ctx, (original_ctx, _flow_options), **_circuit_options) {
       _, mutable_data = new_ctx.decompose
 
       seq = mutable_data[:seq] + [:model_out]
@@ -97,7 +97,7 @@ class VariableMappingTest < Minitest::Spec
   let(:uuid_io) do
     # a => a*3, model.a => model.a
     input   = ->((original_ctx, _flow_options), _circuit_options) { Trailblazer.Context(seq: original_ctx[:seq_from_model] + [:uuid_in]) }
-    output  = ->(new_ctx, (original_ctx, _flow_options), _circuit_options) {
+    output  = ->(new_ctx, (original_ctx, _flow_options), **_circuit_options) {
       _, mutable_data = new_ctx.decompose
 
       seq = mutable_data[:seq] + [:uuid_out]
@@ -133,8 +133,8 @@ class VariableMappingTest < Minitest::Spec
       model_input, model_output = model_io
       uuid_input, uuid_output   = uuid_io
 
-      model_input_2  = ->((original_ctx, _flow_options), _circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2]) }
-      model_output_2 = ->(new_ctx, (original_ctx, _flow_options), _circuit_options) {
+      model_input_2  = ->((original_ctx, _flow_options), **_circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2]) }
+      model_output_2 = ->(new_ctx, (original_ctx, _flow_options), **_circuit_options) {
         _, mutable_data = new_ctx.decompose
 
         seq = mutable_data[:seq_from_model] + [:model_out_2]
@@ -197,8 +197,8 @@ class VariableMappingTest < Minitest::Spec
     end
 
     it "passes through {flow_options} and {circuit_options} to both filters" do
-      model_input_2  = ->((original_ctx, flow_options), circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2], input_flow_options: flow_options, input_circuit_options: circuit_options.keys) }
-      model_output_2 = ->(new_ctx, (original_ctx, flow_options), circuit_options) {
+      model_input_2  = ->((original_ctx, flow_options), **circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2], input_flow_options: flow_options, input_circuit_options: circuit_options.keys) }
+      model_output_2 = ->(new_ctx, (original_ctx, flow_options), **circuit_options) {
         original, = new_ctx.decompose
 
         original_ctx.merge(original).merge(output_flow_options: flow_options, output_circuit_options: circuit_options.keys)
@@ -231,8 +231,8 @@ class VariableMappingTest < Minitest::Spec
         [Trailblazer::Activity::Right, [ctx, flow_options]]
       end
 
-      model_input  = ->((original_ctx, _flow_options), _circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_input]) }
-      model_output = ->(new_ctx, (original_ctx, _flow_options), _circuit_options) { original, _ = new_ctx.decompose; original }
+      model_input  = ->((original_ctx, _flow_options), **_circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_input]) }
+      model_output = ->(new_ctx, (original_ctx, _flow_options), **_circuit_options) { original, _ = new_ctx.decompose; original }
 
       activity = activity_for(
         model_task: lets_change_flow_options,

@@ -57,7 +57,7 @@ class Trailblazer::Activity
 
       # Invoke the @filter callable with the original circuit interface.
       def apply_filter((ctx, original_flow_options), original_circuit_options)
-        @filter.([ctx, original_flow_options], original_circuit_options) # returns {new_ctx}.
+        @filter.([ctx, original_flow_options], **original_circuit_options) # returns {new_ctx}.
       end
     end
 
@@ -78,7 +78,7 @@ class Trailblazer::Activity
         returned_ctx, returned_flow_options = wrap_ctx[:return_args]  # this is the Context returned from {call}ing the wrapped user task.
         original_ctx                        = wrap_ctx[@id]           # grab the original ctx from before which was set in the {:input} filter.
         # let user compute the output.
-        output_ctx = @filter.(returned_ctx, [original_ctx, returned_flow_options], original_circuit_options) # FIXME: shouldn't we pass {returned_ctx} instead of {original_ctx}?
+        output_ctx = @filter.(returned_ctx, [original_ctx, returned_flow_options], **original_circuit_options)
 
         wrap_ctx = wrap_ctx.merge( return_args: [output_ctx, returned_flow_options] )
 

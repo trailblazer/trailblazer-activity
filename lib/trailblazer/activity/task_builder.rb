@@ -5,7 +5,7 @@ module Trailblazer
     # Output signal binary: true=>Right, false=>Left.
     # Passes through all subclasses of Direction.~~~~~~~~~~~~~~~~~
     def self.Binary(user_proc)
-      Task.new(Trailblazer::Option::KW( user_proc ), user_proc)
+      Task.new(Trailblazer::Option(user_proc), user_proc)
     end
 
     # Translates the return value of the user step into a valid signal.
@@ -28,7 +28,7 @@ module Trailblazer
 
       def call( (ctx, flow_options), **circuit_options )
         # Execute the user step with TRB's kw args.
-        result = @task.( ctx, **circuit_options ) # circuit_options contains :exec_context.
+        result = @task.(ctx, keyword_arguments: ctx.to_hash, **circuit_options) # circuit_options contains :exec_context.
 
         # Return an appropriate signal which direction to go next.
         signal = Activity::TaskBuilder.binary_signal_for( result, Activity::Right, Activity::Left )
