@@ -8,3 +8,4 @@ gem "minitest-line"
 
 # gem "trailblazer-context", path: "../trailblazer-context"
 # gem "trailblazer-developer", path: "../trailblazer-developer"
+gem "trailblazer-context", github: "trailblazer/trailblazer-context", branch: "ruby-3"
