@@ -1,3 +1,7 @@
+# 0.12.0
+
+* Support for Ruby 3.0.
+
 # 0.11.5
 
 * Bug fix: `:output` filter from `TaskWrap::VariableMapping` wasn't returning the correct `flow_options`. If the wrapped task changed
