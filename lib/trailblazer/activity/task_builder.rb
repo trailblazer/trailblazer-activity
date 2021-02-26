@@ -31,13 +31,13 @@ module Trailblazer
         result = @task.(ctx, keyword_arguments: ctx.to_hash, **circuit_options) # circuit_options contains :exec_context.
 
         # Return an appropriate signal which direction to go next.
-        signal = Activity::TaskBuilder.binary_signal_for( result, Activity::Right, Activity::Left )
+        signal = Activity::TaskBuilder.binary_signal_for(result, Activity::Right, Activity::Left)
 
-        return signal, [ ctx, flow_options ]
+        return signal, [ctx, flow_options]
       end
 
-      def inspect
-        %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{@user_proc}>}
+      def inspect # TODO: make me private!
+        %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{Trailblazer::Activity::Testing.render_task(@user_proc)}>}
       end
       alias_method :to_s, :inspect
     end

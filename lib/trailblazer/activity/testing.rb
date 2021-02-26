@@ -62,10 +62,6 @@ module Trailblazer
           Success = Activity::End(:success)
         end
 
-        def Cct(activity)
-          Trailblazer::Developer::Render::Circuit.(activity)
-        end
-
         # TODO: Remove this once all it's references are removed
         def implementing
           Implementing
@@ -143,9 +139,29 @@ module Trailblazer
 
         def assert_circuit(schema, circuit)
           cct = Cct(schema)
+
           cct = cct.gsub("#<Trailblazer::Activity::TaskBuilder::Task user_proc=", "<*")
           assert_equal %{#{circuit}}, cct
         end
+
+      def Cct(activity)
+        Trailblazer::Developer::Render::Circuit.(activity, inspect_task: Trailblazer::Activity::Testing.method(:render_task))
+      end
+    end
+
+    # Use this in {#Cct}.
+    def self.render_task(proc)
+      if proc.is_a?(Method)
+
+        receiver = proc.receiver
+        receiver = receiver.is_a?(Class) ? (receiver.name || "#<Class:0x>") : (receiver.name || "#<Module:0x>") #"#<Class:0x>"
+
+        return "#<Method: #{receiver}.#{proc.name}>"
+      elsif proc.is_a?(Symbol)
+        return proc.to_s
+      end
+
+      proc.inspect
     end
   end
 end
