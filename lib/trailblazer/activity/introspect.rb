@@ -68,6 +68,20 @@ module Trailblazer
       def self.Graph(*args)
         Graph.new(*args)
       end
+
+      def self.render_task(proc)
+        if proc.is_a?(Method)
+
+          receiver = proc.receiver
+          receiver = receiver.is_a?(Class) ? (receiver.name || "#<Class:0x>") : (receiver.name || "#<Module:0x>") #"#<Class:0x>"
+
+          return "#<Method: #{receiver}.#{proc.name}>"
+        elsif proc.is_a?(Symbol)
+          return proc.to_s
+        end
+
+        proc.inspect
+      end
     end # Introspect
   end
 end

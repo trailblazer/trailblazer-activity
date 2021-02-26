@@ -37,7 +37,7 @@ module Trailblazer
       end
 
       def inspect # TODO: make me private!
-        %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{Trailblazer::Activity::Testing.render_task(@user_proc)}>}
+        %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{Trailblazer::Activity::Introspect.render_task(@user_proc)}>}
       end
       alias_method :to_s, :inspect
     end
