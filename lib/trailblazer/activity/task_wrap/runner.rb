@@ -17,7 +17,7 @@ class Trailblazer::Activity
 
         # We save all original args passed into this Runner.call, because we want to return them later after this wrap
         # is finished.
-        original_args = [ args, circuit_options ]
+        original_args = [args, circuit_options]
 
         # call the wrap {Activity} around the task.
         wrap_ctx, _ = task_wrap_pipeline.(wrap_ctx, original_args) # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
