@@ -13,11 +13,14 @@ module Trailblazer
       module_function
 
       # Compute runtime arguments necessary to execute a taskWrap per task of the activity.
-      def invoke(activity, args, wrap_runtime: {}, **circuit_options)
+      # This method is the top-level entry, called only once for the entire activity graph.
+      def invoke(activity, args, wrap_runtime: {}, wrap_static: initial_wrap_static, **circuit_options)
         circuit_options = circuit_options.merge(
           runner:       TaskWrap::Runner,
           wrap_runtime: wrap_runtime,
-          activity:     {wrap_static: {activity => initial_wrap_static}, nodes: {}}, # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
+          # This {:activity} structure is currently (?) only needed in {TaskWrap.wrap_static_for}, where we
+          # access {activity[:wrap_static]} to compile the effective taskWrap.
+          activity:     {wrap_static: {activity => wrap_static}, nodes: {}}, # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
         )
 
         # signal, (ctx, flow), circuit_options =
@@ -43,6 +46,9 @@ module Trailblazer
           @merge = merge
         end
 
+        # Compile-time:
+        # Gets called via the {Normalizer} and represents an {:extensions} item.
+        # Adds/alters the activity's {wrap_static}.
         def call(config:, task:, **)
           before_pipe = State::Config.get(config, :wrap_static, task.circuit_task)
 
