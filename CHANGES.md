@@ -1,3 +1,7 @@
+# 0.12.1
+
+* Allow injecting `:wrap_static` into `TaskWrap.invoke`.
+
 # 0.12.0
 
 * Support for Ruby 3.0.
