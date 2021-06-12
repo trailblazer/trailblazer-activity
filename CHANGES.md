@@ -1,3 +1,7 @@
+# 0.12.2
+
+* Use extracted `trailblazer-option`.
+
 # 0.12.1
 
 * Allow injecting `:wrap_static` into `TaskWrap.invoke`.
