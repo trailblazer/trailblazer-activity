@@ -17,7 +17,8 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "trailblazer-context", ">= 0.4.0", "< 0.5.0"
+  spec.add_dependency "trailblazer-context", "~> 0.5.0"
+  spec.add_dependency "trailblazer-option", "~> 0.1.0"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "minitest", "~> 5.0"
