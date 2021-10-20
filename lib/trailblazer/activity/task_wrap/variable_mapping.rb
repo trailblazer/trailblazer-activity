@@ -5,15 +5,17 @@ class Trailblazer::Activity
     # translate them into a {DSL::Extension}.
     #
     # Note that the two options are not the only way to create filters, you can use the
-    # more low-level {Scoped()} etc., too, and write your own filter logic.
+    # more low-level {Scoped()} from the `dsl` gem, too, and write your own filter logic.
     module VariableMapping
-      # The taskWrap extension that's included into the static taskWrap for a task.
+      # The taskWrap extension that's included into the static taskWrap for a specific task.
+      # Note that this is the low-level interface, please refer to {DSL::Linear#VariableMapping} for the high-level version.
       def self.Extension(input, output, id: input.object_id)
         Trailblazer::Activity::TaskWrap::Extension(
           merge: merge_for(input, output, id: id),
         )
-      end
+      end # TODO: remove when {Inject} is made redundant.
 
+      # Places filters before/after the {call_task}.
       # DISCUSS: do we want the automatic wrapping of {input} and {output}?
       def self.merge_for(input, output, id:) # TODO: rename
         [
@@ -37,9 +39,10 @@ class Trailblazer::Activity
         @id     = id
       end
 
-      # {input.call()} is invoked in the circuit.
+      # {input.call()} is invoked in the taskWrap pipeline.
       # `original_args` are the actual args passed to the wrapped task: [ [ctx, ..], circuit_options ]
-      #
+      # We now swap the ctx in {original_args} and our filtered one. The original "outside" ctx is keyed in
+      # {wrap_ctx} with the filter ID.
       def call(wrap_ctx, original_args)
         # let user compute new ctx for the wrapped task.
         input_ctx = apply_filter(*original_args)

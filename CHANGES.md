@@ -1,3 +1,7 @@
+# 0.13.0
+
+* Removed `TaskWrap::Inject::Defaults`. This is now implemented through `dsl`'s `:inject` option.
+
 # 0.12.2
 
 * Use extracted `trailblazer-option`.
