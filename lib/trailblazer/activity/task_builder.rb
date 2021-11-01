@@ -18,22 +18,28 @@ module Trailblazer
       end
     end
 
+    # Wraps a user proc {task} (that expects the task interface) into a circuit interface.
     class Task
       def initialize(task, user_proc)
         @task            = task
         @user_proc       = user_proc
-
         freeze
       end
 
-      def call( (ctx, flow_options), **circuit_options )
+      def call((ctx, flow_options), **circuit_options)
         # Execute the user step with TRB's kw args.
-        result = @task.(ctx, keyword_arguments: ctx.to_hash, **circuit_options) # circuit_options contains :exec_context.
+        # {@task} is/implements {Trailblazer::Option} interface.
+        result = call_option(@task, [ctx, flow_options], **circuit_options)
 
         # Return an appropriate signal which direction to go next.
         signal = Activity::TaskBuilder.binary_signal_for(result, Activity::Right, Activity::Left)
 
         return signal, [ctx, flow_options]
+      end
+
+      # Invoke the original {user_proc} that is wrapped in an {Option()}.
+      private def call_option(task_with_option_interface, (ctx, flow_options), **circuit_options)
+        task_with_option_interface.(ctx, keyword_arguments: ctx.to_hash, **circuit_options) # circuit_options contains :exec_context.
       end
 
       def inspect # TODO: make me private!
