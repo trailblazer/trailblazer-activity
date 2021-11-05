@@ -14,7 +14,8 @@ module Trailblazer
 
       # Compute runtime arguments necessary to execute a taskWrap per task of the activity.
       # This method is the top-level entry, called only once for the entire activity graph.
-      def invoke(activity, args, wrap_runtime: {}, wrap_static: initial_wrap_static, **circuit_options)
+      # [:wrap_static] The taskWrap used for the topmost activity/operation.
+      def invoke(activity, args, wrap_runtime: {}, wrap_static: initial_wrap_static, **circuit_options) # FIXME: why do we need this method?
         circuit_options = circuit_options.merge(
           runner:       TaskWrap::Runner,
           wrap_runtime: wrap_runtime,
@@ -24,7 +25,7 @@ module Trailblazer
         )
 
         # signal, (ctx, flow), circuit_options =
-        Runner.(activity, args, **circuit_options)
+        TaskWrap::Runner.(activity, args, **circuit_options)
       end
 
       # {:extension} API

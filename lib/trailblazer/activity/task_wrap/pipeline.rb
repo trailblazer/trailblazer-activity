@@ -36,7 +36,7 @@ class Trailblazer::Activity
         Pipeline.new(pipe.sequence + [insertion])
       end
 
-      # Merges {extension_rows} into the {task_wrap_pipeline}.
+      # Merges {extension_rows} into the {Pipeline} instance.
       # This is usually used in step extensions or at runtime for {wrap_runtime}.
       #
       # {Extension} API

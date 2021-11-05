@@ -1,6 +1,8 @@
 # 0.13.0
 
 * Removed `TaskWrap::Inject::Defaults`. This is now implemented through `dsl`'s `:inject` option.
+* Removed `TaskWrap::VariableMapping.Extension`.
+* Renamed private `TaskWrap::VariableMapping.merge_for` to `.merge_instructions_for` as there's no {Merge} instance, yet.
 * Extract invocation logic in `TaskBuilder::Task` into `Task#call_option`.
 
 # 0.12.2

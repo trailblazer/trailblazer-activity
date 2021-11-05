@@ -7,17 +7,9 @@ class Trailblazer::Activity
     # Note that the two options are not the only way to create filters, you can use the
     # more low-level {Scoped()} from the `dsl` gem, too, and write your own filter logic.
     module VariableMapping
-      # The taskWrap extension that's included into the static taskWrap for a specific task.
-      # Note that this is the low-level interface, please refer to {DSL::Linear#VariableMapping} for the high-level version.
-      def self.Extension(input, output, id: input.object_id)
-        Trailblazer::Activity::TaskWrap::Extension(
-          merge: merge_for(input, output, id: id),
-        )
-      end # TODO: remove when {Inject} is made redundant.
-
       # Places filters before/after the {call_task}.
-      # DISCUSS: do we want the automatic wrapping of {input} and {output}?
-      def self.merge_for(input, output, id:) # TODO: rename
+      # Note that {input} and {output} are automatically wrapped.
+      def self.merge_instructions_for(input, output, id:)
         [
           [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(input, id: id)]],
           [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["task_wrap.output", TaskWrap::Output.new(output, id: id)]],
@@ -40,7 +32,7 @@ class Trailblazer::Activity
       end
 
       # {input.call()} is invoked in the taskWrap pipeline.
-      # `original_args` are the actual args passed to the wrapped task: [ [ctx, ..], circuit_options ]
+      # {original_args} are the actual args passed to the wrapped task: [ [ctx, ..], circuit_options ]
       # We now swap the ctx in {original_args} and our filtered one. The original "outside" ctx is keyed in
       # {wrap_ctx} with the filter ID.
       def call(wrap_ctx, original_args)

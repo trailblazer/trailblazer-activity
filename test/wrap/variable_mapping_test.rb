@@ -108,14 +108,21 @@ class VariableMappingTest < Minitest::Spec
     [input, output]
   end
 
+  # this method used to sit in {TaskWrap::VariableMapping}.
+  def VariableMappingExtension(input, output, id: input.object_id)
+    Trailblazer::Activity::TaskWrap::Extension(
+      merge: Trailblazer::Activity::TaskWrap::VariableMapping.merge_instructions_for(input, output, id: id),
+    )
+  end
+
   describe "pure Input/Output" do
     it "added via {wrap_static}, manually" do
       model_input, model_output = model_io
       uuid_input, uuid_output   = uuid_io
 
       activity = activity_for(
-        model_extensions: [Activity::TaskWrap::VariableMapping::Extension(model_input, model_output)],
-        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(uuid_input, uuid_output)]
+        model_extensions: [VariableMappingExtension(model_input, model_output)],
+        uuid_extensions: [VariableMappingExtension(uuid_input, uuid_output)]
       )
 
       signal, (ctx, _) = Activity::TaskWrap.invoke(
@@ -144,10 +151,10 @@ class VariableMappingTest < Minitest::Spec
 
       activity = activity_for(
         model_extensions: [
-          Activity::TaskWrap::VariableMapping::Extension(model_input_2, model_output_2),
-          Activity::TaskWrap::VariableMapping::Extension(model_input, model_output)
+          VariableMappingExtension(model_input_2, model_output_2),
+          VariableMappingExtension(model_input, model_output)
         ],
-        uuid_extensions: [Activity::TaskWrap::VariableMapping::Extension(uuid_input, uuid_output)]
+        uuid_extensions: [VariableMappingExtension(uuid_input, uuid_output)]
       )
 
       signal, (ctx, _) = Activity::TaskWrap.invoke(
@@ -206,7 +213,7 @@ class VariableMappingTest < Minitest::Spec
 
       activity = activity_for(
         model_extensions: [
-          Activity::TaskWrap::VariableMapping::Extension(model_input_2, model_output_2)
+          VariableMappingExtension(model_input_2, model_output_2)
         ]
       )
 
@@ -236,7 +243,7 @@ class VariableMappingTest < Minitest::Spec
 
       activity = activity_for(
         model_task: lets_change_flow_options,
-        model_extensions: [Activity::TaskWrap::VariableMapping::Extension(model_input, model_output)],
+        model_extensions: [VariableMappingExtension(model_input, model_output)],
       )
 
       signal, (ctx, flow_options) = Activity::TaskWrap.invoke(

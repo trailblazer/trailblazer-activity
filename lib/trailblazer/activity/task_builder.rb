@@ -18,7 +18,9 @@ module Trailblazer
       end
     end
 
-    # Wraps a user proc {task} (that expects the task interface) into a circuit interface.
+    # Wraps a {task} (that usually expects the task interface) into a circuit interface
+    # that can be used directly in a {Circuit}.
+    # We expect {task} to be exposing an {Option()} interface when calling it.
     class Task
       def initialize(task, user_proc)
         @task            = task
