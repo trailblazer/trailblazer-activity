@@ -40,7 +40,7 @@ module Trailblazer
       end
 
       # Invoke the original {user_proc} that is wrapped in an {Option()}.
-      private def call_option(task_with_option_interface, (ctx, flow_options), **circuit_options)
+      private def call_option(task_with_option_interface, (ctx, _flow_options), **circuit_options)
         task_with_option_interface.(ctx, keyword_arguments: ctx.to_hash, **circuit_options) # circuit_options contains :exec_context.
       end
 
