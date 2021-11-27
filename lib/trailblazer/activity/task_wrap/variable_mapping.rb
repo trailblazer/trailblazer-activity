@@ -66,9 +66,7 @@ class Trailblazer::Activity
 
       # Runs your filter and replaces the ctx in `wrap_ctx[:return_args]` with the filtered one.
       def call(wrap_ctx, original_args)
-        (original_ctx, original_flow_options), original_circuit_options = original_args
-
-        return_args = wrap_ctx[:return_args]
+        (original_ctx, _original_flow_options), original_circuit_options = original_args
 
         returned_ctx, returned_flow_options = wrap_ctx[:return_args]  # this is the Context returned from {call}ing the wrapped user task.
         original_ctx                        = wrap_ctx[@id]           # grab the original ctx from before which was set in the {:input} filter.
