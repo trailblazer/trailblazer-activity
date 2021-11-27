@@ -61,5 +61,44 @@ class PipelineTest < Minitest::Spec
       _(pipe4.sequence.inspect).must_match %r{\["user.add_2", 3\]}
       _(pipe4.sequence.inspect).must_match %r{\["user.add_2", "Last!"\]}
     end
+
+    describe "#prepend" do
+      let(:pipe) { Activity::TaskWrap::Pipeline.new([["1", 1]]) } # initial sequence
+
+      it do
+        # prepend(pipe, insertion_id, insertion, replace: 0)
+        empty_pipe  = Activity::TaskWrap::Pipeline.new([])
+
+        # prepend to beginning
+        pipe = Activity::TaskWrap::Pipeline.prepend(self.pipe, nil, [["2", 2], ["3", 3]])
+        _(pipe.sequence.inspect).must_equal %{[["2", 2], ["3", 3], ["1", 1]]}
+
+          # prepend to empty pipe
+        pipe = Activity::TaskWrap::Pipeline.prepend(empty_pipe, nil, [["2", 2], ["3", 3]])
+        _(pipe.sequence.inspect).must_equal %{[["2", 2], ["3", 3]]}
+
+
+
+      end
+
+      it "prepend hash, not array" do
+        pipe = Activity::TaskWrap::Pipeline.prepend(self.pipe, nil, {"2" => 2, "3" => 3})
+        _(pipe.sequence.inspect).must_equal %{[["2", 2], ["3", 3], ["1", 1]]}
+      end
+
+      it "prepend to existing ID" do
+        pipe = Activity::TaskWrap::Pipeline.new([["1", 1],["4", 4]])
+
+        pipe = Activity::TaskWrap::Pipeline.prepend(pipe, "4", [["2", 2], ["3", 3]])
+        _(pipe.sequence.inspect).must_equal %{[["1", 1], ["2", 2], ["3", 3], ["4", 4]]}
+      end
+
+      it "replace" do
+        pipe = Activity::TaskWrap::Pipeline.new([["item", :item],["4", 4],["5", 5]])
+
+        pipe = Activity::TaskWrap::Pipeline.prepend(pipe, "4", [["2", 2], ["3", 3]], replace: 1)
+        _(pipe.sequence.inspect).must_equal %{[["item", :item], ["2", 2], ["3", 3], ["5", 5]]}
+      end
+    end
   end
 end

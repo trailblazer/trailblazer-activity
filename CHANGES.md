@@ -4,6 +4,7 @@
 * Removed `TaskWrap::VariableMapping.Extension`.
 * Renamed private `TaskWrap::VariableMapping.merge_for` to `.merge_instructions_for` as there's no {Merge} instance, yet.
 * Extract invocation logic in `TaskBuilder::Task` into `Task#call_option`.
+* Add `TaskWrap::Pipeline::prepend`.
 
 # 0.12.2
 
