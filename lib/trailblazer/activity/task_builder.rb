@@ -4,6 +4,7 @@ module Trailblazer
     # Step calls step.(options, **options, flow_options)
     # Output signal binary: true=>Right, false=>Left.
     # Passes through all subclasses of Direction.~~~~~~~~~~~~~~~~~
+    # noinspection RubyClassMethodNamingConvention
     def self.Binary(user_proc)
       Task.new(Trailblazer::Option(user_proc), user_proc)
     end

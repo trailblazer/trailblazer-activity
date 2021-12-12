@@ -246,7 +246,7 @@ class VariableMappingTest < Minitest::Spec
         model_extensions: [VariableMappingExtension(model_input, model_output)],
       )
 
-      signal, (ctx, flow_options) = Activity::TaskWrap.invoke(
+      _signal, (ctx, flow_options) = Activity::TaskWrap.invoke(
         activity,
         [
           {seq: []}, {yo: 1}

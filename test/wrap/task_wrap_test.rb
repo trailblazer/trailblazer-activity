@@ -3,7 +3,7 @@ require "test_helper"
 # Test taskWrap concepts along with {Instance}s.
 class TaskWrapTest < Minitest::Spec
   def abc_intermediate
-    intermediate = Inter.new(
+    _intermediate = Inter.new(
       {
         Inter::TaskRef(:a) => [Inter::Out(:success, :b)],
         Inter::TaskRef(:b) => [Inter::Out(:success, :c)],

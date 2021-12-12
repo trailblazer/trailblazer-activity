@@ -10,7 +10,7 @@ module Trailblazer
       class Graph
         def initialize(activity)
           @activity = activity
-          @schema   = activity.to_h or raise
+          @schema   = activity.to_h or fail
           @circuit  = @schema[:circuit]
           @map      = @circuit.to_h[:map]
           @configs  = @schema[:nodes]
@@ -23,7 +23,12 @@ module Trailblazer
         end
 
         def collect(strategy: :circuit)
-          @map.keys.each_with_index.collect { |task, i| yield find_with_block { |node| node.task == task }, i }
+          case strategy
+            when :circuit
+              @map.keys.each_with_index.collect { |task, i| yield find_with_block { |node| node.task == task }, i }
+            else
+              fail ArgumentError, "unknown strategy: #{strategy}"
+          end
         end
 
         def stop_events
@@ -47,6 +52,7 @@ module Trailblazer
           Node(node_attributes.task, node_attributes.id, node_attributes.outputs, outgoings_for(node_attributes), node_attributes.data)
         end
 
+        # noinspection RubyClassMethodNamingConvention
         def Node(*args)
           Node.new(*args).freeze
         end
@@ -65,23 +71,23 @@ module Trailblazer
         end
       end
 
+      # noinspection RubyClassMethodNamingConvention
       def self.Graph(*args)
         Graph.new(*args)
       end
 
       def self.render_task(proc)
-        if proc.is_a?(Method)
-
-          receiver = proc.receiver
-          receiver = receiver.is_a?(Class) ? (receiver.name || "#<Class:0x>") : (receiver.name || "#<Module:0x>") #"#<Class:0x>"
-
-          return "#<Method: #{receiver}.#{proc.name}>"
-        elsif proc.is_a?(Symbol)
-          return proc.to_s
+        case proc
+          when Method
+            receiver = proc.receiver
+            receiver = receiver.is_a?(Class) ? (receiver.name || "#<Class:0x>") : (receiver.name || "#<Module:0x>") # "#<Class:0x>"
+            return "#<Method: #{receiver}.#{proc.name}>"
+          when Symbol
+            return proc.to_s
         end
 
         proc.inspect
       end
-    end # Introspect
+    end
   end
 end
