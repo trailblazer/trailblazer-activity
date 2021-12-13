@@ -2,7 +2,7 @@
 
 Implements Intermediate, Implementation and compiler
 
-The `activity` gem brings a light-weight DSL to define business processes, and the runtime logic to run those activities.
+The `activity` gem implements the runtime logic to invoke a new abstraction called "activities". Ideally, activities are defined using the [`dsl-linear` DSL gem](https://github.com/trailblazer/trailblazer-activity-dsl-linear).
 
 A process is a set of arbitrary pieces of logic you define, chained together and put into a meaningful context by an activity. Activity lets you focus on the implementation of steps while Trailblazer takes care of the control flow.
 
