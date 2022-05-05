@@ -34,7 +34,7 @@ module Trailblazer
 
       def initial_wrap_static(*)
         # return initial_sequence
-        TaskWrap::Pipeline.new([["task_wrap.call_task", TaskWrap.method(:call_task)]])
+        TaskWrap::Pipeline.new([Pipeline::Row["task_wrap.call_task", TaskWrap.method(:call_task)]])
       end
 
       # Use this in your macros if you want to extend the {taskWrap}.

@@ -11,8 +11,8 @@ class Trailblazer::Activity
       # Note that {input} and {output} are automatically wrapped.
       def self.merge_instructions_for(input, output, id:)
         [
-          [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(input, id: id)]],
-          [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["task_wrap.output", TaskWrap::Output.new(output, id: id)]],
+          {insert: [TaskWrap::Pipeline::Insert.method(:Prepend), "task_wrap.call_task"], row: TaskWrap::Pipeline::Row["task_wrap.input", TaskWrap::Input.new(input, id: id)]},
+          {insert: [TaskWrap::Pipeline::Insert.method(:Append),  "task_wrap.call_task"], row: TaskWrap::Pipeline::Row["task_wrap.output", TaskWrap::Output.new(output, id: id)]},
         ]
       end
     end
