@@ -176,16 +176,16 @@ class VariableMappingTest < Minitest::Spec
 
       # add filters around Model.
       merge = [
-        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(model_input, id: 1)]],
-        [TaskWrap::Pipeline.method(:append), nil, ["task_wrap.output", TaskWrap::Output.new(model_output, id: 1)]]
+        {insert: [TaskWrap::Pipeline::Insert.method(:Prepend), "task_wrap.call_task"],  row: TaskWrap::Pipeline::Row["task_wrap.input", TaskWrap::Input.new(model_input, id: 1)]},
+        {insert: [TaskWrap::Pipeline::Insert.method(:Append), "task_wrap.call_task"],   row: TaskWrap::Pipeline::Row["task_wrap.output", TaskWrap::Output.new(model_output, id: 1)]}
       ]
 
       runtime[Model] = TaskWrap::Pipeline::Merge.new(*merge)
 
       # add filters around Uuid.
       merge = [
-        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["task_wrap.input", TaskWrap::Input.new(uuid_input, id: 1)]],
-        [TaskWrap::Pipeline.method(:append), nil, ["task_wrap.output", TaskWrap::Output.new(uuid_output, id: 1)]]
+        {insert: [TaskWrap::Pipeline::Insert.method(:Prepend), "task_wrap.call_task"],  row: TaskWrap::Pipeline::Row["task_wrap.input", TaskWrap::Input.new(uuid_input, id: 1)]},
+        {insert: [TaskWrap::Pipeline::Insert.method(:Append), "task_wrap.call_task"],   row: TaskWrap::Pipeline::Row["task_wrap.output", TaskWrap::Output.new(uuid_output, id: 1)]}
       ]
 
       runtime[Uuid] = TaskWrap::Pipeline::Merge.new(*merge)

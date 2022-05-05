@@ -27,10 +27,22 @@ class TaskWrapTest < Minitest::Spec
   end
 
   it "populates activity[:wrap_static] and uses it at run-time" do
+    # merge = [
+    #   [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
+    #   [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]]
+    # ]
+
     merge = [
-      [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
-      [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]]
+      { # Add
+        insert: [TaskWrap::Pipeline::Insert.method(:Prepend), "task_wrap.call_task"],
+        row:    TaskWrap::Pipeline::Row["user.add_1", method(:add_1)]
+      },
+      { # Add
+        insert: [TaskWrap::Pipeline::Insert.method(:Append),  "task_wrap.call_task"],
+        row:    TaskWrap::Pipeline::Row["user.add_2", method(:add_2)]
+      }
     ]
+
 
     abc_implementation, _es = abc_implementation(a_extensions: [TaskWrap::Extension(merge: merge)])
 
@@ -38,7 +50,7 @@ class TaskWrapTest < Minitest::Spec
 
     _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
 
-    expect(ctx.inspect).must_equal %{{:seq=>[1, :a, 2, :b, :c]}}
+    assert_equal ctx.inspect, %{{:seq=>[1, :a, 2, :b, :c]}}
 
     # it works nested as well
 
@@ -84,7 +96,7 @@ class TaskWrapTest < Minitest::Spec
     )
 
     merge = [
-      [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:change_start_task)]],
+      {insert: [TaskWrap::Pipeline::Insert.method(:Prepend), "task_wrap.call_task"], row: ["user.add_1", method(:change_start_task)]}
     ]
 
     outer_implementation = {
