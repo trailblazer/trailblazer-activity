@@ -51,7 +51,7 @@ class Trailblazer::Activity
 
       # @private
       def self.find_index(pipe, id)
-        index = pipe.sequence.find_index { |(seq_id, _)| seq_id == id }
+        _index = pipe.sequence.find_index { |(seq_id, _)| seq_id == id }
       end
 
       class Row < Array
