@@ -109,9 +109,9 @@ class VariableMappingTest < Minitest::Spec
   end
 
   # this method used to sit in {TaskWrap::VariableMapping}.
-  def VariableMappingExtension(input, output, id: input.object_id)
+  def VariableMappingExtension(input, output, id: input.object_id, **options)
     Trailblazer::Activity::TaskWrap::Extension(
-      merge: Trailblazer::Activity::TaskWrap::VariableMapping.merge_instructions_for(input, output, id: id),
+      merge: Trailblazer::Activity::TaskWrap::VariableMapping.merge_instructions_for(input, output, id: id, **options),
     )
   end
 
@@ -136,11 +136,16 @@ class VariableMappingTest < Minitest::Spec
       expect(ctx).must_equal({:seq => [], :seq_from_model => [:model_in, "model", :model_out], :c => nil, :seq_from_uuid => [:model_in, "model", :model_out, :uuid_in, "uuid", :uuid_out]})
     end
 
+    # DISCUSS:  if you see this and feel like it's a great idea, consider that you might
+    #           not need it. Rather use the new API to add composable In() and Out() filters.
     it "allows adding multiple I/Os" do
       model_input, model_output = model_io
       uuid_input, uuid_output   = uuid_io
 
-      model_input_2  = ->((original_ctx, _flow_options), **_circuit_options) { Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2]) }
+      model_input_2  = ->((original_ctx, _flow_options), **_circuit_options) {
+       Trailblazer.Context(seq: original_ctx[:seq] + [:model_in_2])
+      }
+
       model_output_2 = ->(new_ctx, (original_ctx, _flow_options), **_circuit_options) {
         _, mutable_data = new_ctx.decompose
 
@@ -152,7 +157,7 @@ class VariableMappingTest < Minitest::Spec
       activity = activity_for(
         model_extensions: [
           VariableMappingExtension(model_input_2, model_output_2),
-          VariableMappingExtension(model_input, model_output)
+          VariableMappingExtension(model_input, model_output, input_id: "task_wrap.input.2", output_id: "task_wrap.output.2")
         ],
         uuid_extensions: [VariableMappingExtension(uuid_input, uuid_output)]
       )
