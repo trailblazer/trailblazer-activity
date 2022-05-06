@@ -1,3 +1,8 @@
+# 0.14.0
+
+* Add optional options `:input_id` and `:output_id` to `VariableMapping.merge_instructions_for`. You don't need this, though.
+
+
 # 0.13.0
 
 * Removed `TaskWrap::Inject::Defaults`. This is now implemented through `dsl`'s `:inject` option.
