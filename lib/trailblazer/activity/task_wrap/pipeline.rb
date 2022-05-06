@@ -82,7 +82,7 @@ class Trailblazer::Activity
         def Prepend(pipeline, new_rows, insert_id) # DISCUSS: do we really want multiple rows? We barely need it.
           index, ary = find(pipeline, insert_id)
 
-          return build(pipeline, new_rows + ary) if index = 0
+          return build(pipeline, new_rows + ary) if index == 0
           return build(pipeline, ary[0..index-1] + new_rows + ary[index..-1])
         end
 
