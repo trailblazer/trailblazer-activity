@@ -3,30 +3,31 @@ require "test_helper"
 class AddsTest < Minitest::Spec
   # DISCUSS: not tested here is Append to empty Pipeline because we always initialize it.
   let(:pipeline) { Trailblazer::Activity::TaskWrap::Pipeline }
+  let(:adds)     { Trailblazer::Activity::Adds }
 
 #@ No mutation on original pipe
   it "what" do
     pipe1 = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]])
 
   #@ {Prepend} to element 0
-    add = { insert: [pipeline::Insert.method(:Prepend), "task_wrap.call_task"], row: pipeline::Row["trace-in-outer", "trace, prepare"] }
-    pipe2 = pipeline::Adds.apply_adds(pipe1, [add])
+    add = { insert: [adds::Insert.method(:Prepend), "task_wrap.call_task"], row: pipeline::Row["trace-in-outer", "trace, prepare"] }
+    pipe2 = adds.apply_adds(pipe1, [add])
 
   #@ {Append} to element 0
-    add = { insert: [pipeline::Insert.method(:Append), "task_wrap.call_task"], row: pipeline::Row["trace-out-outer", "trace, prepare"] }
-    pipe3 = pipeline::Adds.apply_adds(pipe2, [add])
+    add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: pipeline::Row["trace-out-outer", "trace, prepare"] }
+    pipe3 = adds.apply_adds(pipe2, [add])
 
   #@ {Prepend} again
-    add = { insert: [pipeline::Insert.method(:Prepend), "task_wrap.call_task"], row: pipeline::Row["trace-in-inner", "trace, prepare"] }
-    pipe4 = pipeline::Adds.apply_adds(pipe3, [add])
+    add = { insert: [adds::Insert.method(:Prepend), "task_wrap.call_task"], row: pipeline::Row["trace-in-inner", "trace, prepare"] }
+    pipe4 = adds.apply_adds(pipe3, [add])
 
   #@ {Append} again
-    add = { insert: [pipeline::Insert.method(:Append), "task_wrap.call_task"], row: pipeline::Row["trace-out-inner", "trace, prepare"] }
-    pipe5 = pipeline::Adds.apply_adds(pipe4, [add])
+    add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: pipeline::Row["trace-out-inner", "trace, prepare"] }
+    pipe5 = adds.apply_adds(pipe4, [add])
 
   #@ {Append} to last element
-    add = { insert: [pipeline::Insert.method(:Append), "trace-out-outer"], row: pipeline::Row["last-id", "log"] }
-    pipe6 = pipeline::Adds.apply_adds(pipe5, [add])
+    add = { insert: [adds::Insert.method(:Append), "trace-out-outer"], row: pipeline::Row["last-id", "log"] }
+    pipe6 = adds.apply_adds(pipe5, [add])
 
   #@ {Replace}
 
