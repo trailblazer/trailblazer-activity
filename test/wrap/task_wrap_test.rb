@@ -34,11 +34,11 @@ class TaskWrapTest < Minitest::Spec
 
     merge = [
       { # Add
-        insert: [TaskWrap::Pipeline::Insert.method(:Prepend), "task_wrap.call_task"],
+        insert: [Trailblazer::Activity::Adds::Insert.method(:Prepend), "task_wrap.call_task"],
         row:    TaskWrap::Pipeline::Row["user.add_1", method(:add_1)]
       },
       { # Add
-        insert: [TaskWrap::Pipeline::Insert.method(:Append),  "task_wrap.call_task"],
+        insert: [Trailblazer::Activity::Adds::Insert.method(:Append),  "task_wrap.call_task"],
         row:    TaskWrap::Pipeline::Row["user.add_2", method(:add_2)]
       }
     ]
@@ -96,7 +96,7 @@ class TaskWrapTest < Minitest::Spec
     )
 
     merge = [
-      {insert: [TaskWrap::Pipeline::Insert.method(:Prepend), "task_wrap.call_task"], row: ["user.add_1", method(:change_start_task)]}
+      {insert: [Trailblazer::Activity::Adds::Insert.method(:Prepend), "task_wrap.call_task"], row: ["user.add_1", method(:change_start_task)]}
     ]
 
     outer_implementation = {

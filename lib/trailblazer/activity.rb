@@ -40,6 +40,7 @@ require "trailblazer/activity/circuit"
 require "trailblazer/activity/config"
 require "trailblazer/activity/introspect"
 require "trailblazer/activity/task_wrap"
+require "trailblazer/activity/adds"
 require "trailblazer/activity/task_builder"
 
 require "trailblazer/option"
