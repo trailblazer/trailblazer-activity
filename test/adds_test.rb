@@ -78,6 +78,22 @@ class AddsTest < Minitest::Spec
 }
   end
 
+  it "throws an Adds::Sequence error when ID non-existant" do
+    pipe = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"], pipeline::Row["task_wrap.log", "task, log"]])
+
+  #@ {Prepend} to element that doesn't exist
+    add = { insert: [adds::Insert.method(:Prepend), "NOT HERE!"], row: pipeline::Row["trace-in-outer", "trace, prepare"] }
+
+    exception = assert_raises Activity::Adds::IndexError do
+      adds.apply_adds(pipe, [add])
+    end
+
+    assert_equal exception.message, %{
+\e[31m\"NOT HERE!\" is not a valid step ID. Did you mean any of these ?\e[0m
+\e[32m\"task_wrap.call_task\"
+\"task_wrap.log\"\e[0m}
+  end
+
   def inspect(pipe)
     pipe.pretty_inspect.sub(/0x\w+/, "")
   end

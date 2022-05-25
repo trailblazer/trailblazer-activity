@@ -18,40 +18,18 @@ class Trailblazer::Activity
         @sequence
       end
 
-      # attr_reader :sequence
+      # Helper for normalizers.
+      def self.prepend(pipe, insertion_id, insertion, replace: 0) # FIXME: {:replace}
+        adds =
+          insertion.collect do |id, task|
+            {insert: [Adds::Insert.method(:Prepend), insertion_id], row: Pipeline::Row(id, task)}
+          end
 
-      def self.insert_before(pipe, before_id, insertion)
-        raise
-        index = find_index(pipe, before_id)
-
-        seq = pipe.sequence.dup
-
-        Pipeline.new(seq.insert(index, insertion))
+        Adds.apply_adds(pipe, adds)
       end
 
-      def self.insert_after(pipe, after_id, insertion)
-        index = find_index(pipe, after_id)
-
-        seq = pipe.sequence.dup
-
-        Pipeline.new(seq.insert(index+1, insertion))
-      end
-
-      def self.append(pipe, _, insertion)
-        Pipeline.new(pipe.sequence + [insertion])
-      end
-
-      def self.prepend(pipe, insertion_id, insertion, replace: 0)
-        return Pipeline.new(insertion.to_a + pipe.sequence) if insertion_id.nil?
-
-        index = find_index(pipe, insertion_id)
-
-        Pipeline.new(pipe.sequence[0..index-1] + insertion.to_a + pipe.sequence[index+replace..-1])
-      end
-
-      # @private
-      def self.find_index(pipe, id)
-        _index = pipe.sequence.find_index { |(seq_id, _)| seq_id == id }
+      def self.Row(id, task) # TODO: test me.
+        Row[id, task]
       end
 
       class Row < Array
