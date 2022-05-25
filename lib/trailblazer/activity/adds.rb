@@ -76,11 +76,23 @@ module Trailblazer
           def find(sequence, insert_id)
             ary = sequence.to_a
 
-            index = find_index(ary, insert_id) or raise #Sequence::IndexError.new(sequence, insert_id)
+            index = find_index(ary, insert_id) or raise IndexError.new(sequence, insert_id)
 
             return index, ary
           end
         end # Insert
+
+        class IndexError < ::IndexError
+          def initialize(sequence, step_id)
+            valid_ids = sequence.to_a.collect{ |row| row.id.inspect }
+
+            message = "\n" \
+              "\e[31m#{step_id.inspect} is not a valid step ID. Did you mean any of these ?\e[0m\n" \
+              "\e[32m#{valid_ids.join("\n")}\e[0m"
+
+            super(message)
+          end
+        end
       end
   end
 end
