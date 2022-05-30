@@ -36,10 +36,16 @@ module Trailblazer
           module_function
 
           # Append {new_row} after {insert_id}.
-          def Append(pipeline, new_rows, insert_id) # TODO: do we need append without ID?
-            index, ary = find(pipeline, insert_id)
+          def Append(pipeline, new_rows, insert_id=nil)
+            index, ary =
+              if insert_id
+                find(pipeline, insert_id)
+              else
+                _ary = pipeline.to_a # FIXME: make it #apply_on_ary or something.
+                [_ary.size, _ary]
+              end
 
-            return build(pipeline, ary[0..index] + new_rows + ary[index+1..-1])
+            return build(pipeline, ary[0..index] + new_rows + Array(ary[index+1..-1]))# DISCUSS: we need the last Array() because an empty array would break here (why, though?).
           end
 
           # Insert {new_rows} before {insert_id}.
