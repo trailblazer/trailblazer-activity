@@ -29,6 +29,10 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Append), "trace-out-outer"], row: pipeline::Row["last-id", "log"] }
     pipe6 = adds.apply_adds(pipe5, [add])
 
+  #@ {Append} to pipe (not providing an ID)
+    add = { insert: [adds::Insert.method(:Append)], row: pipeline::Row["laster-id", "log"] }
+    pipe7 = adds.apply_adds(pipe6, [add])
+
   #@ {Replace}
 
   #@ {Delete}
@@ -75,6 +79,28 @@ class AddsTest < Minitest::Spec
    ["trace-out-inner", "trace, prepare"],
    ["trace-out-outer", "trace, prepare"],
    ["last-id", "log"]]>
+}
+  end
+
+  it "{Append} without ID on empty list" do
+    pipe = pipeline.new([])
+
+    add = { insert: [adds::Insert.method(:Append)], row: pipeline::Row["laster-id", "log"] }
+    pipe1 = adds.apply_adds(pipe, [add])
+
+    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
+ @sequence=[["laster-id", "log"]]>
+}
+  end
+
+  it "{Append} on 1-element list" do
+    pipe = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]])
+
+    add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: pipeline::Row["laster-id", "log"] }
+    pipe1 = adds.apply_adds(pipe, [add])
+
+    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
+ @sequence=[[\"task_wrap.call_task\", \"task, call\"], [\"laster-id\", \"log\"]]>
 }
   end
 
