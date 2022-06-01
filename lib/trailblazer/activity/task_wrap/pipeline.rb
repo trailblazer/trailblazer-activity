@@ -18,6 +18,19 @@ class Trailblazer::Activity
         @sequence
       end
 
+      # TODO: remove me when old API is deprecated.
+      def self.method(name)
+        new_name = {
+          insert_before: :Prepend,
+          insert_after: :Append,
+        }.fetch(name)
+
+        warn "[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline.method(:#{name})` is deprecated.
+Please use the new API: #FIXME!!!"
+
+        Trailblazer::Activity::Adds::Insert.method(new_name)
+      end
+
       # Helper for normalizers.
       def self.prepend(pipe, insertion_id, insertion, replace: 0) # FIXME: {:replace}
         adds =
@@ -42,15 +55,12 @@ class Trailblazer::Activity
       # This is usually used in step extensions or at runtime for {wrap_runtime}.
       #
       # {Extension} API
-      #
-      # DISCUSS: why are we not using the ADDS interface here?
       class Merge # TODO: RENAME TO TaskWrap::Extension(::Merge)
         def initialize(*extension_rows)
           @extension_rows = extension_rows
         end
 
         def call(task_wrap_pipeline)
-          # TODO: allow old API.
           Adds.apply_adds(task_wrap_pipeline, @extension_rows)
         end
       end

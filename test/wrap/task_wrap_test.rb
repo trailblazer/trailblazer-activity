@@ -27,11 +27,6 @@ class TaskWrapTest < Minitest::Spec
   end
 
   it "populates activity[:wrap_static] and uses it at run-time" do
-    # merge = [
-    #   [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
-    #   [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]]
-    # ]
-
     merge = [
       { # Add
         insert: [Trailblazer::Activity::Adds::Insert.method(:Prepend), "task_wrap.call_task"],
@@ -113,6 +108,43 @@ class TaskWrapTest < Minitest::Spec
     assert_equal [:seq, :start_at], ctx.keys
     assert_equal [:b, :c, :a, :b, :c, :c], ctx[:seq]
     assert_equal start_at, ctx[:start_at]
+  end
+
+  it "deprecates Pipeline.method(:insert) and friends" do
+    merge = nil
+    out, err = capture_io do
+      merge = [
+        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
+        [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]]
+      ]
+    end
+
+  #= we get deprecation warnings for {Pipeline.insert}
+    assert_equal err, %{[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline.method(:insert_before)` is deprecated.
+Please use the new API: #FIXME!!!
+[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline.method(:insert_after)` is deprecated.
+Please use the new API: #FIXME!!!
+}
+
+    ext = nil
+    out, err = capture_io do
+      ext = TaskWrap::Extension(merge: merge)
+    end
+
+    assert_equal err, %{[Trailblazer] You are using the old API for taskWrap extensions.
+Please update to the new TaskWrap.Step() API: # FIXME !!!!!
+}
+
+    abc_implementation, _es = abc_implementation(a_extensions: [ext])
+
+    schema = Inter.(abc_intermediate, abc_implementation)
+
+    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
+
+    assert_equal ctx.inspect, %{{:seq=>[1, :a, 2, :b, :c]}}
+
+
+
   end
 
   def change_start_task(wrap_ctx, original_args)
