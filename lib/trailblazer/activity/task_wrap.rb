@@ -39,7 +39,24 @@ module Trailblazer
 
       # Use this in your macros if you want to extend the {taskWrap}.
       def Extension(merge:)
+        return DeprecatedExtension(merge: merge) if merge[0].is_a?(Array)
+
         Extension.new(merge: Pipeline::Merge.new(*merge))
+      end
+
+      # TODO: remove me at some point.
+      def DeprecatedExtension(merge:)
+        warn "[Trailblazer] You are using the old API for taskWrap extensions.
+Please update to the new TaskWrap.Step() API: # FIXME !!!!!"
+
+        Extension(
+          merge: merge.collect do |ary|
+              {
+                insert: ary[0..1],
+                row: Pipeline.Row(*ary[2])
+              }
+            end
+        )
       end
 
       class Extension
