@@ -38,7 +38,6 @@ class TaskWrapTest < Minitest::Spec
       }
     ]
 
-
     abc_implementation, _es = abc_implementation(a_extensions: [TaskWrap::Extension(merge: merge)])
 
     schema = Inter.(abc_intermediate, abc_implementation)
@@ -144,7 +143,16 @@ Please update to the new TaskWrap.Step() API: # FIXME !!!!!
     assert_equal ctx.inspect, %{{:seq=>[1, :a, 2, :b, :c]}}
 
 
+  #@ deprecation also works for Merge.new()
+    wrap_runtime = {abc_implementation[:c].circuit_task => TaskWrap::Pipeline::Merge.new(*merge)}
 
+    abc_implementation, _ = abc_implementation() # no extensions via wrap_static.
+
+    schema = Inter.(abc_intermediate, abc_implementation)
+
+    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{wrap_runtime: wrap_runtime})
+
+    expect(ctx.inspect).must_equal %{{:seq=>[:a, :b, 1, :c, 2]}}
   end
 
   def change_start_task(wrap_ctx, original_args)
