@@ -8,10 +8,9 @@ class TestingTest < Minitest::Spec
     end
   end
 
-
   it "what" do
-    _(T.render_task(TestingTest.method(:model))).must_equal %{#<Method: TestingTest.model>}
-    _(T.render_task(:model)).must_equal %{model}
-    _(T.render_task(klass.method(:persist))).must_equal %{#<Method: #<Class:0x>.persist>}
+    assert_equal T.render_task(TestingTest.method(:model)), %{#<Method: TestingTest.model>}
+    assert_equal T.render_task(:model), %{model}
+    assert_equal T.render_task(klass.method(:persist)), %{#<Method: #<Class:0x>.persist>}
   end
 end
