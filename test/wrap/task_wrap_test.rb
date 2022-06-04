@@ -39,14 +39,11 @@ class TaskWrapTest < Minitest::Spec
     ]
 
     abc_implementation, _es = abc_implementation(a_extensions: [TaskWrap::Extension(merge: merge)])
+    schema                  = Inter.(abc_intermediate, abc_implementation)
 
-    schema = Inter.(abc_intermediate, abc_implementation)
+    assert_invoke Activity.new(schema), seq: "[1, :a, 2, :b, :c]"
 
-    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
-
-    assert_equal ctx.inspect, %{{:seq=>[1, :a, 2, :b, :c]}}
-
-    # it works nested as well
+  #@ it works nested as well
 
     top_implementation = {
       :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Activity::Right, :success)], []),
@@ -57,17 +54,13 @@ class TaskWrapTest < Minitest::Spec
 
     schema = Inter.(abc_intermediate, top_implementation)
 
-    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
+    assert_invoke Activity.new(schema), seq: "[:a, 1, :a, 2, :b, :c, 1, :c, 2]"
 
-    expect(ctx.inspect).must_equal %{{:seq=>[:a, 1, :a, 2, :b, :c, 1, :c, 2]}}
-
-    # it works nested plus allows {wrap_runtime}
+  #@ it works nested plus allows {wrap_runtime}
 
     wrap_runtime = {c => TaskWrap::Pipeline::Merge.new(*merge)}
 
-    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{wrap_runtime: wrap_runtime})
-
-    expect(ctx.inspect).must_equal %{{:seq=>[:a, 1, :a, 2, :b, 1, :c, 2, 1, 1, :c, 2, 2]}}
+    assert_invoke Activity.new(schema), seq: "[:a, 1, :a, 2, :b, 1, :c, 2, 1, 1, :c, 2, 2]", circuit_options: {wrap_runtime: wrap_runtime}
   end
 
 # In a setup a-->b-->c it's possible to assign a taskWrap step to {a} (which is an activity) that changes a's {:start_task} but
@@ -102,11 +95,7 @@ class TaskWrapTest < Minitest::Spec
 
     outer_schema = Inter.(outer_intermediate, outer_implementation)
 
-    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(outer_schema), [{seq: [], start_at: start_at=implementing.method(:b)}], **{})
-
-    assert_equal [:seq, :start_at], ctx.keys
-    assert_equal [:b, :c, :a, :b, :c, :c], ctx[:seq]
-    assert_equal start_at, ctx[:start_at]
+    assert_invoke Activity.new(outer_schema), seq: "[:b, :c, :a, :b, :c, :c]", start_at: implementing.method(:b)
   end
 
   it "deprecates Pipeline.method(:insert) and friends" do
@@ -134,25 +123,18 @@ Please use the new API: #FIXME!!!
 Please update to the new TaskWrap.Step() API: # FIXME !!!!!
 }
 
-    abc_implementation, _es = abc_implementation(a_extensions: [ext])
+    abc_implementation, _ = abc_implementation(a_extensions: [ext])
+    schema                = Inter.(abc_intermediate, abc_implementation)
 
-    schema = Inter.(abc_intermediate, abc_implementation)
-
-    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{})
-
-    assert_equal ctx.inspect, %{{:seq=>[1, :a, 2, :b, :c]}}
-
+    assert_invoke(Activity.new(schema), seq: "[1, :a, 2, :b, :c]")
 
   #@ deprecation also works for Merge.new()
     wrap_runtime = {abc_implementation[:c].circuit_task => TaskWrap::Pipeline::Merge.new(*merge)}
 
     abc_implementation, _ = abc_implementation() # no extensions via wrap_static.
+    schema                = Inter.(abc_intermediate, abc_implementation)
 
-    schema = Inter.(abc_intermediate, abc_implementation)
-
-    _signal, (ctx, _flow_options) = TaskWrap.invoke(Activity.new(schema), [{seq: []}], **{wrap_runtime: wrap_runtime})
-
-    expect(ctx.inspect).must_equal %{{:seq=>[:a, :b, 1, :c, 2]}}
+    assert_invoke(Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime})
   end
 
   def change_start_task(wrap_ctx, original_args)

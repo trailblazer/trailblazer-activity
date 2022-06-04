@@ -54,6 +54,34 @@ module Trailblazer
         Schema    = Trailblazer::Activity::Schema
         TaskWrap  = Trailblazer::Activity::TaskWrap
 
+        # @param :seq String What the {:seq} variable in the result ctx looks like. (expected seq)
+        def assert_call(activity, terminus: :success, seq: "[]", **ctx_variables)
+          # Call without taskWrap!
+          signal, (ctx, _) = activity.([{seq: [], **ctx_variables}, _flow_options = {}]) # simply call the activity with the input you want to assert.
+
+          assert_call_for(signal, ctx, terminus: terminus, seq: seq, **ctx_variables)
+        end
+
+        # Use {TaskWrap.invoke} to call the activity.
+        def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, **ctx_variables) # DISCUSS: only for {activity} gem?
+          signal, (ctx, _flow_options) = TaskWrap.invoke(
+            activity,
+            [
+              {seq: [], **ctx_variables},
+              {}                          # flow_options
+            ],
+            **circuit_options
+          )
+
+          assert_call_for(signal, ctx, terminus: terminus, seq: seq, **ctx_variables)
+        end
+
+        def assert_call_for(signal, ctx, terminus: :success, seq: "[]", **ctx_variables)
+          assert_equal signal.to_h[:semantic], terminus, "assert_call expected #{terminus} terminus, not #{signal}. Use assert_call(activity, terminus: #{signal.to_h[:semantic]})"
+
+          assert_equal ctx.inspect, {seq: "%%%"}.merge(ctx_variables).inspect.sub('"%%%"', seq)
+        end
+
         module Implementing
           extend Activity::Testing.def_tasks(:a, :b, :c, :d, :f, :g)
 
