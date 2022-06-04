@@ -57,11 +57,28 @@ Please use the new API: #FIXME!!!"
       # {Extension} API
       class Merge # TODO: RENAME TO TaskWrap::Extension(::Merge)
         def initialize(*extension_rows)
+          extension_rows = deprecated_extension_for(extension_rows)
+
           @extension_rows = extension_rows
         end
 
         def call(task_wrap_pipeline)
           Adds.apply_adds(task_wrap_pipeline, @extension_rows)
+        end
+
+        # TODO: remove me at some point.
+        def deprecated_extension_for(extension_rows)
+          return extension_rows unless extension_rows.find { |ext| ext.is_a?(Array) }
+
+          warn "[Trailblazer] You are using the old API for taskWrap extensions.
+Please update to the new TaskWrap.Step() API: # FIXME !!!!!"
+
+          extension_rows.collect do |ary|
+            {
+              insert: ary[0..1],
+              row: Pipeline.Row(*ary[2])
+            }
+          end
         end
       end
     end
