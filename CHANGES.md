@@ -2,6 +2,7 @@
 
 * Add optional options `:input_id` and `:output_id` to `VariableMapping.merge_instructions_for`. You don't need this, though.
 * Deprecate the taskWrap extension API in favor of taskWrap.Step(). You will see warnings explaining the update.
+* Add `TaskWrap::Extension.Runtime()` as a consistent interface for creating taskWrap extensions.
 
 # 0.13.0
 
