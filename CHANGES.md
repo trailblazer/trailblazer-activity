@@ -3,6 +3,9 @@
 * Add optional options `:input_id` and `:output_id` to `VariableMapping.merge_instructions_for`. You don't need this, though.
 * Deprecate the taskWrap extension API in favor of taskWrap.Step(). You will see warnings explaining the update.
 * Add `TaskWrap::Extension.Runtime()` as a consistent interface for creating taskWrap extensions.
+* `Pipeline::Merge` is now `TaskWrap::Extension`. An `Extension` is a collection of tW rows that are merged into a tW pipeline
+  when being `call`ed. What used to be called `Extension` is now called `Extension::WrapStatic` and is a concept for
+  `Implementation` and the DSL.
 
 # 0.13.0
 
