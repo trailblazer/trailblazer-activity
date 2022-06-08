@@ -9,13 +9,13 @@ class Trailblazer::Activity
     module VariableMapping
       # Places filters before/after the {call_task}.
       # Note that {input} and {output} are automatically wrapped.
-      def self.merge_instructions_for(input, output, id:, input_id: "task_wrap.input", output_id: "task_wrap.output")
+      def self.Extension(input, output, id:, input_id: "task_wrap.input", output_id: "task_wrap.output")
         [
           {insert: [Adds::Insert.method(:Prepend), "task_wrap.call_task"], row: TaskWrap::Pipeline::Row[input_id, TaskWrap::Input.new(input, id: id)]},
           {insert: [Adds::Insert.method(:Append),  "task_wrap.call_task"], row: TaskWrap::Pipeline::Row[output_id, TaskWrap::Output.new(output, id: id)]},
         ]
 
-        # TaskWrap.Extension
+        Extension.Runtime
       end
     end
 
