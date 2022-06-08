@@ -14,6 +14,8 @@ class Trailblazer::Activity
           {insert: [Adds::Insert.method(:Prepend), "task_wrap.call_task"], row: TaskWrap::Pipeline::Row[input_id, TaskWrap::Input.new(input, id: id)]},
           {insert: [Adds::Insert.method(:Append),  "task_wrap.call_task"], row: TaskWrap::Pipeline::Row[output_id, TaskWrap::Output.new(output, id: id)]},
         ]
+
+        # TaskWrap.Extension
       end
     end
 

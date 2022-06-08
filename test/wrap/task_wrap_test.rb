@@ -26,6 +26,35 @@ class TaskWrapTest < Minitest::Spec
     return implementation, _es
   end
 
+#@ new extension API for runtime.
+  it "{Extension.Runtime} can be used as runtime extension" do
+    abc_implementation, _es = abc_implementation()
+    schema                  = Inter.(abc_intermediate, abc_implementation)
+
+    c     = implementing.method(:c)
+    c_ext = TaskWrap::Extension.Runtime(
+      [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
+      [method(:add_2), id: "user.add_2", append: "task_wrap.call_task"],
+    )
+
+    wrap_runtime = {c => c_ext}
+
+    assert_invoke Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime}
+
+  #@ test: we can use other insert_ids.
+    c_ext = TaskWrap::Extension.Runtime(
+      [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
+      [method(:add_2), id: "user.add_2", append: "task_wrap.call_task"],
+    #@ these lines test if defaulting in Runtime() works properly and doesn't override anything.
+      [method(:add_2), id: "user.add_2.2", prepend: "user.add_1"], #@ prepend to added step
+      [method(:add_1), id: "user.add_1.2", append: "user.add_2"], #@ prepend to added step
+    )
+
+    wrap_runtime = {c => c_ext}
+
+    assert_invoke Activity.new(schema), seq: "[:a, :b, 2, 1, :c, 2, 1]", circuit_options: {wrap_runtime: wrap_runtime}
+  end
+
   it "populates activity[:wrap_static] and uses it at run-time" do
     merge = [
       { # Add

@@ -42,7 +42,25 @@ module Trailblazer
         Extension.new(merge: Pipeline::Merge.new(*merge))
       end
 
+      # Extension are used at compile-time with {wrap_static}, usually with the {dsl} gem.
       class Extension
+        def self.Runtime(*inserts)
+          merge = inserts.collect do |task, options|
+            runtime_extension_for(task, **options)
+          end
+
+          Pipeline::Merge.new(*merge)
+        end
+
+        def self.runtime_extension_for(task, id:, prepend: "task_wrap.call_task", append: nil)
+          insert, insert_id = append ? [:Append, append] : [:Prepend, prepend]
+
+          {
+            insert: [Activity::Adds::Insert.method(insert), insert_id],
+            row:    TaskWrap::Pipeline::Row(id, task)
+          }
+        end
+
         def initialize(merge:)
           @merge = merge
         end
