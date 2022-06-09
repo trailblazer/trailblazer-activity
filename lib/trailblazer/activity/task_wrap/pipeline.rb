@@ -35,7 +35,7 @@ Please use the new API: #FIXME!!!"
       def self.prepend(pipe, insertion_id, insertion, replace: 0) # FIXME: {:replace}
         adds =
           insertion.collect do |id, task|
-            {insert: [Adds::Insert.method(:Prepend), insertion_id], row: Pipeline::Row(id, task)}
+            {insert: [Adds::Insert.method(:Prepend), insertion_id], row: Pipeline.Row(id, task)}
           end
 
         Adds.apply_adds(pipe, adds)

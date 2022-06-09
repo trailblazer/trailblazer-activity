@@ -1,6 +1,5 @@
 module Trailblazer
   class Activity
-
       # The Adds interface are mechanics to alter compile-time sequences/pipelines.
       # "one" ADDS structure: {row: ..., insert: [Insert, "id"]}
       module Adds
@@ -13,10 +12,8 @@ module Trailblazer
           insert_function.(sequence, [row], *args)
         end
 
-        # TODO: make this the only public method of Sequence.
         # Inserts one or more {Add} into {sequence}.
         def apply_adds(sequence, adds)
-
           adds.each do |add|
             sequence = insert_row(sequence, **add)
           end

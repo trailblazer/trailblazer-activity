@@ -1,12 +1,12 @@
 # 0.14.0
 
+* Remove `Pipeline.insert_before` and friends. Pipeline is now altered using ADDS mechanics, just
+  as we do it with the `Sequence` in the `dsl-linear` gem.
+* `Pipeline::Merge` is now `TaskWrap::Extension`. The "pre-friendly interface" you used to leverage for creating
+  taskWrap (tw) extensions is now deprecated and you will see warnings. See https://trailblazer.to/2.1/docs/activity.html#activity-taskwrap-extension
+* Replace `TaskWrap::Extension()` with `TaskWrap::Extension.WrapStatic()` as a consistent interface for creating tW extensions at compile-time.
+* Remove `VariableMapping.merge_instructions_for`.
 * Add optional options `:input_id` and `:output_id` to `VariableMapping.merge_instructions_for`. You don't need this, though.
-* Deprecate the taskWrap (tW) extension API in favor of `taskWrap.Extension()`. You will see warnings explaining the update.
-* Add `TaskWrap::Extension.WrapStatic()` as a consistent interface for creating tW extensions at compile-time.
-* `Pipeline::Merge` is now `TaskWrap::Extension`.
-  * An `Extension` is a collection of tW rows (literally, ADDS objects) that are merged into a tW pipeline when being `call`ed.
-  * What used to be called `Extension` is now called `Extension::WrapStatic` and is a concept for `Implementation` and the DSL.
-* Removed `VariableMapping.merge_instructions_for`.
 
 # 0.13.0
 
@@ -43,7 +43,7 @@
 
 # 0.11.2
 
-* Updrading `trailblazer-context` version :drum:
+* Upgrading `trailblazer-context` version :drum:
 
 # 0.11.1
 
