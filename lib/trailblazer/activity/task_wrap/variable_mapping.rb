@@ -10,12 +10,10 @@ class Trailblazer::Activity
       # Places filters before/after the {call_task}.
       # Note that {input} and {output} are automatically wrapped.
       def self.Extension(input, output, id:, input_id: "task_wrap.input", output_id: "task_wrap.output")
-        [
-          {insert: [Adds::Insert.method(:Prepend), "task_wrap.call_task"], row: TaskWrap::Pipeline::Row[input_id, TaskWrap::Input.new(input, id: id)]},
-          {insert: [Adds::Insert.method(:Append),  "task_wrap.call_task"], row: TaskWrap::Pipeline::Row[output_id, TaskWrap::Output.new(output, id: id)]},
-        ]
-
-        Extension.Runtime
+        TaskWrap.Extension(
+          [TaskWrap::Input.new(input, id: id),   id: input_id, prepend: "task_wrap.call_task"],
+          [TaskWrap::Output.new(output, id: id), id: output_id, append: "task_wrap.call_task"]
+        )
       end
     end
 

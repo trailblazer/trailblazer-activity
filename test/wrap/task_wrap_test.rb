@@ -164,6 +164,20 @@ Please update to the new TaskWrap.Extension() API: # FIXME !!!!!
     schema                = Inter.(abc_intermediate, abc_implementation)
 
     assert_invoke(Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime})
+
+  #@ using {Pipeline::Merge.new} also gets deprecated
+    ext = nil
+    out, err = capture_io do
+      wrap_runtime = {abc_implementation[:c].circuit_task => TaskWrap::Pipeline::Merge.new(*merge)}
+    end
+
+    assert_equal err, %{[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline::Merge.new` is deprecated.
+Please use the new TaskWrap.Extension() API: #FIXME!!!
+[Trailblazer] You are using the old API for taskWrap extensions.
+Please update to the new TaskWrap.Extension() API: # FIXME !!!!!
+}
+
+    assert_invoke(Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime})
   end
 
   def change_start_task(wrap_ctx, original_args)
