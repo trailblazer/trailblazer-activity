@@ -53,18 +53,18 @@ module Trailblazer
             return build(pipeline, ary[0..index-1] + new_rows + ary[index..-1])
           end
 
-          def Replace(sequence, new_rows, insert_id)
-            index, sequence = find(sequence, insert_id)
+          def Replace(pipeline, new_rows, insert_id)
+            index, ary = find(pipeline, insert_id)
 
-            sequence[index], _ = *new_rows # TODO: replace and insert remaining, if any.
-            sequence
+            return build(pipeline, new_rows + ary[index+1..-1]) if index == 0
+            return build(pipeline, ary[0..index-1] + new_rows + ary[index+1..-1])
           end
 
-          def Delete(sequence, _, insert_id)
-            index, sequence = find(sequence, insert_id)
+          def Delete(pipeline, _, insert_id)
+            index, ary = find(pipeline, insert_id)
 
-            sequence.delete(sequence[index])
-            sequence
+            return build(pipeline, ary[index+1..-1]) if index == 0
+            return build(pipeline, ary[0..index-1] + ary[index+1..-1])
           end
 
           def build(sequence, rows)

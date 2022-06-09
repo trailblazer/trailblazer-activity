@@ -6,6 +6,8 @@ class AddsTest < Minitest::Spec
   let(:adds)     { Trailblazer::Activity::Adds }
 
 #@ No mutation on original pipe
+#@ Those tests are written in one single {it} on purpose. Further on, we perform all ADDS operations
+#@ before we assert the particular pipelines to test if anything gets mutated during the way.
   it "what" do
     pipe1 = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]])
 
@@ -29,13 +31,29 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Append), "trace-out-outer"], row: pipeline::Row["last-id", "log"] }
     pipe6 = adds.apply_adds(pipe5, [add])
 
-  #@ {Append} to pipe (not providing an ID)
-    add = { insert: [adds::Insert.method(:Append)], row: pipeline::Row["laster-id", "log"] }
+  #@ {Replace} first element
+    add = { insert: [adds::Insert.method(:Replace), "trace-in-outer"], row: pipeline::Row["first-element", "log"] }
     pipe7 = adds.apply_adds(pipe6, [add])
 
-  #@ {Replace}
+  #@ {Replace} last element
+    add = { insert: [adds::Insert.method(:Replace), "last-id"], row: pipeline::Row["last-element", "log"] }
+    pipe8 = adds.apply_adds(pipe7, [add])
 
-  #@ {Delete}
+  #@ {Replace} middle element
+    add = { insert: [adds::Insert.method(:Replace), "trace-out-outer"], row: pipeline::Row["middle-element", "log"] }
+    pipe9 = adds.apply_adds(pipe8, [add])
+
+  #@ {Delete} first element
+    add = { insert: [adds::Insert.method(:Delete), "first-element"], row: nil }
+    pipe10 = adds.apply_adds(pipe9, [add])
+
+  #@ {Delete} last element
+    add = { insert: [adds::Insert.method(:Delete), "last-element"], row: nil }
+    pipe11 = adds.apply_adds(pipe10, [add])
+
+    #@ {Delete} middle element
+    add = { insert: [adds::Insert.method(:Delete), "trace-out-inner"], row: nil }
+    pipe12 = adds.apply_adds(pipe11, [add])
 
     assert_equal inspect(pipe1), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
  @sequence=[["task_wrap.call_task", "task, call"]]>
@@ -80,6 +98,60 @@ class AddsTest < Minitest::Spec
    ["trace-out-outer", "trace, prepare"],
    ["last-id", "log"]]>
 }
+
+    assert_equal inspect(pipe7), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
+ @sequence=
+  [["first-element", "log"],
+   ["trace-in-inner", "trace, prepare"],
+   ["task_wrap.call_task", "task, call"],
+   ["trace-out-inner", "trace, prepare"],
+   ["trace-out-outer", "trace, prepare"],
+   ["last-id", "log"]]>
+}
+
+    assert_equal inspect(pipe8), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
+ @sequence=
+  [["first-element", "log"],
+   ["trace-in-inner", "trace, prepare"],
+   ["task_wrap.call_task", "task, call"],
+   ["trace-out-inner", "trace, prepare"],
+   ["trace-out-outer", "trace, prepare"],
+   ["last-element", "log"]]>
+}
+
+    assert_equal inspect(pipe9), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
+ @sequence=
+  [["first-element", "log"],
+   ["trace-in-inner", "trace, prepare"],
+   ["task_wrap.call_task", "task, call"],
+   ["trace-out-inner", "trace, prepare"],
+   ["middle-element", "log"],
+   ["last-element", "log"]]>
+}
+
+    assert_equal inspect(pipe10), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
+ @sequence=
+  [["trace-in-inner", "trace, prepare"],
+   ["task_wrap.call_task", "task, call"],
+   ["trace-out-inner", "trace, prepare"],
+   ["middle-element", "log"],
+   ["last-element", "log"]]>
+}
+
+    assert_equal inspect(pipe11), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
+ @sequence=
+  [["trace-in-inner", "trace, prepare"],
+   ["task_wrap.call_task", "task, call"],
+   ["trace-out-inner", "trace, prepare"],
+   ["middle-element", "log"]]>
+}
+
+    assert_equal inspect(pipe12), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
+ @sequence=
+  [["trace-in-inner", "trace, prepare"],
+   ["task_wrap.call_task", "task, call"],
+   ["middle-element", "log"]]>
+}
   end
 
   it "{Append} without ID on empty list" do
@@ -93,14 +165,31 @@ class AddsTest < Minitest::Spec
 }
   end
 
-  it "{Append} on 1-element list" do
-    pipe = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]])
+  let(:one_element_pipeline) { pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]]) }
 
+  it "{Append} on 1-element list" do
     add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: pipeline::Row["laster-id", "log"] }
-    pipe1 = adds.apply_adds(pipe, [add])
+    pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
     assert_equal inspect(pipe1), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
  @sequence=[[\"task_wrap.call_task\", \"task, call\"], [\"laster-id\", \"log\"]]>
+}
+  end
+
+  it "{Replace} on 1-element list" do
+    add = { insert: [adds::Insert.method(:Replace), "task_wrap.call_task"], row: pipeline::Row["laster-id", "log"] }
+    pipe1 = adds.apply_adds(one_element_pipeline, [add])
+
+    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
+ @sequence=[[\"laster-id\", \"log\"]]>
+}
+  end
+
+  it "{Delete} on 1-element list" do
+    add = { insert: [adds::Insert.method(:Delete), "task_wrap.call_task"], row: nil }
+    pipe1 = adds.apply_adds(one_element_pipeline, [add])
+
+    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::TaskWrap::Pipeline: @sequence=[]>
 }
   end
 
