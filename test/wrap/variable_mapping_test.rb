@@ -179,6 +179,7 @@ class VariableMappingTest < Minitest::Spec
 
       runtime = {}
 
+  #@ this tests if the ADDS interface can be used with {Extension.new}
       # add filters around Model.
       merge = [
         {insert: [Trailblazer::Activity::Adds::Insert.method(:Prepend), "task_wrap.call_task"],  row: TaskWrap::Pipeline::Row["task_wrap.input", TaskWrap::Input.new(model_input, id: 1)]},
