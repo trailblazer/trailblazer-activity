@@ -10,25 +10,29 @@ module Trailblazer
     #   |-- Trace.capture_return [optional]
     #   |-- Wrap::End
     module TaskWrap      
-      # Use this in your macros if you want to extend the {taskWrap}.
+      # inserts must be
+      # An {Extension} can be used for {:wrap_runtime}. It expects a collection of
+      # "friendly interface" arrays.
       #
-      # inserts must be [ [task, id: ..., append: "task_wrap.call_task"] ]
+      #   TaskWrap.Extension([ [task, id: "my_logger", append: "task_wrap.call_task"] ])
+      #
+      # If you want a {wrap_static} extension, wrap it using `Extension.WrapStatic.new`.
       def self.Extension(*inserts, merge: nil)
         if merge
           return Extension::WrapStatic.new(extension: Extension.new(*merge))
-        # TODO: deprecate me! or remove?
+          # TODO: remove me once we drop the pre-friendly interface.
         end
 
         Extension.build(*inserts)
       end
 
-      # An {Extension} is a collection of steps to be inserted into a taskWrap.
+      # An {Extension} is a collection of ADDS objects to be inserted into a taskWrap.
       # It gets called either at
       #   * compile-time and adds its steps to the wrap_static (see Extension::WrapStatic)
       #   * run-time in {TaskWrap::Runner} and adds its steps dynamically at runtime to the
       #     step's taskWrap
       class Extension
-        # Build a taskWrap extension from the "friendly API" {[task, id:, ...]}
+        # Build a taskWrap extension from the "friendly interface" {[task, id:, ...]}
         def self.build(*inserts)
           extension_rows = inserts.collect do |task, options|
             adds_for_friendly_interface(task, **options)
@@ -37,7 +41,7 @@ module Trailblazer
           new(*extension_rows)
         end
 
-        # Translate the friendly API to ADDS.
+        # Translate the friendly interface to ADDS.
         def self.adds_for_friendly_interface(task, id:, prepend: "task_wrap.call_task", append: nil)
           insert, insert_id = append ? [:Append, append] : [:Prepend, prepend]
 
@@ -59,7 +63,7 @@ module Trailblazer
           Adds.apply_adds(task_wrap_pipeline, @extension_rows)
         end
 
-        # TODO: remove me at some point.
+        # TODO: remove me once we drop the pre-friendly interface.
         def deprecated_extension_for(extension_rows)
           return extension_rows unless extension_rows.find { |ext| ext.is_a?(Array) }
 

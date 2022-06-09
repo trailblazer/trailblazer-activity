@@ -33,8 +33,7 @@ module Trailblazer
       # Gets executed in {Intermediate.call} which also provides {config}.
 
       def initial_wrap_static(*)
-        # return initial_sequence
-        TaskWrap::Pipeline.new([Pipeline::Row["task_wrap.call_task", TaskWrap.method(:call_task)]])
+        Pipeline.new([Pipeline.Row("task_wrap.call_task", TaskWrap.method(:call_task))])
       end
     end # TaskWrap
   end
