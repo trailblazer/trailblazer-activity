@@ -28,16 +28,17 @@ module Trailblazer
       #   * run-time in {TaskWrap::Runner} and adds its steps dynamically at runtime to the
       #     step's taskWrap
       class Extension
-        # Build a taskWrap extension from the friendly API {[task, id:, ...]}
+        # Build a taskWrap extension from the "friendly API" {[task, id:, ...]}
         def self.build(*inserts)
           extension_rows = inserts.collect do |task, options|
-            extension_step_for(task, **options)
+            adds_for_friendly_interface(task, **options)
           end
 
           new(*extension_rows)
         end
 
-        def self.extension_step_for(task, id:, prepend: "task_wrap.call_task", append: nil)
+        # Translate the friendly API to ADDS.
+        def self.adds_for_friendly_interface(task, id:, prepend: "task_wrap.call_task", append: nil)
           insert, insert_id = append ? [:Append, append] : [:Prepend, prepend]
 
           {

@@ -110,8 +110,8 @@ class VariableMappingTest < Minitest::Spec
 
   # this method used to sit in {TaskWrap::VariableMapping}.
   def VariableMappingExtension(input, output, id: input.object_id, **options)
-    Trailblazer::Activity::TaskWrap::Extension(
-      merge: Trailblazer::Activity::TaskWrap::VariableMapping.merge_instructions_for(input, output, id: id, **options),
+    Trailblazer::Activity::TaskWrap::Extension::WrapStatic.new(
+      extension: Trailblazer::Activity::TaskWrap::VariableMapping.Extension(input, output, id: id, **options),
     )
   end
 
@@ -185,7 +185,7 @@ class VariableMappingTest < Minitest::Spec
         {insert: [Trailblazer::Activity::Adds::Insert.method(:Append), "task_wrap.call_task"],   row: TaskWrap::Pipeline::Row["task_wrap.output", TaskWrap::Output.new(model_output, id: 1)]}
       ]
 
-      runtime[Model] = TaskWrap::Pipeline::Merge.new(*merge)
+      runtime[Model] = TaskWrap::Extension.new(*merge)
 
       # add filters around Uuid.
       merge = [
@@ -193,7 +193,7 @@ class VariableMappingTest < Minitest::Spec
         {insert: [Trailblazer::Activity::Adds::Insert.method(:Append), "task_wrap.call_task"],   row: TaskWrap::Pipeline::Row["task_wrap.output", TaskWrap::Output.new(uuid_output, id: 1)]}
       ]
 
-      runtime[Uuid] = TaskWrap::Pipeline::Merge.new(*merge)
+      runtime[Uuid] = TaskWrap::Extension.new(*merge)
 
       signal, (options, _) = Activity::TaskWrap.invoke(
         activity,
