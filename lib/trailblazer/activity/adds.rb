@@ -1,69 +1,74 @@
 module Trailblazer
   class Activity
-      # The Adds interface are mechanics to alter compile-time sequences/pipelines.
+      # The Adds interface are mechanics to alter sequences/pipelines.
       # "one" ADDS structure: {row: ..., insert: [Insert, "id"]}
+      #
+      # To work with the instructions provided here, the pipeline structure
+      # needs to expose {#to_a}.
       module Adds
         module_function
-        # @returns Sequence New sequence instance
+        # @returns Sequence/Pipeline New sequence instance
         # @private
-        def insert_row(sequence, row:, insert:)
+        def insert_row(pipeline, row:, insert:)
           insert_function, *args = insert
 
-          insert_function.(sequence, [row], *args)
+          insert_function.(pipeline, [row], *args)
         end
 
-        # Inserts one or more {Add} into {sequence}.
-        def apply_adds(sequence, adds)
+        # Inserts one or more {Add} into {pipeline}.
+        def apply_adds(pipeline, adds)
           adds.each do |add|
-            sequence = insert_row(sequence, **add)
+            pipeline = insert_row(pipeline, **add)
           end
 
-          sequence
+          pipeline
         end
 
-        # Functions to mutate the Sequence/Pipeline by inserting, replacing, or deleting a row.
-        # These functions are called in {apply_adds => insert_row}.
+        # Functions to alter the Sequence/Pipeline by inserting, replacing, or deleting a row.
         #
         # they don't mutate the data structure but rebuild it, has to respond to {to_a}
         #
-        # DISCUSS: those methods shouldn't mutate, as we would alter the taskWrap at runtime
-        # when using {:wrap_runtime}.
-        # DISCUSS: these methods shouldn't even be called directly but via the ADDS interface.
+        # These methods are invoked via {Adds.apply_adds} and should never be called directly.
         module Insert
           module_function
 
           # Append {new_row} after {insert_id}.
           def Append(pipeline, new_rows, insert_id=nil)
-            index, ary =
-              if insert_id
-                find(pipeline, insert_id)
-              else
-                _ary = pipeline.to_a # FIXME: make it #apply_on_ary or something.
-                [_ary.size, _ary]
-              end
+            build_from_ary(pipeline, insert_id) do |ary, index|
+              index = ary.size if index.nil? # append to end of pipeline.
 
-            return build(pipeline, ary[0..index] + new_rows + Array(ary[index+1..-1]))# DISCUSS: we need the last Array() because an empty array would break here (why, though?).
+              range_before_index(ary, index+1) + new_rows + Array(ary[index+1..-1])
+            end
           end
 
           # Insert {new_rows} before {insert_id}.
           def Prepend(pipeline, new_rows, insert_id) # DISCUSS: do we really want multiple rows? We barely need it.
-            index, ary = find(pipeline, insert_id)
-
-            build(pipeline, range_before_index(ary, index) + new_rows + ary[index..-1])
+            build_from_ary(pipeline, insert_id) do |ary, index|
+              range_before_index(ary, index) + new_rows + ary[index..-1]
+            end
           end
 
           def Replace(pipeline, new_rows, insert_id)
-            index, ary = find(pipeline, insert_id)
-
-            build(pipeline, range_before_index(ary, index) + new_rows + ary[index+1..-1])
+            build_from_ary(pipeline, insert_id) do |ary, index|
+              range_before_index(ary, index) + new_rows + ary[index+1..-1]
+            end
           end
 
           def Delete(pipeline, _, insert_id)
-            index, ary = find(pipeline, insert_id)
-
-            build(pipeline, range_before_index(ary, index) + ary[index+1..-1])
+            build_from_ary(pipeline, insert_id) do |ary, index|
+              range_before_index(ary, index) + ary[index+1..-1]
+            end
           end
 
+          # @return index
+          # FIXME: where do we need this???
+          def find(pipeline, insert_id, **options)
+            apply_on_ary(pipeline, insert_id, **options) do |ary, index|
+              index
+            end
+          end
+
+          # @private
           def build(sequence, rows)
             sequence.class.new(rows)
           end
@@ -73,14 +78,34 @@ module Trailblazer
             ary.find_index { |row| row.id == insert_id }
           end
 
-          def find(sequence, insert_id)
-            ary = sequence.to_a
+          # Converts the pipeline structure to an array,
+          # automatically finds the index for {insert_id},
+          # and calls the user block with the computed values.
+          #
+          # Single-entry point, could be named {#call}.
+          # @private
+          def apply_on_ary(pipeline, insert_id, raise_index_error: true, &block)
+            ary   = pipeline.to_a
 
-            index = find_index(ary, insert_id) or raise IndexError.new(sequence, insert_id)
+            if insert_id.nil?
+              index = nil
+            else
+              index = find_index(ary, insert_id) # DISCUSS: this only makes sense if there are more than {Append} using this.
+              raise IndexError.new(pipeline, insert_id) if index.nil? && raise_index_error
+            end
 
-            return index, ary
+            _new_ary = yield(ary, index) # call the block.
           end
 
+          def build_from_ary(pipeline, insert_id, &block)
+            new_ary = apply_on_ary(pipeline, insert_id, &block)
+
+            # Wrap the sequence/pipeline array into a concrete Sequence/Pipeline.
+            build(pipeline, new_ary)
+          end
+
+          # Always returns a valid, concat-able array for all indices
+          # before the {index}.
           # @private
           def range_before_index(ary, index)
             return [] if index == 0

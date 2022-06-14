@@ -18,6 +18,7 @@ class Trailblazer::Activity
         return wrap_ctx, original_args
       end
 
+      # Comply with the Adds interface.
       def to_a
         @sequence
       end

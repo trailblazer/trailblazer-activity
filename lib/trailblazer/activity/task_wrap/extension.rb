@@ -42,6 +42,7 @@ module Trailblazer
         end
 
         # Translate the friendly interface to ADDS.
+        # This is a mini-DSL, if you want.
         def self.adds_for_friendly_interface(task, id:, prepend: "task_wrap.call_task", append: nil)
           insert, insert_id = append ? [:Append, append] : [:Prepend, prepend]
 
