@@ -12,10 +12,10 @@ module Trailblazer
         def insert_row(pipeline, row:, insert:)
           insert_function, *args = insert
 
-          insert_function.(pipeline, [row], *args)
+          insert_function.(pipeline, row, *args)
         end
 
-        # Inserts one or more {Add} into {pipeline}.
+        # Inserts one or more {Adds} into {pipeline}.
         def apply_adds(pipeline, adds)
           adds.each do |add|
             pipeline = insert_row(pipeline, **add)
@@ -33,24 +33,26 @@ module Trailblazer
           module_function
 
           # Append {new_row} after {insert_id}.
-          def Append(pipeline, new_rows, insert_id=nil)
+          def Append(pipeline, new_row, insert_id=nil)
             build_from_ary(pipeline, insert_id) do |ary, index|
               index = ary.size if index.nil? # append to end of pipeline.
 
-              range_before_index(ary, index+1) + new_rows + Array(ary[index+1..-1])
+              range_before_index(ary, index+1) + [new_row] + Array(ary[index+1..-1])
             end
           end
 
-          # Insert {new_rows} before {insert_id}.
-          def Prepend(pipeline, new_rows, insert_id) # DISCUSS: do we really want multiple rows? We barely need it.
+          # Insert {new_row} before {insert_id}.
+          def Prepend(pipeline, new_row, insert_id=nil)
             build_from_ary(pipeline, insert_id) do |ary, index|
-              range_before_index(ary, index) + new_rows + ary[index..-1]
+              index = 0 if index.nil? # Prepend to beginning of pipeline.
+
+              range_before_index(ary, index) + [new_row] + ary[index..-1]
             end
           end
 
-          def Replace(pipeline, new_rows, insert_id)
+          def Replace(pipeline, new_row, insert_id)
             build_from_ary(pipeline, insert_id) do |ary, index|
-              range_before_index(ary, index) + new_rows + ary[index+1..-1]
+              range_before_index(ary, index) + [new_row] + ary[index+1..-1]
             end
           end
 

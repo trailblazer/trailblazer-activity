@@ -23,16 +23,6 @@ class Trailblazer::Activity
         @sequence
       end
 
-      # Helper for normalizers.
-      def self.prepend(pipe, insertion_id, insertion, replace: 0) # FIXME: {:replace}
-        adds =
-          insertion.collect do |id, task|
-            {insert: [Adds::Insert.method(:Prepend), insertion_id], row: Pipeline.Row(id, task)}
-          end
-
-        Adds.apply_adds(pipe, adds)
-      end
-
       # TODO: remove me when old tW extension API is deprecated.
       def self.method(name)
         new_name = {
