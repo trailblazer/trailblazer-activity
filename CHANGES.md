@@ -7,6 +7,7 @@
 * Replace `TaskWrap::Extension()` with `TaskWrap::Extension.WrapStatic()` as a consistent interface for creating tW extensions at compile-time.
 * Remove `VariableMapping.merge_instructions_for`.
 * Add optional options `:input_id` and `:output_id` to `VariableMapping.merge_instructions_for`. You don't need this, though.
+* Remove `Insert.find`.
 
 # 0.13.0
 

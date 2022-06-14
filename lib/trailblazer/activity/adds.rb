@@ -60,14 +60,6 @@ module Trailblazer
             end
           end
 
-          # @return index
-          # FIXME: where do we need this???
-          def find(pipeline, insert_id, **options)
-            apply_on_ary(pipeline, insert_id, **options) do |ary, index|
-              index
-            end
-          end
-
           # @private
           def build(sequence, rows)
             sequence.class.new(rows)
