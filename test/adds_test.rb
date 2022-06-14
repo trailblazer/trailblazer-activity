@@ -193,21 +193,6 @@ class AddsTest < Minitest::Spec
 }
   end
 
-  it "Adds.find" do
-  #@ finds the index
-    assert_equal adds::Insert.find(one_element_pipeline, "task_wrap.call_task"), 0
-
-  #@ raise exception for non-existant
-    exc = assert_raises do adds::Insert.find(one_element_pipeline, "task_wrap.NONEXISTANT") end
-
-    assert_equal exc.message, %{
-\e[31m\"task_wrap.NONEXISTANT\" is not a valid step ID. Did you mean any of these ?\e[0m
-\e[32m\"task_wrap.call_task\"\e[0m}
-
-  #@ doesn't raise exception for non-existant
-    assert_equal adds::Insert.find(one_element_pipeline, "task_wrap.NONEXISTANT", raise_index_error: false), nil
-  end
-
   it "throws an Adds::Sequence error when ID non-existant" do
     pipe = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"], pipeline::Row["task_wrap.log", "task, log"]])
 
