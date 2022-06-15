@@ -36,6 +36,8 @@ end
 
 require "trailblazer/activity/structures"
 require "trailblazer/activity/schema"
+require "trailblazer/activity/schema/implementation"
+require "trailblazer/activity/schema/intermediate"
 require "trailblazer/activity/circuit"
 require "trailblazer/activity/config"
 require "trailblazer/activity/introspect"

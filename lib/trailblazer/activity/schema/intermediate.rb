@@ -76,7 +76,8 @@ class Trailblazer::Activity
         end.flatten(1)
       end
 
-      # Invoke each task's extensions (usually coming from the DSL or some macro).
+      # Invoke each task's extensions (usually coming from the DSL user or some macro).
+      # We're expecting each {ext} to be a {TaskWrap::Extension::WrapStatic} instance.
       def self.config(implementation, config:)
         implementation.each do |id, task|
           task.extensions.each { |ext| config = ext.(config: config, id: id, task: task) } # DISCUSS: ext must return new {Config}.

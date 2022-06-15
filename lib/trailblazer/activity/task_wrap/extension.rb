@@ -79,19 +79,20 @@ Please update to the new TaskWrap.Extension() API: # FIXME !!!!!"
           end
         end
 
-        # Extension are used at compile-time with {wrap_static}, usually with the {dsl} gem.
+        # Extension are used at compile-time with {wrap_static}, mostly with the {dsl} gem.
+        # {WrapStatic} extensions are called for setup through {Intermediate.config} at compile-time.
+        # Each extension alters the activity's wrap_static taskWrap.
         class WrapStatic
           def initialize(extension:)
             @extension = extension
           end
 
-          # Compile-time:
-          # Gets called via the {Normalizer} and represents an {:extensions} item.
-          # Adds/alters the activity's {wrap_static}.
           def call(config:, task:, **)
-            before_pipe = State::Config.get(config, :wrap_static, task.circuit_task)
+            # Add the extension's task(s) to the activity's {wrap_static} taskWrap
+            # by using the immutable {Config} interface.
+            before_pipe = Config.get(config, :wrap_static, task.circuit_task)
 
-            State::Config.set(config, :wrap_static, task.circuit_task, @extension.(before_pipe))
+            Config.set(config, :wrap_static, task.circuit_task, @extension.(before_pipe))
           end
         end # WrapStatic
 

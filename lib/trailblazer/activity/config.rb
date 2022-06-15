@@ -1,33 +1,32 @@
 module Trailblazer
-  module Activity::State
-    # Compile-time
-    #
-    # DISCUSS: we could replace parts with Hamster::Hash.
+  class Activity
+    # Config API allows you to read and write immutably to the activity's
+    # {:config} field. Most of the times, this only contains {:wrap_static}.
     module Config
       module_function
 
-      def set(state, *args)
+      def set(config, *args)
         if args.size == 2
           key, value = *args
 
-          state = state.merge(key => value)
+          config = config.merge(key => value)
         else
           directive, key, value = *args
 
-          state = state.merge( directive => {}.freeze ) unless state.key?(directive)
+          config = config.merge( directive => {}.freeze ) unless config.key?(directive)
 
-          directive_hash = state[directive].merge(key => value)
-          state = state.merge( directive => directive_hash.freeze )
+          directive_hash = config[directive].merge(key => value)
+          config = config.merge( directive => directive_hash.freeze )
         end
 
-        state
+        config
       end
 
-      def get(state, *args)
+      def get(config, *args)
         directive, key = *args
 
-        return state[directive] if args.size == 1
-        return state[directive][key] if state.key?(directive)
+        return config[directive] if args.size == 1
+        return config[directive][key] if config.key?(directive)
 
         nil
       end

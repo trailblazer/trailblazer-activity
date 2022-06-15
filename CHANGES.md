@@ -9,6 +9,7 @@
 * Add optional options `:input_id` and `:output_id` to `VariableMapping.merge_instructions_for`. You don't need this, though.
 * Remove `Insert.find`.
 * Move `Pipeline.prepend` to the `trailblazer-activity-linear-dsl` gem.
+* Rename `Activity::State::Config` to `Activity::Config`.
 
 # 0.13.0
 

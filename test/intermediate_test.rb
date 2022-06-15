@@ -23,10 +23,10 @@ class IntermediateTest < Minitest::Spec
       [:a]
     ) # start
 
-    Config = Trailblazer::Activity::State::Config
-    a_extension_1 = ->(config:, **) { Config.set(config, :a1, true)  }
-    a_extension_2 = ->(config:, **) { Config.set(config, :a2, :yo)   }
-    b_extension_1 = ->(config:, **) { Config.set(config, :b1, false) }
+    config = Trailblazer::Activity::Config
+    a_extension_1 = ->(config:, **) { config.set(config, :a1, true)  }
+    a_extension_2 = ->(config:, **) { config.set(config, :a2, :yo)   }
+    b_extension_1 = ->(config:, **) { config.set(config, :b1, false) }
 
     implementation = {
       :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)],        [a_extension_1, a_extension_2]),
@@ -130,7 +130,7 @@ class IntermediateTest < Minitest::Spec
     expect(ctx.inspect).must_equal %{{:seq=>[:c, :d]}}
   end
 
-  describe ":extension API: Config::State" do
+  describe ":extension API: Config" do
     let(:intermediate) do
       Inter.new(
         {
@@ -162,11 +162,11 @@ class IntermediateTest < Minitest::Spec
     end
 
     it "allows using the {Config} API" do
-      ext_a = ->(config:, **)       { Activity::State::Config.set(config, :a, "bla") }
-      ext_b = ->(config:, **)       { Activity::State::Config.set(config, :b, "blubb") }
-      ext_c = ->(config:, **)       { Activity::State::Config.set(config, :c, "key", "value") } # initializes {:c} with hash.
-      ext_d = ->(config:, id:, **)  { Activity::State::Config.set(config, id, 1) }              # provides :id
-      ext_e = ->(config:, **)       { Activity::State::Config.set(config, :e, config[:C] + 1) } # allows reading new {Config} instance.
+      ext_a = ->(config:, **)       { Activity::Config.set(config, :a, "bla") }
+      ext_b = ->(config:, **)       { Activity::Config.set(config, :b, "blubb") }
+      ext_c = ->(config:, **)       { Activity::Config.set(config, :c, "key", "value") } # initializes {:c} with hash.
+      ext_d = ->(config:, id:, **)  { Activity::Config.set(config, id, 1) }              # provides :id
+      ext_e = ->(config:, **)       { Activity::Config.set(config, :e, config[:C] + 1) } # allows reading new {Config} instance.
 
       schema = Inter.(intermediate, implementation([ext_a, ext_b, ext_c, ext_d, ext_e]))
 
