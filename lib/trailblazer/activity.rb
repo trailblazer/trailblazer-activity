@@ -14,12 +14,8 @@ module Trailblazer
       )
     end
 
-    # Reader and writer method for an Activity.
-    # The writer {dsl[:key] = "value"} exposes immutable behavior and will replace the old
-    # @state with a new, modified copy.
-    #
-    # Always use the accessors to avoid leaking state to other components
-    # due to mutable write operations.
+    # DISCUSS: we could remove this reader in the future
+    # and use {Activity.to_h[:config]}.
     def [](*key)
       @schema[:config][*key]
     end
