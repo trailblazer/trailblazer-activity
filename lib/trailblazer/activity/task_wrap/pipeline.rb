@@ -28,6 +28,8 @@ class Trailblazer::Activity
         new_name = {
           insert_before: :Prepend,
           insert_after: :Append,
+          append: :Append,
+          prepend: :Prepend,
         }.fetch(name)
 
         warn "[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline.method(:#{name})` is deprecated.
