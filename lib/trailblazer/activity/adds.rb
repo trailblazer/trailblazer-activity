@@ -16,12 +16,42 @@ module Trailblazer
         end
 
         # Inserts one or more {Adds} into {pipeline}.
-        def apply_adds(pipeline, adds)
+        private def apply_adds(pipeline, adds)
           adds.each do |add|
             pipeline = insert_row(pipeline, **add)
           end
 
           pipeline
+        end
+
+        # @param inserts Array of friendly interface insertions
+        # def call(pipeline, *inserts)
+        #   adds = build_adds_for_friendly_interface(inserts)
+
+        #   Adds.apply_adds(pipeline, adds)
+        # end
+
+        module FriendlyInterface
+          # @public
+          # @return Array of ADDS
+          #
+          # Translate a collection of friendly interface to ADDS.
+          # This is a mini-DSL, if you want.
+          def self.adds_for(inserts)
+            inserts.collect do |task, options|
+              build_adds(task, **options)
+            end
+          end
+
+          # @private
+          def self.build_adds(task, id:, prepend: "task_wrap.call_task", append: nil)
+            insert, insert_id = append ? [:Append, append] : [:Prepend, prepend]
+
+            {
+              insert: [Activity::Adds::Insert.method(insert), insert_id],
+              row:    TaskWrap::Pipeline::Row(id, task)
+            }
+          end
         end
 
         # Functions to alter the Sequence/Pipeline by inserting, replacing, or deleting a row.

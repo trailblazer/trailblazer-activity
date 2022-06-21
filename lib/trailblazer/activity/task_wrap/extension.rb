@@ -34,22 +34,10 @@ module Trailblazer
       class Extension
         # Build a taskWrap extension from the "friendly interface" {[task, id:, ...]}
         def self.build(*inserts)
-          extension_rows = inserts.collect do |task, options|
-            adds_for_friendly_interface(task, **options)
-          end
+          # For performance reasons we're computing the ADDS here and not in {#call}.
+          extension_rows = Activity::Adds::FriendlyInterface.adds_for(inserts)
 
           new(*extension_rows)
-        end
-
-        # Translate the friendly interface to ADDS.
-        # This is a mini-DSL, if you want.
-        def self.adds_for_friendly_interface(task, id:, prepend: "task_wrap.call_task", append: nil)
-          insert, insert_id = append ? [:Append, append] : [:Prepend, prepend]
-
-          {
-            insert: [Activity::Adds::Insert.method(insert), insert_id],
-            row:    TaskWrap::Pipeline::Row(id, task)
-          }
         end
 
         def initialize(*extension_rows)
