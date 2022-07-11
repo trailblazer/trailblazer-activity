@@ -16,7 +16,7 @@ module Trailblazer
         end
 
         # Inserts one or more {Adds} into {pipeline}.
-        private def apply_adds(pipeline, adds)
+        def apply_adds(pipeline, adds)
           adds.each do |add|
             pipeline = insert_row(pipeline, **add)
           end
