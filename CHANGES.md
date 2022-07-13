@@ -5,8 +5,7 @@
 * `Pipeline::Merge` is now `TaskWrap::Extension`. The "pre-friendly interface" you used to leverage for creating
   taskWrap (tw) extensions is now deprecated and you will see warnings. See https://trailblazer.to/2.1/docs/activity.html#activity-taskwrap-extension
 * Replace `TaskWrap::Extension()` with `TaskWrap::Extension.WrapStatic()` as a consistent interface for creating tW extensions at compile-time.
-* Remove `VariableMapping.merge_instructions_for`.
-* Add optional options `:input_id` and `:output_id` to `VariableMapping.merge_instructions_for`. You don't need this, though.
+* Move `VariableMapping` to the `trailblazer-activity-dsl-linear` gem.
 * Remove `Insert.find`.
 * Move `Pipeline.prepend` to the `trailblazer-activity-linear-dsl` gem.
 * Rename `Activity::State::Config` to `Activity::Config`.
