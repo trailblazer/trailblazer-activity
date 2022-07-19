@@ -1,14 +1,14 @@
 # 0.14.0
 
 * Remove `Pipeline.insert_before` and friends. Pipeline is now altered using ADDS mechanics, just
-  as we do it with the `Sequence` in the `dsl-linear` gem.
+  as we do it with the `Sequence` in the `trailblazer-activity-dsl-linear` gem.
 * `Pipeline::Merge` is now `TaskWrap::Extension`. The "pre-friendly interface" you used to leverage for creating
   taskWrap (tw) extensions is now deprecated and you will see warnings. See https://trailblazer.to/2.1/docs/activity.html#activity-taskwrap-extension
 * Replace `TaskWrap::Extension()` with `TaskWrap::Extension.WrapStatic()` as a consistent interface for creating tW extensions at compile-time.
-* Move `VariableMapping` to the `trailblazer-activity-dsl-linear` gem.
 * Remove `Insert.find`.
-* Move `Pipeline.prepend` to the `trailblazer-activity-linear-dsl` gem.
 * Rename `Activity::State::Config` to `Activity::Config`.
+* Move `VariableMapping` to the `trailblazer-activity-dsl-linear` gem.
+* Move `Pipeline.prepend` to the `trailblazer-activity-linear-dsl` gem.
 
 # 0.13.0
 
