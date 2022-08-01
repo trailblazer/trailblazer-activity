@@ -54,16 +54,18 @@ module Trailblazer
         Schema    = Trailblazer::Activity::Schema
         TaskWrap  = Trailblazer::Activity::TaskWrap
 
+        # `:seq` is always passed into ctx.
         # @param :seq String What the {:seq} variable in the result ctx looks like. (expected seq)
-        def assert_call(activity, terminus: :success, seq: "[]", **ctx_variables)
+        # @param :expected_ctx_variables Variables that are added during the call by the asserted activity.
+        def assert_call(activity, terminus: :success, seq: "[]", expected_ctx_variables: {}, **ctx_variables)
           # Call without taskWrap!
           signal, (ctx, _) = activity.([{seq: [], **ctx_variables}, _flow_options = {}]) # simply call the activity with the input you want to assert.
 
-          assert_call_for(signal, ctx, terminus: terminus, seq: seq, **ctx_variables)
+          assert_call_for(signal, ctx, terminus: terminus, seq: seq, **expected_ctx_variables, **ctx_variables)
         end
 
         # Use {TaskWrap.invoke} to call the activity.
-        def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, **ctx_variables) # DISCUSS: only for {activity} gem?
+        def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, expected_ctx_variables: {}, **ctx_variables) # DISCUSS: only for {activity} gem?
           signal, (ctx, _flow_options) = TaskWrap.invoke(
             activity,
             [
@@ -73,11 +75,11 @@ module Trailblazer
             **circuit_options
           )
 
-          assert_call_for(signal, ctx, terminus: terminus, seq: seq, **ctx_variables)
+          assert_call_for(signal, ctx, terminus: terminus, seq: seq, **ctx_variables, **expected_ctx_variables) # DISCUSS: ordering of variables?
         end
 
         def assert_call_for(signal, ctx, terminus: :success, seq: "[]", **ctx_variables)
-          assert_equal signal.to_h[:semantic], terminus, "assert_call expected #{terminus} terminus, not #{signal}. Use assert_call(activity, terminus: #{signal.to_h[:semantic]})"
+          assert_equal signal.to_h[:semantic], terminus, "assert_call expected #{terminus} terminus, not #{signal}. Use assert_call(activity, terminus: #{signal.to_h[:semantic].inspect})"
 
           assert_equal ctx.inspect, {seq: "%%%"}.merge(ctx_variables).inspect.sub('"%%%"', seq)
         end
@@ -95,25 +97,27 @@ module Trailblazer
           Implementing
         end
 
-        def flat_activity
+        def flat_activity(implementing: Implementing)
           return @_flat_activity if defined?(@_flat_activity)
 
           intermediate = Inter.new(
             {
               Inter::TaskRef("Start.default")      => [Inter::Out(:success, :B)],
-              Inter::TaskRef(:B, additional: true) => [Inter::Out(:success, :C)],
+              Inter::TaskRef(:B, additional: true) => [Inter::Out(:success, :C), Inter::Out(:failure, "End.failure")],
               Inter::TaskRef(:C)                   => [Inter::Out(:success, "End.success")],
-              Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+              Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)],
+              Inter::TaskRef("End.failure", stop_event: true) => [Inter::Out(:failure, nil)],
             },
-            ["End.success"],
+            ["End.success", "End.failure"],
             ["Start.default"], # start
           )
 
           implementation = {
             "Start.default" => Schema::Implementation::Task(st = Implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
-            :B => Schema::Implementation::Task(b = Implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  []),
-            :C => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  []),
+            :B => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success), Activity::Output(Activity::Left, :failure)],                  []),
+            :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  []),
             "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
+            "End.failure" => Schema::Implementation::Task(Implementing::Failure, [Activity::Output(Implementing::Failure, :failure)], []), # DISCUSS: End has one Output, signal is itself?
           }
 
           schema = Inter.(intermediate, implementation)
