@@ -9,6 +9,7 @@
 * Rename `Activity::State::Config` to `Activity::Config`.
 * Move `VariableMapping` to the `trailblazer-activity-dsl-linear` gem.
 * Move `Pipeline.prepend` to the `trailblazer-activity-linear-dsl` gem.
+* Add `Testing#assert_call` as a consistent test implementation. (0.14.0.beta2)
 
 # 0.13.0
 
