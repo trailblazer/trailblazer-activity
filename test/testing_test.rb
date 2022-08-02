@@ -8,6 +8,15 @@ class TestingTest < Minitest::Spec
     end
   end
 
+  class Test < Minitest::Spec
+    def call
+      run
+      @failures
+    end
+
+    include Trailblazer::Activity::Testing::Assertions
+  end
+
   it "what" do
     assert_equal T.render_task(TestingTest.method(:model)), %{#<Method: TestingTest.model>}
     assert_equal T.render_task(:model), %{model}
@@ -17,35 +26,120 @@ class TestingTest < Minitest::Spec
 
 
   it "#assert_call" do
-    implemeting = T.def_tasks(:b, :c)
+    test = Class.new(Test) do
+      let(:activity) { flat_activity(implementing: T.def_tasks(:b, :c)) }
 
-    activity = flat_activity(implementing: implementing)
+    #0001
+      #@ {:seq} specifies expected `ctx[:seq]`.
+      it { assert_call activity, seq: "[:b, :c]" }
 
-    #@ {:seq} specifies expected `ctx[:seq]`.
-    assert_call activity, seq: "[:b, :c]"
-    #@ allows {:terminus}
-    assert_call activity, seq: "[:b]", terminus: :failure, b: Trailblazer::Activity::Left
+    #0002
+      #@ allows {:terminus}
+      it { assert_call activity, seq: "[:b]", terminus: :failure, b: Trailblazer::Activity::Left }
 
-    # assert_raises do
+    #0003
+      #@ when specifying wrong {:terminus} you get an error
+      it { assert_call activity, seq: "[:b]", terminus: :not_right, b: Trailblazer::Activity::Left }
 
-    #   assert_call activity, seq: "[:b]", terminus: :not_right, b: Trailblazer::Activity::Left
-    # end
-  end
+    #0004
+      #@ when specifying wrong {:seq} you get an error
+      it { assert_call activity, seq: "[:xxxxxx]" }
 
-  it "what" do
-    implementing = Module.new do
-      extend T.def_tasks(:c)
+    #0005
+      #@ {#assert_call} returns ctx
+      it {
+        ctx = assert_call activity, seq: "[:b, :c]"
+        assert_equal ctx.inspect, %{{:seq=>[:b, :c]}}
+      }
 
-      # b step adding additional ctx variables.
-      def self.b((ctx, flow_options), **)
-        ctx[:from_b] = "hello, from b!"
-        return Trailblazer::Activity::Right, [ctx, flow_options]
-      end
+    #0006
+      #@ {#assert_call} allows injecting {**ctx_variables}.
+      it {
+        ctx = assert_call activity, seq: "[:b, :c]", current_user: Module
+        assert_equal ctx.inspect, %{{:seq=>[:b, :c], :current_user=>Module}}
+      }
     end
 
-    activity = flat_activity(implementing: implementing)
+    test_case = test.new(:test_0001_anonymous)
+    failures = test_case.()
+    assert_equal failures.size, 0
 
-    #@ we can provide additional {:expected_ctx_variables}.
-    assert_call activity, seq: "[:c]", expected_ctx_variables: {from_b: "hello, from b!"}
+    test_case = test.new(:test_0002_anonymous)
+    failures = test_case.()
+    assert_equal failures.size, 0
+
+    test_case = test.new(:test_0003_anonymous)
+    failures = test_case.()
+
+    failures[0].inspect.must_equal %{#<Minitest::Assertion: assert_call expected not_right terminus, not #<Trailblazer::Activity::End semantic=:failure>. Use assert_call(activity, terminus: :failure).
+Expected: :not_right
+  Actual: :failure>}
+
+    assert_equal 1, failures.size
+
+    test_case = test.new(:test_0004_anonymous)
+    failures = test_case.()
+
+    failures[0].inspect.must_equal %{#<Minitest::Assertion: --- expected
++++ actual
+@@ -1,3 +1,3 @@
+ # encoding: US-ASCII
+ #    valid: true
+-\"{:seq=>[:xxxxxx]}\"
++\"{:seq=>[:b, :c]}\"
+>}
+
+    assert_equal 1, failures.size
+
+    test_case = test.new(:test_0005_anonymous)
+    failures = test_case.()
+    assert_equal failures.size, 0
+
+    test_case = test.new(:test_0006_anonymous)
+    failures = test_case.()
+    assert_equal failures.size, 0
   end
+
+  it "{:expected_ctx_variables}" do
+    test = Class.new(Test) do
+      let(:activity) do
+        implementing = Module.new do
+          extend T.def_tasks(:c)
+
+          # b step adding additional ctx variables.
+          def self.b((ctx, flow_options), **)
+            ctx[:from_b] = "hello, from b!"
+            return Trailblazer::Activity::Right, [ctx, flow_options]
+          end
+        end
+
+        activity = flat_activity(implementing: implementing)
+      end
+
+    #0001
+      #@ we can provide additional {:expected_ctx_variables}.
+      it { assert_call activity, seq: "[:c]", expected_ctx_variables: {from_b: "hello, from b!"} }
+
+    #0002
+      #@ wrong {:expected_ctx_variables} fails
+      it { assert_call activity, seq: "[:c]", expected_ctx_variables: {from_b: "hello, absolutely not from b!"} }
+    end
+
+    test_case = test.new(:test_0001_anonymous)
+    failures = test_case.()
+    assert_equal failures.size, 0
+
+    test_case = test.new(:test_0002_anonymous)
+    failures = test_case.()
+
+    failures[0].inspect.must_equal %{#<Minitest::Assertion: --- expected
++++ actual
+@@ -1,3 +1,3 @@
+ # encoding: US-ASCII
+ #    valid: true
+-\"{:seq=>[:c], :from_b=>\\\"hello, absolutely not from b!\\\"}\"
++\"{:seq=>[:c], :from_b=>\\\"hello, from b!\\\"}\"
+>}
+  end
+
 end
