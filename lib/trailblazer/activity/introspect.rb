@@ -44,14 +44,14 @@ module Trailblazer
         end
 
         def node_for(node_attributes)
-          Node(node_attributes.task, node_attributes.id, node_attributes.outputs, outgoings_for(node_attributes), node_attributes.data)
+          Node(node_attributes.task, node_attributes.id, node_attributes.outputs, outgoings_for(node_attributes), node_attributes.data, @activity)
         end
 
         def Node(*args)
           Node.new(*args).freeze
         end
 
-        Node     = Struct.new(:task, :id, :outputs, :outgoings, :data)
+        Node     = Struct.new(:task, :id, :outputs, :outgoings, :data, :activity)
         Outgoing = Struct.new(:output, :task)
 
         def outgoings_for(node)

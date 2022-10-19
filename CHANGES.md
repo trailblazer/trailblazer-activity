@@ -1,3 +1,7 @@
+# 0.14.1
+
+* Add `Node[:activity]` field to access the activity that contains the task.
+
 # 0.14.0
 
 * Remove `Pipeline.insert_before` and friends. Pipeline is now altered using ADDS mechanics, just

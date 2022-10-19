@@ -11,6 +11,7 @@ class IntrospectionTest < Minitest::Spec
       it { expect(node[:task]).must_equal implementing.method(:b) }
       it { expect(node[:outgoings].inspect).must_equal(%{[#<struct Trailblazer::Activity::Introspect::Graph::Outgoing output=#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Right, semantic=:success>, task=#{bc.inspect}>]}) }
       it { expect(node[:data].inspect).must_equal %{{:more=>true}} }
+      it { assert_equal node[:activity], nested_activity } # TODO: document.
 
       describe "with Start.default" do
         let(:node) { graph.find("Start.default") }
