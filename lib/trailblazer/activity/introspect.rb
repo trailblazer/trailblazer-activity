@@ -1,8 +1,9 @@
 module Trailblazer
   class Activity
     # The Introspect API provides inflections for `Activity` instances.
-    # It abstracts internals about circuits and provides a convenient API to third-parties such as
-    # tracing, rendering an activity, or finding particular tasks.
+    #
+    # It abstracts internals about circuits and provides a convenient API to third-parties
+    # such as tracing, rendering an activity, or finding particular tasks.
     module Introspect
       # TODO: order of step/fail/pass in Node would be cool to have
 
@@ -43,8 +44,16 @@ module Trailblazer
           node_for(existing)
         end
 
+        # Build a {Graph::Node} with outputs etc.
         def node_for(node_attributes)
-          Node(node_attributes.task, node_attributes.id, node_attributes.outputs, outgoings_for(node_attributes), node_attributes.data, @activity)
+          Node(
+            node_attributes.task,
+            node_attributes.id,
+            node_attributes.outputs, # [#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Right, semantic=:success>]
+            outgoings_for(node_attributes),
+            node_attributes.data,
+            @activity
+          )
         end
 
         def Node(*args)
