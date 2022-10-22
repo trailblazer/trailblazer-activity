@@ -71,23 +71,23 @@ class TestingTest < Minitest::Spec
     test_case = test.new(:test_0003_anonymous)
     failures = test_case.()
 
-    failures[0].inspect.must_equal %{#<Minitest::Assertion: assert_call expected not_right terminus, not #<Trailblazer::Activity::End semantic=:failure>. Use assert_call(activity, terminus: :failure).
+    failures[0].message.must_equal %{assert_call expected not_right terminus, not #<Trailblazer::Activity::End semantic=:failure>. Use assert_call(activity, terminus: :failure).
 Expected: :not_right
-  Actual: :failure>}
+  Actual: :failure}
 
     assert_equal 1, failures.size
 
     test_case = test.new(:test_0004_anonymous)
     failures = test_case.()
 
-    failures[0].inspect.must_equal %{#<Minitest::Assertion: --- expected
+    failures[0].message.must_equal %{--- expected
 +++ actual
 @@ -1,3 +1,3 @@
  # encoding: US-ASCII
  #    valid: true
 -\"{:seq=>[:xxxxxx]}\"
 +\"{:seq=>[:b, :c]}\"
->}
+}
 
     assert_equal 1, failures.size
 
