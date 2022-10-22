@@ -14,7 +14,7 @@ module Trailblazer
       # An {Extension} can be used for {:wrap_runtime}. It expects a collection of
       # "friendly interface" arrays.
       #
-      #   TaskWrap.Extension([ [task, id: "my_logger", append: "task_wrap.call_task"] ])
+      #   TaskWrap.Extension([task, id: "my_logger", append: "task_wrap.call_task"], [...])
       #
       # If you want a {wrap_static} extension, wrap it using `Extension.WrapStatic.new`.
       def self.Extension(*inserts, merge: nil)

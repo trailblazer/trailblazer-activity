@@ -2,6 +2,18 @@ require "test_helper"
 
 # Test taskWrap concepts along with {Instance}s.
 class TaskWrapTest < Minitest::Spec
+  def add_1(wrap_ctx, original_args)
+    ctx, = original_args[0]
+    ctx[:seq] << 1
+    return wrap_ctx, original_args # yay to mutable state. not.
+  end
+
+  def add_2(wrap_ctx, original_args)
+    ctx, = original_args[0]
+    ctx[:seq] << 2
+    return wrap_ctx, original_args # yay to mutable state. not.
+  end
+
   def abc_intermediate
     intermediate = Inter.new(
       {
@@ -27,6 +39,7 @@ class TaskWrapTest < Minitest::Spec
   end
 
 #@ new extension API for runtime.
+#@ friendly Interface tests.
   it "{Extension()} can be used as runtime extension" do
     abc_implementation, _es = abc_implementation()
     schema                  = Inter.(abc_intermediate, abc_implementation)
@@ -53,6 +66,16 @@ class TaskWrapTest < Minitest::Spec
     wrap_runtime = {c => c_ext}
 
     assert_invoke Activity.new(schema), seq: "[:a, :b, 2, 1, :c, 2, 1]", circuit_options: {wrap_runtime: wrap_runtime}
+
+  #@ test: {append: nil} appends to very end
+    c_ext = TaskWrap.Extension(
+      [method(:add_2), id: "user.add_2", append: "task_wrap.call_task"],
+      [method(:add_1), id: "user.add_1", append: nil],
+    )
+
+    wrap_runtime = {c => c_ext}
+
+    assert_invoke Activity.new(schema), seq: "[:a, :b, :c, 2, 1]", circuit_options: {wrap_runtime: wrap_runtime}
   end
 
   it "populates activity[:wrap_static] and uses it at run-time" do

@@ -29,19 +29,6 @@ Minitest::Spec.class_eval do
     end
   end
 
-  # taskWrap tester :)
-  def add_1(wrap_ctx, original_args)
-    ctx, = original_args[0]
-    ctx[:seq] << 1
-    return wrap_ctx, original_args # yay to mutable state. not.
-  end
-
-  def add_2(wrap_ctx, original_args)
-    ctx, = original_args[0]
-    ctx[:seq] << 2
-    return wrap_ctx, original_args # yay to mutable state. not.
-  end
-
   require "trailblazer/activity/testing"
   include Trailblazer::Activity::Testing::Assertions
 end

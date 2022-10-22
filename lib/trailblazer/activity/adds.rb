@@ -44,8 +44,9 @@ module Trailblazer
           end
 
           # @private
-          def self.build_adds(task, id:, prepend: "task_wrap.call_task", append: nil)
-            insert, insert_id = append ? [:Append, append] : [:Prepend, prepend]
+          def self.build_adds(task, id:, prepend: "task_wrap.call_task", append: false)
+            insert, insert_id =
+              append === false ? [:Prepend, prepend] : [:Append, append]
 
             {
               insert: [Activity::Adds::Insert.method(insert), insert_id],

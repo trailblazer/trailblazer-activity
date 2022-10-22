@@ -1,6 +1,8 @@
 # 0.14.1
 
-* Add `Node[:activity]` field to access the activity that contains the task.
+* Add `Graph::Node[:activity]` field to access the activity that contains the task.
+* Allow `append: nil` for friendly interface: `TaskWrap.Extension([method(:add_1), id: "user.add_1", append: nil])`.
+  This will append the step to the end of the pipeline.
 
 # 0.14.0
 
