@@ -19,9 +19,7 @@ module Trailblazer
         circuit_options = circuit_options.merge(
           runner:       TaskWrap::Runner,
           wrap_runtime: wrap_runtime,
-          # This {:activity} structure is currently (?) only needed in {TaskWrap.wrap_static_for}, where we
-          # access {activity[:wrap_static]} to compile the effective taskWrap.
-          activity:     {wrap_static: {activity => wrap_static}, nodes: {}}, # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
+          activity:     container_activity_for(activity, wrap_static), # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
         )
 
         # signal, (ctx, flow), circuit_options =
@@ -34,6 +32,19 @@ module Trailblazer
 
       def initial_wrap_static(*)
         Pipeline.new([Pipeline.Row("task_wrap.call_task", TaskWrap.method(:call_task))])
+      end
+
+      # This is the top-most "activity" that hosts the actual activity being run.
+      # The data structure is used in {TaskWrap.wrap_static_for}, where we
+      # access {activity[:wrap_static]} to compile the effective taskWrap.
+      #
+      # It's also needed in Trace/Introspect and mimicks the host containing the actual activity.
+      def container_activity_for(activity, wrap_static)
+        {
+          wrap_static:  {activity => wrap_static},
+          circuit:      {map: {activity => []}}, # TODO: this is needed in Introspect, maybe we can avoid setting this.
+          nodes:        [Activity::NodeAttributes.new(activity.inspect, [], activity, {})]
+        }
       end
     end # TaskWrap
   end
