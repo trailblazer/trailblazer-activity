@@ -10,7 +10,7 @@ module Trailblazer
     def call(args, **circuit_options)
       @schema[:circuit].(
         args,
-        **(circuit_options.merge(activity: self))
+        **circuit_options.merge(activity: self)
       )
     end
 
