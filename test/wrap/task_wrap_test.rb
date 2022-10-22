@@ -150,6 +150,15 @@ class TaskWrapTest < Minitest::Spec
     assert_invoke Activity.new(outer_schema), seq: "[:b, :c, :a, :b, :c, :c]", start_at: implementing.method(:b)
   end
 
+  def change_start_task(wrap_ctx, original_args)
+    (ctx, flow_options), circuit_options = original_args
+
+    circuit_options = circuit_options.merge(start_task: ctx[:start_at])
+    original_args   = [[ctx, flow_options], circuit_options]
+
+    return wrap_ctx, original_args # yay to mutable state. not.
+  end
+
   it "deprecates Pipeline.method(:insert) and friends" do
     merge = nil
     out, err = capture_io do
@@ -201,15 +210,5 @@ Please update to the new TaskWrap.Extension() API: # FIXME !!!!!
 }
 
     assert_invoke(Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime})
-  end
-
-  def change_start_task(wrap_ctx, original_args)
-    (ctx, flow_options), circuit_options = original_args
-
-    circuit_options = circuit_options.merge(start_task: ctx[:start_at])
-
-    original_args = [[ctx, flow_options], circuit_options]
-
-    return wrap_ctx, original_args # yay to mutable state. not.
   end
 end
