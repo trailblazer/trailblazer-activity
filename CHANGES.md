@@ -3,8 +3,6 @@
 * Add `Graph::Node[:activity]` field to access the activity that contains the task.
 * Allow `append: nil` for friendly interface: `TaskWrap.Extension([method(:add_1), id: "user.add_1", append: nil])`.
   This will append the step to the end of the pipeline.
-* In `TaskWrap.invoke` we now provide the container activity (the one "hosting" the actually executed activity)
-  in a way that it complies with `Introspect::Graph` requirements.
 
 # 0.14.0
 

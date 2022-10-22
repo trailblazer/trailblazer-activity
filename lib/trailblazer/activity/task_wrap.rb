@@ -42,8 +42,6 @@ module Trailblazer
       def container_activity_for(activity, wrap_static)
         {
           wrap_static:  {activity => wrap_static},
-          circuit:      {map: {activity => []}}, # TODO: this is needed in Introspect, maybe we can avoid setting this.
-          nodes:        [Activity::NodeAttributes.new(activity.inspect, [], activity, {})]
         }
       end
     end # TaskWrap
