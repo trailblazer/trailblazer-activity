@@ -132,14 +132,14 @@ Expected: :not_right
     test_case = test.new(:test_0002_anonymous)
     failures = test_case.()
 
-    failures[0].inspect.must_equal %{#<Minitest::Assertion: --- expected
+    failures[0].message.must_equal %{--- expected
 +++ actual
 @@ -1,3 +1,3 @@
  # encoding: US-ASCII
  #    valid: true
 -\"{:seq=>[:c], :from_b=>\\\"hello, absolutely not from b!\\\"}\"
 +\"{:seq=>[:c], :from_b=>\\\"hello, from b!\\\"}\"
->}
+}
   end
 
 end
