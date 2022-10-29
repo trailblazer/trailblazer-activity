@@ -1,7 +1,12 @@
 # 0.14.1
 
+* Remove the `:wrap_static` keyword argument for `TaskWrap.invoke` and replace it with `:container_activity`.
+* Make `TaskWrap.initial_wrap_static` return `INITIAL_TASK_WRAP` instead of recompiling it for every `invoke`.
 * Add `Graph::Node[:activity]` field to access the activity that contains the task.
-* Allow `append: nil` for friendly interface: `TaskWrap.Extension([method(:add_1), id: "user.add_1", append: nil])`.
+* Allow `append: nil` for friendly interface.
+  ```ruby
+  TaskWrap.Extension([method(:add_1), id: "user.add_1", append: nil])`.
+  ```
   This will append the step to the end of the pipeline.
 
 # 0.14.0
