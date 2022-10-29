@@ -76,6 +76,20 @@ module Trailblazer
         Graph.new(*args)
       end
 
+      # @private
+      def self.find_path(activity, segments)
+        node = nil
+        last_activity = nil
+
+        segments.each do |segment| # TODO: use logic from Activity/patch.
+          node          = Trailblazer::Activity::Introspect.Graph(activity).find(segment) or return
+          last_activity = activity
+          activity      = node.task
+        end
+
+        return node, last_activity
+      end
+
       def self.render_task(proc)
         if proc.is_a?(Method)
 

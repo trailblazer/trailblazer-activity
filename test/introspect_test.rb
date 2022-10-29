@@ -1,6 +1,28 @@
 require "test_helper"
 
 class IntrospectionTest < Minitest::Spec
+  describe "Introspect.find_path" do
+    it "#find_path" do
+      b_activity = nested_activity() # [B, [B, C], E]
+      activity   = nested_activity(flat_activity: b_activity, d_id: :Delete) # [B, Delete=[B, D=[B, C], E], E]
+
+      #@ one element path
+      node, host_activity = Trailblazer::Activity::Introspect.find_path(activity, [:E])
+      assert_equal node.class, Trailblazer::Activity::Introspect::Graph::Node
+      assert_equal node.task, Implementing.method(:f)
+      assert_equal host_activity, activity
+
+      #@ multiple elements
+      node, host_activity = Trailblazer::Activity::Introspect.find_path(activity, [:Delete, :D, :C])
+      assert_equal node.class, Trailblazer::Activity::Introspect::Graph::Node
+      assert_equal node.task, Implementing.method(:c)
+      assert_equal host_activity, flat_activity
+
+      assert_nil Trailblazer::Activity::Introspect.find_path(activity, [:c])
+      assert_nil Trailblazer::Activity::Introspect.find_path(activity, [:Delete, :c])
+    end
+  end
+
   describe "Introspect::Graph" do
     let(:graph) { Activity::Introspect::Graph(nested_activity) }
 

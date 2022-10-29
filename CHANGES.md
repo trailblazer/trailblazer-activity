@@ -7,6 +7,9 @@
   TaskWrap.Extension([method(:add_1), id: "user.add_1", append: nil])`.
   ```
   This will append the step to the end of the pipeline.
+* Add `Introspect.find_path` to retrieve a `Graph::Node` and its hosting activity from a deeply nested setup.
+* Add `:flat_activity` keyword argument to `Testing.nested_activity`, so you can inject any activity for `:D`.
+  Also, allow to change `:D`'s ID with the `:d_id` option.
 
 # 0.14.0
 
