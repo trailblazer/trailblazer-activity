@@ -22,6 +22,11 @@ module Trailblazer
           find_with_block(&block)
         end
 
+        def [](task)
+          find_with_block { |node| node[:task] == task }
+        end
+
+        # TODO: convert to {#to_a}.
         def collect(strategy: :circuit)
           @map.keys.each_with_index.collect { |task, i| yield find_with_block { |node| node.task == task }, i }
         end

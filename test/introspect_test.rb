@@ -53,6 +53,11 @@ class IntrospectionTest < Minitest::Spec
         it { expect(node[:task]).must_equal implementing.method(:b) }
         it { assert_outputs(node, success: Activity::Right) }
       end
+
+      describe "#[]" do
+        let(:node) { graph[Implementing.method(:b)] }
+        it { assert_equal node, graph.find(:B) }
+      end
     end
 
     describe "#collect" do
