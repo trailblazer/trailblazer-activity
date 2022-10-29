@@ -94,7 +94,7 @@ module Trailblazer
           Success = Activity::End(:success)
         end
 
-        # TODO: Remove this once all it's references are removed
+        # TODO: Remove this once all its references are removed
         def implementing
           Implementing
         end
@@ -127,14 +127,13 @@ module Trailblazer
           @_flat_activity = Activity.new(schema)
         end
 
-        def nested_activity
-          return @_nested_activity if defined?(@_nested_activity)
-
+# FIXME: why is this in Testing? We don't need this anywhere but in this gem.
+        def nested_activity(flat_activity: bc, d_id: :D)
           intermediate = Inter.new(
             {
               Inter::TaskRef("Start.default") => [Inter::Out(:success, :B)],
-              Inter::TaskRef(:B, more: true)  => [Inter::Out(:success, :D)],
-              Inter::TaskRef(:D) => [Inter::Out(:success, :E)],
+              Inter::TaskRef(:B, more: true)  => [Inter::Out(:success, d_id)],
+              Inter::TaskRef(d_id) => [Inter::Out(:success, :E)],
               Inter::TaskRef(:E) => [Inter::Out(:success, "End.success")],
               Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
             },
@@ -145,14 +144,14 @@ module Trailblazer
           implementation = {
             "Start.default" => Schema::Implementation::Task(st = Implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
             :B => Schema::Implementation::Task(b = Implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  []),
-            :D => Schema::Implementation::Task(c = bc, [Activity::Output(Implementing::Success, :success)],                  []),
+            d_id => Schema::Implementation::Task(flat_activity, [Activity::Output(Implementing::Success, :success)],                  []),
             :E => Schema::Implementation::Task(e = Implementing.method(:f), [Activity::Output(Activity::Right, :success)],                  []),
             "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
           }
 
           schema = Inter.(intermediate, implementation)
 
-          @_nested_activity = Activity.new(schema)
+          Activity.new(schema)
         end
 
         alias_method :bc, :flat_activity
