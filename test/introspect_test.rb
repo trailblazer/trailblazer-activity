@@ -7,16 +7,21 @@ class IntrospectionTest < Minitest::Spec
       activity   = nested_activity(flat_activity: b_activity, d_id: :Delete) # [B, Delete=[B, D=[B, C], E], E]
 
       #@ one element path
-      node, host_activity = Trailblazer::Activity::Introspect.find_path(activity, [:E])
+      node, host_activity, graph = Trailblazer::Activity::Introspect.find_path(activity, [:E])
       assert_equal node.class, Trailblazer::Activity::Introspect::Graph::Node
       assert_equal node.task, Implementing.method(:f)
       assert_equal host_activity, activity
+      assert_equal graph.stop_events, Trailblazer::Activity::Introspect.Graph(activity).stop_events
 
       #@ multiple elements
-      node, host_activity = Trailblazer::Activity::Introspect.find_path(activity, [:Delete, :D, :C])
+      node, host_activity, _graph = Trailblazer::Activity::Introspect.find_path(activity, [:Delete, :D, :C])
       assert_equal node.class, Trailblazer::Activity::Introspect::Graph::Node
       assert_equal node.task, Implementing.method(:c)
       assert_equal host_activity, flat_activity
+      assert_equal _graph.stop_events, Trailblazer::Activity::Introspect.Graph(flat_activity).stop_events
+
+      # TODO: remove this test once we know how to assert graph identity.
+      assert _graph.stop_events != graph.stop_events
 
       assert_nil Trailblazer::Activity::Introspect.find_path(activity, [:c])
       assert_nil Trailblazer::Activity::Introspect.find_path(activity, [:Delete, :c])
