@@ -10,7 +10,6 @@ module Trailblazer
       # @private This API is still under construction.
       class Graph
         def initialize(activity)
-          @activity = activity
           @schema   = activity.to_h or raise
           @circuit  = @schema[:circuit]
           @map      = @circuit.to_h[:map]
@@ -52,7 +51,6 @@ module Trailblazer
             node_attributes.outputs, # [#<struct Trailblazer::Activity::Output signal=Trailblazer::Activity::Right, semantic=:success>]
             outgoings_for(node_attributes),
             node_attributes.data,
-            @activity
           )
         end
 
