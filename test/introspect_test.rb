@@ -6,6 +6,14 @@ class IntrospectionTest < Minitest::Spec
       b_activity = nested_activity() # [B, [B, C], E]
       activity   = nested_activity(flat_activity: b_activity, d_id: :Delete) # [B, Delete=[B, D=[B, C], E], E]
 
+      #@ find top-activity which returns a special Node.
+      node, host_activity, graph = Trailblazer::Activity::Introspect.find_path(activity, [])
+      assert_equal node.class, Trailblazer::Activity::Introspect::Graph::Node
+      assert_equal node.task, activity
+      assert_equal host_activity, Trailblazer::Activity::TaskWrap.container_activity_for(activity)
+      # assert_equal graph.stop_events, Trailblazer::Activity::Introspect.Graph(activity).stop_events
+
+
       #@ one element path
       node, host_activity, graph = Trailblazer::Activity::Introspect.find_path(activity, [:E])
       assert_equal node.class, Trailblazer::Activity::Introspect::Graph::Node

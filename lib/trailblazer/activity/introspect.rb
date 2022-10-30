@@ -63,7 +63,7 @@ module Trailblazer
           Node.new(*args).freeze
         end
 
-        Node     = Struct.new(:task, :id, :outputs, :outgoings, :data, :activity)
+        Node     = Struct.new(:task, :id, :outputs, :outgoings, :data)
         Outgoing = Struct.new(:output, :task)
 
         def outgoings_for(node)
@@ -83,9 +83,10 @@ module Trailblazer
 
       # @private
       def self.find_path(activity, segments)
-        node = nil
-        last_graph, last_activity = nil, nil
+        raise ArgumentError.new(%{[Trailblazer] Please pass #{activity}.to_h[:activity] into #find_path.}) unless activity.kind_of?(Trailblazer::Activity)
 
+        node                      = Graph::Node.new(activity, nil, [], [], {}) # DISCUSS: outgoings should be separate Node class.
+        last_graph, last_activity = nil, TaskWrap.container_activity_for(activity) # needed for empty/root path
 
         segments.each do |segment|
           graph         = Introspect.Graph(activity)
