@@ -25,7 +25,7 @@ module Trailblazer
         # that can be used directly in a {Circuit}.
         # We expect {task} to be exposing an {Option()} interface when calling it.
         class Step
-          def initialize(task, user_proc)
+          def initialize(task, user_proc, **)
             @task            = task
             @user_proc       = user_proc
           end

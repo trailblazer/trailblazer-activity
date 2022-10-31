@@ -1,6 +1,6 @@
 require "test_helper"
 
-class TaskBuilderTest < Minitest::Spec
+class TaskAdapterTest < Minitest::Spec
   describe "#inspect" do
     it { assert_equal Activity::TaskBuilder.Binary(:imaproc).inspect, %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=imaproc>} }
 
