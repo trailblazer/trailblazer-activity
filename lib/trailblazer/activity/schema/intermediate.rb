@@ -22,6 +22,7 @@ class Trailblazer::Activity
         nodes   = node_attributes(intermediate, implementation)
         outputs = outputs(intermediate.stop_task_ids, nodes)
         config  = config(implementation, config: config)
+
         Schema.new(circuit, outputs, nodes, config)
       end
 
@@ -50,7 +51,7 @@ class Trailblazer::Activity
       # Compute the connections for {circuit_task}.
       def self.connections_for(outs, task_outputs, implementation)
         Hash[
-          outs.collect { |required_out|
+          outs.collect { |required_out| # Intermediate::Out, it's abstract.
             [
               for_semantic(task_outputs, required_out.semantic).signal,
               implementation.fetch(required_out.target).circuit_task
@@ -60,11 +61,12 @@ class Trailblazer::Activity
       end
 
       def self.node_attributes(intermediate, implementation)
-        intermediate.wiring.collect do |task_ref, outputs| # id, Task{circuit_task, outputs}
-          task = implementation.fetch(task_ref.id)
-          data = task_ref[:data] # TODO: allow adding data from implementation.
+        intermediate.wiring.collect do |task_ref, outputs|
+          id                  = task_ref.id
+          implementation_task = implementation.fetch(id)
+          data                = task_ref[:data] # TODO: allow adding data from implementation.
 
-          NodeAttributes.new(task_ref.id, task.outputs, task.circuit_task, data)
+          NodeAttributes.new(id, implementation_task.outputs, implementation_task.circuit_task, data)
         end
       end
 
