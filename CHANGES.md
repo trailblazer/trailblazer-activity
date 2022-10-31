@@ -1,4 +1,4 @@
-# 0.14.1
+# 0.15.0
 
 * Remove the `:wrap_static` keyword argument for `TaskWrap.invoke` and replace it with `:container_activity`.
 * Make `TaskWrap.initial_wrap_static` return `INITIAL_TASK_WRAP` instead of recompiling it for every `invoke`.
@@ -11,6 +11,9 @@
 * Add `Introspect::Graph#[]` to retrieve nodes by task.
 * Add `:flat_activity` keyword argument to `Testing.nested_activity`, so you can inject any activity for `:D`.
   Also, allow to change `:D`'s ID with the `:d_id` option.
+* Rename `Activity::TaskBuilder` to `Activity::Circuit::TaskAdapter` and `Taskbuilder::Task` is now `Circuit::TaskAdapter::Step`.
+* Introduce `Circuit::TaskAdapter::Step::AssignVariable` as a shortcut for running a user_proc as an `Option` and
+  then assigning its return value to a ctx variable.
 
 # 0.14.0
 

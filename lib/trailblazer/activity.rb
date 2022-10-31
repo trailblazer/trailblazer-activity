@@ -43,7 +43,7 @@ require "trailblazer/activity/task_wrap"
 require "trailblazer/activity/task_wrap/runner"
 require "trailblazer/activity/task_wrap/extension"
 require "trailblazer/activity/adds"
-require "trailblazer/activity/task_builder"
+require "trailblazer/activity/circuit/task_adapter"
 require "trailblazer/option"
 require "trailblazer/context"
 
