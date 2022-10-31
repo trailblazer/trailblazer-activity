@@ -5,20 +5,6 @@ class ActivityTest < Minitest::Spec
     expect(Trailblazer::Activity.new({}).inspect.gsub(/0x\w+/, "0x")).must_equal %{#<Trailblazer::Activity:0x>}
   end
 
-  it "empty Activity" do
-    skip
-    activity = Module.new do
-      extend Trailblazer::Activity::Path()
-    end
-
-    # puts Cct(activity.instance_variable_get(:@process))
-    expect(Cct(activity)).must_equal %{
-#<Start/:default>
- {Trailblazer::Activity::Right} => #<End/:success>
-#<End/:success>
-}
-  end
-
   it "can start with any task" do
     skip
     signal, (options,) = activity.([{}], start_task: L)
