@@ -24,7 +24,7 @@ module Trailblazer
 
       # @param args [Array] all arguments to be passed to the task's `call`
       # @param task [callable] task to call
-      Run = ->(task, args, **circuit_options) { task.(args, **circuit_options) }
+      Runner = ->(task, args, **circuit_options) { task.(args, **circuit_options) }
 
       # Runs the circuit until we hit a stop event.
       #
@@ -37,7 +37,7 @@ module Trailblazer
       # @return [last_signal, options, flow_options, *args]
       #
       # NOTE: returned circuit_options are discarded when calling the runner.
-      def call(args, start_task: @start_task, runner: Run, **circuit_options)
+      def call(args, start_task: @start_task, runner: Runner, **circuit_options)
         circuit_options = circuit_options.merge( runner: runner ).freeze # TODO: set the :runner option via arguments_for_call to save the merge?
         task            = start_task
 

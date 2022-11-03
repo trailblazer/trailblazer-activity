@@ -14,6 +14,7 @@
 * Rename `Activity::TaskBuilder` to `Activity::Circuit::TaskAdapter` and `Taskbuilder::Task` is now `Circuit::TaskAdapter::Step`.
 * Introduce `Circuit::TaskAdapter::Step::AssignVariable` as a shortcut for running a user_proc as an `Option` and
   then assigning its return value to a ctx variable.
+* Rename `Circuit::Run` to `Circuit::Runner` for consistency with `TaskWrap::Runner`.
 
 # 0.14.0
 
