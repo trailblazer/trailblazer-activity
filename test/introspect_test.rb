@@ -8,31 +8,46 @@ class IntrospectionTest < Minitest::Spec
 
       #@ find top-activity which returns a special Node.
       node, host_activity, graph = Trailblazer::Activity::Introspect.find_path(activity, [])
-      assert_equal node.class, Trailblazer::Activity::Introspect::Graph::Node
-      assert_equal node.task, activity
+      assert_equal node.class, Trailblazer::Activity::Introspect::TaskMap::TaskAttributes
+      assert_equal node[:task], activity
       assert_equal host_activity, Trailblazer::Activity::TaskWrap.container_activity_for(activity)
-      # assert_equal graph.stop_events, Trailblazer::Activity::Introspect.Graph(activity).stop_events
-
 
       #@ one element path
       node, host_activity, graph = Trailblazer::Activity::Introspect.find_path(activity, [:E])
-      assert_equal node.class, Trailblazer::Activity::Introspect::Graph::Node
-      assert_equal node.task, Implementing.method(:f)
+      assert_equal node.class, Trailblazer::Activity::Introspect::TaskMap::TaskAttributes
+      assert_equal node[:task], Implementing.method(:f)
       assert_equal host_activity, activity
-      assert_equal graph.stop_events, Trailblazer::Activity::Introspect.Graph(activity).stop_events
 
-      #@ multiple elements
+      #@ nested element
       node, host_activity, _graph = Trailblazer::Activity::Introspect.find_path(activity, [:Delete, :D, :C])
-      assert_equal node.class, Trailblazer::Activity::Introspect::Graph::Node
-      assert_equal node.task, Implementing.method(:c)
+      assert_equal node.class, Trailblazer::Activity::Introspect::TaskMap::TaskAttributes
+      assert_equal node[:task], Implementing.method(:c)
       assert_equal host_activity, flat_activity
-      assert_equal _graph.stop_events, Trailblazer::Activity::Introspect.Graph(flat_activity).stop_events
 
-      # TODO: remove this test once we know how to assert graph identity.
-      assert _graph.stop_events != graph.stop_events
-
+      #@ non-existent element
       assert_nil Trailblazer::Activity::Introspect.find_path(activity, [:c])
       assert_nil Trailblazer::Activity::Introspect.find_path(activity, [:Delete, :c])
+    end
+  end
+
+  describe "Introspect.TaskMap()" do
+    it "exposes Hash API" do
+      task_map = Activity::Introspect.TaskMap(flat_activity) # [B, C]
+
+    #@ #[] finds by task
+      attributes = task_map[Implementing.method(:b)]
+      assert_equal attributes[:id],   :B
+      assert_equal attributes[:task], Implementing.method(:b)
+
+    #@ #fetch finds by task
+      assert_equal task_map.fetch(Implementing.method(:b))[:id], :B
+
+    #@ #find_by_id
+      # assert_equal task_map.find_by_id(:B)[:id], :B
+
+    #@ non-existent
+      assert_equal task_map[nil], nil
+      assert_raises KeyError do task_map.fetch(nil) end
     end
   end
 

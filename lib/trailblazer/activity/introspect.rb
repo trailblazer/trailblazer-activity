@@ -5,6 +5,29 @@ module Trailblazer
     # It abstracts internals about circuits and provides a convenient API to third-parties
     # such as tracing, rendering an activity, or finding particular tasks.
     module Introspect
+      # A TaskMap maps {task} to {Task::Attributes} node. The latter contains the ID
+      # and possibly more fields.
+      # Part of the new introspect API, much simpler and faster.
+      def self.TaskMap(activity)
+        schema = activity.to_h
+        nodes  = schema[:nodes] # TODO: deprecate nodes and use a dedicated task_map here.
+
+        nodes.collect do |node_attributes|
+          [
+            task = node_attributes[:task],
+            TaskMap::TaskAttributes(id: node_attributes[:id], task: task)
+          ]
+        end.to_h.freeze
+      end
+
+      class TaskMap < Hash
+        TaskAttributes = Struct.new(:id, :task) # TODO: extend at some point.
+
+        def self.TaskAttributes(id:, task:)
+          TaskMap::TaskAttributes.new(id, task).freeze
+        end
+      end
+
       # TODO: order of step/fail/pass in Node would be cool to have
 
       # @private This API is still under construction.
@@ -85,20 +108,20 @@ module Trailblazer
       def self.find_path(activity, segments)
         raise ArgumentError.new(%{[Trailblazer] Please pass #{activity}.to_h[:activity] into #find_path.}) unless activity.kind_of?(Trailblazer::Activity)
 
-        node                      = Graph::Node.new(activity, nil, [], [], {}) # DISCUSS: outgoings should be separate Node class.
+        task_attributes           = TaskMap::TaskAttributes(id: nil, task: activity)
         last_graph, last_activity = nil, TaskWrap.container_activity_for(activity) # needed for empty/root path
 
         segments.each do |segment|
-          graph         = Introspect.Graph(activity)
-          node          = graph.find(segment) or return
+          task_map              = Introspect.TaskMap(activity)
+          task, task_attributes = (task_map.find { |task, attributes| attributes[:id] == segment } or return) # DISCUSS: should we abstract these internals of {TaskMap} in {find_by_id}?
 
           last_activity = activity
-          last_graph    = graph
+          last_graph    = task_map
 
-          activity      = node.task
+          activity      = task
         end
 
-        return node, last_activity, last_graph
+        return task_attributes, last_activity, last_graph
       end
 
       def self.render_task(proc)
