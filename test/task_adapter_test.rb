@@ -85,7 +85,7 @@ class TaskAdapterTest < Minitest::Spec
     line_number_for_binary = __LINE__ - 2
 
     lines = warning.split("\n")
-    lines[0] = lines[0][0..-5]
+    lines[0] = lines[0][0..-5] if lines[0] =~ /\d-\d+-\d/
     warning = lines.join("\n")
 
     assert_equal warning, %{NOTE: Trailblazer::Activity::TaskBuilder.Binary is deprecated; use Trailblazer::Activity::Circuit::TaskAdapter.for_step() instead. It will be removed on or after 2023-12
