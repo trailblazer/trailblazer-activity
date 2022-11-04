@@ -1,6 +1,12 @@
 module Trailblazer
   class Activity
-    class Circuit
+    #
+    # Circuit::Step:          Only translates the incoming circuit-interface to step-interface.
+    # Circuit::Step::Option:  Only translates the incoming circuit-interface to step-interface.
+    #                         Internally, call a Trailblazer::Option object.
+    # Circuit::TaskAdapter:   Uses Circuit::Step to translate incoming, and returns a circuit-interface
+    #                 compatible return set.
+    class Circuit# step and circuit_step are different!!
       def self.Step(callable_with_step_interface, option: false)
         if option
           return Step::Option.new(Trailblazer::Option(callable_with_step_interface), callable_with_step_interface)
@@ -10,16 +16,16 @@ module Trailblazer
       end
 
       # {Step#call} returns a return value. It is *not* circuit-interface compatible (by design).
-      class Step # DISCUSS: Will WE NEED/USE this anywhere? we normally wrap everything into an Option, anyway.
+      class Step
         def initialize(step, user_proc, **)
           @step            = step
           @user_proc       = user_proc
         end
 
-        # Execute the user step with TRB's kw args.
-        # {@step} is/implements {Trailblazer::Option} interface.
+        # Translate the circuit interface to the step's step-interface. However,
+        # this only translates the calling interface, not the returning.
         def call((ctx, flow_options), **circuit_options)
-          result = @step.call(ctx, **ctx.to_hash)
+          result = @step.(ctx, **ctx.to_hash)
           # in an immutable environment we should return the ctx from the step.
           return result, ctx
         end
@@ -38,15 +44,8 @@ module Trailblazer
         end
       end
 
-
-        # # Invoke the original {user_proc} that is wrapped in an {Option()}.
-        # private def call_option(step_with_option_interface, (ctx, _flow_options), **circuit_options)
-        #   step_with_option_interface.(ctx, keyword_arguments: ctx.to_hash, **circuit_options) # circuit_options contains :exec_context.
-        # end
-
-      # Always exposes circuit-interface.
-        # that can be used directly in a {Circuit}.
-      class Task
+      # Always exposes circuit-interface, a {TaskAdapter} instance can be used directly in a {Circuit}.
+      class TaskAdapter
         def self.for_step(step, binary: true, **options_for_step)
           circuit_step = Circuit.Step(step, **options_for_step)
 
@@ -56,29 +55,19 @@ module Trailblazer
         # @param circuit_step Exposes a Circuit::Step.call([ctx, flow_options], **circuit_options) interface
         def initialize(circuit_step, **)
           @circuit_step = circuit_step
-          # @user_proc       = user_proc
         end
 
         def call((ctx, flow_options), **circuit_options)
           result, ctx = @circuit_step.([ctx, flow_options], **circuit_options)
 
           # Return an appropriate signal which direction to go next.
-          signal = Task.binary_signal_for(result, Activity::Right, Activity::Left)
+          signal = TaskAdapter.binary_signal_for(result, Activity::Right, Activity::Left)
 
           return signal, [ctx, flow_options]
         end
 
-        # every step is wrapped by this proc/decider. this is executed in the circuit as the actual task.
-        # Step calls step.(options, **options, flow_options)
-        # Output signal binary: true=>Right, false=>Left.
-        # Passes through all subclasses of Direction.~~~~~~~~~~~~~~~~~
-
-        def self.Binary(user_proc, adapter_class: Step, **options)
-raise "implement me for compat"
-        end
-
         # Translates the return value of the user step into a valid signal.
-        # Note that it passes through subclasses of {Signal}.
+        # Note that it passes through subclasses of {Activity::Signal}.
         def self.binary_signal_for(result, on_true, on_false)
           if result.is_a?(Class) && result < Activity::Signal
             result
@@ -88,7 +77,9 @@ raise "implement me for compat"
         end
 
         def inspect # TODO: make me private!
-          %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{Trailblazer::Activity::Introspect.render_task(@user_proc)}>}
+          user_step = @circuit_step.instance_variable_get(:@user_proc) # DISCUSS: to we want Step#to_h?
+
+          %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{Trailblazer::Activity::Introspect.render_task(user_step)}>}
         end
         alias_method :to_s, :inspect
 
@@ -114,8 +105,34 @@ raise "implement me for compat"
       end
     end # Circuit
 
-    # TODO: deprecate
-    # TaskBuilder       = Circuit::TaskAdapter
+    class Pipeline # DISCUSS: move this to {task_wrap/pipeline.rb}?
+      # Implements adapter for a callable in a Pipeline.
+      class TaskAdapter < Circuit::TaskAdapter
+        def self.for_step(callable, **)
+          circuit_step = Circuit.Step(callable, option: false) # Since we don't have {:exec_context} in Pipeline, Option doesn't make much sense.
+
+          TaskAdapter.new(circuit_step) # return a {Pipeline::TaskAdapter}
+        end
+
+        def call(wrap_ctx, args)
+          _result, _new_wrap_ctx = @circuit_step.([wrap_ctx, args]) # For funny reasons, the Circuit::Step's call interface is compatible to the Pipeline's.
+
+          # DISCUSS: we're mutating wrap_ctx, that's the whole point of this abstraction (plus kwargs).
+
+          return wrap_ctx, args
+        end
+      end
+    end # Pipeline
+
+    # TODO: remove when we drop compatibility.
+    module TaskBuilder
+      def self.Binary(user_proc)
+        warn %{[Trailblazer] Activity::TaskBuilder is deprecated. Please use the TaskAdapter API: # FIXME}
+
+        Activity::Circuit::TaskAdapter.for_step(user_proc, option: true)
+      end
+    end
+    # deprecate_constant :TaskBuilder
     # TaskBuilder::Task = Circuit::TaskAdapter::Step
   end # Activity
 end
