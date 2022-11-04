@@ -84,14 +84,20 @@ class TaskAdapterTest < Minitest::Spec
     end
     line_number_for_binary = __LINE__ - 2
 
+    lines = warning.split("\n")
+    lines[0] = lines[0][0..-5]
+    warning = lines.join("\n")
 
-    assert_equal warning, %{NOTE: Trailblazer::Activity::TaskBuilder.Binary is deprecated; use Trailblazer::Activity::Circuit::TaskAdapter.for_step() instead. It will be removed on or after 2023-12-01.
-Trailblazer::Activity::TaskBuilder.Binary called from #{File.realpath(__FILE__)}:#{line_number_for_binary}.
-}
+    assert_equal warning, %{NOTE: Trailblazer::Activity::TaskBuilder.Binary is deprecated; use Trailblazer::Activity::Circuit::TaskAdapter.for_step() instead. It will be removed on or after 2023-12
+Trailblazer::Activity::TaskBuilder.Binary called from #{File.realpath(__FILE__)}:#{line_number_for_binary}.}
 
     assert_equal task_adapter.inspect, %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=process_type>}
 
     signal, (ctx, flow_options) = task_adapter.([{model: Object}, {}], exec_context: Operation.new)
+
+    assert_equal signal, Trailblazer::Activity::Right
+    assert_equal ctx.inspect, %{{:model=>Object, :type=>Class}}
+    assert_equal flow_options.inspect, %{{}}
   end
 
   # TODO: properly test {TaskAdapter#inspect}.
