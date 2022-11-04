@@ -12,8 +12,11 @@
 * Add `:flat_activity` keyword argument to `Testing.nested_activity`, so you can inject any activity for `:D`.
   Also, allow to change `:D`'s ID with the `:d_id` option.
 * Rename `Activity::TaskBuilder` to `Activity::Circuit::TaskAdapter` and `Taskbuilder::Task` is now `Circuit::TaskAdapter::Step`.
-* Introduce `Circuit::TaskAdapter::Step::AssignVariable` as a shortcut for running a user_proc as an `Option` and
-  then assigning its return value to a ctx variable.
+
+[* Introduce `Circuit::TaskAdapter::Step::AssignVariable` as a shortcut for running a user_proc as an `Option` and
+  then assigning its return value to a ctx variable.]
+*  We now have Circuit::TaskAdapter, Circuit::Step, and Pipeline::TaskAdapter. With `TaskAdapter.for_step` you can easily build a Task object the "Binary" way.
+
 * Rename `Circuit::Run` to `Circuit::Runner` for consistency with `TaskWrap::Runner`.
 
 # 0.14.0

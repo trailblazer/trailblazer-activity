@@ -127,9 +127,12 @@ module Trailblazer
     # TODO: remove when we drop compatibility.
     module TaskBuilder
       def self.Binary(user_proc)
-        warn %{[Trailblazer] Activity::TaskBuilder is deprecated. Please use the TaskAdapter API: # FIXME}
-
         Activity::Circuit::TaskAdapter.for_step(user_proc, option: true)
+      end
+
+      class << self
+        extend Gem::Deprecate
+        deprecate :Binary, "Trailblazer::Activity::Circuit::TaskAdapter.for_step()", 2023, 12
       end
     end
     # deprecate_constant :TaskBuilder

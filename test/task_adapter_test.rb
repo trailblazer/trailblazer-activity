@@ -82,8 +82,11 @@ class TaskAdapterTest < Minitest::Spec
     _, warning = capture_io do
       task_adapter = Activity::TaskBuilder.Binary(:process_type)
     end
+    line_number_for_binary = __LINE__ - 2
 
-    assert_equal warning, %{[Trailblazer] Activity::TaskBuilder is deprecated. Please use the TaskAdapter API: # FIXME
+
+    assert_equal warning, %{NOTE: Trailblazer::Activity::TaskBuilder.Binary is deprecated; use Trailblazer::Activity::Circuit::TaskAdapter.for_step() instead. It will be removed on or after 2023-12-01.
+Trailblazer::Activity::TaskBuilder.Binary called from #{File.realpath(__FILE__)}:#{line_number_for_binary}.
 }
 
     assert_equal task_adapter.inspect, %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=process_type>}
