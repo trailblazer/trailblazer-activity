@@ -65,7 +65,7 @@ module Trailblazer
         end
 
         # Use {TaskWrap.invoke} to call the activity.
-        def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, expected_ctx_variables: {}, **ctx_variables) # DISCUSS: only for {activity} gem?
+        def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, expected_ctx_variables: {}, **ctx_variables)
           signal, (ctx, _flow_options) = TaskWrap.invoke(
             activity,
             [
