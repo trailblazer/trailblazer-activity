@@ -41,10 +41,12 @@ module Trailblazer
       #
       # It's also needed in Trace/Introspect and mimicks the host containing the actual activity.
       #
-      # DICUSS: we could cache that on Strategy/Operation level.
-      def container_activity_for(activity, wrap_static: initial_wrap_static)
+      # DISCUSS: we could cache that on Strategy/Operation level.
+      #          merging the **config hash is 1/4 slower than before.
+      def container_activity_for(activity, wrap_static: initial_wrap_static, **config)
         {
           wrap_static:  {activity => wrap_static},
+          **config
         }
       end
 

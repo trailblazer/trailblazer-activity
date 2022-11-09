@@ -211,4 +211,9 @@ Please update to the new TaskWrap.Extension() API: # FIXME !!!!!
 
     assert_invoke(Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime})
   end
+
+  it "provides {TaskWrap.container_activity_for}" do
+    host_activity = Activity::TaskWrap.container_activity_for(Object, each: true, wrap_static: {a: 1})
+    assert_equal host_activity.inspect, "{:wrap_static=>{Object=>{:a=>1}}, :each=>true}"
+  end
 end

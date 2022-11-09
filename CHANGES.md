@@ -1,7 +1,12 @@
 # 0.15.0
 
+## TaskWrap.invoke
+
 * Remove the `:wrap_static` keyword argument for `TaskWrap.invoke` and replace it with `:container_activity`.
-* Make `TaskWrap.initial_wrap_static` return `INITIAL_TASK_WRAP` instead of recompiling it for every `invoke`.
+* Make `TaskWrap.initial_wrap_static` return `INITIAL_TASK_WRAP` instead of recompiling it for every `#invoke`.
+* Introduce `TaskWrap.container_activity_for` to build "host activities" that are used to provide a wrap_static to
+  the actually run activity. This is also used in the `Each()` macro and other places.
+
 * Allow `append: nil` for friendly interface.
   ```ruby
   TaskWrap.Extension([method(:add_1), id: "user.add_1", append: nil])`.
