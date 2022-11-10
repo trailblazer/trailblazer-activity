@@ -63,6 +63,13 @@ class TaskAdapterTest < Minitest::Spec
     assert_equal ctx.inspect, %{{:model=>Object, :type=>Class}}
     assert_equal flow_options.inspect, %{{}}
 
+    ctx = {model: nil}
+    signal, (ctx, flow_options) = circuit_task.([ctx, flow_options], **circuit_options, exec_context: Operation.new)
+
+    assert_equal signal, Trailblazer::Activity::Left
+    assert_equal ctx.inspect, %{{:model=>nil}}
+    assert_equal flow_options.inspect, %{{}}
+
 #@ pipeline-interface
 
     # we don't have {:exec_context} in a Pipeline!
@@ -70,7 +77,7 @@ class TaskAdapterTest < Minitest::Spec
     args = [1,2]
     ctx  = {model: Object}
 
-    pipeline_task = Activity::Pipeline::TaskAdapter.for_step(step) # Task receives circuit-interface but it's compatible with Pipeline interface
+    pipeline_task = Activity::TaskWrap::Pipeline::TaskAdapter.for_step(step) # Task receives circuit-interface but it's compatible with Pipeline interface
     wrap_ctx, args = pipeline_task.(ctx, args) # that's how pipeline tasks are called in {TaskWrap::Pipeline}.
 
     assert_equal wrap_ctx.inspect, %{{:model=>Object, :type=>Class}}

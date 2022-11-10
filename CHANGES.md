@@ -1,28 +1,33 @@
 # 0.15.0
 
-## TaskWrap.invoke
+* Rename `Circuit::Run` to `Circuit::Runner` for consistency with `TaskWrap::Runner`.
+* Add `:flat_activity` keyword argument to `Testing.nested_activity`, so you can inject any activity for `:D`.
+  Also, allow to change `:D`'s ID with the `:d_id` option.
+
+## TaskWrap
 
 * Remove the `:wrap_static` keyword argument for `TaskWrap.invoke` and replace it with `:container_activity`.
 * Make `TaskWrap.initial_wrap_static` return `INITIAL_TASK_WRAP` instead of recompiling it for every `#invoke`.
 * Introduce `TaskWrap.container_activity_for` to build "host activities" that are used to provide a wrap_static to
   the actually run activity. This is also used in the `Each()` macro and other places.
-
 * Allow `append: nil` for friendly interface.
+
   ```ruby
   TaskWrap.Extension([method(:add_1), id: "user.add_1", append: nil])`.
   ```
-  This will append the step to the end of the pipeline.
+  This appends the step to the end of the pipeline.
+
+## Introspect
+
 * Add `Introspect.find_path` to retrieve a `Graph::Node` and its hosting activity from a deeply nested setup.
-* Add `Introspect::Graph#[]` to retrieve nodes by task.
-* Add `:flat_activity` keyword argument to `Testing.nested_activity`, so you can inject any activity for `:D`.
-  Also, allow to change `:D`'s ID with the `:d_id` option.
-* Rename `Activity::TaskBuilder` to `Activity::Circuit::TaskAdapter` and `Taskbuilder::Task` is now `Circuit::TaskAdapter::Step`.
 
-[* Introduce `Circuit::TaskAdapter::Step::AssignVariable` as a shortcut for running a user_proc as an `Option` and
-  then assigning its return value to a ctx variable.]
-*  We now have Circuit::TaskAdapter, Circuit::Step, and Pipeline::TaskAdapter. With `TaskAdapter.for_step` you can easily build a Task object the "Binary" way.
+## TaskAdapter
 
-* Rename `Circuit::Run` to `Circuit::Runner` for consistency with `TaskWrap::Runner`.
+* Rename `Activity::TaskBuilder.Binary()` to `Activity::Circuit::TaskAdapter.for_step()`. It returns a `TaskAdapter`
+  instance, which is a bit more descriptive than a `Task` instance.
+* Add `Circuit.Step(callable_with_step_interface)` which accepts a step-interface callable and, when called, returns
+  its result and the `ctx`. This is great for deciders in macros where you don't want the step's result on the `ctx`.
+* Add `TaskWrap::Pipeline::TaskBuilder`.
 
 # 0.14.0
 

@@ -59,6 +59,27 @@ Please use the new TaskWrap.Extension() API: #FIXME!!!"
           TaskWrap::Extension.new(*inserts)
         end
       end # Merge
+
+      # Implements adapter for a callable in a Pipeline.
+      class TaskAdapter < Circuit::TaskAdapter
+        # Returns a {Pipeline::TaskAdapter} instance that can be used directly in a Pipeline.
+        # When `call`ed, it returns a Pipeline-interface return set.
+        #
+        # @see Circuit::TaskAdapter.for_step
+        def self.for_step(callable, **)
+          circuit_step = Circuit.Step(callable, option: false) # Since we don't have {:exec_context} in Pipeline, Option doesn't make much sense.
+
+          TaskAdapter.new(circuit_step) # return a {Pipeline::TaskAdapter}
+        end
+
+        def call(wrap_ctx, args)
+          _result, _new_wrap_ctx = @circuit_step.([wrap_ctx, args]) # For funny reasons, the Circuit::Step's call interface is compatible to the Pipeline's.
+
+          # DISCUSS: we're mutating wrap_ctx, that's the whole point of this abstraction (plus kwargs).
+
+          return wrap_ctx, args
+        end
+      end # TaskAdapter
     end
   end
 end
