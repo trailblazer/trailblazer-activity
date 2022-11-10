@@ -1,8 +1,10 @@
 module Trailblazer
   class Activity
-    NodeAttributes = Struct.new(:id, :outputs, :task, :data) # TODO: rename to Task::Attributes.
+    # In NodeAttributes we store data from Intermediate and Implementing compile-time.
+    # This would be lost otherwise.
+    NodeAttributes = Struct.new(:id, :outputs, :task, :data) # TODO: rename to Schema::Task::Attributes.
 
-    # Schema is primitive data structure + an invoker (usually coming from Activity etc)
+    # TODO: deprecate :nodes in favor of [brain/1]
     class Schema < Struct.new(:circuit, :outputs, :nodes, :config)
 
       # @!method to_h()

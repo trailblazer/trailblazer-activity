@@ -5,19 +5,23 @@ module Trailblazer
     # It abstracts internals about circuits and provides a convenient API to third-parties
     # such as tracing, rendering an activity, or finding particular tasks.
     module Introspect
-      # A TaskMap maps {task} to {Task::Attributes} node. The latter contains the ID
-      # and possibly more fields.
-      # Part of the new introspect API, much simpler and faster.
+      # A TaskMap is a way to introspect an {Activity}. It allows finding a {TaskAttributes}
+      # instance by its ID given at compile-time, or its task.
+      #
+      # It is much simpler and faster than the Graph interface that might get (re)moved.
       def self.TaskMap(activity)
         schema = activity.to_h
-        nodes  = schema[:nodes] # TODO: deprecate nodes and use a dedicated task_map here.
+        nodes  = schema[:nodes]
 
-        nodes.collect do |node_attributes|
-          [
-            task = node_attributes[:task],
-            TaskMap::TaskAttributes(id: node_attributes[:id], task: task)
-          ]
-        end.to_h.freeze
+        task_map_tuples =
+          nodes.collect do |node_attributes|
+            [
+              task = node_attributes[:task],
+              TaskMap::TaskAttributes(id: node_attributes[:id], task: task)
+            ]
+          end
+
+        TaskMap[task_map_tuples].freeze
       end
 
       class TaskMap < Hash
@@ -30,6 +34,13 @@ module Trailblazer
 
       # TODO: order of step/fail/pass in Node would be cool to have
 
+      # TODO: Remove Graph. This is only useful to render the full
+      # circuit, which is a very specific task that could sit in `developer`,
+      # instead.
+      # Some thoughts here:
+      # * where do we need Schema.outputs? and where task.outputs?
+      #
+      #
       # @private This API is still under construction.
       class Graph
         def initialize(activity)

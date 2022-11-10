@@ -19,7 +19,10 @@
 
 ## Introspect
 
-* Add `Introspect.find_path` to retrieve a `Graph::Node` and its hosting activity from a deeply nested setup.
+* Add `Introspect.find_path` to retrieve a `Graph::Node` and its hosting activity from a deeply nested graph.
+  Note that this method is still considered private.
+* Add `Introspect::TaskMap` as a slim interface for introspecting `Activity` instances. Note that `Graph` might get
+  moved to `developer` as it is very specific to rendering circuits.
 
 ## TaskAdapter
 

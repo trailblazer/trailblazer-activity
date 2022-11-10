@@ -31,23 +31,31 @@ class IntrospectionTest < Minitest::Spec
   end
 
   describe "Introspect.TaskMap()" do
-    it "exposes Hash API" do
-      task_map = Activity::Introspect.TaskMap(flat_activity) # [B, C]
+    let(:task_map) { Activity::Introspect.TaskMap(flat_activity)  } # [B, C]
 
-    #@ #[] finds by task
+    it "returns TaskMap that looks like a Hash" do
+      assert_equal task_map.class, Activity::Introspect::TaskMap
+    end
+
+    it "exposes #[] to find by task" do
       attributes = task_map[Implementing.method(:b)]
       assert_equal attributes[:id],   :B
       assert_equal attributes[:task], Implementing.method(:b)
 
-    #@ #fetch finds by task
+      #@ non-existent
+      assert_equal task_map[nil], nil
+    end
+
+    it "exposes #fetch to find by task" do
       assert_equal task_map.fetch(Implementing.method(:b))[:id], :B
 
-    #@ #find_by_id
-      # assert_equal task_map.find_by_id(:B)[:id], :B
-
-    #@ non-existent
-      assert_equal task_map[nil], nil
+      #@ non-existent
       assert_raises KeyError do task_map.fetch(nil) end
+    end
+
+    it "exposes #find_by" do
+      skip
+      assert_equal task_map.find_by_id(:B)[:id], :B
     end
   end
 
