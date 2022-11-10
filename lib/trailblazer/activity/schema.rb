@@ -4,8 +4,8 @@ module Trailblazer
     # This would be lost otherwise.
     NodeAttributes = Struct.new(:id, :outputs, :task, :data) # TODO: rename to Schema::Task::Attributes.
 
-    # TODO: deprecate :nodes in favor of [brain/1]
     class Schema < Struct.new(:circuit, :outputs, :nodes, :config)
+      # {:nodes} is passed directly from {compile_activity}. We need to store this data here.
 
       # @!method to_h()
       #   Returns a hash containing the schema's components.
