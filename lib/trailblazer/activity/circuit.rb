@@ -38,7 +38,7 @@ module Trailblazer
       #
       # NOTE: returned circuit_options are discarded when calling the runner.
       def call(args, start_task: @start_task, runner: Runner, **circuit_options)
-        circuit_options = circuit_options.merge( runner: runner ).freeze # TODO: set the :runner option via arguments_for_call to save the merge?
+        circuit_options = circuit_options.merge(runner: runner) # TODO: set the :runner option via arguments_for_call to save the merge?
         task            = start_task
 
         loop do
@@ -49,7 +49,7 @@ module Trailblazer
           )
 
           # Stop execution of the circuit when we hit a stop event (< End). This could be an task's End or Suspend.
-          return [ last_signal, args ] if @stop_events.include?(task) # DISCUSS: return circuit_options here?
+          return [ last_signal, args ] if @stop_events.include?(task)
 
           if (next_task = next_for(task, last_signal))
             task = next_task
