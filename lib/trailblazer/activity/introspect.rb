@@ -30,6 +30,11 @@ module Trailblazer
         def self.TaskAttributes(id:, task:)
           TaskMap::TaskAttributes.new(id, task).freeze
         end
+
+        def find_by_id(id)
+          tuple = find { |task, attrs| attrs[:id] == id } or return
+          tuple[1]
+        end
       end
 
       # TODO: order of step/fail/pass in Node would be cool to have

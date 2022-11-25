@@ -54,7 +54,6 @@ class IntrospectionTest < Minitest::Spec
     end
 
     it "exposes #find_by" do
-      skip
       assert_equal task_map.find_by_id(:B)[:id], :B
     end
   end
