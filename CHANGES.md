@@ -3,6 +3,7 @@
 * Rename `Circuit::Run` to `Circuit::Runner` for consistency with `TaskWrap::Runner`.
 * Add `:flat_activity` keyword argument to `Testing.nested_activity`, so you can inject any activity for `:D`.
   Also, allow to change `:D`'s ID with the `:d_id` option.
+* Introduce `Deprecate.warn` to have consistent deprecation warnings across all gems.
 
 ## TaskWrap
 

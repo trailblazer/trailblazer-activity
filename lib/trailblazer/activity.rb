@@ -44,6 +44,7 @@ require "trailblazer/activity/task_wrap"
 require "trailblazer/activity/task_wrap/runner"
 require "trailblazer/activity/task_wrap/extension"
 require "trailblazer/activity/adds"
+require "trailblazer/activity/deprecate"
 require "trailblazer/option"
 require "trailblazer/context"
 
