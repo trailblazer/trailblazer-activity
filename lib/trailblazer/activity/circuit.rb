@@ -49,7 +49,7 @@ module Trailblazer
           )
 
           # Stop execution of the circuit when we hit a stop event (< End). This could be an task's End or Suspend.
-          return [ last_signal, args ] if @stop_events.include?(task)
+          return [last_signal, args] if @stop_events.include?(task)
 
           if (next_task = next_for(task, last_signal))
             task = next_task
