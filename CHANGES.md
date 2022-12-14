@@ -4,7 +4,7 @@
 * Add `:flat_activity` keyword argument to `Testing.nested_activity`, so you can inject any activity for `:D`.
   Also, allow to change `:D`'s ID with the `:d_id` option.
 * Introduce `Deprecate.warn` to have consistent deprecation warnings across all gems.
-* Introduce `Activity.call` as a top-level entry point and replacement for `TaskWrap.invoke`.
+* Introduce `Activity.call` as a top-level entry point and abstraction for `TaskWrap.invoke`.
 
 ## TaskWrap
 
