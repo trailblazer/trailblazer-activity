@@ -19,6 +19,9 @@ module Trailblazer
       # If you want a {wrap_static} extension, wrap it using `Extension.WrapStatic.new`.
       def self.Extension(*inserts, merge: nil)
         if merge
+          Deprecate.warn caller_locations[0], "The :merge option for TaskWrap.Extension is deprecated and will be removed in 0.16.
+Please refer to https://trailblazer.to/2.1/docs/activity.html#activity-taskwrap-static and have a great day."
+
           return Extension::WrapStatic.new(extension: Extension.new(*merge))
           # TODO: remove me once we drop the pre-friendly interface.
         end
@@ -56,8 +59,8 @@ module Trailblazer
         def deprecated_extension_for(extension_rows)
           return extension_rows unless extension_rows.find { |ext| ext.is_a?(Array) }
 
-          warn "[Trailblazer] You are using the old API for taskWrap extensions.
-Please update to the new TaskWrap.Extension() API: # FIXME !!!!!"
+          Deprecate.warn caller_locations[3], "You are using the old API for taskWrap extensions.
+Please update to the new TaskWrap.Extension() API."
 
           extension_rows.collect do |ary|
             {
@@ -65,6 +68,13 @@ Please update to the new TaskWrap.Extension() API: # FIXME !!!!!"
               row: Pipeline.Row(*ary[2])
             }
           end
+        end
+
+        # Create extensions from the friendly interface that can alter the wrap_static
+        # of a step in an activity. The returned extensionn can be passed directly via {:extensions}
+        # to the compiler, or when using the `#step` DSL.
+        def self.WrapStatic(*inserts)
+          WrapStatic.new(extension: TaskWrap.Extension(*inserts))
         end
 
         # Extension are used at compile-time with {wrap_static}, mostly with the {dsl} gem.

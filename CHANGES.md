@@ -1,3 +1,10 @@
+# 0.15.1
+
+* Introduce `Extension.WrapStatic()` as a consistent interface for creating wrap_static extensions
+  exposing the friendly interface.
+* Deprecate `Extension(merge: ...)` since we have `Extension.WrapStatic` now.
+* Better deprecation warnings for extensions using `Insert` and not the friendly interface.
+
 # 0.15.0
 
 * Rename `Circuit::Run` to `Circuit::Runner` for consistency with `TaskWrap::Runner`.

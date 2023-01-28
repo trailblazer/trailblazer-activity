@@ -80,17 +80,11 @@ class TaskWrapTest < Minitest::Spec
 
   it "populates activity[:wrap_static] and uses it at run-time" do
     merge = [
-      { # Add
-        insert: [Trailblazer::Activity::Adds::Insert.method(:Prepend), "task_wrap.call_task"],
-        row:    TaskWrap::Pipeline::Row["user.add_1", method(:add_1)]
-      },
-      { # Add
-        insert: [Trailblazer::Activity::Adds::Insert.method(:Append),  "task_wrap.call_task"],
-        row:    TaskWrap::Pipeline::Row["user.add_2", method(:add_2)]
-      }
+      [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
+      [method(:add_2), id: "user.add_2", append:  "task_wrap.call_task"],
     ]
 
-    abc_implementation, _es = abc_implementation(a_extensions: [TaskWrap.Extension(merge: merge)])
+    abc_implementation, _es = abc_implementation(a_extensions: [TaskWrap::Extension.WrapStatic(*merge)])
     schema                  = Inter.(abc_intermediate, abc_implementation)
 
     assert_invoke Activity.new(schema), seq: "[1, :a, 2, :b, :c]"
@@ -100,7 +94,7 @@ class TaskWrapTest < Minitest::Spec
     top_implementation = {
       :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Activity::Right, :success)], []),
       :b => Schema::Implementation::Task(Activity.new(schema), [Activity::Output(_es, :success)], []),
-      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap.Extension(merge: merge)]),
+      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.WrapStatic(*merge)]),
       "End.success" => Schema::Implementation::Task(es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
     }
 
@@ -110,7 +104,7 @@ class TaskWrapTest < Minitest::Spec
 
   #@ it works nested plus allows {wrap_runtime}
 
-    wrap_runtime = {c => TaskWrap::Extension.new(*merge)}
+    wrap_runtime = {c => TaskWrap::Extension(*merge)}
 
     assert_invoke Activity.new(schema), seq: "[:a, 1, :a, 2, :b, 1, :c, 2, 1, 1, :c, 2, 2]", circuit_options: {wrap_runtime: wrap_runtime}
   end
@@ -134,12 +128,10 @@ class TaskWrapTest < Minitest::Spec
       [:a] # start
     )
 
-    merge = [
-      {insert: [Trailblazer::Activity::Adds::Insert.method(:Prepend), "task_wrap.call_task"], row: ["user.add_1", method(:change_start_task)]}
-    ]
+    merge = [method(:change_start_task), id: "user.add_1", prepend: "task_wrap.call_task"]
 
     outer_implementation = {
-      :a => Schema::Implementation::Task(Activity.new(inner_schema), [Activity::Output(_es, :success)], [TaskWrap.Extension(merge: merge)]),
+      :a => Schema::Implementation::Task(Activity.new(inner_schema), [Activity::Output(_es, :success)], [TaskWrap::Extension.WrapStatic(merge)]),
       :b => Schema::Implementation::Task(Activity.new(inner_schema), [Activity::Output(_es, :success)], []),
       :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],      []),
       "End.success" => Schema::Implementation::Task(es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
@@ -177,11 +169,14 @@ Please use the new API: #FIXME!!!
 
     ext = nil
     out, err = capture_io do
-      ext = TaskWrap.Extension(merge: merge)
+      ext = TaskWrap.Extension(merge: merge) # {:merge} option is deprecated, too.
     end
+    line_no = __LINE__
 
-    assert_equal err, %{[Trailblazer] You are using the old API for taskWrap extensions.
-Please update to the new TaskWrap.Extension() API: # FIXME !!!!!
+    assert_equal err, %{[Trailblazer] #{__FILE__}:#{line_no - 2} The :merge option for TaskWrap.Extension is deprecated and will be removed in 0.16.
+Please refer to https://trailblazer.to/2.1/docs/activity.html#activity-taskwrap-static and have a great day.
+[Trailblazer] #{__FILE__}:#{line_no - 2} You are using the old API for taskWrap extensions.
+Please update to the new TaskWrap.Extension() API.
 }
 
     abc_implementation, _ = abc_implementation(a_extensions: [ext])
@@ -202,14 +197,15 @@ Please update to the new TaskWrap.Extension() API: # FIXME !!!!!
     out, err = capture_io do
       wrap_runtime = {abc_implementation[:c].circuit_task => TaskWrap::Pipeline::Merge.new(*merge)}
     end
+    line_no = __LINE__
 
     assert_equal err, %{[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline::Merge.new` is deprecated.
 Please use the new TaskWrap.Extension() API: #FIXME!!!
-[Trailblazer] You are using the old API for taskWrap extensions.
-Please update to the new TaskWrap.Extension() API: # FIXME !!!!!
+[Trailblazer] #{__FILE__}:#{line_no - 2} You are using the old API for taskWrap extensions.
+Please update to the new TaskWrap.Extension() API.
 }
 
-    assert_invoke(Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime})
+    assert_invoke Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime}
   end
 
   it "provides {TaskWrap.container_activity_for}" do
