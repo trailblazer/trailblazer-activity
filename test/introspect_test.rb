@@ -8,19 +8,19 @@ class IntrospectionTest < Minitest::Spec
 
       #@ find top-activity which returns a special Node.
       node, host_activity, graph = Trailblazer::Activity::Introspect.find_path(activity, [])
-      assert_equal node.class, Trailblazer::Activity::Introspect::TaskMap::TaskAttributes
+      assert_equal node.class, Trailblazer::Activity::Schema::Nodes::Attributes
       assert_equal node[:task], activity
       assert_equal host_activity, Trailblazer::Activity::TaskWrap.container_activity_for(activity)
 
       #@ one element path
       node, host_activity, graph = Trailblazer::Activity::Introspect.find_path(activity, [:E])
-      assert_equal node.class, Trailblazer::Activity::Introspect::TaskMap::TaskAttributes
+      assert_equal node.class, Trailblazer::Activity::Schema::Nodes::Attributes
       assert_equal node[:task], Implementing.method(:f)
       assert_equal host_activity, activity
 
       #@ nested element
       node, host_activity, _graph = Trailblazer::Activity::Introspect.find_path(activity, [:Delete, :D, :C])
-      assert_equal node.class, Trailblazer::Activity::Introspect::TaskMap::TaskAttributes
+      assert_equal node.class, Trailblazer::Activity::Schema::Nodes::Attributes
       assert_equal node[:task], Implementing.method(:c)
       assert_equal host_activity, flat_activity
 
@@ -30,31 +30,34 @@ class IntrospectionTest < Minitest::Spec
     end
   end
 
-  describe "Introspect.TaskMap()" do
-    let(:task_map) { Activity::Introspect.TaskMap(flat_activity)  } # [B, C]
+  describe "Introspect.Nodes()" do
+    let(:task_map) { Activity::Introspect.Nodes(flat_activity)  } # [B, C]
 
-    it "returns TaskMap that looks like a Hash" do
-      assert_equal task_map.class, Activity::Introspect::TaskMap
+    it "returns Nodes that looks like a Hash" do
+      assert_equal task_map.class, Activity::Schema::Nodes
     end
 
     it "exposes #[] to find by task" do
       attributes = task_map[Implementing.method(:b)]
-      assert_equal attributes[:id],   :B
-      assert_equal attributes[:task], Implementing.method(:b)
+      assert_equal attributes.id,   :B
+      assert_equal attributes.task, Implementing.method(:b)
 
       #@ non-existent
-      assert_equal task_map[nil], nil
+      assert_nil task_map[nil]
     end
 
     it "exposes #fetch to find by task" do
-      assert_equal task_map.fetch(Implementing.method(:b))[:id], :B
+      assert_equal task_map.fetch(Implementing.method(:b)).id, :B
 
       #@ non-existent
       assert_raises KeyError do task_map.fetch(nil) end
     end
 
-    it "exposes #find_by" do
-      assert_equal task_map.find_by_id(:B)[:id], :B
+    it "accepts {:id} option" do
+      attrs = Activity::Introspect.Nodes(flat_activity, id: :B)
+
+      assert_equal attrs.id, :B
+      assert_equal attrs.task, Implementing.method(:b)
     end
   end
 

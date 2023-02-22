@@ -15,7 +15,7 @@ class ActivityTest < Minitest::Spec
 
   # TODO: test {to_h} properly
   it "exposes {:data} attributes in {#to_h}" do
-    expect(bc.to_h[:nodes][1][:data].inspect).must_equal %{{:additional=>true}}
+    expect(bc.to_h[:nodes].values[1][:data].inspect).must_equal %{{:additional=>true}}
   end
 
   it "{:activity}" do

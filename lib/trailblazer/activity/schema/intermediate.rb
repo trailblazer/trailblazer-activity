@@ -19,7 +19,7 @@ class Trailblazer::Activity
         config.freeze
 
         circuit = circuit(intermediate, implementation)
-        nodes   = node_attributes(intermediate, implementation)
+        nodes   = node_attributes(intermediate, implementation) # TODO: build Schema::Nodes<[] structure Nodes#find_by_id. Nodes[task]. Remove TaskMap, we don't need it anymore.
         outputs = outputs(intermediate.stop_task_ids, nodes)
         config  = config(implementation, config: config)
 
@@ -60,21 +60,29 @@ class Trailblazer::Activity
         ]
       end
 
+      # Compile the Schema{:nodes} field.
       def self.node_attributes(intermediate, implementation)
-        intermediate.wiring.collect do |task_ref, outputs|
-          id                  = task_ref.id
-          implementation_task = implementation.fetch(id)
-          data                = task_ref[:data] # TODO: allow adding data from implementation.
+        nodes_attributes =
+          intermediate.wiring.collect do |task_ref, outputs|
+            id                  = task_ref.id
+            implementation_task = implementation.fetch(id)
 
-          NodeAttributes.new(id, implementation_task.outputs, implementation_task.circuit_task, data)
-        end
+            [
+              id,                               # id
+              implementation_task.outputs,      # outputs
+              implementation_task.circuit_task, # task
+              task_ref[:data]                   # TODO: allow adding data from implementation.
+            ]
+          end
+
+        Schema::Nodes(nodes_attributes)
       end
 
       # intermediate/implementation independent.
-      def self.outputs(stop_task_ids, nodes_attributes)
+      def self.outputs(stop_task_ids, nodes)
         stop_task_ids.collect do |id|
           # Grab the {outputs} of the stop nodes.
-          nodes_attributes.find { |node_attrs| id == node_attrs.id }.outputs
+          Introspect::Nodes.find_by_id(nodes, id).outputs
         end.flatten(1)
       end
 

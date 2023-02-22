@@ -5,36 +5,41 @@ module Trailblazer
     # It abstracts internals about circuits and provides a convenient API to third-parties
     # such as tracing, rendering an activity, or finding particular tasks.
     module Introspect
-      # A TaskMap is a way to introspect an {Activity}. It allows finding a {TaskAttributes}
-      # instance by its ID given at compile-time, or its task.
-      #
-      # It is much simpler and faster than the Graph interface that might get (re)moved.
-      def self.TaskMap(activity)
+      # Public entry point for {Activity} instance introspection.
+      def self.Nodes(activity, id: nil)
         schema = activity.to_h
         nodes  = schema[:nodes]
 
-        task_map_tuples =
-          nodes.collect do |node_attributes|
-            [
-              task = node_attributes[:task],
-              TaskMap::TaskAttributes(id: node_attributes[:id], task: task)
-            ]
-          end
-
-        TaskMap[task_map_tuples].freeze
+        id.nil? ? nodes : Nodes.find_by_id(nodes, id)
       end
 
-      class TaskMap < Hash
-        TaskAttributes = Struct.new(:id, :task) # TODO: extend at some point.
-
-        def self.TaskAttributes(id:, task:)
-          TaskMap::TaskAttributes.new(id, task).freeze
-        end
-
-        def find_by_id(id)
-          tuple = find { |task, attrs| attrs[:id] == id } or return
+      module Nodes
+        # @private
+        # @return Attributes data structure
+        def self.find_by_id(nodes, id)
+          tuple = nodes.find { |task, attrs| attrs.id == id } or return
           tuple[1]
         end
+      end
+
+      # @private
+      def self.find_path(activity, segments)
+        raise ArgumentError.new(%{[Trailblazer] Please pass #{activity}.to_h[:activity] into #find_path.}) unless activity.kind_of?(Trailblazer::Activity)
+
+        attributes           = Schema::Nodes::Attributes.new(nil, nil, activity) # FIXME: use attributes from container_activity_for !!!!!!!!!!!!!!!!!
+        last_graph, last_activity = nil, TaskWrap.container_activity_for(activity) # needed for empty/root path
+
+        segments.each do |segment|
+          nodes      = Introspect.Nodes(activity)
+          attributes = Introspect::Nodes.find_by_id(nodes, segment) or return
+
+          last_activity = activity
+          last_graph    = nodes
+
+          activity      = attributes.task
+        end
+
+        return attributes, last_activity, last_graph
       end
 
       # TODO: order of step/fail/pass in Node would be cool to have
@@ -73,14 +78,14 @@ module Trailblazer
         private
 
         def find_by_id(id)
-          node = @configs.find { |_node| _node.id == id } or return
-          node_for(node)
+          node = @configs.find { |_, _node| _node.id == id } or return
+          node_for(node[1])
         end
 
         def find_with_block
-          existing = @configs.find { |node| yield Node(node.task, node.id, node.outputs, node.data) } or return
+          existing = @configs.find { |_, node| yield Node(node.task, node.id, node.outputs, node.data) } or return
 
-          node_for(existing)
+          node_for(existing[1])
         end
 
         # Build a {Graph::Node} with outputs etc.
@@ -116,25 +121,6 @@ module Trailblazer
         Graph.new(*args)
       end
 
-      # @private
-      def self.find_path(activity, segments)
-        raise ArgumentError.new(%{[Trailblazer] Please pass #{activity}.to_h[:activity] into #find_path.}) unless activity.kind_of?(Trailblazer::Activity)
-
-        task_attributes           = TaskMap::TaskAttributes(id: nil, task: activity)
-        last_graph, last_activity = nil, TaskWrap.container_activity_for(activity) # needed for empty/root path
-
-        segments.each do |segment|
-          task_map              = Introspect.TaskMap(activity)
-          task, task_attributes = (task_map.find { |task, attributes| attributes[:id] == segment } or return) # DISCUSS: should we abstract these internals of {TaskMap} in {find_by_id}?
-
-          last_activity = activity
-          last_graph    = task_map
-
-          activity      = task
-        end
-
-        return task_attributes, last_activity, last_graph
-      end
 
       def self.render_task(proc)
         if proc.is_a?(Method)
