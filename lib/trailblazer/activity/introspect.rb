@@ -6,11 +6,13 @@ module Trailblazer
     # such as tracing, rendering an activity, or finding particular tasks.
     module Introspect
       # Public entry point for {Activity} instance introspection.
-      def self.Nodes(activity, id: nil)
+      def self.Nodes(activity, id: nil, task: nil)
         schema = activity.to_h
         nodes  = schema[:nodes]
 
-        id.nil? ? nodes : Nodes.find_by_id(nodes, id)
+        return Nodes.find_by_id(nodes, id) if id
+        return nodes.fetch(task)           if task
+        nodes
       end
 
       module Nodes

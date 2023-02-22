@@ -59,6 +59,13 @@ class IntrospectionTest < Minitest::Spec
       assert_equal attrs.id, :B
       assert_equal attrs.task, Implementing.method(:b)
     end
+
+    it "accepts {:task} option" do
+      attrs = Activity::Introspect.Nodes(flat_activity, task: Implementing.method(:b))
+
+      assert_equal attrs.id, :B
+      assert_equal attrs.task, Implementing.method(:b)
+    end
   end
 
   describe "Introspect::Graph" do

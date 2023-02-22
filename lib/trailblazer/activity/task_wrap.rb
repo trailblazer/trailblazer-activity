@@ -46,6 +46,7 @@ module Trailblazer
       def container_activity_for(activity, wrap_static: initial_wrap_static, **config)
         {
           wrap_static:  {activity => wrap_static},
+          nodes:        Schema.Nodes([[nil, nil, activity]]),
           **config
         }
       end

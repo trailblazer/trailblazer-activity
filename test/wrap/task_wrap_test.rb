@@ -210,6 +210,6 @@ Please update to the new TaskWrap.Extension() API.
 
   it "provides {TaskWrap.container_activity_for}" do
     host_activity = Activity::TaskWrap.container_activity_for(Object, each: true, wrap_static: {a: 1})
-    assert_equal host_activity.inspect, "{:wrap_static=>{Object=>{:a=>1}}, :each=>true}"
+    assert_equal host_activity.inspect, "{:wrap_static=>{Object=>{:a=>1}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, outputs=nil, task=Object, data=nil>}, :each=>true}"
   end
 end

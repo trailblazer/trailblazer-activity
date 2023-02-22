@@ -19,6 +19,8 @@ module Trailblazer
       # That's why in 0.16.0 we changed this structure.5
       #
       # Nodes{#<task> => #<Nodes::Attributes id= task= data= outputs=>}
+      #
+      # @private Please use {Introspect.Nodes} for querying nodes.
       def self.Nodes(nodes)
         Nodes[
           nodes.collect do |attrs|
