@@ -1,5 +1,7 @@
 module Trailblazer
   class Activity
+      # Developer's docs: https://trailblazer.to/2.1/docs/internals#internals-wiring-api-adds-interface
+      #
       # The Adds interface are mechanics to alter sequences/pipelines.
       # "one" ADDS structure: {row: ..., insert: [Insert, "id"]}
       #
