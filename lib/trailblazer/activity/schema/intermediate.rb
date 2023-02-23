@@ -19,7 +19,7 @@ class Trailblazer::Activity
         config.freeze
 
         circuit = circuit(intermediate, implementation)
-        nodes   = node_attributes(intermediate, implementation) # TODO: build Schema::Nodes<[] structure Nodes#find_by_id. Nodes[task]. Remove TaskMap, we don't need it anymore.
+        nodes   = nodes(intermediate, implementation) # TODO: build Schema::Nodes<[] structure Nodes#find_by_id. Nodes[task]. Remove TaskMap, we don't need it anymore.
         outputs = outputs(intermediate.stop_task_ids, nodes)
         config  = config(implementation, config: config)
 
@@ -61,7 +61,7 @@ class Trailblazer::Activity
       end
 
       # Compile the Schema{:nodes} field.
-      def self.node_attributes(intermediate, implementation)
+      def self.nodes(intermediate, implementation)
         nodes_attributes =
           intermediate.wiring.collect do |task_ref, outputs|
             id                  = task_ref.id
