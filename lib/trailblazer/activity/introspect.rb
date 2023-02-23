@@ -6,12 +6,12 @@ module Trailblazer
     # such as tracing, rendering an activity, or finding particular tasks.
     module Introspect
       # Public entry point for {Activity} instance introspection.
-      def self.Nodes(activity, id: nil, task: nil)
+      def self.Nodes(activity, task: nil, **options)
         schema = activity.to_h
         nodes  = schema[:nodes]
 
-        return Nodes.find_by_id(nodes, id) if id
-        return nodes.fetch(task)           if task
+        return Nodes.find_by_id(nodes, options[:id]) if options.key?(:id)
+        return nodes.fetch(task)                     if task
         nodes
       end
 
@@ -28,20 +28,19 @@ module Trailblazer
       def self.find_path(activity, segments)
         raise ArgumentError.new(%{[Trailblazer] Please pass #{activity}.to_h[:activity] into #find_path.}) unless activity.kind_of?(Trailblazer::Activity)
 
-        attributes           = Schema::Nodes::Attributes.new(nil, nil, activity) # FIXME: use attributes from container_activity_for !!!!!!!!!!!!!!!!!
-        last_graph, last_activity = nil, TaskWrap.container_activity_for(activity) # needed for empty/root path
+        segments = [nil, *segments]
+
+        attributes    = nil
+        last_activity = nil
+        activity      = TaskWrap.container_activity_for(activity) # needed for empty/root path
 
         segments.each do |segment|
-          nodes      = Introspect.Nodes(activity)
-          attributes = Introspect::Nodes.find_by_id(nodes, segment) or return
-
+          attributes    = Introspect.Nodes(activity, id: segment) or return
           last_activity = activity
-          last_graph    = nodes
-
           activity      = attributes.task
         end
 
-        return attributes, last_activity, last_graph
+        return attributes, last_activity
       end
 
       def self.render_task(proc)

@@ -60,6 +60,15 @@ class IntrospectionTest < Minitest::Spec
       assert_equal attrs.task, Implementing.method(:b)
     end
 
+    it "accepts {id: nil}" do
+      container_activity = Activity::TaskWrap.container_activity_for(flat_activity)
+
+      attrs = Activity::Introspect.Nodes(container_activity, id: nil)
+
+      assert_equal attrs.id, nil
+      assert_equal attrs.task, flat_activity
+    end
+
     it "accepts {:task} option" do
       attrs = Activity::Introspect.Nodes(flat_activity, task: Implementing.method(:b))
 
