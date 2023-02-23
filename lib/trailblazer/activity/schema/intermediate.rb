@@ -19,7 +19,7 @@ class Trailblazer::Activity
         config.freeze
 
         circuit = circuit(intermediate, implementation)
-        nodes   = nodes(intermediate, implementation) # TODO: build Schema::Nodes<[] structure Nodes#find_by_id. Nodes[task]. Remove TaskMap, we don't need it anymore.
+        nodes   = nodes(intermediate, implementation)
         outputs = outputs(intermediate.stop_task_ids, nodes)
         config  = config(implementation, config: config)
 
