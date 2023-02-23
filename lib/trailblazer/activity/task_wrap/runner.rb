@@ -10,7 +10,7 @@ class Trailblazer::Activity
       # @api private
       # @interface Runner
       def self.call(task, args, **circuit_options)
-        wrap_ctx = { task: task }
+        wrap_ctx = {task: task}
 
         # this pipeline is "wrapped around" the actual `task`.
         task_wrap_pipeline = merge_static_with_runtime(task, **circuit_options) || raise
@@ -44,8 +44,8 @@ class Trailblazer::Activity
     end # Runner
 
     # Retrieve the static wrap config from {activity}.
-    def self.wrap_static_for(task, activity:, **)
-      wrap_static = activity[:wrap_static]
+    def self.wrap_static_for(task, activity:, **) # TODO: we could remove the double-splat and pass activity as positional.
+      wrap_static = activity.to_h[:wrap_static]
       wrap_static[task] or raise "#{task}"
     end
   end
