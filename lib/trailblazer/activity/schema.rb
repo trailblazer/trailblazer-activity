@@ -9,7 +9,7 @@ module Trailblazer
       class Nodes < Hash
         # In Attributes we store data from Intermediate and Implementing compile-time.
         # This would be lost otherwise.
-        Attributes = Struct.new(:id, :outputs, :task, :data)
+        Attributes = Struct.new(:id, :task, :data, :outputs)
       end
 
       # Builder for {Schema::Nodes} datastructure.
@@ -25,7 +25,7 @@ module Trailblazer
         Nodes[
           nodes.collect do |attrs|
             [
-              attrs[2], # task
+              attrs[1], # task
               Nodes::Attributes.new(*attrs).freeze
             ]
           end

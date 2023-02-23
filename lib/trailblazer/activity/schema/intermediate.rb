@@ -69,9 +69,9 @@ class Trailblazer::Activity
 
             [
               id,                               # id
-              implementation_task.outputs,      # outputs
               implementation_task.circuit_task, # task
-              task_ref[:data]                   # TODO: allow adding data from implementation.
+              task_ref[:data],                  # TODO: allow adding data from implementation.
+              implementation_task.outputs,      # outputs
             ]
           end
 
