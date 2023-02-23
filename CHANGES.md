@@ -1,13 +1,14 @@
 # 0.16.0
 
-* Remove `Introspect::TaskMap` in favor of `Introspect::Nodes`.
-* Add `Introspect::Nodes`, an even slimmer interface on top of `Schema::Nodes` which is so fast that
-  it might not need caching.
+* Introduce `Activity::Introspect.Nodes()` as a consistent and fast interface for introspection
+  and remove `Activity::Introspect::TaskMap`.
 * Change `Activity#to_h[:nodes]`. This is now a `Schema::Nodes` "hash" that is keyed by task that
   points to `Nodes::Attributes` data structures (a replacement for `Activity::NodeAttributes`).
   This decision reduces logic and improves performance: it turned out that most of the time an introspect
   lookup queries for a task, not ID.
 * Remove `Activity::NodeAttributes`.
+* Move `Introspect::Graph` to `trailblazer-developer`. It's a data structure very specific
+  to rendering, which is not a part of pure runtime behavior. `Activity::Introspect.Graph()` is now deprecated.
 
 # 0.15.1
 
