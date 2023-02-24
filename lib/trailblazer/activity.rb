@@ -14,14 +14,8 @@ module Trailblazer
       )
     end
 
-    # DISCUSS: we could remove this reader in the future
-    # and use {Activity.to_h[:config]}.
-    def [](*key)
-      @schema[:config][*key]
-    end
-
     def to_h
-      @schema
+      @schema.to_h
     end
 
     def inspect

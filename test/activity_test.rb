@@ -13,6 +13,18 @@ class ActivityTest < Minitest::Spec
     expect(options.inspect).must_equal %{{:L=>1}}
   end
 
+  it "exposes {#to_h}" do
+    hsh = flat_activity.to_h
+
+    assert_equal hsh.keys, [:circuit, :outputs, :nodes, :config] # These four keys are required by the Activity interface.
+
+    assert_equal hsh[:circuit].class, Trailblazer::Activity::Circuit
+    assert_equal hsh[:outputs].collect{ |output| output.to_h[:semantic] }.inspect, %{[:success, :failure]}
+    assert_equal hsh[:nodes].class, Trailblazer::Activity::Schema::Nodes
+    assert_equal hsh[:nodes].collect { |id, attrs| attrs.id }.inspect, %{["Start.default", :B, :C, "End.success", "End.failure"]}
+    assert_equal hsh[:config].inspect, "{:wrap_static=>{}}"
+  end
+
   # TODO: test {to_h} properly
   it "exposes {:data} attributes in {#to_h}" do
     expect(bc.to_h[:nodes].values[1][:data].inspect).must_equal %{{:additional=>true}}

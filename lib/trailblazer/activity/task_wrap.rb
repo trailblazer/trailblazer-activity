@@ -43,11 +43,13 @@ module Trailblazer
       #
       # DISCUSS: we could cache that on Strategy/Operation level.
       #          merging the **config hash is 1/4 slower than before.
-      def container_activity_for(activity, wrap_static: initial_wrap_static, **config)
+      def container_activity_for(activity, wrap_static: initial_wrap_static, id: nil, **config)
         {
-          wrap_static:  {activity => wrap_static},
-          nodes:        Schema.Nodes([[nil, activity]]), # id: {nil}
-          **config
+          config: {
+            wrap_static:  {activity => wrap_static},
+            **config
+          },
+          nodes:  Schema.Nodes([[id, activity]]),
         }
       end
 
@@ -55,4 +57,3 @@ module Trailblazer
     end # TaskWrap
   end
 end
-

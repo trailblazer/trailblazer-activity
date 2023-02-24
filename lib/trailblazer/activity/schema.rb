@@ -1,5 +1,7 @@
 module Trailblazer
   class Activity
+    # The idea with {:config} is to have a generic runtime store for feature fields
+    # like {:wrap_static} but also for flags, e.g. `each: true` from the Each() macro.
     class Schema < Struct.new(:circuit, :outputs, :nodes, :config)
       # {:nodes} is passed directly from {compile_activity}. We need to store this data here.
 

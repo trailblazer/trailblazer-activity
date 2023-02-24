@@ -28,14 +28,13 @@ class Trailblazer::Activity
         return wrap_ctx[:return_signal], wrap_ctx[:return_args]
       end
 
-
       # Compute the task's wrap by applying alterations both static and from runtime.
       #
       # NOTE: this is for performance reasons: we could have only one hash containing everything but that'd mean
       # unnecessary computations at `call`-time since steps might not even be executed.
       # TODO: make this faster.
-      private_class_method def self.merge_static_with_runtime(task, wrap_runtime:, **circuit_options)
-        static_wrap = TaskWrap.wrap_static_for(task, **circuit_options) # find static wrap for this specific task [, or default wrap activity].
+      private_class_method def self.merge_static_with_runtime(task, wrap_runtime:, activity:, **circuit_options)
+        static_wrap = TaskWrap.wrap_static_for(task, activity) # find static wrap for this specific task [, or default wrap activity].
 
         # Apply runtime alterations.
         # Grab the additional wirings for the particular `task` from `wrap_runtime`.
@@ -44,9 +43,11 @@ class Trailblazer::Activity
     end # Runner
 
     # Retrieve the static wrap config from {activity}.
-    def self.wrap_static_for(task, activity:, **) # TODO: we could remove the double-splat and pass activity as positional.
-      wrap_static = activity.to_h[:wrap_static]
-      wrap_static[task] or raise "#{task}"
+    # @private
+    def self.wrap_static_for(task, activity)
+      activity.to_h
+        .fetch(:config)
+        .fetch(:wrap_static)[task] # the {wrap_static} for {task}.
     end
   end
 end
