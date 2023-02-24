@@ -86,11 +86,18 @@ Please update to the new TaskWrap.Extension() API."
           end
 
           def call(config:, task:, **)
-            # Add the extension's task(s) to the activity's {wrap_static} taskWrap
-            # by using the immutable {Config} interface.
-            before_pipe = Config.get(config, :wrap_static, task.circuit_task)
+            # DISCUSS: does it make sense to test the immutable behavior here? What would be the worst outcome?
+            task = task.circuit_task # Receives {Schema::Implementation::Task}. DISCUSS: why?
 
-            Config.set(config, :wrap_static, task.circuit_task, @extension.(before_pipe))
+            # Add the extension's task(s) to the activity's {:wrap_static} taskWrap
+            # which is stored in the {:config} field.
+            wrap_static = config[:wrap_static]                 # the activity's {wrap_static}.
+            task_wrap   = wrap_static[task] # the "original" taskWrap for {task}.
+
+            # Overwrite the original task_wrap:
+            wrap_static = wrap_static.merge(task => @extension.(task_wrap))
+
+            config.merge(wrap_static: wrap_static) # Return new config hash. This needs to be immutable code!
           end
         end # WrapStatic
 

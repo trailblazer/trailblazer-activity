@@ -13,6 +13,8 @@
 * `TaskWrap.container_activity_for` now accepts `:id` for setting an ID for the containered activity to
 anything other than `nil`.
 * Re-add `:nodes` to the container activity hash as this provides a consistent way for treating all `Activity`s.
+* Remove `Activity::Config`. This immutable hash interface was used in one place, only, and can easily
+  be replaced with `config.merge()`.
 
 # 0.15.1
 

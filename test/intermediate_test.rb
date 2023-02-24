@@ -23,9 +23,9 @@ class IntermediateTest < Minitest::Spec
       [:a]
     ) # start
 
-    a_extension_1 = ->(config:, **) { Trailblazer::Activity::Config.set(config, :a1, true)  }
-    a_extension_2 = ->(config:, **) { Trailblazer::Activity::Config.set(config, :a2, :yo)   }
-    b_extension_1 = ->(config:, **) { Trailblazer::Activity::Config.set(config, :b1, false) }
+    a_extension_1 = ->(config:, **) { config.merge(a1: true) }
+    a_extension_2 = ->(config:, **) { config.merge(a2: yo)   }
+    b_extension_1 = ->(config:, **) { config.merge(b1: false) }
 
     implementation = {
       :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)],        [a_extension_1, a_extension_2]),
@@ -161,15 +161,14 @@ class IntermediateTest < Minitest::Spec
     end
 
     it "allows using the {Config} API" do
-      ext_a = ->(config:, **)       { Activity::Config.set(config, :a, "bla") }
-      ext_b = ->(config:, **)       { Activity::Config.set(config, :b, "blubb") }
-      ext_c = ->(config:, **)       { Activity::Config.set(config, :c, "key", "value") } # initializes {:c} with hash.
-      ext_d = ->(config:, id:, **)  { Activity::Config.set(config, id, 1) }              # provides :id
-      ext_e = ->(config:, **)       { Activity::Config.set(config, :e, config[:C] + 1) } # allows reading new {Config} instance.
+      ext_a = ->(config:, **)       { config.merge(a: "bla") }
+      ext_b = ->(config:, **)       { config.merge(b: "blubb") }
+      ext_d = ->(config:, id:, **)  { config.merge(id => 1) }              # provides :id
+      ext_e = ->(config:, **)       { config.merge(e: config[:C] + 1) } # allows reading new {Config} instance.
 
-      schema = Inter.(intermediate, implementation([ext_a, ext_b, ext_c, ext_d, ext_e]))
+      schema = Inter.(intermediate, implementation([ext_a, ext_b, ext_d, ext_e]))
 
-      expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :c=>{\"key\"=>\"value\"}, :C=>1, :e=>2}}
+      expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :C=>1, :e=>2}}
     end
 
   # {Implementation.call()} allows to pass {config} data
