@@ -1,15 +1,18 @@
 # 0.16.0
 
+* Remove `Activity#[]`. Please use `activity.to_h[:config]`.
 * Introduce `Activity::Introspect.Nodes()` as a consistent and fast interface for introspection
   and remove `Activity::Introspect::TaskMap`.
 * Change `Activity#to_h[:nodes]`. This is now a `Schema::Nodes` "hash" that is keyed by task that
   points to `Nodes::Attributes` data structures (a replacement for `Activity::NodeAttributes`).
   This decision reduces logic and improves performance: it turned out that most of the time an introspect
   lookup queries for a task, not ID.
-* Re-add `:nodes` to the container activity as this gives a consistent way for treating all `Activity`s.
 * Remove `Activity::NodeAttributes`.
 * Move `Introspect::Graph` to `trailblazer-developer`. It's a data structure very specific
   to rendering, which is not a part of pure runtime behavior. `Activity::Introspect.Graph()` is now deprecated.
+* `TaskWrap.container_activity_for` now accepts `:id` for setting an ID for the containered activity to
+anything other than `nil`.
+* Re-add `:nodes` to the container activity hash as this provides a consistent way for treating all `Activity`s.
 
 # 0.15.1
 
