@@ -71,7 +71,7 @@ module Trailblazer
           build_from_ary(pipeline, insert_id) do |ary, index|
             index = ary.size if index.nil? # append to end of pipeline.
 
-            range_before_index(ary, index + 1) + [new_row] + Array(ary[index + 1..])
+            range_before_index(ary, index + 1) + [new_row] + Array(ary[index + 1..-1])
           end
         end
 
@@ -80,19 +80,19 @@ module Trailblazer
           build_from_ary(pipeline, insert_id) do |ary, index|
             index = 0 if index.nil? # Prepend to beginning of pipeline.
 
-            range_before_index(ary, index) + [new_row] + ary[index..]
+            range_before_index(ary, index) + [new_row] + ary[index..-1]
           end
         end
 
         def Replace(pipeline, new_row, insert_id)
           build_from_ary(pipeline, insert_id) do |ary, index|
-            range_before_index(ary, index) + [new_row] + ary[index + 1..]
+            range_before_index(ary, index) + [new_row] + ary[index + 1..-1]
           end
         end
 
         def Delete(pipeline, _, insert_id)
           build_from_ary(pipeline, insert_id) do |ary, index|
-            range_before_index(ary, index) + ary[index + 1..]
+            range_before_index(ary, index) + ary[index + 1..-1]
           end
         end
 
