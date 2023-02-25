@@ -67,32 +67,32 @@ module Trailblazer
         module_function
 
         # Append {new_row} after {insert_id}.
-        def Append(pipeline, new_row, insert_id=nil)
+        def Append(pipeline, new_row, insert_id = nil)
           build_from_ary(pipeline, insert_id) do |ary, index|
             index = ary.size if index.nil? # append to end of pipeline.
 
-            range_before_index(ary, index+1) + [new_row] + Array(ary[index+1..-1])
+            range_before_index(ary, index + 1) + [new_row] + Array(ary[index + 1..])
           end
         end
 
         # Insert {new_row} before {insert_id}.
-        def Prepend(pipeline, new_row, insert_id=nil)
+        def Prepend(pipeline, new_row, insert_id = nil)
           build_from_ary(pipeline, insert_id) do |ary, index|
             index = 0 if index.nil? # Prepend to beginning of pipeline.
 
-            range_before_index(ary, index) + [new_row] + ary[index..-1]
+            range_before_index(ary, index) + [new_row] + ary[index..]
           end
         end
 
         def Replace(pipeline, new_row, insert_id)
           build_from_ary(pipeline, insert_id) do |ary, index|
-            range_before_index(ary, index) + [new_row] + ary[index+1..-1]
+            range_before_index(ary, index) + [new_row] + ary[index + 1..]
           end
         end
 
         def Delete(pipeline, _, insert_id)
           build_from_ary(pipeline, insert_id) do |ary, index|
-            range_before_index(ary, index) + ary[index+1..-1]
+            range_before_index(ary, index) + ary[index + 1..]
           end
         end
 
@@ -113,7 +113,7 @@ module Trailblazer
         # Single-entry point, could be named {#call}.
         # @private
         def apply_on_ary(pipeline, insert_id, raise_index_error: true, &block)
-          ary   = pipeline.to_a
+          ary = pipeline.to_a
 
           if insert_id.nil?
             index = nil
@@ -137,13 +137,13 @@ module Trailblazer
         # @private
         def range_before_index(ary, index)
           return [] if index == 0
-          ary[0..index-1]
+          ary[0..index - 1]
         end
       end # Insert
 
       class IndexError < ::IndexError
         def initialize(sequence, step_id)
-          valid_ids = sequence.to_a.collect{ |row| row.id.inspect }
+          valid_ids = sequence.to_a.collect { |row| row.id.inspect }
 
           message = "\n" \
             "\e[31m#{step_id.inspect} is not a valid step ID. Did you mean any of these ?\e[0m\n" \
