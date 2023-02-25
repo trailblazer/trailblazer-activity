@@ -58,7 +58,7 @@ module Trailblazer
               task,
               signal: last_signal,
               outputs: @map[task],
-              exec_context: circuit_options[:exec_context], # passed at run-time from DSL
+              exec_context: circuit_options[:exec_context] # passed at run-time from DSL
             )
           end
         end
@@ -66,7 +66,11 @@ module Trailblazer
 
       # Returns the circuit's components.
       def to_h
-        { map: @map, end_events: @stop_events, start_task: @start_task }
+        {
+          map: @map,
+          end_events: @stop_events,
+          start_task: @start_task
+        }
       end
 
       private

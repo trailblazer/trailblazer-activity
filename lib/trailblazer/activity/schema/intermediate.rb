@@ -6,8 +6,13 @@ class Trailblazer::Activity
       TaskRef = Struct.new(:id, :data) # TODO: rename to NodeRef
       Out     = Struct.new(:semantic, :target)
 
-      def self.TaskRef(id, data={}); TaskRef.new(id, data) end
-      def self.Out(*args);           Out.new(*args)        end
+      def self.TaskRef(id, data = {})
+        TaskRef.new(id, data)
+      end
+
+      def self.Out(*args)
+        Out.new(*args)
+      end
 
       # Compiles a {Schema} instance from an {intermediate} structure and
       # the {implementation} object references.
@@ -30,16 +35,14 @@ class Trailblazer::Activity
       def self.circuit(intermediate, implementation)
         end_events = intermediate.stop_task_ids
 
-        wiring = Hash[
-          intermediate.wiring.collect do |task_ref, outs|
-            task = implementation.fetch(task_ref.id)
+        wiring = intermediate.wiring.collect do |task_ref, outs|
+          task = implementation.fetch(task_ref.id)
 
-            [
-              task.circuit_task,
-              end_events.include?(task_ref.id) ? {} : connections_for(outs, task.outputs, implementation)
-            ]
-          end
-        ]
+          [
+            task.circuit_task,
+            end_events.include?(task_ref.id) ? {} : connections_for(outs, task.outputs, implementation)
+          ]
+        end.to_h
 
         Circuit.new(
           wiring,
@@ -50,14 +53,12 @@ class Trailblazer::Activity
 
       # Compute the connections for {circuit_task}.
       def self.connections_for(outs, task_outputs, implementation)
-        Hash[
-          outs.collect { |required_out| # Intermediate::Out, it's abstract.
-            [
-              for_semantic(task_outputs, required_out.semantic).signal,
-              implementation.fetch(required_out.target).circuit_task
-            ]
-          }.compact
-        ]
+        outs.collect { |required_out| # Intermediate::Out, it's abstract.
+          [
+            for_semantic(task_outputs, required_out.semantic).signal,
+            implementation.fetch(required_out.target).circuit_task
+          ]
+        }.compact.to_h
       end
 
       # Compile the Schema{:nodes} field.
@@ -71,7 +72,7 @@ class Trailblazer::Activity
               id,                               # id
               implementation_task.circuit_task, # task
               task_ref[:data],                  # TODO: allow adding data from implementation.
-              implementation_task.outputs,      # outputs
+              implementation_task.outputs       # outputs
             ]
           end
 
@@ -80,10 +81,10 @@ class Trailblazer::Activity
 
       # intermediate/implementation independent.
       def self.outputs(stop_task_ids, nodes)
-        stop_task_ids.collect do |id|
+        stop_task_ids.flat_map do |id| # flat_map means collect.flatten.
           # Grab the {outputs} of the stop nodes.
           Introspect::Nodes.find_by_id(nodes, id).outputs
-        end.flatten(1)
+        end
       end
 
       # Invoke each task's extensions (usually coming from the DSL user or some macro).
@@ -95,8 +96,6 @@ class Trailblazer::Activity
 
         config
       end
-
-
 
       # Apply to any array.
       private_class_method def self.for_semantic(outputs, semantic)

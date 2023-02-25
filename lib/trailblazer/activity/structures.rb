@@ -21,7 +21,7 @@ module Trailblazer
       end
 
       def to_s
-        %{#<#{self.class.name} #{@options.collect { |k, v| "#{k}=#{v.inspect}" }.join(" ")}>}
+        %(#<#{self.class.name} #{@options.collect { |k, v| "#{k}=#{v.inspect}" }.join(" ")}>)
       end
 
       alias inspect to_s
@@ -33,9 +33,11 @@ module Trailblazer
       end
     end
 
-    class Signal;         end
+    class Signal; end
+
     class Right < Signal; end
-    class Left  < Signal; end
+
+    class Left < Signal; end
 
     # signal:   actual signal emitted by the task
     # color:    the mapping, where this signal will travel to. This can be e.g. Left=>:success. The polarization when building the graph.

@@ -9,7 +9,7 @@ module Trailblazer
     #   |-- Call (call actual task) id: "task_wrap.call_task"
     #   |-- Trace.capture_return [optional]
     #   |-- Wrap::End
-    module TaskWrap      
+    module TaskWrap
       # inserts must be
       # An {Extension} can be used for {:wrap_runtime}. It expects a collection of
       # "friendly interface" arrays.
@@ -100,7 +100,6 @@ Please update to the new TaskWrap.Extension() API."
             config.merge(wrap_static: wrap_static) # Return new config hash. This needs to be immutable code!
           end
         end # WrapStatic
-
       end # Extension
     end # TaskWrap
   end

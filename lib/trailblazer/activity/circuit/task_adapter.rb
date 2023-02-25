@@ -22,8 +22,8 @@ module Trailblazer
       # and returns the return value of the user's callable. By design, it is *not* circuit-interface compatible.
       class Step
         def initialize(step, user_proc, **)
-          @step            = step
-          @user_proc       = user_proc
+          @step      = step
+          @user_proc = user_proc
         end
 
         # Translate the circuit interface to the step's step-interface. However,
@@ -91,7 +91,7 @@ module Trailblazer
         def inspect # TODO: make me private!
           user_step = @circuit_step.instance_variable_get(:@user_proc) # DISCUSS: to we want Step#to_h?
 
-          %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{Trailblazer::Activity::Introspect.render_task(user_step)}>}
+          %(#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{Trailblazer::Activity::Introspect.render_task(user_step)}>)
         end
         alias_method :to_s, :inspect
       end

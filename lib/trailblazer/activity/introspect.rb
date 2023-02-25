@@ -26,7 +26,7 @@ module Trailblazer
 
       # @private
       def self.find_path(activity, segments)
-        raise ArgumentError.new(%{[Trailblazer] Please pass #{activity}.to_h[:activity] into #find_path.}) unless activity.kind_of?(Trailblazer::Activity)
+        raise ArgumentError.new(%([Trailblazer] Please pass #{activity}.to_h[:activity] into #find_path.)) unless activity.is_a?(Trailblazer::Activity)
 
         segments = [nil, *segments]
 
@@ -35,7 +35,7 @@ module Trailblazer
         activity      = TaskWrap.container_activity_for(activity) # needed for empty/root path
 
         segments.each do |segment|
-          attributes    = Introspect.Nodes(activity, id: segment) or return
+          attributes    = Introspect.Nodes(activity, id: segment) or return nil
           last_activity = activity
           activity      = attributes.task
         end
@@ -47,7 +47,7 @@ module Trailblazer
         if proc.is_a?(Method)
 
           receiver = proc.receiver
-          receiver = receiver.is_a?(Class) ? (receiver.name || "#<Class:0x>") : (receiver.name || "#<Module:0x>") #"#<Class:0x>"
+          receiver = receiver.is_a?(Class) ? (receiver.name || "#<Class:0x>") : (receiver.name || "#<Module:0x>") # "#<Class:0x>"
 
           return "#<Method: #{receiver}.#{proc.name}>"
         elsif proc.is_a?(Symbol)
@@ -59,7 +59,7 @@ module Trailblazer
 
       # TODO: remove with 0.1.0.
       def self.Graph(*args)
-        Deprecate.warn caller_locations[0], %{`Trailblazer::Activity::Introspect::Graph` is deprecated. Please use `Trailblazer::Developer::Introspect.Graph`}
+        Deprecate.warn caller_locations[0], %(`Trailblazer::Activity::Introspect::Graph` is deprecated. Please use `Trailblazer::Developer::Introspect.Graph`)
 
         Trailblazer::Developer::Introspect::Graph.new(*args)
       end

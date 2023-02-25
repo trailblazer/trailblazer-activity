@@ -80,9 +80,9 @@ module Trailblazer
       def assert_process_for(process, *args)
         semantics, circuit = args[0..-2], args[-1]
 
-        inspects = semantics.collect { |semantic| %{#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=#{semantic.inspect}>, semantic=#{semantic.inspect}>} }
+        inspects = semantics.collect { |semantic| %(#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=#{semantic.inspect}>, semantic=#{semantic.inspect}>) }
 
-        assert_equal %{[#{inspects.join(", ")}]}, process.to_h[:outputs].inspect
+        assert_equal %([#{inspects.join(", ")}]), process.to_h[:outputs].inspect
 
         assert_circuit(process, circuit)
 
@@ -93,7 +93,7 @@ module Trailblazer
         cct = Cct(schema)
 
         cct = cct.gsub("#<Trailblazer::Activity::TaskBuilder::Task user_proc=", "<*")
-        assert_equal %{#{circuit}}, cct
+        assert_equal circuit.to_s, cct
       end
 
       def Cct(activity)

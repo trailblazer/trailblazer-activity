@@ -28,12 +28,12 @@ class IntermediateTest < Minitest::Spec
     b_extension_1 = ->(config:, **) { config.merge(b1: false) }
 
     implementation = {
-      :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)],        [a_extension_1, a_extension_2]),
-      :b => Schema::Implementation::Task(implementing.method(:b), [Activity::Output("B/success", :success), Activity::Output("B/failure", :failure)], [b_extension_1]),
-      :c => Schema::Implementation::Task(implementing.method(:c), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)]),
-      :d => Schema::Implementation::Task(implementing.method(:d), [Activity::Output("D/success", :success), Activity::Output(Left, :failure)]),
-      "End.success" => Schema::Implementation::Task(implementing::Success, [Activity::Output(implementing::Success, :success)]), # DISCUSS: End has one Output, signal is itself?
-      "End.failure" => Schema::Implementation::Task(implementing::Failure, [Activity::Output(implementing::Failure, :failure)])
+      :a => Schema::Implementation::Task(Implementing.method(:a), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)],        [a_extension_1, a_extension_2]),
+      :b => Schema::Implementation::Task(Implementing.method(:b), [Activity::Output("B/success", :success), Activity::Output("B/failure", :failure)], [b_extension_1]),
+      :c => Schema::Implementation::Task(Implementing.method(:c), [Activity::Output(Right,       :success), Activity::Output(Left, :failure)]),
+      :d => Schema::Implementation::Task(Implementing.method(:d), [Activity::Output("D/success", :success), Activity::Output(Left, :failure)]),
+      "End.success" => Schema::Implementation::Task(Implementing::Success, [Activity::Output(Implementing::Success, :success)]), # DISCUSS: End has one Output, signal is itself?
+      "End.failure" => Schema::Implementation::Task(Implementing::Failure, [Activity::Output(Implementing::Failure, :failure)])
     }
 
     schema = Inter.(intermediate, implementation)
@@ -66,8 +66,8 @@ class IntermediateTest < Minitest::Spec
 
   def implementation(c_extensions)
     {
-      :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  c_extensions),
-      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [])
+      :C => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  c_extensions),
+      "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], [])
     }
   end
 
@@ -97,11 +97,11 @@ class IntermediateTest < Minitest::Spec
 
     implementation =
       {
-        "Start.default" => Schema::Implementation::Task(implementing::Start, [Activity::Output(Activity::Right, :success)], []),
-        :C => Schema::Implementation::Task(implementing.method(:c), [Activity::Output(Activity::Right, :success)], []),
+        "Start.default" => Schema::Implementation::Task(Implementing::Start, [Activity::Output(Activity::Right, :success)], []),
+        :C => Schema::Implementation::Task(Implementing.method(:c), [Activity::Output(Activity::Right, :success)], []),
         :D => Schema::Implementation::Task(D.method(:d_end),        [Activity::Output("D/stop", :win)], []),
-        :E => Schema::Implementation::Task(implementing.method(:f), [Activity::Output(Activity::Right, :success)], []),
-        "End.success" => Schema::Implementation::Task(implementing::Success, [Activity::Output(implementing::Success, :success)], [])
+        :E => Schema::Implementation::Task(Implementing.method(:f), [Activity::Output(Activity::Right, :success)], []),
+        "End.success" => Schema::Implementation::Task(Implementing::Success, [Activity::Output(Implementing::Success, :success)], [])
       }
 
     schema = Inter.(intermediate, implementation)
@@ -143,8 +143,8 @@ class IntermediateTest < Minitest::Spec
 
     def implementation(c_extensions)
       {
-        :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  c_extensions),
-        "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], [])
+        :C => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  c_extensions),
+        "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], [])
       }
     end
 

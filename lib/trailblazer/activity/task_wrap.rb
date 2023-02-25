@@ -21,7 +21,7 @@ module Trailblazer
         circuit_options = circuit_options.merge(
           runner:       TaskWrap::Runner,
           wrap_runtime: wrap_runtime,
-          activity:     container_activity, # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
+          activity:     container_activity # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
         )
 
         # signal, (ctx, flow), circuit_options =
@@ -49,7 +49,7 @@ module Trailblazer
             wrap_static:  {activity => wrap_static},
             **config
           },
-          nodes:  Schema.Nodes([[id, activity]]),
+          nodes:  Schema.Nodes([[id, activity]])
         }
       end
 
