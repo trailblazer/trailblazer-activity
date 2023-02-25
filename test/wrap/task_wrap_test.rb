@@ -29,10 +29,10 @@ class TaskWrapTest < Minitest::Spec
 
   def abc_implementation(a_extensions: [])
     implementation = {
-      :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Activity::Right, :success)], a_extensions),
-      :b => Schema::Implementation::Task(implementing.method(:b), [Activity::Output(Activity::Right, :success)],                 []),
-      :c => Schema::Implementation::Task(implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 []),
-      "End.success" => Schema::Implementation::Task(_es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
+      :a => Schema::Implementation::Task(Implementing.method(:a), [Activity::Output(Activity::Right, :success)], a_extensions),
+      :b => Schema::Implementation::Task(Implementing.method(:b), [Activity::Output(Activity::Right, :success)],                 []),
+      :c => Schema::Implementation::Task(Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 []),
+      "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     return implementation, _es
@@ -44,7 +44,7 @@ class TaskWrapTest < Minitest::Spec
     abc_implementation, _es = abc_implementation()
     schema                  = Inter.(abc_intermediate, abc_implementation)
 
-    c     = implementing.method(:c)
+    c     = Implementing.method(:c)
     c_ext = TaskWrap.Extension(
       [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
       [method(:add_2), id: "user.add_2", append: "task_wrap.call_task"],
@@ -92,10 +92,10 @@ class TaskWrapTest < Minitest::Spec
   #@ it works nested as well
 
     top_implementation = {
-      :a => Schema::Implementation::Task(implementing.method(:a), [Activity::Output(Activity::Right, :success)], []),
+      :a => Schema::Implementation::Task(Implementing.method(:a), [Activity::Output(Activity::Right, :success)], []),
       :b => Schema::Implementation::Task(Activity.new(schema), [Activity::Output(_es, :success)], []),
-      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.WrapStatic(*merge)]),
-      "End.success" => Schema::Implementation::Task(es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
+      :c => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.WrapStatic(*merge)]),
+      "End.success" => Schema::Implementation::Task(es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(abc_intermediate, top_implementation)
@@ -133,13 +133,13 @@ class TaskWrapTest < Minitest::Spec
     outer_implementation = {
       :a => Schema::Implementation::Task(Activity.new(inner_schema), [Activity::Output(_es, :success)], [TaskWrap::Extension.WrapStatic(merge)]),
       :b => Schema::Implementation::Task(Activity.new(inner_schema), [Activity::Output(_es, :success)], []),
-      :c => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],      []),
-      "End.success" => Schema::Implementation::Task(es = implementing::Success, [Activity::Output(implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
+      :c => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],      []),
+      "End.success" => Schema::Implementation::Task(es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     outer_schema = Inter.(outer_intermediate, outer_implementation)
 
-    assert_invoke Activity.new(outer_schema), seq: "[:b, :c, :a, :b, :c, :c]", start_at: implementing.method(:b)
+    assert_invoke Activity.new(outer_schema), seq: "[:b, :c, :a, :b, :c, :c]", start_at: Implementing.method(:b)
   end
 
   def change_start_task(wrap_ctx, original_args)

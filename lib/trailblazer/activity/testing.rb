@@ -44,133 +44,57 @@ module Trailblazer
     end
 
     module Assertions
-        Activity  = Trailblazer::Activity
-        Inter     = Trailblazer::Activity::Schema::Intermediate
-        Schema    = Trailblazer::Activity::Schema
-        TaskWrap  = Trailblazer::Activity::TaskWrap
+      # `:seq` is always passed into ctx.
+      # @param :seq String What the {:seq} variable in the result ctx looks like. (expected seq)
+      # @param :expected_ctx_variables Variables that are added during the call by the asserted activity.
+      def assert_call(activity, terminus: :success, seq: "[]", expected_ctx_variables: {}, **ctx_variables)
+        # Call without taskWrap!
+        signal, (ctx, _) = activity.([{seq: [], **ctx_variables}, _flow_options = {}]) # simply call the activity with the input you want to assert.
 
-        # `:seq` is always passed into ctx.
-        # @param :seq String What the {:seq} variable in the result ctx looks like. (expected seq)
-        # @param :expected_ctx_variables Variables that are added during the call by the asserted activity.
-        def assert_call(activity, terminus: :success, seq: "[]", expected_ctx_variables: {}, **ctx_variables)
-          # Call without taskWrap!
-          signal, (ctx, _) = activity.([{seq: [], **ctx_variables}, _flow_options = {}]) # simply call the activity with the input you want to assert.
+        assert_call_for(signal, ctx, terminus: terminus, seq: seq, **expected_ctx_variables, **ctx_variables)
+      end
 
-          assert_call_for(signal, ctx, terminus: terminus, seq: seq, **expected_ctx_variables, **ctx_variables)
-        end
+      # Use {TaskWrap.invoke} to call the activity.
+      def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, expected_ctx_variables: {}, **ctx_variables)
+        signal, (ctx, _flow_options) = Activity::TaskWrap.invoke(
+          activity,
+          [
+            {seq: [], **ctx_variables},
+            {}                          # flow_options
+          ],
+          **circuit_options
+        )
 
-        # Use {TaskWrap.invoke} to call the activity.
-        def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, expected_ctx_variables: {}, **ctx_variables)
-          signal, (ctx, _flow_options) = TaskWrap.invoke(
-            activity,
-            [
-              {seq: [], **ctx_variables},
-              {}                          # flow_options
-            ],
-            **circuit_options
-          )
+        assert_call_for(signal, ctx, terminus: terminus, seq: seq, **ctx_variables, **expected_ctx_variables) # DISCUSS: ordering of variables?
+      end
 
-          assert_call_for(signal, ctx, terminus: terminus, seq: seq, **ctx_variables, **expected_ctx_variables) # DISCUSS: ordering of variables?
-        end
+      def assert_call_for(signal, ctx, terminus: :success, seq: "[]", **ctx_variables)
+        assert_equal signal.to_h[:semantic], terminus, "assert_call expected #{terminus} terminus, not #{signal}. Use assert_call(activity, terminus: #{signal.to_h[:semantic].inspect})"
 
-        def assert_call_for(signal, ctx, terminus: :success, seq: "[]", **ctx_variables)
-          assert_equal signal.to_h[:semantic], terminus, "assert_call expected #{terminus} terminus, not #{signal}. Use assert_call(activity, terminus: #{signal.to_h[:semantic].inspect})"
+        assert_equal ctx.inspect, {seq: "%%%"}.merge(ctx_variables).inspect.sub('"%%%"', seq)
 
-          assert_equal ctx.inspect, {seq: "%%%"}.merge(ctx_variables).inspect.sub('"%%%"', seq)
+        return ctx
+      end
 
-          return ctx
-        end
+      # Tests {:circuit} and {:outputs} fields so far.
+      def assert_process_for(process, *args)
+        semantics, circuit = args[0..-2], args[-1]
 
-        module Implementing
-          extend Activity::Testing.def_tasks(:a, :b, :c, :d, :f, :g)
+        inspects = semantics.collect { |semantic| %{#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=#{semantic.inspect}>, semantic=#{semantic.inspect}>} }
 
-          Start = Activity::Start.new(semantic: :default)
-          Failure = Activity::End(:failure)
-          Success = Activity::End(:success)
-        end
+        assert_equal %{[#{inspects.join(", ")}]}, process.to_h[:outputs].inspect
 
-        # TODO: Remove this once all its references are removed
-        def implementing
-          Implementing
-        end
+        assert_circuit(process, circuit)
 
-        def flat_activity(implementing: Implementing)
-          return @_flat_activity if defined?(@_flat_activity)
+        process
+      end
 
-          intermediate = Inter.new(
-            {
-              Inter::TaskRef("Start.default")      => [Inter::Out(:success, :B)],
-              Inter::TaskRef(:B, additional: true) => [Inter::Out(:success, :C), Inter::Out(:failure, "End.failure")],
-              Inter::TaskRef(:C)                   => [Inter::Out(:success, "End.success")],
-              Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)],
-              Inter::TaskRef("End.failure", stop_event: true) => [Inter::Out(:failure, nil)],
-            },
-            ["End.success", "End.failure"],
-            ["Start.default"], # start
-          )
+      def assert_circuit(schema, circuit)
+        cct = Cct(schema)
 
-          implementation = {
-            "Start.default" => Schema::Implementation::Task(st = Implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
-            :B => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success), Activity::Output(Activity::Left, :failure)],                  []),
-            :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  []),
-            "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
-            "End.failure" => Schema::Implementation::Task(Implementing::Failure, [Activity::Output(Implementing::Failure, :failure)], []), # DISCUSS: End has one Output, signal is itself?
-          }
-
-          schema = Inter.(intermediate, implementation)
-
-          @_flat_activity = Activity.new(schema)
-        end
-
-# FIXME: why is this in Testing? We don't need this anywhere but in this gem.
-        def nested_activity(flat_activity: bc, d_id: :D)
-          intermediate = Inter.new(
-            {
-              Inter::TaskRef("Start.default") => [Inter::Out(:success, :B)],
-              Inter::TaskRef(:B, more: true)  => [Inter::Out(:success, d_id)],
-              Inter::TaskRef(d_id) => [Inter::Out(:success, :E)],
-              Inter::TaskRef(:E) => [Inter::Out(:success, "End.success")],
-              Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
-            },
-            ["End.success"],
-            ["Start.default"] # start
-          )
-
-          implementation = {
-            "Start.default" => Schema::Implementation::Task(st = Implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
-            :B => Schema::Implementation::Task(b = Implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  []),
-            d_id => Schema::Implementation::Task(flat_activity, [Activity::Output(Implementing::Success, :success)],                  []),
-            :E => Schema::Implementation::Task(e = Implementing.method(:f), [Activity::Output(Activity::Right, :success)],                  []),
-            "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
-          }
-
-          schema = Inter.(intermediate, implementation)
-
-          Activity.new(schema)
-        end
-
-        alias_method :bc, :flat_activity
-        alias_method :bde, :nested_activity
-
-        # Tests {:circuit} and {:outputs} fields so far.
-        def assert_process_for(process, *args)
-          semantics, circuit = args[0..-2], args[-1]
-
-          inspects = semantics.collect { |semantic| %{#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=#{semantic.inspect}>, semantic=#{semantic.inspect}>} }
-
-          assert_equal %{[#{inspects.join(", ")}]}, process.to_h[:outputs].inspect
-
-          assert_circuit(process, circuit)
-
-          process
-        end
-
-        def assert_circuit(schema, circuit)
-          cct = Cct(schema)
-
-          cct = cct.gsub("#<Trailblazer::Activity::TaskBuilder::Task user_proc=", "<*")
-          assert_equal %{#{circuit}}, cct
-        end
+        cct = cct.gsub("#<Trailblazer::Activity::TaskBuilder::Task user_proc=", "<*")
+        assert_equal %{#{circuit}}, cct
+      end
 
       def Cct(activity)
         Trailblazer::Developer::Render::Circuit.(activity, inspect_task: Trailblazer::Activity::Testing.method(:render_task))

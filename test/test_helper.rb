@@ -12,3 +12,12 @@ Minitest::Spec.class_eval do
 end
 
 T = Trailblazer::Activity::Testing
+
+require "fixtures"
+
+Minitest::Spec.class_eval do
+  Implementing = Fixtures::Implementing
+  Activity = Trailblazer::Activity
+
+  include Fixtures
+end

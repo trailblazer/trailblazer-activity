@@ -31,12 +31,12 @@ class ActivityTest < Minitest::Spec
   end
 
   it "{:activity}" do
-    intermediate = Inter.new(
+    intermediate = Activity::Schema::Intermediate.new(
       {
-        Inter::TaskRef(:a) => [Inter::Out(:success, :b)],
-        Inter::TaskRef(:b) => [Inter::Out(:success, :c)],
-        Inter::TaskRef(:c) => [Inter::Out(:success, :d)],
-        Inter::TaskRef(:d) => [Inter::Out(:success, nil)]
+        Activity::Schema::Intermediate::TaskRef(:a) => [Activity::Schema::Intermediate::Out(:success, :b)],
+        Activity::Schema::Intermediate::TaskRef(:b) => [Activity::Schema::Intermediate::Out(:success, :c)],
+        Activity::Schema::Intermediate::TaskRef(:c) => [Activity::Schema::Intermediate::Out(:success, :d)],
+        Activity::Schema::Intermediate::TaskRef(:d) => [Activity::Schema::Intermediate::Out(:success, nil)]
       },
       [:d],
       [:a] # start
@@ -58,7 +58,7 @@ class ActivityTest < Minitest::Spec
       :d => Schema::Implementation::Task(step4.clone, [Activity::Output(Activity::Right, :success)], [])
     }
 
-    nested_activity = Activity.new(Inter.(intermediate, implementation))
+    nested_activity = Activity.new(Activity::Schema::Intermediate.(intermediate, implementation))
 
     implementation = {
       :a => Schema::Implementation::Task(step5, [Activity::Output(Activity::Right, :success)], []),
@@ -67,7 +67,7 @@ class ActivityTest < Minitest::Spec
       :d => Schema::Implementation::Task(step7.clone, [Activity::Output(Activity::Right, :success)], [])
     }
 
-    activity = Activity.new(Inter.(intermediate, implementation))
+    activity = Activity.new(Activity::Schema::Intermediate.(intermediate, implementation))
 
     _signal, (ctx,) = activity.([[], {}])
 
