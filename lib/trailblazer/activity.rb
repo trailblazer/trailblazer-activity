@@ -21,7 +21,7 @@ module Trailblazer
     end
 
     def inspect
-      %{#<Trailblazer::Activity:0x#{object_id}>}
+      %(#<Trailblazer::Activity:0x#{object_id}>)
     end
 
     # Canonical entry-point to invoke an {Activity} or Strategy such as {Activity::Railway}
