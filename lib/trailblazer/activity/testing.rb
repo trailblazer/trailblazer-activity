@@ -10,8 +10,9 @@ module Trailblazer
     def self.def_steps(*names)
       Module.new do
         module_function
+
         names.each do |name|
-          define_method(name) do | ctx, ** |
+          define_method(name) do |ctx, **|
             ctx[:seq] << name
             ctx.key?(name) ? ctx[name] : true
           end
@@ -24,21 +25,15 @@ module Trailblazer
     # @example
     #   task task: T.def_task(:create)
     def self.def_task(name)
-      Module.new do
-        define_singleton_method(name) do | (ctx, flow_options), ** |
-          ctx[:seq] << name
-          signal = ctx.key?(name) ? ctx[name] : Activity::Right
-
-          return signal, [ctx, flow_options]
-        end
-      end.method(name)
+      def_tasks(name).method(name)
     end
 
     def self.def_tasks(*names)
       Module.new do
         module_function
+
         names.each do |name|
-          define_method(name) do | (ctx, flow_options), ** |
+          define_method(name) do |(ctx, flow_options), **|
             ctx[:seq] << name
             signal = ctx.key?(name) ? ctx[name] : Activity::Right
 
