@@ -97,7 +97,7 @@ module Trailblazer
       end
 
       def Cct(activity)
-        Trailblazer::Developer::Render::Circuit.(activity, inspect_task: Trailblazer::Activity::Testing.method(:render_task))
+        Activity::Introspect::Render.(activity, inspect_task: Trailblazer::Activity::Testing.method(:render_task))
       end
     end
 
