@@ -38,7 +38,7 @@ module Fixtures
       "End.failure" => Schema::Implementation::Task(Implementing::Failure, [], []), # DISCUSS: End has one Output, signal is itself?
     }
 
-    schema = Inter.(intermediate, implementation)
+    schema = Inter::Compiler.(intermediate, implementation)
 
     @_flat_activity = Activity.new(schema)
   end
@@ -64,7 +64,7 @@ module Fixtures
       "End.success" => Schema::Implementation::Task(Implementing::Success, [], []),
     }
 
-    schema = Inter.(intermediate, implementation)
+    schema = Inter::Compiler.(intermediate, implementation)
 
     Activity.new(schema)
   end

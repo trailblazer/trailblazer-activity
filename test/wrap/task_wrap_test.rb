@@ -42,7 +42,7 @@ class TaskWrapTest < Minitest::Spec
 #@ friendly Interface tests.
   it "{Extension()} can be used as runtime extension" do
     abc_implementation, _es = abc_implementation()
-    schema                  = Inter.(abc_intermediate, abc_implementation)
+    schema                  = Inter::Compiler.(abc_intermediate, abc_implementation)
 
     c     = Implementing.method(:c)
     c_ext = TaskWrap.Extension(
@@ -85,7 +85,7 @@ class TaskWrapTest < Minitest::Spec
     ]
 
     abc_implementation, _es = abc_implementation(a_extensions: [TaskWrap::Extension.WrapStatic(*merge)])
-    schema                  = Inter.(abc_intermediate, abc_implementation)
+    schema                  = Inter::Compiler.(abc_intermediate, abc_implementation)
 
     assert_invoke Activity.new(schema), seq: "[1, :a, 2, :b, :c]"
 
@@ -98,7 +98,7 @@ class TaskWrapTest < Minitest::Spec
       "End.success" => Schema::Implementation::Task(Implementing::Success, [], []) # DISCUSS: End has one Output, signal is itself?
     }
 
-    schema = Inter.(abc_intermediate, top_implementation)
+    schema = Inter::Compiler.(abc_intermediate, top_implementation)
 
     assert_invoke Activity.new(schema), seq: "[:a, 1, :a, 2, :b, :c, 1, :c, 2]"
 
@@ -114,7 +114,7 @@ class TaskWrapTest < Minitest::Spec
   it "allows changing {circuit_options} via taskWrap" do
     abc_implementation, _es = abc_implementation()
 
-    inner_schema = Inter.(abc_intermediate, abc_implementation)
+    inner_schema = Inter::Compiler.(abc_intermediate, abc_implementation)
 
   # outer
     outer_intermediate = Inter.new(
@@ -137,7 +137,7 @@ class TaskWrapTest < Minitest::Spec
       "End.success" => Schema::Implementation::Task(es = Implementing::Success, [], []) # DISCUSS: End has one Output, signal is itself?
     }
 
-    outer_schema = Inter.(outer_intermediate, outer_implementation)
+    outer_schema = Inter::Compiler.(outer_intermediate, outer_implementation)
 
     assert_invoke Activity.new(outer_schema), seq: "[:b, :c, :a, :b, :c, :c]", start_at: Implementing.method(:b)
   end
@@ -180,7 +180,7 @@ Please update to the new TaskWrap.Extension() API.
 }
 
     abc_implementation, _ = abc_implementation(a_extensions: [ext])
-    schema                = Inter.(abc_intermediate, abc_implementation)
+    schema                = Inter::Compiler.(abc_intermediate, abc_implementation)
 
     assert_invoke(Activity.new(schema), seq: "[1, :a, 2, :b, :c]")
 
@@ -188,7 +188,7 @@ Please update to the new TaskWrap.Extension() API.
     wrap_runtime = {abc_implementation[:c].circuit_task => TaskWrap::Extension.new(*merge)}
 
     abc_implementation, _ = abc_implementation() # no extensions via wrap_static.
-    schema                = Inter.(abc_intermediate, abc_implementation)
+    schema                = Inter::Compiler.(abc_intermediate, abc_implementation)
 
     assert_invoke(Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime})
 

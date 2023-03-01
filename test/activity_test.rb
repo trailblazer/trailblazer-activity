@@ -58,7 +58,7 @@ class ActivityTest < Minitest::Spec
       :d => Schema::Implementation::Task(step4.clone, [], [])
     }
 
-    nested_activity = Activity.new(Activity::Schema::Intermediate.(intermediate, implementation))
+    nested_activity = Activity.new(Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
 
     implementation = {
       :a => Schema::Implementation::Task(step5, [Activity::Output(Activity::Right, :success)], []),
@@ -67,7 +67,7 @@ class ActivityTest < Minitest::Spec
       :d => Schema::Implementation::Task(step7.clone, [], [])
     }
 
-    activity = Activity.new(Activity::Schema::Intermediate.(intermediate, implementation))
+    activity = Activity.new(Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
 
     _signal, (ctx,) = activity.([[], {}])
 

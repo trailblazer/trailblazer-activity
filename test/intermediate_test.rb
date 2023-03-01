@@ -41,7 +41,7 @@ class IntermediateTest < Minitest::Spec
       "End.failure" => Schema::Implementation::Task(Implementing::Failure,  [Activity::Output(Implementing::Failure, :failure)])
     }
 
-    schema = Inter.(intermediate, implementation)
+    schema = Inter::Compiler.(intermediate, implementation)
 
     assert_process schema, :success, :failure, %(
 #<Method: IntermediateTest.b_task>
@@ -106,7 +106,7 @@ class IntermediateTest < Minitest::Spec
         "End.success" => Schema::Implementation::Task(Implementing::Success,  [], [])
       }
 
-    schema = Inter.(intermediate, implementation)
+    schema = Inter::Compiler.(intermediate, implementation)
 
     assert_equal schema[:outputs].inspect, %{[#<struct Trailblazer::Activity::Output signal=#<IntermediateTest::D::End semantic=:win>, semantic=:win>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>]}
 
@@ -152,7 +152,7 @@ class IntermediateTest < Minitest::Spec
       exception = Object.const_defined?(:FrozenError) ? FrozenError : RuntimeError # < Ruby 2.5
 
       assert_raises exception do
-        Inter.(intermediate, implementation([ext_a]))
+        Inter::Compiler.(intermediate, implementation([ext_a]))
       end
     end
 
@@ -162,7 +162,7 @@ class IntermediateTest < Minitest::Spec
       ext_d = ->(config:, id:, **)  { config.merge(id => 1) }              # provides :id
       ext_e = ->(config:, **)       { config.merge(e: config[:C] + 1) } # allows reading new {Config} instance.
 
-      schema = Inter.(intermediate, implementation([ext_a, ext_b, ext_d, ext_e]))
+      schema = Inter::Compiler.(intermediate, implementation([ext_a, ext_b, ext_d, ext_e]))
 
       expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :C=>1, :e=>2}}
     end
@@ -170,13 +170,13 @@ class IntermediateTest < Minitest::Spec
   # {Implementation.call()} allows to pass {config} data
     describe "{Implementation.call()}" do
       it "accepts {config_merge:} data that is merged into {config}" do
-        schema = Inter.(intermediate, implementation([]), config_merge: {beer: "yes"})
+        schema = Inter::Compiler.(intermediate, implementation([]), config_merge: {beer: "yes"})
 
         expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>{}, :beer=>\"yes\"}}
       end
 
       it "{:config_merge} overrides values in {default_config}" do
-        schema = Inter.(intermediate, implementation([]), config_merge: {beer: "yes", wrap_static: "yo"})
+        schema = Inter::Compiler.(intermediate, implementation([]), config_merge: {beer: "yes", wrap_static: "yo"})
 
         expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>"yo", :beer=>\"yes\"}}
       end

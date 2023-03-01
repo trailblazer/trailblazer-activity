@@ -19,7 +19,8 @@ anything other than `nil`.
 
 ## Intermediate/Implementation
 
-* Introduce `Schema::Compiler` which is simplified and is 10% faster.
+* Remove `Intermediate.call`, this is now done through `Intermediate::Compiler`.
+* Introduce `Intermediate::Compiler` which is simplified and is 10% faster.
 * A terminus ("end event") in `Schema::Intermediate` no longer has outputs but an empty array. The
   `stop_event: true` option is still required to mark the `TaskRef` as a terminus.
 * `Schema::Intermediate` now keeps a map `{<terminus ID> => :semantic}` instead of the flat termini ID list and
@@ -46,7 +47,7 @@ anything other than `nil`.
       {"End.success" => :success},
       :a # start
     ```
-  * In line with the change in `Intermediate`, the `Implemention` termini `Task`s now don't have outputs anymore.
+* In line with the change in `Intermediate`, the `Implemention` termini `Task`s now don't have outputs anymore.
 
     ```ruby
     implementation = {

@@ -52,7 +52,7 @@ class DocsIntermediateTest < Minitest::Spec
     #:impl end
 
     #:comp
-    schema = Intermediate.(intermediate, implementation)
+    schema = Intermediate::Compiler.(intermediate, implementation)
 
     Activity.new(schema)
     #:comp end
