@@ -29,7 +29,7 @@ module Trailblazer
 
         # If Ruby had pattern matching, this function wasn't necessary.
         def inspect_with_matcher(task, inspect_task: method(:inspect_task), inspect_end: method(:inspect_end))
-          return inspect_task.(task) unless task.kind_of?(Trailblazer::Activity::End)
+          return inspect_task.(task) unless task.is_a?(Trailblazer::Activity::End)
           inspect_end.(task)
         end
 

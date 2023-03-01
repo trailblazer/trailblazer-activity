@@ -51,11 +51,13 @@ module Trailblazer
             terminus_to_output  = terminus_to_output(intermediate, implementation)
             activity_outputs    = terminus_to_output.values
 
-            return Circuit.new(
-                wiring,
-                terminus_to_output.keys,
-                start_task: implementation.fetch(start_id).circuit_task
-              ),
+            circuit = Circuit.new(
+              wiring,
+              terminus_to_output.keys, # termini
+              start_task: implementation.fetch(start_id).circuit_task
+            )
+
+            return circuit,
               activity_outputs,
               Schema::Nodes(nodes_attributes),
               config
@@ -75,15 +77,14 @@ module Trailblazer
           def terminus_to_output(intermediate, implementation)
             terminus_to_semantic = intermediate.stop_task_ids
 
-            terminus_to_output =
-              terminus_to_semantic.collect do |id, semantic|
-                terminus_task = implementation.fetch(id).circuit_task
+            terminus_to_semantic.collect do |id, semantic|
+              terminus_task = implementation.fetch(id).circuit_task
 
-                [
-                  terminus_task,
-                  Activity::Output(terminus_task, semantic) # The End instance is the signal.
-                ]
-              end.to_h
+              [
+                terminus_task,
+                Activity::Output(terminus_task, semantic) # The End instance is the signal.
+              ]
+            end.to_h
           end
 
           # Run all Implementation::Task.extensions and return new {config}
