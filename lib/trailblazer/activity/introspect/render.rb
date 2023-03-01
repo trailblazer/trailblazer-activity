@@ -1,6 +1,7 @@
 module Trailblazer
   class Activity
     module Introspect
+      # @private
       module Render
         module_function
 

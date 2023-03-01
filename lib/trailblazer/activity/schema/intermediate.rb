@@ -2,7 +2,7 @@ class Trailblazer::Activity
   class Schema
     # An {Intermediate} structure defines the *structure* of the circuit. It usually
     # comes from a DSL or a visual editor.
-    class Intermediate < Struct.new(:wiring, :stop_task_ids, :start_task_ids)
+    class Intermediate < Struct.new(:wiring, :stop_task_ids, :start_task_id)
       TaskRef = Struct.new(:id, :data) # TODO: rename to NodeRef
       Out     = Struct.new(:semantic, :target)
 
@@ -19,6 +19,8 @@ class Trailblazer::Activity
       #
       # Intermediate structure, Implementation, calls extensions, passes {config} # TODO
       def self.call(intermediate, implementation, config_merge: {})
+        return Compiler.(intermediate, implementation, config_merge: config_merge)
+
         config_default = {wrap_static: Hash.new(TaskWrap.initial_wrap_static)} # DISCUSS: this really doesn't have to be here, but works for now and we want it in 99%.
         config         = config_default.merge(config_merge)
         config.freeze
@@ -47,7 +49,7 @@ class Trailblazer::Activity
         Circuit.new(
           wiring,
           intermediate.stop_task_ids.collect { |id| implementation.fetch(id).circuit_task },
-          start_task: intermediate.start_task_ids.collect { |id| implementation.fetch(id).circuit_task }[0]
+          start_task: intermediate.start_task_id.collect { |id| implementation.fetch(id).circuit_task }[0]
         )
       end
 

@@ -14,7 +14,6 @@ end
 T = Trailblazer::Activity::Testing
 
 require "fixtures"
-
 Minitest::Spec::Activity = Trailblazer::Activity
 Minitest::Spec::Implementing = Fixtures::Implementing
 

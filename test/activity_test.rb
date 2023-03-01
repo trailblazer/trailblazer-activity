@@ -36,10 +36,10 @@ class ActivityTest < Minitest::Spec
         Activity::Schema::Intermediate::TaskRef(:a) => [Activity::Schema::Intermediate::Out(:success, :b)],
         Activity::Schema::Intermediate::TaskRef(:b) => [Activity::Schema::Intermediate::Out(:success, :c)],
         Activity::Schema::Intermediate::TaskRef(:c) => [Activity::Schema::Intermediate::Out(:success, :d)],
-        Activity::Schema::Intermediate::TaskRef(:d) => [Activity::Schema::Intermediate::Out(:success, nil)]
+        Activity::Schema::Intermediate::TaskRef(:d, stop_event: true) => []
       },
-      [:d],
-      [:a] # start
+      {:d => :success},
+      :a # start
     )
 
     # DISCUSS: in Ruby 3, procs created from the same block are identical: https://rubyreferences.github.io/rubychanges/3.0.html#proc-and-eql
@@ -55,7 +55,7 @@ class ActivityTest < Minitest::Spec
       :a => Schema::Implementation::Task(step, [Activity::Output(Activity::Right, :success)], []),
       :b => Schema::Implementation::Task(step2, [Activity::Output(Activity::Right, :success)], []),
       :c => Schema::Implementation::Task(step3.clone, [Activity::Output(Activity::Right, :success)], []),
-      :d => Schema::Implementation::Task(step4.clone, [Activity::Output(Activity::Right, :success)], [])
+      :d => Schema::Implementation::Task(step4.clone, [], [])
     }
 
     nested_activity = Activity.new(Activity::Schema::Intermediate.(intermediate, implementation))
@@ -64,7 +64,7 @@ class ActivityTest < Minitest::Spec
       :a => Schema::Implementation::Task(step5, [Activity::Output(Activity::Right, :success)], []),
       :b => Schema::Implementation::Task(nested_activity, [Activity::Output(Activity::Right, :success)], []),
       :c => Schema::Implementation::Task(step6, [Activity::Output(Activity::Right, :success)], []),
-      :d => Schema::Implementation::Task(step7.clone, [Activity::Output(Activity::Right, :success)], [])
+      :d => Schema::Implementation::Task(step7.clone, [], [])
     }
 
     activity = Activity.new(Activity::Schema::Intermediate.(intermediate, implementation))

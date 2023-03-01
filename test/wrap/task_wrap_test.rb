@@ -20,10 +20,10 @@ class TaskWrapTest < Minitest::Spec
         Inter::TaskRef(:a) => [Inter::Out(:success, :b)],
         Inter::TaskRef(:b) => [Inter::Out(:success, :c)],
         Inter::TaskRef(:c) => [Inter::Out(:success, "End.success")],
-        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+        Inter::TaskRef("End.success", stop_event: true) => []
       },
-      ["End.success"],
-      [:a] # start
+      {"End.success" => :semantic},
+      :a # start
     )
   end
 
@@ -32,7 +32,7 @@ class TaskWrapTest < Minitest::Spec
       :a => Schema::Implementation::Task(Implementing.method(:a), [Activity::Output(Activity::Right, :success)], a_extensions),
       :b => Schema::Implementation::Task(Implementing.method(:b), [Activity::Output(Activity::Right, :success)],                 []),
       :c => Schema::Implementation::Task(Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 []),
-      "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
+      "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     return implementation, _es
@@ -95,7 +95,7 @@ class TaskWrapTest < Minitest::Spec
       :a => Schema::Implementation::Task(Implementing.method(:a), [Activity::Output(Activity::Right, :success)], []),
       :b => Schema::Implementation::Task(Activity.new(schema), [Activity::Output(_es, :success)], []),
       :c => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.WrapStatic(*merge)]),
-      "End.success" => Schema::Implementation::Task(es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
+      "End.success" => Schema::Implementation::Task(Implementing::Success, [], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(abc_intermediate, top_implementation)
@@ -122,10 +122,10 @@ class TaskWrapTest < Minitest::Spec
         Inter::TaskRef(:a) => [Inter::Out(:success, :b)],
         Inter::TaskRef(:b) => [Inter::Out(:success, :c)],
         Inter::TaskRef(:c) => [Inter::Out(:success, "End.success")],
-        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+        Inter::TaskRef("End.success", stop_event: true) => []
       },
-      ["End.success"],
-      [:a] # start
+      {"End.success" => :success},
+      :a # start
     )
 
     merge = [method(:change_start_task), id: "user.add_1", prepend: "task_wrap.call_task"]
@@ -134,7 +134,7 @@ class TaskWrapTest < Minitest::Spec
       :a => Schema::Implementation::Task(Activity.new(inner_schema), [Activity::Output(_es, :success)], [TaskWrap::Extension.WrapStatic(merge)]),
       :b => Schema::Implementation::Task(Activity.new(inner_schema), [Activity::Output(_es, :success)], []),
       :c => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],      []),
-      "End.success" => Schema::Implementation::Task(es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []) # DISCUSS: End has one Output, signal is itself?
+      "End.success" => Schema::Implementation::Task(es = Implementing::Success, [], []) # DISCUSS: End has one Output, signal is itself?
     }
 
     outer_schema = Inter.(outer_intermediate, outer_implementation)

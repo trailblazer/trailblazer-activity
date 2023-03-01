@@ -20,19 +20,22 @@ module Fixtures
         Inter::TaskRef("Start.default")      => [Inter::Out(:success, :B)],
         Inter::TaskRef(:B, additional: true) => [Inter::Out(:success, :C), Inter::Out(:failure, "End.failure")],
         Inter::TaskRef(:C)                   => [Inter::Out(:success, "End.success")],
-        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)],
-        Inter::TaskRef("End.failure", stop_event: true) => [Inter::Out(:failure, nil)],
+        Inter::TaskRef("End.success", stop_event: true, semantic: :success) => [],
+        Inter::TaskRef("End.failure", stop_event: true, semantic: :failure) => [],
       },
-      ["End.success", "End.failure"],
-      ["Start.default"], # start
+      {
+        "End.success" => :success,
+        "End.failure" => :failure,
+      },
+      "Start.default", # start
     )
 
     implementation = {
       "Start.default" => Schema::Implementation::Task(st = Implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
       :B => Schema::Implementation::Task(b = implementing.method(:b), [Activity::Output(Activity::Right, :success), Activity::Output(Activity::Left, :failure)],                  []),
       :C => Schema::Implementation::Task(c = implementing.method(:c), [Activity::Output(Activity::Right, :success)],                  []),
-      "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
-      "End.failure" => Schema::Implementation::Task(Implementing::Failure, [Activity::Output(Implementing::Failure, :failure)], []), # DISCUSS: End has one Output, signal is itself?
+      "End.success" => Schema::Implementation::Task(Implementing::Success, [], []), # DISCUSS: End has one Output, signal is itself?
+      "End.failure" => Schema::Implementation::Task(Implementing::Failure, [], []), # DISCUSS: End has one Output, signal is itself?
     }
 
     schema = Inter.(intermediate, implementation)
@@ -47,18 +50,18 @@ module Fixtures
         Inter::TaskRef(:B, more: true)  => [Inter::Out(:success, d_id)],
         Inter::TaskRef(d_id) => [Inter::Out(:success, :E)],
         Inter::TaskRef(:E) => [Inter::Out(:success, "End.success")],
-        Inter::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+        Inter::TaskRef("End.success", stop_event: true, semantic: :success) => []
       },
-      ["End.success"],
-      ["Start.default"] # start
+      {"End.success" => :success},
+      "Start.default" # start
     )
 
     implementation = {
-      "Start.default" => Schema::Implementation::Task(st = Implementing::Start, [Activity::Output(Activity::Right, :success)],        []),
-      :B => Schema::Implementation::Task(b = Implementing.method(:b), [Activity::Output(Activity::Right, :success)],                  []),
-      d_id => Schema::Implementation::Task(flat_activity, [Activity::Output(Implementing::Success, :success)],                  []),
-      :E => Schema::Implementation::Task(e = Implementing.method(:f), [Activity::Output(Activity::Right, :success)],                  []),
-      "End.success" => Schema::Implementation::Task(_es = Implementing::Success, [Activity::Output(Implementing::Success, :success)], []), # DISCUSS: End has one Output, signal is itself?
+      "Start.default" => Schema::Implementation::Task(st = Implementing::Start, [Activity::Output(Activity::Right, :success)], []),
+      :B => Schema::Implementation::Task(b = Implementing.method(:b), [Activity::Output(Activity::Right, :success)], []),
+      d_id => Schema::Implementation::Task(flat_activity, [Activity::Output(Implementing::Success, :success)], []),
+      :E => Schema::Implementation::Task(e = Implementing.method(:f), [Activity::Output(Activity::Right, :success)], []),
+      "End.success" => Schema::Implementation::Task(Implementing::Success, [], []),
     }
 
     schema = Inter.(intermediate, implementation)

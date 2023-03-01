@@ -15,6 +15,45 @@ anything other than `nil`.
 * Re-add `:nodes` to the container activity hash as this provides a consistent way for treating all `Activity`s.
 * Remove `Activity::Config`. This immutable hash interface was used in one place, only, and can easily
   be replaced with `config.merge()`.
+* Add `Introspect::Render`. Please consider this private.
+
+## Intermediate/Implementation
+
+* Introduce `Schema::Compiler` which is simplified and is 10% faster.
+* A terminus ("end event") in `Schema::Intermediate` no longer has outputs but an empty array. The
+  `stop_event: true` option is still required to mark the `TaskRef` as a terminus.
+* `Schema::Intermediate` now keeps a map `{<terminus ID> => :semantic}` instead of the flat termini ID list and
+  one default start event instead of an array. This looks as follows.
+
+    ```ruby
+    Schema::Intermediate.new(
+      {
+        # ...
+        Intermediate::TaskRef("End.success", stop_event: true) => [Inter::Out(:success, nil)]
+      },
+      ["End.success"],
+      [:a] # start
+    ```
+
+    Now becomes
+
+    ```ruby
+    Schema::Intermediate.new(
+      {
+        # ...
+        Intermediate::TaskRef("End.success", stop_event: true) => []
+      },
+      {"End.success" => :success},
+      :a # start
+    ```
+  * In line with the change in `Intermediate`, the `Implemention` termini `Task`s now don't have outputs anymore.
+
+    ```ruby
+    implementation = {
+      # ...
+      "End.success" => Schema::Implementation::Task(Activity::End.new(semantic: :success), [], []) # No need for outputs here.
+    }
+    ```
 
 # 0.15.1
 

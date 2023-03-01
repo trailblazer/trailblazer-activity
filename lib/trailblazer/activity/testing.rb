@@ -89,6 +89,8 @@ module Trailblazer
         process
       end
 
+      alias_method :assert_process, :assert_process_for
+
       def assert_circuit(schema, circuit)
         cct = Cct(schema)
 
