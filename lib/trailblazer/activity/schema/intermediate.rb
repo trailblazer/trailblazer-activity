@@ -2,6 +2,7 @@ class Trailblazer::Activity
   class Schema
     # An {Intermediate} structure defines the *structure* of the circuit. It usually
     # comes from a DSL or a visual editor.
+    # @private This class might get removed in 0.17.0.
     class Intermediate < Struct.new(:wiring, :stop_task_ids, :start_task_id)
       TaskRef = Struct.new(:id, :data) # TODO: rename to NodeRef
       Out     = Struct.new(:semantic, :target)

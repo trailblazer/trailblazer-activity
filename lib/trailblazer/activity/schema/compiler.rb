@@ -2,6 +2,7 @@ module Trailblazer
   class Activity
     class Schema
       class Intermediate
+        # @private This class might get removed in 0.17.0.
         module Compiler
           module_function
 
