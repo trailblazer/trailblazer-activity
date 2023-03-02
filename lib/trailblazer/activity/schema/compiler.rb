@@ -38,7 +38,7 @@ module Trailblazer
                 id,               # id
                 task,             # task
                 task_ref[:data],  # TODO: allow adding data from implementation.
-                outputs           # outputs # DISCUSS: End doesn't have outputs anymore.
+                outputs           # {Activity::Output}s
               ]
 
               # Invoke each task's extensions (usually coming from the DSL user or some macro).
