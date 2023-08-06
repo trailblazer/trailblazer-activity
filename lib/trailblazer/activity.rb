@@ -24,11 +24,15 @@ module Trailblazer
       %(#<Trailblazer::Activity:0x#{object_id}>)
     end
 
-    # Canonical entry-point to invoke an {Activity} or Strategy such as {Activity::Railway}
-    # with its taskWrap.
-    def self.call(activity, ctx)
-      TaskWrap.invoke(activity, [ctx, {}])
+    module Call
+      # Canonical entry-point to invoke an {Activity} or Strategy such as {Activity::Railway}
+      # with its taskWrap.
+      def call(activity, ctx)
+        TaskWrap.invoke(activity, [ctx, {}])
+      end
     end
+
+    extend Call # {Activity.call}.
   end # Activity
 end
 

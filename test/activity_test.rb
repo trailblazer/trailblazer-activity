@@ -74,4 +74,16 @@ class ActivityTest < Minitest::Spec
     # each task receives the containing {:activity}
     expect(ctx).must_equal [activity, nested_activity, nested_activity, nested_activity, nested_activity, activity, activity]
   end
+
+  it "allows overriding {Activity.call} (this is needed in trb-pro)" do
+    activity = Class.new(Activity)
+
+    call_module = Module.new do
+      def call(*)
+        "overridden call!"
+      end
+    end
+
+    assert_equal activity.extend(call_module).call, "overridden call!"
+  end
 end

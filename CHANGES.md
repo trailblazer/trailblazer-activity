@@ -1,3 +1,7 @@
+# 0.16.1
+
+* Allow overriding `Activity.call`.
+
 # 0.16.0
 
 * Remove `Activity#[]`. Please use `activity.to_h[:config]`.
