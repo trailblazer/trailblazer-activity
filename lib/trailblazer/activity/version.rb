@@ -1,7 +1,7 @@
 module Trailblazer
   module Version
     module Activity
-      VERSION = "0.16.0"
+      VERSION = "0.16.1"
     end
   end
 end
