@@ -52,24 +52,20 @@ module Trailblazer
         signal, (ctx, _) = activity.([{seq: [], **ctx_variables}, _flow_options = {}]) # simply call the activity with the input you want to assert.
 
         assert_call_for(signal, ctx, terminus: terminus, seq: seq, **expected_ctx_variables, **ctx_variables)
-
-        return signal, [ctx, flow_options]
       end
 
       # Use {TaskWrap.invoke} to call the activity.
-      def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, expected_ctx_variables: {}, flow_options: {}, **ctx_variables)
+      def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, expected_ctx_variables: {}, **ctx_variables)
         signal, (ctx, _flow_options) = Activity::TaskWrap.invoke(
           activity,
           [
             {seq: [], **ctx_variables},
-            flow_options
+            {}                          # flow_options
           ],
           **circuit_options
         )
 
         assert_call_for(signal, ctx, terminus: terminus, seq: seq, **ctx_variables, **expected_ctx_variables) # DISCUSS: ordering of variables?
-
-        return signal, [ctx, _flow_options]
       end
 
       def assert_call_for(signal, ctx, terminus: :success, seq: "[]", **ctx_variables)
