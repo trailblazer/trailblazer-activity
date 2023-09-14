@@ -1,3 +1,7 @@
+# 0.16.2
+
+* Allow passing custom `:flow_options` to `Testing#assert_invoke`.
+
 # 0.16.1
 
 * Allow overriding `Activity.call`.

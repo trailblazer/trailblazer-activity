@@ -55,12 +55,12 @@ module Trailblazer
       end
 
       # Use {TaskWrap.invoke} to call the activity.
-      def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, expected_ctx_variables: {}, **ctx_variables)
+      def assert_invoke(activity, terminus: :success, seq: "[]", circuit_options: {}, flow_options: {}, expected_ctx_variables: {}, **ctx_variables)
         signal, (ctx, _flow_options) = Activity::TaskWrap.invoke(
           activity,
           [
             {seq: [], **ctx_variables},
-            {}                          # flow_options
+            flow_options,
           ],
           **circuit_options
         )

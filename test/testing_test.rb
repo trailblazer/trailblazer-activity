@@ -177,11 +177,22 @@ Expected: :not_right
       let(:activity) { MyActivity }
 
     #0001
+      #@ test that we can pass {:circuit_options}
       it {
         ctx = assert_invoke activity, seq: "[:call]", circuit_options: {start: "yes"}
 
         assert_equal ctx.invisible[:circuit_options].keys.inspect, %([:start, :runner, :wrap_runtime, :activity])
         assert_equal ctx.invisible[:circuit_options][:start], "yes"
+      }
+
+
+    #0002
+      #@ test that we can pass {:flow_options}
+      it {
+        ctx = assert_invoke activity, seq: "[:call]", flow_options: {start: "yes"}
+
+        assert_equal ctx.invisible[:flow_options].keys.inspect, %([:start])
+        assert_equal ctx.invisible[:flow_options][:start], "yes"
       }
 
     # #0002
@@ -213,8 +224,12 @@ Expected: :not_right
 
     test_case = test.new(:test_0001_anonymous)
     failures = test_case.()
-    puts failures
-
     assert_equal failures.size, 0
+
+    test_case = test.new(:test_0002_anonymous)
+    failures = test_case.()
+    puts failures
+    assert_equal failures.size, 0
+
   end
 end
