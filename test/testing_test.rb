@@ -142,4 +142,79 @@ Expected: :not_right
 }
   end
 
+  # assert_invoke
+  it "#assert_invoke" do
+    test = Class.new(Test) do
+      class MyActivity
+        def self.call((ctx, flow_options), **circuit_options)
+
+          # ctx = ctx.merge(
+          # )
+
+          mock_ctx = MyCtx[
+            **ctx,
+            seq: ctx[:seq] + [:call],
+            invisible: {
+              flow_options: flow_options,
+              circuit_options: circuit_options,
+            }
+          ]
+
+          return Trailblazer::Activity::End.new(semantic: :success), [mock_ctx, flow_options]
+        end
+      end
+
+      class MyCtx < Hash
+        def inspect
+          slice(*(keys - [:invisible])).inspect
+        end
+
+        def invisible
+          self[:invisible]
+        end
+      end
+
+      let(:activity) { MyActivity }
+
+    #0001
+      it {
+        ctx = assert_invoke activity, seq: "[:call]", circuit_options: {start: "yes"}
+
+        assert_equal ctx.invisible[:circuit_options].keys.inspect, %([:start, :runner, :wrap_runtime, :activity])
+        assert_equal ctx.invisible[:circuit_options][:start], "yes"
+      }
+
+    # #0002
+    #   #@ allows {:terminus}
+    #   it { assert_call activity, seq: "[:b]", terminus: :failure, b: Trailblazer::Activity::Left }
+
+    # #0003
+    #   #@ when specifying wrong {:terminus} you get an error
+    #   it { assert_call activity, seq: "[:b]", terminus: :not_right, b: Trailblazer::Activity::Left }
+
+    # #0004
+    #   #@ when specifying wrong {:seq} you get an error
+    #   it { assert_call activity, seq: "[:xxxxxx]" }
+
+    # #0005
+    #   #@ {#assert_call} returns ctx
+    #   it {
+    #     ctx = assert_call activity, seq: "[:b, :c]"
+    #     assert_equal ctx.inspect, %{{:seq=>[:b, :c]}}
+    #   }
+
+    # #0006
+    #   #@ {#assert_call} allows injecting {**ctx_variables}.
+    #   it {
+    #     ctx = assert_call activity, seq: "[:b, :c]", current_user: Module
+    #     assert_equal ctx.inspect, %{{:seq=>[:b, :c], :current_user=>Module}}
+    #   }
+    end
+
+    test_case = test.new(:test_0001_anonymous)
+    failures = test_case.()
+    puts failures
+
+    assert_equal failures.size, 0
+  end
 end
