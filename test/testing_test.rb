@@ -179,7 +179,7 @@ Expected: :not_right
     #0001
       #@ test that we can pass {:circuit_options}
       it {
-        ctx = assert_invoke activity, seq: "[:call]", circuit_options: {start: "yes"}
+        signal, (ctx, flow_options) = assert_invoke activity, seq: "[:call]", circuit_options: {start: "yes"}
 
         assert_equal ctx.invisible[:circuit_options].keys.inspect, %([:start, :runner, :wrap_runtime, :activity])
         assert_equal ctx.invisible[:circuit_options][:start], "yes"
@@ -189,10 +189,20 @@ Expected: :not_right
     #0002
       #@ test that we can pass {:flow_options}
       it {
-        ctx = assert_invoke activity, seq: "[:call]", flow_options: {start: "yes"}
+        signal, (ctx, flow_options) = assert_invoke activity, seq: "[:call]", flow_options: {start: "yes"}
 
         assert_equal ctx.invisible[:flow_options].keys.inspect, %([:start])
         assert_equal ctx.invisible[:flow_options][:start], "yes"
+      }
+
+    #0003
+      #@ we return circuit interface
+      it {
+        signal, (ctx, flow_options) = assert_invoke activity, seq: "[:call]", flow_options: {start: "yes"}
+
+        assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
+        assert_equal ctx.inspect, %({:seq=>[:call]})
+        assert_equal flow_options.inspect, %({:start=>\"yes\"})
       }
 
     # #0002
@@ -228,8 +238,11 @@ Expected: :not_right
 
     test_case = test.new(:test_0002_anonymous)
     failures = test_case.()
-    puts failures
     assert_equal failures.size, 0
 
+    test_case = test.new(:test_0003_anonymous)
+    failures = test_case.()
+    puts failures
+    assert_equal failures.size, 0
   end
 end
