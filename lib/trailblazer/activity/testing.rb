@@ -82,9 +82,7 @@ module Trailblazer
       def assert_process_for(process, *args)
         semantics, circuit = args[0..-2], args[-1]
 
-        inspects = semantics.collect { |semantic| %(#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=#{semantic.inspect}>, semantic=#{semantic.inspect}>) }
-
-        assert_equal %([#{inspects.join(", ")}]), process.to_h[:outputs].inspect
+        assert_equal semantics.sort, process.to_h[:outputs].collect { |output| output[:semantic] }.sort
 
         assert_circuit(process, circuit)
 
