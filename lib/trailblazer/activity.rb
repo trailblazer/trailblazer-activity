@@ -3,8 +3,6 @@ module Trailblazer
   #
   # Developer's docs: https://trailblazer.to/2.1/docs/internals.html#internals-activity
   class Activity
-    # include Activity::Interface # TODO
-
     def initialize(schema)
       @schema = schema
     end
