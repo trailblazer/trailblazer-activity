@@ -76,7 +76,7 @@ module Trailblazer
       private
 
       def next_for(last_task, signal)
-        outputs = @map[last_task]
+        outputs = @map.fetch(last_task, {})
         outputs[signal]
       end
 
