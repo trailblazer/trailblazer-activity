@@ -2,15 +2,15 @@ require "test_helper"
 
 class ActivityTest < Minitest::Spec
   it "provides {#inspect}" do
-    expect(Trailblazer::Activity.new({}).inspect.gsub(/0x\w+/, "0x")).must_equal %{#<Trailblazer::Activity:0x>}
+    assert_equal Trailblazer::Activity.new({}).inspect.gsub(/0x\w+/, "0x"), %{#<Trailblazer::Activity:0x>}
   end
 
   it "can start with any task" do
     skip
     signal, (options,) = activity.([{}], start_task: L)
 
-    expect(signal).must_equal activity.outputs[:success].signal
-    expect(options.inspect).must_equal %{{:L=>1}}
+    assert_equal signal, activity.outputs[:success].signal
+    assert_equal options.inspect, %{{:L=>1}}
   end
 
   it "exposes {#to_h}" do
@@ -27,7 +27,7 @@ class ActivityTest < Minitest::Spec
 
   # TODO: test {to_h} properly
   it "exposes {:data} attributes in {#to_h}" do
-    expect(bc.to_h[:nodes].values[1][:data].inspect).must_equal %{{:additional=>true}}
+    assert_equal bc.to_h[:nodes].values[1][:data].inspect, %{{:additional=>true}}
   end
 
   it "{:activity}" do
@@ -72,7 +72,7 @@ class ActivityTest < Minitest::Spec
     _signal, (ctx,) = activity.([[], {}])
 
     # each task receives the containing {:activity}
-    expect(ctx).must_equal [activity, nested_activity, nested_activity, nested_activity, nested_activity, activity, activity]
+    assert_equal ctx, [activity, nested_activity, nested_activity, nested_activity, nested_activity, activity, activity]
   end
 
   it "allows overriding {Activity.call} (this is needed in trb-pro)" do
