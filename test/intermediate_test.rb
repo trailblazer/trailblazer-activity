@@ -164,7 +164,7 @@ class IntermediateTest < Minitest::Spec
 
       schema = Inter::Compiler.(intermediate, implementation([ext_a, ext_b, ext_d, ext_e]))
 
-      expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :C=>1, :e=>2}}
+      assert_equal (schema[:config].to_h.inspect), %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :C=>1, :e=>2}}
     end
 
   # {Implementation.call()} allows to pass {config} data
@@ -172,13 +172,13 @@ class IntermediateTest < Minitest::Spec
       it "accepts {config_merge:} data that is merged into {config}" do
         schema = Inter::Compiler.(intermediate, implementation([]), config_merge: {beer: "yes"})
 
-        expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>{}, :beer=>\"yes\"}}
+        assert_equal (schema[:config].to_h.inspect), %{{:wrap_static=>{}, :beer=>\"yes\"}}
       end
 
       it "{:config_merge} overrides values in {default_config}" do
         schema = Inter::Compiler.(intermediate, implementation([]), config_merge: {beer: "yes", wrap_static: "yo"})
 
-        expect(schema[:config].to_h.inspect).must_equal %{{:wrap_static=>"yo", :beer=>\"yes\"}}
+        assert_equal (schema[:config].to_h.inspect), %{{:wrap_static=>"yo", :beer=>\"yes\"}}
       end
     end
   end

@@ -20,11 +20,11 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, i, j, *bla) = circuit.([ctx, 1, 2], task: Start)
 
-    expect(ctx.inspect).must_equal %{{:start=>1, :a=>2, :b=>3, :_end=>4}}
-    expect(last_signal).must_equal "the end"
-    expect(i).must_equal 1
-    expect(j).must_equal 2
-    expect(bla).must_equal []
+    assert_equal (ctx.inspect), %{{:start=>1, :a=>2, :b=>3, :_end=>4}}
+    assert_equal (last_signal), "the end"
+    assert_equal (i), 1
+    assert_equal (j), 2
+    assert_equal (bla), []
 
     # ---
 
@@ -33,7 +33,7 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, i, j, *bla) = circuit.([ctx, flow_options, 2], task: Start, runner: MyRunner)
 
-    expect(flow_options).must_equal(stack: [Start, A, B, End])
+    assert_equal (flow_options), { stack: [Start, A, B, End] }
   end
 
   MyRunner = ->(task, args, **circuit_options) do
@@ -76,11 +76,11 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, i, j, *bla) = outer.([ctx, {}, 2], task: Start)
 
-    expect(ctx.inspect).must_equal %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
-    expect(last_signal).must_equal "the end"
-    expect(i).must_equal({})
-    expect(j).must_equal 2
-    expect(bla).must_equal []
+    assert_equal (ctx.inspect), %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
+    assert_equal (last_signal), "the end"
+    assert_equal (i),({})
+    assert_equal (j), 2
+    assert_equal (bla), []
   end
 
   it "allows using a custom :runner" do
@@ -89,11 +89,11 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, flow_options, j, *bla) = outer.([ctx, flow_options, 2], task: Start, runner: MyRunner)
 
-    expect(ctx.inspect).must_equal %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
-    expect(last_signal).must_equal "the end"
-    expect(flow_options).must_equal(stack: [Start, A, nestable, Start, C, End, B, End], runner: MyRunner)
-    expect(j).must_equal 2
-    expect(bla).must_equal []
+    assert_equal (ctx.inspect), %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
+    assert_equal (last_signal), "the end"
+    assert_equal (flow_options), { stack: [Start, A, nestable, Start, C, End, B, End], runner: MyRunner }
+    assert_equal (j), 2
+    assert_equal (bla), []
   end
 
   let(:wicked_circuit) do
