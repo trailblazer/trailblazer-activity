@@ -1,6 +1,6 @@
 require "test_helper"
 
-class DeprecationTest < Minitest::Spec
+class DeprecationTest < Minitest::TrailblazerSpec
   it do
     caller_location = caller_locations[0]
 

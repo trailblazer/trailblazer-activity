@@ -1,7 +1,7 @@
 require "test_helper"
 
 # Test taskWrap concepts along with {Instance}s.
-class TaskWrapTest < Minitest::Spec
+class TaskWrapTest < Minitest::TrailblazerSpec
   def add_1(wrap_ctx, original_args)
     ctx, = original_args[0]
     ctx[:seq] << 1

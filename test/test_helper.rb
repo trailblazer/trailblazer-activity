@@ -1,22 +1,21 @@
 require "pp"
 require "trailblazer-activity"
 require "minitest/autorun"
+require "minitest-trailblazer"
+require "minitest/trailblazer_spec"
 
-Minitest::Spec.class_eval do
-  def assert_equal(asserted, expected, *args)
-    super(expected, asserted, *args)
+module Minitest
+  class TrailblazerSpec
+    include Trailblazer::AssertionsOverride
+    require "trailblazer/activity/testing"
+    include ::Trailblazer::Activity::Testing::Assertions
+    require_relative "fixtures"
+    include Fixtures
+
+    Spec::Activity = ::Trailblazer::Activity
+    Spec::Implementing = Fixtures::Implementing
   end
-
-  require "trailblazer/activity/testing"
-  include Trailblazer::Activity::Testing::Assertions
 end
 
 T = Trailblazer::Activity::Testing
 
-require "fixtures"
-Minitest::Spec::Activity = Trailblazer::Activity
-Minitest::Spec::Implementing = Fixtures::Implementing
-
-Minitest::Spec.class_eval do
-  include Fixtures
-end

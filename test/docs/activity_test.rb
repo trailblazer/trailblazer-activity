@@ -1,6 +1,6 @@
 require "test_helper"
 
-class DocsIntermediateTest < Minitest::Spec
+class DocsIntermediateTest < Minitest::TrailblazerSpec
   it do
     #:int
     Intermediate = Trailblazer::Activity::Schema::Intermediate # shortcut alias.

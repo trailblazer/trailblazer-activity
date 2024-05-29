@@ -1,6 +1,6 @@
 require "test_helper"
 
-class CircuitTest < Minitest::Spec
+class CircuitTest < Minitest::TrailblazerSpec
   Start   = ->((options, *args), *_circuit_options) { options[:start] = 1; ["to a", [options, *args]] }
   A       = ->((options, *args), *_circuit_options) { options[:a] = 2;     ["from a", [options, *args]] }
   B       = ->((options, *args), *_circuit_options) { options[:b] = 3;     ["from b", [options, *args]] }

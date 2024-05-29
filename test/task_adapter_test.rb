@@ -1,6 +1,6 @@
 require "test_helper"
 
-class TaskAdapterTest < Minitest::Spec
+class TaskAdapterTest < Minitest::TrailblazerSpec
   class Operation
     def process_type(ctx, model:, **)
       return if model.nil?

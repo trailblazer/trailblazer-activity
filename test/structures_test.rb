@@ -1,6 +1,6 @@
 require "test_helper"
 
-class StructuresTest < Minitest::Spec
+class StructuresTest < Minitest::TrailblazerSpec
   describe "End(semantic)" do
     let(:evt) { Activity::End(:meaning) }
 

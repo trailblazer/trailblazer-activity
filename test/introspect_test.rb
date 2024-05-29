@@ -1,6 +1,6 @@
 require "test_helper"
 
-class IntrospectionTest < Minitest::Spec
+class IntrospectionTest < Minitest::TrailblazerSpec
   describe "Introspect.find_path" do
     it "#find_path" do
       b_activity = nested_activity() # [B, [B, C], E]

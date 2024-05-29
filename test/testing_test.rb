@@ -1,6 +1,6 @@
 require "test_helper"
 
-class TestingTest < Minitest::Spec
+class TestingTest < Minitest::TrailblazerSpec
   extend T.def_steps(:model)
 
   klass = Class.new do
@@ -8,7 +8,7 @@ class TestingTest < Minitest::Spec
     end
   end
 
-  class Test < Minitest::Spec
+  class Test < Minitest::TrailblazerSpec
     def call
       run
       @failures

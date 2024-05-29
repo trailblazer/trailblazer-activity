@@ -1,6 +1,6 @@
 require "test_helper"
 
-class DocInternalsTest < Minitest::Spec
+class DocInternalsTest < Minitest::TrailblazerSpec
   #:method
   def outdated_method
     Trailblazer::Activity::Deprecate.warn caller_locations[0], "The `#outdated_method` is deprecated."

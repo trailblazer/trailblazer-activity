@@ -1,6 +1,6 @@
 require "test_helper"
 
-class AddsTest < Minitest::Spec
+class AddsTest < Minitest::TrailblazerSpec
   # DISCUSS: not tested here is Append to empty Pipeline because we always initialize it.
   let(:pipeline) { Trailblazer::Activity::TaskWrap::Pipeline }
   let(:adds)     { Trailblazer::Activity::Adds }

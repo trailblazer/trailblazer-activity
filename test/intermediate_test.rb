@@ -1,6 +1,6 @@
 require "test_helper"
 
-class IntermediateTest < Minitest::Spec
+class IntermediateTest < Minitest::TrailblazerSpec
   # Example task that doesn't return standard binary signals but
   # {"b/success"} etc.
   def self.b_task((ctx, flow_options), **)

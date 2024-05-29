@@ -1,6 +1,6 @@
 require "test_helper"
 
-class ActivityTest < Minitest::Spec
+class ActivityTest < Minitest::TrailblazerSpec
   it "provides {#inspect}" do
     assert_equal Trailblazer::Activity.new({}).inspect.gsub(/0x\w+/, "0x"), %{#<Trailblazer::Activity:0x>}
   end
