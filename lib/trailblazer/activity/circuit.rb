@@ -57,7 +57,7 @@ module Trailblazer
             raise IllegalSignalError.new(
               task,
               signal: last_signal,
-              outputs: @map[task],
+              outputs: @map.fetch(task, {}),
               exec_context: circuit_options[:exec_context] # passed at run-time from DSL
             )
           end
@@ -76,7 +76,7 @@ module Trailblazer
       private
 
       def next_for(last_task, signal)
-        outputs = @map[last_task]
+        outputs = @map.fetch(last_task, {})
         outputs[signal]
       end
 
