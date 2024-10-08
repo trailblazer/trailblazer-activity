@@ -1,7 +1,7 @@
 # 0.16.3
 
-* Fix a bug in Ruby 3: `NoMethodError: undefined method `[]' for nil`. Thanks @tiagotex for finding the problem
-  and solution.
+* Fix a bug in Ruby 3.2: `NoMethodError: undefined method `[]' for nil`. Thanks @tiagotex for finding the problem
+  and solution. This bug only occurs when compacting the memory using GC, which is only introduced with Ruby 3.2.
 
 # 0.16.2
 
