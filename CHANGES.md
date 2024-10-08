@@ -1,3 +1,8 @@
+# 0.16.3
+
+* Fix a bug in Ruby 3: `NoMethodError: undefined method `[]' for nil`. Thanks @tiagotex for finding the problem
+  and solution.
+
 # 0.16.2
 
 * Allow passing custom `:flow_options` to `Testing#assert_invoke`.
