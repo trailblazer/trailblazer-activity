@@ -88,40 +88,43 @@ class ActivityTest < Minitest::Spec
   end
 end
 
-class GCBugTest < Minitest::Spec
-  it "still finds {.method} tasks after GC compression" do
-    intermediate = Activity::Schema::Intermediate.new(
-      {
-        Activity::Schema::Intermediate::TaskRef(:a) => [Activity::Schema::Intermediate::Out(:success, :b)],
-        Activity::Schema::Intermediate::TaskRef(:b, stop_event: true) => []
-      },
-      {:b => :success},
-      :a # start
-    )
 
-    module Step
-      extend T.def_tasks(:create)
+if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.2")
+  class GCBugTest < Minitest::Spec
+    it "still finds {.method} tasks after GC compression" do
+      intermediate = Activity::Schema::Intermediate.new(
+        {
+          Activity::Schema::Intermediate::TaskRef(:a) => [Activity::Schema::Intermediate::Out(:success, :b)],
+          Activity::Schema::Intermediate::TaskRef(:b, stop_event: true) => []
+        },
+        {:b => :success},
+        :a # start
+      )
+
+      module Step
+        extend T.def_tasks(:create)
+      end
+
+      implementation = {
+        :a => Schema::Implementation::Task(Step.method(:create), [Activity::Output(Activity::Right, :success)], []),
+        :b => Schema::Implementation::Task(Trailblazer::Activity::End.new(semantic: :success), [], []),
+      }
+
+
+      activity = Activity.new(Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
+
+      assert_invoke activity, seq: %([:create])
+
+  # TODO: add tests for different Rubys
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+
+  # Without the fix, this *might* throw the following exception:
+  #
+  # NoMethodError: undefined method `[]' for nil
+  #     /home/nick/projects/trailblazer-activity/lib/trailblazer/activity/circuit.rb:80:in `next_for'
+
+      assert_invoke activity, seq: %([:create])
     end
 
-    implementation = {
-      :a => Schema::Implementation::Task(Step.method(:create), [Activity::Output(Activity::Right, :success)], []),
-      :b => Schema::Implementation::Task(Trailblazer::Activity::End.new(semantic: :success), [], []),
-    }
-
-
-    activity = Activity.new(Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
-
-    assert_invoke activity, seq: %([:create])
-
-# TODO: add tests for different Rubys
-    GC.verify_compaction_references(expand_heap: true, toward: :empty)
-
-# Without the fix, this *might* throw the following exception:
-#
-# NoMethodError: undefined method `[]' for nil
-#     /home/nick/projects/trailblazer-activity/lib/trailblazer/activity/circuit.rb:80:in `next_for'
-
-    assert_invoke activity, seq: %([:create])
   end
-
 end
