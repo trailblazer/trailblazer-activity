@@ -139,7 +139,10 @@ class TaskWrapTest < Minitest::Spec
 
     outer_schema = Inter::Compiler.(outer_intermediate, outer_implementation)
 
-    assert_invoke Activity.new(outer_schema), seq: "[:b, :c, :a, :b, :c, :c]", start_at: Implementing.method(:b)
+    start_task = Implementing.method(:b) # this used to work before `map.compare_by_identity`.
+    start_task = abc_implementation[:b].circuit_task # it has to be the very same object
+
+    assert_invoke Activity.new(outer_schema), seq: "[:b, :c, :a, :b, :c, :c]", start_at: start_task
   end
 
   def change_start_task(wrap_ctx, original_args)
@@ -148,7 +151,7 @@ class TaskWrapTest < Minitest::Spec
     circuit_options = circuit_options.merge(start_task: ctx[:start_at])
     original_args   = [[ctx, flow_options], circuit_options]
 
-    return wrap_ctx, original_args # yay to mutable state. not.
+    return wrap_ctx, original_args
   end
 
   it "deprecates Pipeline.method(:insert) and friends" do
