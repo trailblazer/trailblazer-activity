@@ -15,7 +15,7 @@ class TaskWrapTest < Minitest::Spec
   end
 
   def abc_intermediate
-    intermediate = Inter.new(
+    _intermediate = Inter.new(
       {
         Inter::TaskRef(:a) => [Inter::Out(:success, :b)],
         Inter::TaskRef(:b) => [Inter::Out(:success, :c)],
@@ -156,7 +156,7 @@ class TaskWrapTest < Minitest::Spec
 
   it "deprecates Pipeline.method(:insert) and friends" do
     merge = nil
-    out, err = capture_io do
+    _out, err = capture_io do
       merge = [
         [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
         [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]]
@@ -171,7 +171,7 @@ Please use the new API: #FIXME!!!
 }
 
     ext = nil
-    out, err = capture_io do
+    _out, err = capture_io do
       ext = TaskWrap.Extension(merge: merge) # {:merge} option is deprecated, too.
     end
     line_no = __LINE__
@@ -196,8 +196,7 @@ Please update to the new TaskWrap.Extension() API.
     assert_invoke(Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime})
 
   #@ using {Pipeline::Merge.new} also gets deprecated
-    ext = nil
-    out, err = capture_io do
+    _out, err = capture_io do
       wrap_runtime = {abc_implementation[:c].circuit_task => TaskWrap::Pipeline::Merge.new(*merge)}
     end
     line_no = __LINE__

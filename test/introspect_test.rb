@@ -7,13 +7,13 @@ class IntrospectionTest < Minitest::Spec
       activity   = nested_activity(flat_activity: b_activity, d_id: :Delete) # [B, Delete=[B, D=[B, C], E], E]
 
       #@ find top-activity which returns a special Node.
-      node, host_activity, graph = Trailblazer::Activity::Introspect.find_path(activity, [])
+      node, host_activity, _graph = Trailblazer::Activity::Introspect.find_path(activity, [])
       assert_equal node.class, Trailblazer::Activity::Schema::Nodes::Attributes
       assert_equal node[:task], activity
       assert_equal host_activity, Trailblazer::Activity::TaskWrap.container_activity_for(activity)
 
       #@ one element path
-      node, host_activity, graph = Trailblazer::Activity::Introspect.find_path(activity, [:E])
+      node, host_activity, _graph = Trailblazer::Activity::Introspect.find_path(activity, [:E])
       assert_equal node.class, Trailblazer::Activity::Schema::Nodes::Attributes
       assert_equal node[:task], Implementing.method(:f)
       assert_equal host_activity, activity

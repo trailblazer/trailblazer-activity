@@ -56,13 +56,6 @@ module Trailblazer
 
         proc.inspect
       end
-
-      # TODO: remove with 0.1.0.
-      def self.Graph(*args)
-        Deprecate.warn caller_locations[0], %(`Trailblazer::Activity::Introspect::Graph` is deprecated. Please use `Trailblazer::Developer::Introspect.Graph`)
-
-        Trailblazer::Developer::Introspect::Graph.new(*args)
-      end
     end # Introspect
   end
 end
