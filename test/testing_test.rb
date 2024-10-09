@@ -113,7 +113,7 @@ Expected: :not_right
           end
         end
 
-        activity = flat_activity(implementing: implementing)
+        _activity = flat_activity(implementing: implementing)
       end
 
     #0001
@@ -179,7 +179,7 @@ Expected: :not_right
     #0001
       #@ test that we can pass {:circuit_options}
       it {
-        signal, (ctx, flow_options) = assert_invoke activity, seq: "[:call]", circuit_options: {start: "yes"}
+        _signal, (ctx, _flow_options) = assert_invoke activity, seq: "[:call]", circuit_options: {start: "yes"}
 
         assert_equal ctx.invisible[:circuit_options].keys.inspect, %([:start, :runner, :wrap_runtime, :activity])
         assert_equal ctx.invisible[:circuit_options][:start], "yes"
@@ -189,7 +189,7 @@ Expected: :not_right
     #0002
       #@ test that we can pass {:flow_options}
       it {
-        signal, (ctx, flow_options) = assert_invoke activity, seq: "[:call]", flow_options: {start: "yes"}
+        _signal, (ctx, _flow_options) = assert_invoke activity, seq: "[:call]", flow_options: {start: "yes"}
 
         assert_equal ctx.invisible[:flow_options].keys.inspect, %([:start])
         assert_equal ctx.invisible[:flow_options][:start], "yes"
