@@ -88,10 +88,12 @@ class ActivityTest < Minitest::Spec
   end
 end
 
-
-if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.2")
+if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.1")
+  # TODO: we can remove this once we drop Ruby <= 3.3.6.
   class GCBugTest < Minitest::Spec
     it "still finds {.method} tasks after GC compression" do
+      ruby_version = Gem::Version.new(RUBY_VERSION)
+
       intermediate = Activity::Schema::Intermediate.new(
         {
           Activity::Schema::Intermediate::TaskRef(:a) => [Activity::Schema::Intermediate::Out(:success, :b)],
@@ -110,21 +112,39 @@ if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.2")
         :b => Schema::Implementation::Task(Trailblazer::Activity::End.new(semantic: :success), [], []),
       }
 
-
       activity = Activity.new(Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
 
       assert_invoke activity, seq: %([:create])
 
-  # TODO: add tests for different Rubys
-      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+      if ruby_version >= Gem::Version.new("3.1") && ruby_version < Gem::Version.new("3.2")
+        require "trailblazer/activity/circuit/ruby_with_unfixed_compaction"
+        Trailblazer::Activity::Circuit.prepend(Trailblazer::Activity::Circuit::RubyWithUnfixedCompaction)
+      elsif ruby_version >= Gem::Version.new("3.2.0") && ruby_version <= Gem::Version.new("3.2.6")
+        require "trailblazer/activity/circuit/ruby_with_unfixed_compaction"
+        Trailblazer::Activity::Circuit.prepend(Trailblazer::Activity::Circuit::RubyWithUnfixedCompaction)
+      elsif ruby_version >= Gem::Version.new("3.3.0") && ruby_version <= Gem::Version.new("3.3.6")
+        require "trailblazer/activity/circuit/ruby_with_unfixed_compaction"
+        Trailblazer::Activity::Circuit.prepend(Trailblazer::Activity::Circuit::RubyWithUnfixedCompaction)
+      end
 
-  # Without the fix, this *might* throw the following exception:
-  #
-  # NoMethodError: undefined method `[]' for nil
-  #     /home/nick/projects/trailblazer-activity/lib/trailblazer/activity/circuit.rb:80:in `next_for'
+      activity = Activity.new(Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
+
+      ruby_version_specific_options =
+        if ruby_version >= Gem::Version.new("3.2") # FIXME: future
+          {expand_heap: true, toward: :empty}
+        else
+          {}
+        end
+
+      # Provoke the bug:
+      GC.verify_compaction_references(**ruby_version_specific_options)
+
+      # Without the fix, this *might* throw the following exception:
+      #
+      # NoMethodError: undefined method `[]' for nil
+      #     /home/nick/projects/trailblazer-activity/lib/trailblazer/activity/circuit.rb:80:in `next_for'
 
       assert_invoke activity, seq: %([:create])
     end
-
   end
 end

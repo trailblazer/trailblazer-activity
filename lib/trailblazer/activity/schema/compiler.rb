@@ -24,7 +24,7 @@ module Trailblazer
 
           # From the intermediate "template" and the actual implementation, compile a {Circuit} instance.
           def schema_components(intermediate, implementation, config)
-            wiring = {}.compare_by_identity # https://ruby-doc.org/3.3.0/Hash.html#class-Hash-label-Modifying+an+Active+Hash+Key
+            wiring = {}
             nodes_attributes  = []
 
             intermediate.wiring.each do |task_ref, outs|
