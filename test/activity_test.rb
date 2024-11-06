@@ -88,7 +88,7 @@ class ActivityTest < Minitest::Spec
   end
 end
 
-if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.1")
+if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.1") && RUBY_ENGINE == "ruby"
   # TODO: we can remove this once we drop Ruby <= 3.3.6.
   class GCBugTest < Minitest::Spec
     it "still finds {.method} tasks after GC compression" do
