@@ -49,14 +49,14 @@ class TestingTest < Minitest::Spec
       #@ {#assert_call} returns ctx
       it {
         ctx = assert_call activity, seq: "[:b, :c]"
-        assert_equal ctx.inspect, %{{:seq=>[:b, :c]}}
+        assert_equal Trailblazer::Core::Utils.inspect(ctx), %{{:seq=>[:b, :c]}}
       }
 
     #0006
       #@ {#assert_call} allows injecting {**ctx_variables}.
       it {
         ctx = assert_call activity, seq: "[:b, :c]", current_user: Module
-        assert_equal ctx.inspect, %{{:seq=>[:b, :c], :current_user=>Module}}
+        assert_equal Trailblazer::Core::Utils.inspect(ctx), %{{:seq=>[:b, :c], :current_user=>Module}}
       }
     end
 
@@ -85,8 +85,8 @@ Expected: :not_right
 @@ -1,3 +1,3 @@
  # encoding: US-ASCII
  #    valid: true
--\"{:seq=>[:xxxxxx]}\"
-+\"{:seq=>[:b, :c]}\"
+-\"#{{:seq => [:xxxxxx]}}\"
++\"#{{:seq=>[:b, :c]}}\"
 }
 
     assert_equal 1, failures.size
@@ -108,7 +108,7 @@ Expected: :not_right
 
           # b step adding additional ctx variables.
           def self.b((ctx, flow_options), **)
-            ctx[:from_b] = "hello, from b!"
+            ctx[:from_b] = 1
             return Trailblazer::Activity::Right, [ctx, flow_options]
           end
         end
@@ -118,11 +118,11 @@ Expected: :not_right
 
     #0001
       #@ we can provide additional {:expected_ctx_variables}.
-      it { assert_call activity, seq: "[:c]", expected_ctx_variables: {from_b: "hello, from b!"} }
+      it { assert_call activity, seq: "[:c]", expected_ctx_variables: {from_b: 1} }
 
     #0002
       #@ wrong {:expected_ctx_variables} fails
-      it { assert_call activity, seq: "[:c]", expected_ctx_variables: {from_b: "hello, absolutely not from b!"} }
+      it { assert_call activity, seq: "[:c]", expected_ctx_variables: {from_b: 2} }
     end
 
     test_case = test.new(:test_0001_anonymous)
@@ -137,8 +137,8 @@ Expected: :not_right
 @@ -1,3 +1,3 @@
  # encoding: US-ASCII
  #    valid: true
--\"{:seq=>[:c], :from_b=>\\\"hello, absolutely not from b!\\\"}\"
-+\"{:seq=>[:c], :from_b=>\\\"hello, from b!\\\"}\"
+-\"#{{:seq=>[:c], :from_b=>2}}\"
++\"#{{:seq=>[:c], :from_b=>1}}\"
 }
   end
 
@@ -201,8 +201,8 @@ Expected: :not_right
         signal, (ctx, flow_options) = assert_invoke activity, seq: "[:call]", flow_options: {start: "yes"}
 
         assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
-        assert_equal ctx.inspect, %({:seq=>[:call]})
-        assert_equal flow_options.inspect, %({:start=>\"yes\"})
+        assert_equal Trailblazer::Core::Utils.inspect(ctx), %({:seq=>[:call]})
+        assert_equal Trailblazer::Core::Utils.inspect(flow_options), %({:start=>\"yes\"})
       }
 
     # #0002
@@ -221,7 +221,7 @@ Expected: :not_right
     #   #@ {#assert_call} returns ctx
     #   it {
     #     ctx = assert_call activity, seq: "[:b, :c]"
-    #     assert_equal ctx.inspect, %{{:seq=>[:b, :c]}}
+    #     assert_equal Trailblazer::Core::Utils.inspect(ctx), %{{:seq=>[:b, :c]}}
     #   }
 
     # #0006

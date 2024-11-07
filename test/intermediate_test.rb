@@ -61,11 +61,11 @@ class IntermediateTest < Minitest::Spec
 #<End/:failure>
 )
 
-    assert_equal schema[:outputs].inspect, %{[#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:failure>, semantic=:failure>]}
+    assert_equal CU.inspect(schema[:outputs]), %{[#<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:failure>, semantic=:failure>]}
 
     # :extension API
     #   test it works with and without [bla_ext], and more than one per line
-    assert_equal schema[:config].inspect, %{{:wrap_static=>{}, :b1=>false, :a1=>true, :a2=>:yo}}
+    assert_equal CU.inspect(schema[:config]), %{{:wrap_static=>{}, :b1=>false, :a1=>true, :a2=>:yo}}
 
     assert_invoke Activity.new(schema), seq: "[:a, :b, :d]"
     assert_invoke Activity.new(schema), b: false, seq: "[:a, :b, :c]", terminus: :failure
@@ -108,7 +108,7 @@ class IntermediateTest < Minitest::Spec
 
     schema = Inter::Compiler.(intermediate, implementation)
 
-    assert_equal schema[:outputs].inspect, %{[#<struct Trailblazer::Activity::Output signal=#<IntermediateTest::D::End semantic=:win>, semantic=:win>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>]}
+    assert_equal CU.inspect(schema[:outputs]), %{[#<struct Trailblazer::Activity::Output signal=#<IntermediateTest::D::End semantic=:win>, semantic=:win>, #<struct Trailblazer::Activity::Output signal=#<Trailblazer::Activity::End semantic=:success>, semantic=:success>]}
 
     assert_circuit schema, %{
 #<Start/:default>
@@ -164,7 +164,7 @@ class IntermediateTest < Minitest::Spec
 
       schema = Inter::Compiler.(intermediate, implementation([ext_a, ext_b, ext_d, ext_e]))
 
-      assert_equal schema[:config].to_h.inspect, %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :C=>1, :e=>2}}
+      assert_equal CU.inspect(schema[:config].to_h), %{{:wrap_static=>{}, :a=>\"bla\", :b=>\"blubb\", :C=>1, :e=>2}}
     end
 
   # {Implementation.call()} allows to pass {config} data
@@ -172,13 +172,13 @@ class IntermediateTest < Minitest::Spec
       it "accepts {config_merge:} data that is merged into {config}" do
         schema = Inter::Compiler.(intermediate, implementation([]), config_merge: {beer: "yes"})
 
-        assert_equal schema[:config].to_h.inspect, %{{:wrap_static=>{}, :beer=>\"yes\"}}
+        assert_equal CU.inspect(schema[:config].to_h), %{{:wrap_static=>{}, :beer=>\"yes\"}}
       end
 
       it "{:config_merge} overrides values in {default_config}" do
         schema = Inter::Compiler.(intermediate, implementation([]), config_merge: {beer: "yes", wrap_static: "yo"})
 
-        assert_equal schema[:config].to_h.inspect, %{{:wrap_static=>"yo", :beer=>\"yes\"}}
+        assert_equal CU.inspect(schema[:config].to_h), %{{:wrap_static=>"yo", :beer=>\"yes\"}}
       end
     end
   end

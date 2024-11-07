@@ -20,7 +20,7 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, i, j, *bla) = circuit.([ctx, 1, 2], task: Start)
 
-    assert_equal ctx.inspect, %{{:start=>1, :a=>2, :b=>3, :_end=>4}}
+    assert_equal CU.inspect(ctx), %{{:start=>1, :a=>2, :b=>3, :_end=>4}}
     assert_equal last_signal, "the end"
     assert_equal i, 1
     assert_equal j, 2
@@ -76,7 +76,7 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, i, j, *bla) = outer.([ctx, {}, 2], task: Start)
 
-    assert_equal ctx.inspect, %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
+    assert_equal CU.inspect(ctx), %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
     assert_equal last_signal, "the end"
     assert_equal i,({})
     assert_equal j, 2
@@ -89,7 +89,7 @@ class CircuitTest < Minitest::Spec
 
     last_signal, (ctx, flow_options, j, *bla) = outer.([ctx, flow_options, 2], task: Start, runner: MyRunner)
 
-    assert_equal ctx.inspect, %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
+    assert_equal CU.inspect(ctx), %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
     assert_equal last_signal, "the end"
     assert_equal flow_options, { stack: [Start, A, nestable, Start, C, End, B, End], runner: MyRunner }
     assert_equal j, 2

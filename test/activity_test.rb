@@ -10,7 +10,7 @@ class ActivityTest < Minitest::Spec
     signal, (options,) = activity.([{}], start_task: L)
 
     assert_equal signal, activity.outputs[:success].signal
-    assert_equal options.inspect, %{{:L=>1}}
+    assert_equal CU.inspect(options), %{{:L=>1}}
   end
 
   it "exposes {#to_h}" do
@@ -22,12 +22,12 @@ class ActivityTest < Minitest::Spec
     assert_equal hsh[:outputs].collect{ |output| output.to_h[:semantic] }.inspect, %{[:success, :failure]}
     assert_equal hsh[:nodes].class, Trailblazer::Activity::Schema::Nodes
     assert_equal hsh[:nodes].collect { |id, attrs| attrs.id }.inspect, %{["Start.default", :B, :C, "End.success", "End.failure"]}
-    assert_equal hsh[:config].inspect, "{:wrap_static=>{}}"
+    assert_equal CU.inspect(hsh[:config]), "{:wrap_static=>{}}"
   end
 
   # TODO: test {to_h} properly
   it "exposes {:data} attributes in {#to_h}" do
-    assert_equal bc.to_h[:nodes].values[1][:data].inspect, %{{:additional=>true}}
+    assert_equal CU.inspect(bc.to_h[:nodes].values[1][:data]), %{{:additional=>true}}
   end
 
   it "{:activity}" do
@@ -122,7 +122,7 @@ if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.1") && RUBY_ENGINE == "
       elsif ruby_version >= Gem::Version.new("3.2.0") && ruby_version <= Gem::Version.new("3.2.6")
         require "trailblazer/activity/circuit/ruby_with_unfixed_compaction"
         Trailblazer::Activity::Circuit.prepend(Trailblazer::Activity::Circuit::RubyWithUnfixedCompaction)
-      elsif ruby_version >= Gem::Version.new("3.3.0") && ruby_version <= Gem::Version.new("3.3.6")
+      elsif ruby_version >= Gem::Version.new("3.3.0") #&& ruby_version <= Gem::Version.new("3.3.6")
         require "trailblazer/activity/circuit/ruby_with_unfixed_compaction"
         Trailblazer::Activity::Circuit.prepend(Trailblazer::Activity::Circuit::RubyWithUnfixedCompaction)
       end

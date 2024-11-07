@@ -215,30 +215,30 @@ Please update to the new TaskWrap.Extension() API.
     it "accepts {:wrap_static} option" do
       host_activity = Activity::TaskWrap.container_activity_for(Object, wrap_static: {a: 1})
 
-      assert_equal host_activity.inspect, "{:config=>{:wrap_static=>{Object=>{:a=>1}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>{:a=>1}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
     end
 
     it "if {:wrap_static} not given it adds {#initial_wrap_static}" do
       host_activity = Activity::TaskWrap.container_activity_for(Object)
 
-      assert_equal host_activity.inspect, "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
     end
 
     it "accepts additional options for {:config}, e.g. {each: true}" do
       host_activity = Activity::TaskWrap.container_activity_for(Object, each: true)
 
-      assert_equal host_activity.inspect, "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}, :each=>true}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}, :each=>true}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
 
     # allows mixing
       host_activity = Activity::TaskWrap.container_activity_for(Object, each: true, wrap_static: {a: 1})
 
-      assert_equal host_activity.inspect, "{:config=>{:wrap_static=>{Object=>{:a=>1}}, :each=>true}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>{:a=>1}}, :each=>true}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
     end
 
     it "accepts {:id}" do
       host_activity = Activity::TaskWrap.container_activity_for(Object, id: :OBJECT)
 
-      assert_equal host_activity.inspect, "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=:OBJECT, task=Object, data=nil, outputs=nil>}}"
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=:OBJECT, task=Object, data=nil, outputs=nil>}}"
     end
   end # {TaskWrap.container_activity_for}
 end

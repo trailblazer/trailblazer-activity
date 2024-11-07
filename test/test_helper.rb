@@ -19,4 +19,8 @@ Minitest::Spec::Implementing = Fixtures::Implementing
 
 Minitest::Spec.class_eval do
   include Fixtures
+
+
+  require "trailblazer/core"
+  CU = Trailblazer::Core::Utils
 end
