@@ -1,3 +1,8 @@
+# 0.16.4
+
+* Revert the static "fix" from 0.16.3 and make the compaction fix optional, as most Ruby versions
+  are solving this problem natively. See here for details: https://dev.to/trailblazer/gc-compaction-behold-your-hash-keys-2ii1#quick-fix
+
 # 0.16.3
 
 * Fix a bug in Ruby 3.2: `NoMethodError: undefined method `[]' for nil`. Thanks @tiagotex for finding the problem
