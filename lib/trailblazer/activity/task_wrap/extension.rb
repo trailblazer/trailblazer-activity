@@ -86,9 +86,6 @@ Please update to the new TaskWrap.Extension() API."
           end
 
           def call(config:, task:, **)
-            # DISCUSS: does it make sense to test the immutable behavior here? What would be the worst outcome?
-            task = task.circuit_task # Receives {Schema::Implementation::Task}. DISCUSS: why?
-
             # Add the extension's task(s) to the activity's {:wrap_static} taskWrap
             # which is stored in the {:config} field.
             wrap_static = config[:wrap_static]                 # the activity's {wrap_static}.
@@ -97,6 +94,7 @@ Please update to the new TaskWrap.Extension() API."
             # Overwrite the original task_wrap:
             wrap_static = wrap_static.merge(task => @extension.(task_wrap))
 
+            # DISCUSS: does it make sense to test the immutable behavior here? What would be the worst outcome?
             config.merge(wrap_static: wrap_static) # Return new config hash. This needs to be immutable code!
           end
         end # WrapStatic

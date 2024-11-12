@@ -92,7 +92,7 @@ module Trailblazer
           def invoke_extensions_for(config, impl_task, id)
             impl_task
               .extensions
-              .inject(config) { |cfg, ext| ext.(config: cfg, id: id, task: impl_task) } # {ext} must return new config hash.
+              .inject(config) { |cfg, ext| ext.(config: cfg, id: id, task: impl_task.circuit_task) } # {ext} must return new config hash.
           end
 
           # In an array of {Activity::Output}, find the output matching {semantic}.
