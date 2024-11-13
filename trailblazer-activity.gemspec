@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["apotonick@gmail.com"]
 
   spec.summary       = %q{Runtime code for Trailblazer activities.}
-  spec.homepage      = "http://trailblazer.to"
+  spec.homepage      = "https://trailblazer.to"
   spec.licenses      = ["LGPL-3.0"]
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "minitest-line"
   spec.add_development_dependency "rake"
-  spec.add_development_dependency "trailblazer-core-utils", "0.0.3"
+  spec.add_development_dependency "trailblazer-core-utils", "0.0.4"
 
   spec.required_ruby_version = '>= 2.1.0'
 end
