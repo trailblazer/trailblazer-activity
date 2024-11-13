@@ -17,15 +17,7 @@ module Trailblazer
       #   TaskWrap.Extension([task, id: "my_logger", append: "task_wrap.call_task"], [...])
       #
       # If you want a {wrap_static} extension, wrap it using `Extension.WrapStatic.new`.
-      def self.Extension(*inserts, merge: nil)
-        if merge
-          Deprecate.warn caller_locations[0], "The :merge option for TaskWrap.Extension is deprecated and will be removed in 0.16.
-Please refer to https://trailblazer.to/2.1/docs/activity.html#activity-taskwrap-static and have a great day."
-
-          return Extension::WrapStatic.new(extension: Extension.new(*merge))
-          # TODO: remove me once we drop the pre-friendly interface.
-        end
-
+      def self.Extension(*inserts)
         Extension.build(*inserts)
       end
 
@@ -44,8 +36,6 @@ Please refer to https://trailblazer.to/2.1/docs/activity.html#activity-taskwrap-
         end
 
         def initialize(*extension_rows)
-          extension_rows = deprecated_extension_for(extension_rows) # TODO: remove me soon!
-
           @extension_rows = extension_rows # those rows are simple ADDS instructions.
         end
 
@@ -53,21 +43,6 @@ Please refer to https://trailblazer.to/2.1/docs/activity.html#activity-taskwrap-
         # This is usually used in step extensions or at runtime for {wrap_runtime}.
         def call(task_wrap_pipeline)
           Adds.apply_adds(task_wrap_pipeline, @extension_rows)
-        end
-
-        # TODO: remove me once we drop the pre-friendly interface.
-        def deprecated_extension_for(extension_rows)
-          return extension_rows unless extension_rows.find { |ext| ext.is_a?(Array) }
-
-          Deprecate.warn caller_locations[3], "You are using the old API for taskWrap extensions.
-Please update to the new TaskWrap.Extension() API."
-
-          extension_rows.collect do |ary|
-            {
-              insert: ary[0..1],
-              row: Pipeline.Row(*ary[2])
-            }
-          end
         end
 
         # Create extensions from the friendly interface that can alter the wrap_static
