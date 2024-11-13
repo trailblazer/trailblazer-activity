@@ -1,3 +1,9 @@
+# 0.17.0
+
+* In `Extension#call`, remove the dependency to `Implementation::Task`. The logic only receives the actual circuit task.
+* Remove deprecated `Extension()` interface.
+* Remove `Trailblazer::Activity::Introspect::Graph`.
+
 # 0.16.4
 
 * Revert the static "fix" from 0.16.3 and make the compaction fix optional, as most Ruby versions
