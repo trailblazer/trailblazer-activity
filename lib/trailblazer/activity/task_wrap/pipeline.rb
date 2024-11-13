@@ -23,21 +23,6 @@ class Trailblazer::Activity
         @sequence
       end
 
-      # TODO: remove me when old tW extension API is deprecated.
-      def self.method(name)
-        new_name = {
-          insert_before: :Prepend,
-          insert_after: :Append,
-          append: :Append,
-          prepend: :Prepend
-        }.fetch(name)
-
-        warn "[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline.method(:#{name})` is deprecated.
-Please use the new API: #FIXME!!!"
-
-        Trailblazer::Activity::Adds::Insert.method(new_name)
-      end
-
       def self.Row(id, task)
         Row[id, task]
       end
@@ -47,18 +32,6 @@ Please use the new API: #FIXME!!!"
           self[0]
         end
       end
-
-      # TODO: remove {Merge} when old tW extension API is deprecated.
-      class Merge
-        def self.new(*inserts)
-          warn "[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline::Merge.new` is deprecated.
-Please use the new TaskWrap.Extension() API: #FIXME!!!"
-
-          # We can safely assume that users calling {Merge.new} are using the old tW extension API, not
-          # the "friendly API". That's why we don't go through {Extension.build}.
-          TaskWrap::Extension.new(*inserts)
-        end
-      end # Merge
 
       # Implements adapter for a callable in a Pipeline.
       class TaskAdapter < Circuit::TaskAdapter

@@ -154,63 +154,6 @@ class TaskWrapTest < Minitest::Spec
     return wrap_ctx, original_args
   end
 
-  it "deprecates Pipeline.method(:insert) and friends" do
-    merge = nil
-    out, err = capture_io do
-      merge = [
-        [TaskWrap::Pipeline.method(:insert_before), "task_wrap.call_task", ["user.add_1", method(:add_1)]],
-        [TaskWrap::Pipeline.method(:insert_after),  "task_wrap.call_task", ["user.add_2", method(:add_2)]]
-      ]
-    end
-
-  #= we get deprecation warnings for {Pipeline.insert}
-    assert_equal err, %{[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline.method(:insert_before)` is deprecated.
-Please use the new API: #FIXME!!!
-[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline.method(:insert_after)` is deprecated.
-Please use the new API: #FIXME!!!
-}
-
-    ext = nil
-    out, err = capture_io do
-      ext = TaskWrap.Extension(merge: merge) # {:merge} option is deprecated, too.
-    end
-    line_no = __LINE__
-
-    assert_equal err, %{[Trailblazer] #{__FILE__}:#{line_no - 2} The :merge option for TaskWrap.Extension is deprecated and will be removed in 0.16.
-Please refer to https://trailblazer.to/2.1/docs/activity.html#activity-taskwrap-static and have a great day.
-[Trailblazer] #{__FILE__}:#{line_no - 2} You are using the old API for taskWrap extensions.
-Please update to the new TaskWrap.Extension() API.
-}
-
-    abc_implementation, _ = abc_implementation(a_extensions: [ext])
-    schema                = Inter::Compiler.(abc_intermediate, abc_implementation)
-
-    assert_invoke(Activity.new(schema), seq: "[1, :a, 2, :b, :c]")
-
-  #@ deprecation also works for Extension.new() (formerly {Pipeline::Merge.new})
-    wrap_runtime = {abc_implementation[:c].circuit_task => TaskWrap::Extension.new(*merge)}
-
-    abc_implementation, _ = abc_implementation() # no extensions via wrap_static.
-    schema                = Inter::Compiler.(abc_intermediate, abc_implementation)
-
-    assert_invoke(Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime})
-
-  #@ using {Pipeline::Merge.new} also gets deprecated
-    ext = nil
-    out, err = capture_io do
-      wrap_runtime = {abc_implementation[:c].circuit_task => TaskWrap::Pipeline::Merge.new(*merge)}
-    end
-    line_no = __LINE__
-
-    assert_equal err, %{[Trailblazer] Using `Trailblazer::Activity::TaskWrap::Pipeline::Merge.new` is deprecated.
-Please use the new TaskWrap.Extension() API: #FIXME!!!
-[Trailblazer] #{__FILE__}:#{line_no - 2} You are using the old API for taskWrap extensions.
-Please update to the new TaskWrap.Extension() API.
-}
-
-    assert_invoke Activity.new(schema), seq: "[:a, :b, 1, :c, 2]", circuit_options: {wrap_runtime: wrap_runtime}
-  end
-
   describe "{TaskWrap.container_activity_for}" do
     it "accepts {:wrap_static} option" do
       host_activity = Activity::TaskWrap.container_activity_for(Object, wrap_static: {a: 1})
