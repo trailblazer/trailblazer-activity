@@ -24,7 +24,7 @@ module Trailblazer
 
           content = content.join("\n")
 
-          "\n#{content}".gsub(/0x\w+/, "0x")
+          "\n#{content}".gsub(/0x\w+/, "0x") # DISCUSS: use sub logic from core-utils
         end
 
         # If Ruby had pattern matching, this function wasn't necessary.
