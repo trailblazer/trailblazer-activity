@@ -1,3 +1,9 @@
+# 0.17.1
+
+* Allow `:replace` in ADDS friendly interface.
+* Remove `TaskWrap::Extension::WrapStatic`. We only use `TaskWrap::Extension` now. Note that presently, you
+  cannot add options to the `config` field anymore.
+
 # 0.17.0
 
 * In `Extension#call`, remove the dependency to `Implementation::Task`. The logic only receives the actual circuit task.
