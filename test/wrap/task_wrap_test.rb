@@ -154,25 +154,39 @@ class TaskWrapTest < Minitest::Spec
     return wrap_ctx, original_args
   end
 
-  it "deprecates {TaskWrap.WrapStatic}" do
-    adds = [
-      [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
-      [method(:add_2), id: "user.add_2", append:  "task_wrap.call_task"],
-    ]
+  describe "Extension" do
+    it "deprecates {TaskWrap.WrapStatic}" do
+      adds = [
+        [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
+        [method(:add_2), id: "user.add_2", append:  "task_wrap.call_task"],
+      ]
 
-    ext = nil
-    _, warning = capture_io do
-      ext = TaskWrap::Extension.WrapStatic(*adds)
+      ext = nil
+      _, warning = capture_io do
+        ext = TaskWrap::Extension.WrapStatic(*adds)
+      end
+      line_number_for_binary = __LINE__ - 2
+
+      # lines = warning.split("\n")
+      # lines[0] = lines[0][0..-5]+"." if lines[0] =~ /\d-\d+-\d/
+      # warning = lines.join("\n")
+
+      assert_equal warning, %{[Trailblazer] #{File.realpath(__FILE__)}:#{line_number_for_binary} Using `TaskWrap::Extension.WrapStatic()` is deprecated. Please use `TaskWrap.Extension()`.\n}
+      assert_equal ext.class, Trailblazer::Activity::TaskWrap::Extension
+      # DISCUSS: should we test if the extension is correct?
     end
-    line_number_for_binary = __LINE__ - 2
 
-    # lines = warning.split("\n")
-    # lines[0] = lines[0][0..-5]+"." if lines[0] =~ /\d-\d+-\d/
-    # warning = lines.join("\n")
+    it "{Extension#call} accepts **options" do
+      adds = [
+        [Object, id: "user.add_1", prepend: nil],
+      ]
 
-    assert_equal warning, %{[Trailblazer] #{File.realpath(__FILE__)}:#{line_number_for_binary} Using `TaskWrap::Extension.WrapStatic()` is deprecated. Please use `TaskWrap.Extension()`.\n}
-    assert_equal ext.class, Trailblazer::Activity::TaskWrap::Extension
-    # DISCUSS: should we test if the extension is correct?
+      ext = TaskWrap::Extension.WrapStatic(*adds)
+
+      task_wrap = ext.([], some: :options)
+
+      assert_equal task_wrap.inspect, %([["user.add_1", Object]])
+    end
   end
 
   describe "{TaskWrap.container_activity_for}" do

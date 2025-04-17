@@ -26,6 +26,7 @@ module Trailblazer
       #   * compile-time and adds its steps to the wrap_static (see Extension::WrapStatic)
       #   * run-time in {TaskWrap::Runner} and adds its steps dynamically at runtime to the
       #     step's taskWrap
+      #   * it's also used in the DSL to create compile-time tW extensions.
       class Extension
         # Build a taskWrap extension from the "friendly interface" {[task, id:, ...]}
         def self.build(*inserts)
@@ -48,6 +49,7 @@ module Trailblazer
         # Create extensions from the friendly interface that can alter the wrap_static
         # of a step in an activity. The returned extensionn can be passed directly via {:extensions}
         # to the compiler, or when using the `#step` DSL.
+        # TODO: remove.
         def self.WrapStatic(*inserts)
           Activity::Deprecate.warn caller_locations[0], "Using `TaskWrap::Extension.WrapStatic()` is deprecated. Please use `TaskWrap.Extension()`."
 
