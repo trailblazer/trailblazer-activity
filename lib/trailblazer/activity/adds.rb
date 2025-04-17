@@ -47,9 +47,13 @@ module Trailblazer
         end
 
         # @private
-        def self.build_adds(task, id:, prepend: "task_wrap.call_task", append: false)
+        def self.build_adds(task, id:, prepend: "task_wrap.call_task", append: false, replace: false)
           insert, insert_id =
-            (append === false) ? [:Prepend, prepend] : [:Append, append]
+            if replace
+              [:Replace, replace]
+            else
+              (append === false) ? [:Prepend, prepend] : [:Append, append]
+            end
 
           {
             insert: [Activity::Adds::Insert.method(insert), insert_id],
