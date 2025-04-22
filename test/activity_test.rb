@@ -13,15 +13,79 @@ class ActivityTest < Minitest::Spec
     assert_equal CU.inspect(options), %{{:L=>1}}
   end
 
+  def flat_activity()
+    start = Activity::Start.new(semantic: :default)
+    failure = Activity::End(:failure)
+    success = Activity::End(:success)
+
+    # signals
+    right = Activity::Right
+    left  = Activity::Left
+
+    # tasks
+    b = Implementing.method(:b)
+    c = Implementing.method(:c)
+
+    wiring = {
+      start   => {right => b},
+      b       => {right => c, left => failure},
+      c       => {right => success},
+      # failure => {},
+      # success => {}
+    }
+
+    # standard outputs, for introspection interface.
+    right_output = Activity::Output(Activity::Right, :success)
+    left_output = Activity::Output(Activity::Right, :failure)
+
+    nodes_attributes = [
+      # id, task, data, [outputs]
+      ["Start.default", start, {}, [right_output]],
+      ["b", b, {}, [right_output, left_output]],
+      ["c", c, {}, [right_output]],
+      ["End.failure", failure, {stop_event: true}, []],
+      ["End.success", success, {stop_event: true}, []],
+    ]
+
+    circuit = Activity::Circuit.new(
+      wiring,
+      [failure, success], # termini
+      start_task: start
+    )
+
+    activity_outputs = [
+      Activity::Output(failure, :failure),
+      Activity::Output(success, :success)
+    ]
+
+    # extensions could be used to extend a particular task_wrap.
+    wrap_static = {
+      start => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      b => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      c => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      failure => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      success => Activity::TaskWrap::INITIAL_TASK_WRAP,
+    }
+
+    schema = Schema.new(
+      circuit,
+      activity_outputs,
+      Schema::Nodes(nodes_attributes),
+      {wrap_static: wrap_static}
+    )
+
+    @_flat_activity = Activity.new(schema)
+  end
+
   it "exposes {#to_h}" do
     hsh = flat_activity.to_h
 
     assert_equal hsh.keys, [:circuit, :outputs, :nodes, :config] # These four keys are required by the Activity interface.
 
     assert_equal hsh[:circuit].class, Trailblazer::Activity::Circuit
-    assert_equal hsh[:outputs].collect{ |output| output.to_h[:semantic] }.inspect, %{[:success, :failure]}
+    assert_equal hsh[:outputs].collect{ |output| output.to_h[:semantic] }.inspect, %{[:failure, :success]}
     assert_equal hsh[:nodes].class, Trailblazer::Activity::Schema::Nodes
-    assert_equal hsh[:nodes].collect { |id, attrs| attrs.id }.inspect, %{["Start.default", :B, :C, "End.success", "End.failure"]}
+    assert_equal hsh[:nodes].collect { |id, attrs| attrs.id }.inspect, %{["Start.default", "b", "c", "End.failure", "End.success"]}
 
     assert_equal hsh[:config].keys, [:wrap_static]
     assert_equal hsh[:config][:wrap_static].keys.collect { |key| key.inspect },
@@ -29,8 +93,8 @@ class ActivityTest < Minitest::Spec
       "#<Trailblazer::Activity::Start semantic=:default>",
       Implementing.method(:b).inspect,
       Implementing.method(:c).inspect,
+      "#<Trailblazer::Activity::End semantic=:failure>",
       "#<Trailblazer::Activity::End semantic=:success>",
-      "#<Trailblazer::Activity::End semantic=:failure>"
     ]
 
     pipeline_class = Activity::TaskWrap::Pipeline
