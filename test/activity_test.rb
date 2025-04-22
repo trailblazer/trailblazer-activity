@@ -22,7 +22,22 @@ class ActivityTest < Minitest::Spec
     assert_equal hsh[:outputs].collect{ |output| output.to_h[:semantic] }.inspect, %{[:success, :failure]}
     assert_equal hsh[:nodes].class, Trailblazer::Activity::Schema::Nodes
     assert_equal hsh[:nodes].collect { |id, attrs| attrs.id }.inspect, %{["Start.default", :B, :C, "End.success", "End.failure"]}
-    assert_equal CU.inspect(hsh[:config]), "{:wrap_static=>{}}"
+
+    assert_equal hsh[:config].keys, [:wrap_static]
+    assert_equal hsh[:config][:wrap_static].keys.collect { |key| key.inspect },
+    [
+      "#<Trailblazer::Activity::Start semantic=:default>",
+      Implementing.method(:b).inspect,
+      Implementing.method(:c).inspect,
+      "#<Trailblazer::Activity::End semantic=:success>",
+      "#<Trailblazer::Activity::End semantic=:failure>"
+    ]
+
+    pipeline_class = Activity::TaskWrap::Pipeline
+    call_task_inspect = [Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK].inspect
+
+    assert_equal hsh[:config][:wrap_static].values.collect { |value| value.class }, [pipeline_class, pipeline_class, pipeline_class, pipeline_class, pipeline_class]
+    assert_equal hsh[:config][:wrap_static].values.collect { |value| value.to_a.inspect }, [call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect]
   end
 
   # TODO: test {to_h} properly

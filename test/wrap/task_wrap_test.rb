@@ -79,12 +79,12 @@ class TaskWrapTest < Minitest::Spec
   end
 
   it "populates activity[:wrap_static] and uses it at run-time" do
-    merge = [
+    adds = [
       [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
       [method(:add_2), id: "user.add_2", append:  "task_wrap.call_task"],
     ]
 
-    abc_implementation, _es = abc_implementation(a_extensions: [TaskWrap::Extension.WrapStatic(*merge)])
+    abc_implementation, _es = abc_implementation(a_extensions: [TaskWrap::Extension.WrapStatic(*adds)])
     schema                  = Inter::Compiler.(abc_intermediate, abc_implementation)
 
     assert_invoke Activity.new(schema), seq: "[1, :a, 2, :b, :c]"
@@ -94,7 +94,7 @@ class TaskWrapTest < Minitest::Spec
     top_implementation = {
       :a => Schema::Implementation::Task(Implementing.method(:a), [Activity::Output(Activity::Right, :success)], []),
       :b => Schema::Implementation::Task(Activity.new(schema), [Activity::Output(_es, :success)], []),
-      :c => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension.WrapStatic(*merge)]),
+      :c => Schema::Implementation::Task(c = Implementing.method(:c), [Activity::Output(Activity::Right, :success)],                 [TaskWrap::Extension(*adds)]),
       "End.success" => Schema::Implementation::Task(Implementing::Success, [], []) # DISCUSS: End has one Output, signal is itself?
     }
 
@@ -104,7 +104,7 @@ class TaskWrapTest < Minitest::Spec
 
   #@ it works nested plus allows {wrap_runtime}
 
-    wrap_runtime = {c => TaskWrap::Extension(*merge)}
+    wrap_runtime = {c => TaskWrap::Extension(*adds)}
 
     assert_invoke Activity.new(schema), seq: "[:a, 1, :a, 2, :b, 1, :c, 2, 1, 1, :c, 2, 2]", circuit_options: {wrap_runtime: wrap_runtime}
   end
@@ -181,7 +181,7 @@ class TaskWrapTest < Minitest::Spec
         [Object, id: "user.add_1", prepend: nil],
       ]
 
-      ext = TaskWrap::Extension.WrapStatic(*adds)
+      ext = TaskWrap::Extension(*adds)
 
       task_wrap = ext.([], some: :options)
 
