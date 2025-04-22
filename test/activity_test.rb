@@ -5,13 +5,28 @@ class ActivityTest < Minitest::Spec
     assert_equal Trailblazer::Activity.new({}).inspect.gsub(/0x\w+/, "0x"), %{#<Trailblazer::Activity:0x>}
   end
 
-  it "can start with any task" do
-    skip
-    signal, (options,) = activity.([{}], start_task: L)
+  describe "Activity#call" do
+    it "accepts circuit interface" do
+      signal, (ctx, flow_options) = flat_activity.call([{seq: []}, {}])
 
-    assert_equal signal, activity.outputs[:success].signal
-    assert_equal CU.inspect(options), %{{:L=>1}}
+      assert_equal CU.inspect(ctx), %({:seq=>[:b, :c]})
+      assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
+
+      signal, (ctx, flow_options) = flat_activity.call([{seq: [], b: Trailblazer::Activity::Left}, {}])
+
+      assert_equal CU.inspect(ctx), %({:seq=>[:b], :b=>Trailblazer::Activity::Left})
+      assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:failure>)
+    end
+
+    it "accepts {:start_task}" do
+      skip
+      signal, (options,) = activity.([{}], start_task: L)
+
+      assert_equal signal, activity.outputs[:success].signal
+      assert_equal CU.inspect(options), %{{:L=>1}}
+    end
   end
+
 
   def flat_activity()
     start = Activity::Start.new(semantic: :default)
