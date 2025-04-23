@@ -48,7 +48,7 @@ module Trailblazer
             **circuit_options
           )
 
-          # Stop execution of the circuit when we hit a stop event (< End). This could be an task's End or Suspend.
+          # Stop execution of the circuit when we hit a terminus.
           return [last_signal, args] if @stop_events.include?(task)
 
           if (next_task = next_for(task, last_signal))
@@ -91,8 +91,8 @@ module Trailblazer
           @task = task
           @signal = signal
 
-          message = "#{exec_context.class}: \n" \
-            "\e[31mUnrecognized Signal `#{signal.inspect}` returned from #{task.inspect}. Registered signals are, \e[0m\n" \
+          message = "#{exec_context.class}:\n" \
+            "\e[31mUnrecognized signal `#{signal.inspect}` returned from #{task.inspect}. Registered signals are:\e[0m\n" \
             "\e[32m#{outputs.keys.map(&:inspect).join("\n")}\e[0m"
 
           super(message)

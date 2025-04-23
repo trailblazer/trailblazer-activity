@@ -1,10 +1,6 @@
 require "test_helper"
 
 class ActivityTest < Minitest::Spec
-  it "provides {#inspect}" do
-    assert_equal Trailblazer::Activity.new({}).inspect.gsub(/0x\w+/, "0x"), %{#<Trailblazer::Activity:0x>}
-  end
-
   describe "Activity#call" do
     it "accepts circuit interface" do
       signal, (ctx, flow_options) = flat_activity.call([{seq: []}, {}])
@@ -12,6 +8,7 @@ class ActivityTest < Minitest::Spec
       assert_equal CU.inspect(ctx), %({:seq=>[:b, :c]})
       assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
 
+      # b step fails.
       signal, (ctx, flow_options) = flat_activity.call([{seq: [], b: Trailblazer::Activity::Left}, {}])
 
       assert_equal CU.inspect(ctx), %({:seq=>[:b], :b=>Trailblazer::Activity::Left})
@@ -19,16 +16,74 @@ class ActivityTest < Minitest::Spec
     end
 
     it "accepts {:start_task}" do
-      skip
-      signal, (options,) = activity.([{}], start_task: L)
+      signal, (ctx, flow_options) = flat_activity.call([{seq: []}, {}], start_task: Implementing.method(:c))
 
-      assert_equal signal, activity.outputs[:success].signal
-      assert_equal CU.inspect(options), %{{:L=>1}}
+      assert_equal CU.inspect(ctx), %({:seq=>[:c]})
+      assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
+    end
+
+    it "accepts {:runner}" do
+      my_runner = ->(task, args, **circuit_options) do
+        args[0][:seq] << :my_runner
+
+        task.(args, **circuit_options)
+      end
+
+      signal, (ctx, flow_options) = flat_activity.call([{seq: []}, {}], runner: my_runner)
+
+      assert_equal CU.inspect(ctx), %({:seq=>[:my_runner, :my_runner, :b, :my_runner, :c, :my_runner]})
+      assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
+    end
+
+    it "throws a {IllegalSignalError} exception if a signal is not connected" do
+      b_task          = Implementing.method(:b)
+      broken_activity = flat_activity(wiring: {b_task => {nonsense: false, bogus: true}}) # {b} task does not connect the {Right} signal.
+      class MyExecContext; end
+
+      exception = assert_raises Trailblazer::Activity::Circuit::IllegalSignalError do
+        signal, (ctx, flow_options) = broken_activity.call([{seq: []}, {}], start_task: b_task, exec_context: MyExecContext.new)
+      end
+
+      message = "ActivityTest::MyExecContext:
+\e[31mUnrecognized signal `Trailblazer::Activity::Right` returned from #{b_task.inspect}. Registered signals are:\e[0m
+\e[32m:nonsense
+:bogus\e[0m"
+
+    assert_equal exception.message, message
+
+    assert_equal exception.task, b_task
+    assert_equal exception.signal, Trailblazer::Activity::Right
     end
   end
 
+  it "exposes {#to_h}" do
+    hsh = flat_activity.to_h
 
-  def flat_activity()
+    assert_equal hsh.keys, [:circuit, :outputs, :nodes, :config] # These four keys are required by the Activity interface.
+
+    assert_equal hsh[:circuit].class, Trailblazer::Activity::Circuit
+    assert_equal hsh[:outputs].collect{ |output| output.to_h[:semantic] }.inspect, %{[:failure, :success]}
+    assert_equal hsh[:nodes].class, Trailblazer::Activity::Schema::Nodes
+    assert_equal hsh[:nodes].collect { |id, attrs| attrs.id }.inspect, %{["Start.default", "b", "c", "End.failure", "End.success"]}
+
+    assert_equal hsh[:config].keys, [:wrap_static]
+    assert_equal hsh[:config][:wrap_static].keys.collect { |key| key.inspect },
+    [
+      "#<Trailblazer::Activity::Start semantic=:default>",
+      Implementing.method(:b).inspect,
+      Implementing.method(:c).inspect,
+      "#<Trailblazer::Activity::End semantic=:failure>",
+      "#<Trailblazer::Activity::End semantic=:success>",
+    ]
+
+    pipeline_class = Activity::TaskWrap::Pipeline
+    call_task_inspect = [Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK].inspect
+
+    assert_equal hsh[:config][:wrap_static].values.collect { |value| value.class }, [pipeline_class, pipeline_class, pipeline_class, pipeline_class, pipeline_class]
+    assert_equal hsh[:config][:wrap_static].values.collect { |value| value.to_a.inspect }, [call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect]
+  end
+
+  def flat_activity(wiring: nil)
     start = Activity::Start.new(semantic: :default)
     failure = Activity::End(:failure)
     success = Activity::End(:success)
@@ -41,7 +96,7 @@ class ActivityTest < Minitest::Spec
     b = Implementing.method(:b)
     c = Implementing.method(:c)
 
-    wiring = {
+    wiring ||= {
       start   => {right => b},
       b       => {right => c, left => failure},
       c       => {right => success},
@@ -92,37 +147,7 @@ class ActivityTest < Minitest::Spec
     @_flat_activity = Activity.new(schema)
   end
 
-  it "exposes {#to_h}" do
-    hsh = flat_activity.to_h
-
-    assert_equal hsh.keys, [:circuit, :outputs, :nodes, :config] # These four keys are required by the Activity interface.
-
-    assert_equal hsh[:circuit].class, Trailblazer::Activity::Circuit
-    assert_equal hsh[:outputs].collect{ |output| output.to_h[:semantic] }.inspect, %{[:failure, :success]}
-    assert_equal hsh[:nodes].class, Trailblazer::Activity::Schema::Nodes
-    assert_equal hsh[:nodes].collect { |id, attrs| attrs.id }.inspect, %{["Start.default", "b", "c", "End.failure", "End.success"]}
-
-    assert_equal hsh[:config].keys, [:wrap_static]
-    assert_equal hsh[:config][:wrap_static].keys.collect { |key| key.inspect },
-    [
-      "#<Trailblazer::Activity::Start semantic=:default>",
-      Implementing.method(:b).inspect,
-      Implementing.method(:c).inspect,
-      "#<Trailblazer::Activity::End semantic=:failure>",
-      "#<Trailblazer::Activity::End semantic=:success>",
-    ]
-
-    pipeline_class = Activity::TaskWrap::Pipeline
-    call_task_inspect = [Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK].inspect
-
-    assert_equal hsh[:config][:wrap_static].values.collect { |value| value.class }, [pipeline_class, pipeline_class, pipeline_class, pipeline_class, pipeline_class]
-    assert_equal hsh[:config][:wrap_static].values.collect { |value| value.to_a.inspect }, [call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect]
-  end
-
-  # TODO: test {to_h} properly
-  it "exposes {:data} attributes in {#to_h}" do
-    assert_equal CU.inspect(bc.to_h[:nodes].values[1][:data]), %{{:additional=>true}}
-  end
+  # TODO: remove remaining tests from here!
 
   it "{:activity}" do
     intermediate = Activity::Schema::Intermediate.new(

@@ -82,47 +82,4 @@ class CircuitTest < Minitest::Spec
     assert_equal j, 2
     assert_equal bla, []
   end
-
-  it "allows using a custom :runner" do
-    ctx          = {}
-    flow_options = {stack: [], runner: MyRunner}
-
-    last_signal, (ctx, flow_options, j, *bla) = outer.([ctx, flow_options, 2], task: Start, runner: MyRunner)
-
-    assert_equal CU.inspect(ctx), %{{:start=>1, :a=>2, :c=>6, :_end=>4, :b=>3}}
-    assert_equal last_signal, "the end"
-    assert_equal flow_options, { stack: [Start, A, nestable, Start, C, End, B, End], runner: MyRunner }
-    assert_equal j, 2
-    assert_equal bla, []
-  end
-
-  let(:wicked_circuit) do
-    map = {
-      Start => {eureka: A},
-      A     => {"from a" => End}
-    }
-
-    Trailblazer::Activity::Circuit.new(map, [End], start_task: Start)
-  end
-
-  it "throws an exception if any unknown signal is caught" do
-    DummyActivity = Class.new(Trailblazer::Activity)
-
-    exception = assert_raises Trailblazer::Activity::Circuit::IllegalSignalError do
-      ctx = {}
-      flow_options = {}
-      circuit_options = {exec_context: DummyActivity.new(Hash.new)}
-
-      wicked_circuit.([ctx, flow_options], **circuit_options)
-    end
-
-    message = "CircuitTest::DummyActivity: \n" \
-      "\e[31mUnrecognized Signal `\"to a\"` returned from #{Start}. Registered signals are, \e[0m\n" \
-      "\e[32m:eureka\e[0m"
-
-    assert_equal message, exception.message
-
-    assert_equal Start, exception.task
-    assert_equal "to a", exception.signal
-  end
 end
