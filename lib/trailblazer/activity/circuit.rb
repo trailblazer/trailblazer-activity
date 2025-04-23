@@ -6,7 +6,7 @@ module Trailblazer
     # Note: Please use #Activity as a public circuit builder.
     #
     # @param map         [Hash] Defines the wiring.
-    # @param stop_events [Array] Tasks that stop execution of the circuit.
+    # @param termini [Array] Tasks that stop execution of the circuit.
     #
     #   result = circuit.(start_at, *args)
     #
@@ -15,9 +15,9 @@ module Trailblazer
     #
     # This is the "pipeline operator"'s implementation.
     class Circuit
-      def initialize(map, stop_events, start_task:, name: nil)
+      def initialize(map, termini, start_task:, name: nil)
         @map         = map
-        @stop_events = stop_events
+        @termini     = termini
         @name        = name
         @start_task  = start_task
       end
@@ -49,7 +49,7 @@ module Trailblazer
           )
 
           # Stop execution of the circuit when we hit a terminus.
-          return [last_signal, args] if @stop_events.include?(task)
+          return [last_signal, args] if @termini.include?(task)
 
           if (next_task = next_for(task, last_signal))
             task = next_task
@@ -68,7 +68,7 @@ module Trailblazer
       def to_h
         {
           map: @map,
-          end_events: @stop_events,
+          end_events: @termini,
           start_task: @start_task
         }
       end
