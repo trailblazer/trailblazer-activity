@@ -3,7 +3,7 @@ require "test_helper"
 # High-level interface to ADDS.
     # TODO: merge with {task_wrap_test.rb}.
 class FriendlyInterfaceTest < Minitest::Spec
-  it "what" do
+  it "provides several insertion strategies" do
     # create new task_wrap with empty original array.
     ext = TaskWrap.Extension(
       [Object, id: "task_wrap.call_task", append: nil]
@@ -38,5 +38,17 @@ class FriendlyInterfaceTest < Minitest::Spec
     task_wrap = ext.(task_wrap)
 
     assert_equal task_wrap.inspect, %([["my.prepend", String], ["my.before", Module], ["task_wrap.call_task", Object], ["my.after", Class], ["my.append", Float]])
+  end
+
+  it "allows using step IDs from earlier inserted steps" do
+    ext = TaskWrap.Extension(
+      [Object, id: "task_wrap.call_task", append: nil],
+      [Module, id: "my.object", append: "task_wrap.call_task"],
+      [Class, id: "my.class", prepend: "my.object"], # my.object is the step from above.
+    )
+
+    task_wrap = ext.([])
+
+    assert_equal task_wrap.inspect, %([["task_wrap.call_task", Object], ["my.class", Class], ["my.object", Module]])
   end
 end
