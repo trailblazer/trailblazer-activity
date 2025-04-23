@@ -46,10 +46,11 @@ class TaskWrapTest < Minitest::Spec
       [method(:add_2), id: "user.add_2", append: "task_wrap.call_task"],
     )
 
-    _, b, c, _ = tasks
+    _, b, c = tasks
 
     wrap_static = wrap_static(*tasks)
 
+    # Replace the taskWrap fo {c} with an extended one.
     original_tw_for_c = wrap_static[c]
     wrap_static = wrap_static.merge(c => ext.(original_tw_for_c))
 
@@ -65,6 +66,39 @@ class TaskWrapTest < Minitest::Spec
     signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}])
 
     assert_equal CU.inspect(ctx), %({:seq=>[:b, 1, :c, 2]})
+    assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
+  end
+
+  it "{:wrap_runtime} allows adding tw extensions to specific tasks when invoking the activity" do
+    activity = flat_activity(config: {wrap_static: wrap_static(*tasks)})
+    _, b     = tasks
+
+    wrap_runtime = {
+      b => Trailblazer::Activity::TaskWrap.Extension(
+        [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
+        [method(:add_2), id: "user.add_2", append: "task_wrap.call_task"],
+      )
+    }
+
+    signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}], wrap_runtime: wrap_runtime)
+
+    assert_equal CU.inspect(ctx), %({:seq=>[1, :b, 2, :c]})
+    assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
+  end
+
+  it "{:wrap_runtime} can also be a defaulted Hash. maybe we could allow having both, default steps and specific ones?" do
+    activity = flat_activity(config: {wrap_static: wrap_static(*tasks)})
+
+    wrap_runtime = Hash.new(
+      Trailblazer::Activity::TaskWrap.Extension(
+        [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
+        [method(:add_2), id: "user.add_2", append: "task_wrap.call_task"],
+      )
+    )
+
+    signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}], wrap_runtime: wrap_runtime)
+
+    assert_equal CU.inspect(ctx), %({:seq=>[1, 1, 2, 1, :b, 2, 1, :c, 2, 1, 2, 2]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
   end
 end
