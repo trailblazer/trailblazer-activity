@@ -101,4 +101,61 @@ class TaskWrapTest < Minitest::Spec
     assert_equal CU.inspect(ctx), %({:seq=>[1, 1, 2, 1, :b, 2, 1, :c, 2, 1, 2, 2]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
   end
+
+  def change_start_task(wrap_ctx, original_args)
+    (ctx, flow_options), circuit_options = original_args
+
+    circuit_options = circuit_options.merge(start_task: ctx[:start_at])
+    original_args   = [[ctx, flow_options], circuit_options]
+
+    return wrap_ctx, original_args
+  end
+
+  # Set start_task of {flat_activity} (which is nested in {nesting_activity}) to something else than configured in the
+  # nested activity itself.
+  it "allows changing {:circuit_options} via a taskWrap step" do
+    nesting_builder = Class.new do
+      include NestingActivity
+    end.new
+
+    flat_builder = Class.new do
+      include FlatActivity
+    end.new
+
+    start, b, c, failure, success = flat_builder.tasks
+
+    flat_wrap_static = {
+      start => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      b => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      c => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      failure => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      success => Activity::TaskWrap::INITIAL_TASK_WRAP,
+    }
+
+    flat_activity = flat_builder.flat_activity(config: {wrap_static: flat_wrap_static})
+
+    tasks = nesting_builder.tasks(flat_activity: flat_activity)
+    start, a, flat_activity, failure, success = tasks
+
+    # Replace the taskWrap fo {flat_activity} with an extended one.
+    ext = Trailblazer::Activity::TaskWrap.Extension(
+      [method(:change_start_task), id: "my.change_start_task", prepend: nil],
+    )
+
+    wrap_static = {
+      start => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      a => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      flat_activity => ext.(Activity::TaskWrap::INITIAL_TASK_WRAP), # extended.
+      failure => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      success => Activity::TaskWrap::INITIAL_TASK_WRAP,
+    }
+
+    activity = nesting_builder.activity(tasks: tasks, config: {wrap_static: wrap_static})
+
+    # Note the custom user-defined {:start_at} circuit option.
+    signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: [], start_at: c}, {}])
+
+    assert_equal CU.inspect(ctx), %({:seq=>[:a, :c], :start_at=>#{c.inspect}})
+    assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
+  end
 end

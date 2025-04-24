@@ -34,11 +34,11 @@ class Trailblazer::Activity
       # unnecessary computations at `call`-time since steps might not even be executed.
       # TODO: make this faster.
       private_class_method def self.merge_static_with_runtime(task, wrap_runtime:, activity:, **circuit_options)
-        static_wrap = TaskWrap.wrap_static_for(task, activity) # find static wrap for this specific task [, or default wrap activity].
+        static_task_wrap = TaskWrap.wrap_static_for(task, activity) # find static wrap for this specific task [, or default wrap activity].
 
         # Apply runtime alterations.
-        # Grab the additional wirings for the particular `task` from `wrap_runtime`.
-        (dynamic_wrap = wrap_runtime[task]) ? dynamic_wrap.(static_wrap) : static_wrap
+        # Grab the additional task_wrap extensions for the particular {task} from {:wrap_runtime}.
+        (dynamic_wrap = wrap_runtime[task]) ? dynamic_wrap.(static_task_wrap) : static_task_wrap
       end
     end # Runner
 
