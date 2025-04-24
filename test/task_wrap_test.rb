@@ -113,6 +113,7 @@ class TaskWrapTest < Minitest::Spec
 
   # Set start_task of {flat_activity} (which is nested in {nesting_activity}) to something else than configured in the
   # nested activity itself.
+  # Instead of running {a -> {b -> c} -> success} it now goes {a -> {c} -> success}.
   it "allows changing {:circuit_options} via a taskWrap step" do
     nesting_builder = Class.new do
       include NestingActivity
@@ -158,4 +159,35 @@ class TaskWrapTest < Minitest::Spec
     assert_equal CU.inspect(ctx), %({:seq=>[:a, :c], :start_at=>#{c.inspect}})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
   end
+
+  describe "{TaskWrap.container_activity_for}" do
+    it "accepts {:wrap_static} option" do
+      host_activity = Activity::TaskWrap.container_activity_for(Object, wrap_static: {a: 1})
+
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>{:a=>1}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+    end
+
+    it "if {:wrap_static} not given it adds {#initial_wrap_static}" do
+      host_activity = Activity::TaskWrap.container_activity_for(Object)
+
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+    end
+
+    it "accepts additional options for {:config}, e.g. {each: true}" do
+      host_activity = Activity::TaskWrap.container_activity_for(Object, each: true)
+
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}, :each=>true}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+
+    # allows mixing
+      host_activity = Activity::TaskWrap.container_activity_for(Object, each: true, wrap_static: {a: 1})
+
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>{:a=>1}}, :each=>true}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+    end
+
+    it "accepts {:id}" do
+      host_activity = Activity::TaskWrap.container_activity_for(Object, id: :OBJECT)
+
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=:OBJECT, task=Object, data=nil, outputs=nil>}}"
+    end
+  end # {TaskWrap.container_activity_for}
 end

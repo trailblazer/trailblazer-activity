@@ -1,8 +1,7 @@
 require "test_helper"
 
 # High-level interface to ADDS.
-    # TODO: merge with {task_wrap_test.rb}.
-class FriendlyInterfaceTest < Minitest::Spec
+class ExtensionTest < Minitest::Spec
   it "provides several insertion strategies" do
     # create new task_wrap with empty original array.
     ext = TaskWrap.Extension(
