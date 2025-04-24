@@ -74,43 +74,43 @@ class ActivityTest < Minitest::Spec
   # TODO: remove remaining tests from here!
 
   it "{:activity}" do
-    intermediate = Activity::Schema::Intermediate.new(
+    intermediate = Trailblazer::Activity::Schema::Intermediate.new(
       {
-        Activity::Schema::Intermediate::TaskRef(:a) => [Activity::Schema::Intermediate::Out(:success, :b)],
-        Activity::Schema::Intermediate::TaskRef(:b) => [Activity::Schema::Intermediate::Out(:success, :c)],
-        Activity::Schema::Intermediate::TaskRef(:c) => [Activity::Schema::Intermediate::Out(:success, :d)],
-        Activity::Schema::Intermediate::TaskRef(:d, stop_event: true) => []
+        Trailblazer::Activity::Schema::Intermediate::TaskRef(:a) => [Trailblazer::Activity::Schema::Intermediate::Out(:success, :b)],
+        Trailblazer::Activity::Schema::Intermediate::TaskRef(:b) => [Trailblazer::Activity::Schema::Intermediate::Out(:success, :c)],
+        Trailblazer::Activity::Schema::Intermediate::TaskRef(:c) => [Trailblazer::Activity::Schema::Intermediate::Out(:success, :d)],
+        Trailblazer::Activity::Schema::Intermediate::TaskRef(:d, stop_event: true) => []
       },
       {:d => :success},
       :a # start
     )
 
     # DISCUSS: in Ruby 3, procs created from the same block are identical: https://rubyreferences.github.io/rubychanges/3.0.html#proc-and-eql
-    step = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
-    step2 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
-    step3 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
-    step4 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
-    step5 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
-    step6 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
-    step7 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Activity::Right, [ctx, flow]] }
+    step = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, [ctx, flow]] }
+    step2 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, [ctx, flow]] }
+    step3 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, [ctx, flow]] }
+    step4 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, [ctx, flow]] }
+    step5 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, [ctx, flow]] }
+    step6 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, [ctx, flow]] }
+    step7 = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, [ctx, flow]] }
 
     implementation = {
-      :a => Schema::Implementation::Task(step, [Activity::Output(Activity::Right, :success)], []),
-      :b => Schema::Implementation::Task(step2, [Activity::Output(Activity::Right, :success)], []),
-      :c => Schema::Implementation::Task(step3.clone, [Activity::Output(Activity::Right, :success)], []),
-      :d => Schema::Implementation::Task(step4.clone, [], [])
+      :a => Trailblazer::Activity::Schema::Implementation::Task(step, [Trailblazer::Activity::Output(Trailblazer::Activity::Right, :success)], []),
+      :b => Trailblazer::Activity::Schema::Implementation::Task(step2, [Trailblazer::Activity::Output(Trailblazer::Activity::Right, :success)], []),
+      :c => Trailblazer::Activity::Schema::Implementation::Task(step3.clone, [Trailblazer::Activity::Output(Trailblazer::Activity::Right, :success)], []),
+      :d => Trailblazer::Activity::Schema::Implementation::Task(step4.clone, [], [])
     }
 
-    nested_activity = Activity.new(Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
+    nested_activity = Trailblazer::Activity.new(Trailblazer::Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
 
     implementation = {
-      :a => Schema::Implementation::Task(step5, [Activity::Output(Activity::Right, :success)], []),
-      :b => Schema::Implementation::Task(nested_activity, [Activity::Output(Activity::Right, :success)], []),
-      :c => Schema::Implementation::Task(step6, [Activity::Output(Activity::Right, :success)], []),
-      :d => Schema::Implementation::Task(step7.clone, [], [])
+      :a => Trailblazer::Activity::Schema::Implementation::Task(step5, [Trailblazer::Activity::Output(Trailblazer::Activity::Right, :success)], []),
+      :b => Trailblazer::Activity::Schema::Implementation::Task(nested_activity, [Trailblazer::Activity::Output(Trailblazer::Activity::Right, :success)], []),
+      :c => Trailblazer::Activity::Schema::Implementation::Task(step6, [Trailblazer::Activity::Output(Trailblazer::Activity::Right, :success)], []),
+      :d => Trailblazer::Activity::Schema::Implementation::Task(step7.clone, [], [])
     }
 
-    activity = Activity.new(Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
+    activity = Trailblazer::Activity.new(Trailblazer::Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
 
     _signal, (ctx,) = activity.([[], {}])
 
@@ -119,7 +119,7 @@ class ActivityTest < Minitest::Spec
   end
 
   it "allows overriding {Activity.call} (this is needed in trb-pro)" do
-    activity = Class.new(Activity)
+    activity = Class.new(Trailblazer::Activity)
 
     call_module = Module.new do
       def call(*)
@@ -137,10 +137,10 @@ if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.1") && RUBY_ENGINE == "
     it "still finds {.method} tasks after GC compression" do
       ruby_version = Gem::Version.new(RUBY_VERSION)
 
-      intermediate = Activity::Schema::Intermediate.new(
+      intermediate = Trailblazer::Activity::Schema::Intermediate.new(
         {
-          Activity::Schema::Intermediate::TaskRef(:a) => [Activity::Schema::Intermediate::Out(:success, :b)],
-          Activity::Schema::Intermediate::TaskRef(:b, stop_event: true) => []
+          Trailblazer::Activity::Schema::Intermediate::TaskRef(:a) => [Trailblazer::Activity::Schema::Intermediate::Out(:success, :b)],
+          Trailblazer::Activity::Schema::Intermediate::TaskRef(:b, stop_event: true) => []
         },
         {:b => :success},
         :a # start
@@ -151,11 +151,11 @@ if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.1") && RUBY_ENGINE == "
       end
 
       implementation = {
-        :a => Schema::Implementation::Task(Step.method(:create), [Activity::Output(Activity::Right, :success)], []),
-        :b => Schema::Implementation::Task(Trailblazer::Activity::End.new(semantic: :success), [], []),
+        :a => Trailblazer::Activity::Schema::Implementation::Task(Step.method(:create), [Trailblazer::Activity::Output(Trailblazer::Activity::Right, :success)], []),
+        :b => Trailblazer::Activity::Schema::Implementation::Task(Trailblazer::Trailblazer::Activity::End.new(semantic: :success), [], []),
       }
 
-      activity = Activity.new(Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
+      activity = Trailblazer::Activity.new(Trailblazer::Activity::Schema::Intermediate::Compiler.(intermediate, implementation))
 
       assert_invoke activity, seq: %([:create])
 

@@ -4,7 +4,7 @@ require "test_helper"
 class ExtensionTest < Minitest::Spec
   it "provides several insertion strategies" do
     # create new task_wrap with empty original array.
-    ext = TaskWrap.Extension(
+    ext = Trailblazer::Activity::TaskWrap.Extension(
       [Object, id: "task_wrap.call_task", append: nil]
     )
 
@@ -12,7 +12,7 @@ class ExtensionTest < Minitest::Spec
 
     assert_equal task_wrap.inspect, %([["task_wrap.call_task", Object]])
 
-    ext = TaskWrap.Extension(
+    ext = Trailblazer::Activity::TaskWrap.Extension(
       [Object, id: "task_wrap.call_task", replace: "task_wrap.call_task"]
     )
 
@@ -20,7 +20,7 @@ class ExtensionTest < Minitest::Spec
 
     assert_equal task_wrap.inspect, %([["task_wrap.call_task", Object]])
 
-    ext = TaskWrap.Extension(
+    ext = Trailblazer::Activity::TaskWrap.Extension(
       [Module, id: "my.before", prepend: "task_wrap.call_task"],
       [Class, id: "my.after", append: "task_wrap.call_task"],
     )
@@ -29,7 +29,7 @@ class ExtensionTest < Minitest::Spec
 
     assert_equal task_wrap.inspect, %([["my.before", Module], ["task_wrap.call_task", Object], ["my.after", Class]])
 
-    ext = TaskWrap.Extension(
+    ext = Trailblazer::Activity::TaskWrap.Extension(
       [String, id: "my.prepend", prepend: nil],
       [Float, id: "my.append", append: nil],
     )
@@ -40,7 +40,7 @@ class ExtensionTest < Minitest::Spec
   end
 
   it "allows using step IDs from earlier inserted steps" do
-    ext = TaskWrap.Extension(
+    ext = Trailblazer::Activity::TaskWrap.Extension(
       [Object, id: "task_wrap.call_task", append: nil],
       [Module, id: "my.object", append: "task_wrap.call_task"],
       [Class, id: "my.class", prepend: "my.object"], # my.object is the step from above.
@@ -66,7 +66,7 @@ class ExtensionTest < Minitest::Spec
 
       ext = nil
       _, warning = capture_io do
-        ext = TaskWrap::Extension.WrapStatic(*adds)
+        ext = Trailblazer::Activity::TaskWrap::Extension.WrapStatic(*adds)
       end
       line_number_for_binary = __LINE__ - 2
 
@@ -84,7 +84,7 @@ class ExtensionTest < Minitest::Spec
         [Object, id: "user.add_1", prepend: nil],
       ]
 
-      ext = TaskWrap::Extension(*adds)
+      ext = Trailblazer::Activity::TaskWrap::Extension(*adds)
 
       task_wrap = ext.([], some: :options)
 

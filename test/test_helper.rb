@@ -9,24 +9,28 @@ Minitest::Spec.class_eval do
 
   require "trailblazer/activity/testing"
   include Trailblazer::Activity::Testing::Assertions
+
+  module Minitest::Spec::Implementing
+    extend Trailblazer::Activity::Testing.def_tasks(:a, :b, :c, :d, :f, :g)
+
+    Start = Trailblazer::Activity::Start.new(semantic: :default)
+    Failure = Trailblazer::Activity::End(:failure)
+    Success = Trailblazer::Activity::End(:success)
+  end
 end
 
 T = Trailblazer::Activity::Testing
-
-require "fixtures"
-Minitest::Spec::Activity = Trailblazer::Activity
-Minitest::Spec::Implementing = Fixtures::Implementing
 
 module Fixtures
   module FlatActivity
     def tasks
       @tasks ||= [
-        start = Activity::Start.new(semantic: :default),
+        start = Trailblazer::Activity::Start.new(semantic: :default),
         # tasks
-        b = Implementing.method(:b),
-        c = Implementing.method(:c),
-        failure = Activity::End(:failure),
-        success = Activity::End(:success),
+        b = Minitest::Spec::Implementing.method(:b),
+        c = Minitest::Spec::Implementing.method(:c),
+        failure = Trailblazer::Activity::End(:failure),
+        success = Trailblazer::Activity::End(:success),
       ]
     end
 
@@ -36,14 +40,14 @@ module Fixtures
       start, b, c, failure, success = tasks
 
       wiring ||= {
-        start   => {Activity::Right => b},
-        b       => {Activity::Right => c, Activity::Left => failure},
-        c       => {Activity::Right => success},
+        start   => {Trailblazer::Activity::Right => b},
+        b       => {Trailblazer::Activity::Right => c, Trailblazer::Activity::Left => failure},
+        c       => {Trailblazer::Activity::Right => success},
       }
 
       # standard outputs, for introspection interface.
-      right_output = Activity::Output(Activity::Right, :success)
-      left_output = Activity::Output(Activity::Left, :failure)
+      right_output = Trailblazer::Activity::Output(Trailblazer::Activity::Right, :success)
+      left_output = Trailblazer::Activity::Output(Trailblazer::Activity::Left, :failure)
 
       nodes_attributes = [
         # id, task, data, [outputs]
@@ -54,15 +58,15 @@ module Fixtures
         ["End.success", success, {stop_event: true}, []],
       ]
 
-      circuit = Activity::Circuit.new(
+      circuit = Trailblazer::Activity::Circuit.new(
         wiring,
         [failure, success], # termini
         start_task: start
       )
 
       activity_outputs = [
-        Activity::Output(failure, :failure),
-        Activity::Output(success, :success)
+        Trailblazer::Activity::Output(failure, :failure),
+        Trailblazer::Activity::Output(success, :success)
       ]
 
 
@@ -70,27 +74,27 @@ module Fixtures
       # config = {
       # }
 
-      schema = Schema.new(
+      schema = Trailblazer::Activity::Schema.new(
         circuit,
         activity_outputs,
-        Schema::Nodes(nodes_attributes),
+        Trailblazer::Activity::Schema::Nodes(nodes_attributes),
         config
       )
 
-      @_flat_activity = Activity.new(schema)
+      @_flat_activity = Trailblazer::Activity.new(schema)
     end
   end
 
   module NestingActivity
     def tasks(flat_activity:)
       @tasks ||= [
-        start = Activity::Start.new(semantic: :default),
+        start = Trailblazer::Activity::Start.new(semantic: :default),
         # tasks
-        a = Implementing.method(:a),
+        a = Minitest::Spec::Implementing.method(:a),
         flat_activity,
-        # c = Implementing.method(:c),
-        failure = Activity::End(:failure),
-        success = Activity::End(:success),
+        # c = Minitest::Spec::Implementing.method(:c),
+        failure = Trailblazer::Activity::End(:failure),
+        success = Trailblazer::Activity::End(:success),
       ]
     end
 
@@ -102,14 +106,14 @@ module Fixtures
       flat_activity_failure_output, flat_activity_success_output = flat_activity.to_h[:outputs]
 
       wiring ||= {
-        start         => {Activity::Right => a},
-        a             => {Activity::Right => flat_activity, Activity::Left => failure},
+        start         => {Trailblazer::Activity::Right => a},
+        a             => {Trailblazer::Activity::Right => flat_activity, Trailblazer::Activity::Left => failure},
         flat_activity => {flat_activity_success_output.signal => success, flat_activity_failure_output.signal => failure},
       }
 
       # standard outputs, for introspection interface.
-      right_output = Activity::Output(Activity::Right, :success)
-      left_output = Activity::Output(Activity::Left, :failure)
+      right_output = Trailblazer::Activity::Output(Trailblazer::Activity::Right, :success)
+      left_output = Trailblazer::Activity::Output(Trailblazer::Activity::Left, :failure)
 
       nodes_attributes = [
         # # id, task, data, [outputs]
@@ -120,25 +124,25 @@ module Fixtures
         # ["End.success", success, {stop_event: true}, []],
       ]
 
-      circuit = Activity::Circuit.new(
+      circuit = Trailblazer::Activity::Circuit.new(
         wiring,
         [failure, success], # termini
         start_task: start
       )
 
       activity_outputs = [
-        Activity::Output(failure, :failure),
-        Activity::Output(success, :success)
+        Trailblazer::Activity::Output(failure, :failure),
+        Trailblazer::Activity::Output(success, :success)
       ]
 
-      schema = Schema.new(
+      schema = Trailblazer::Activity::Schema.new(
         circuit,
         activity_outputs,
-        Schema::Nodes(nodes_attributes),
+        Trailblazer::Activity::Schema::Nodes(nodes_attributes),
         config
       )
 
-      @_nesting_activity = Activity.new(schema)
+      @_nesting_activity = Trailblazer::Activity.new(schema)
     end
   end
 end

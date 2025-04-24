@@ -219,7 +219,7 @@ class AddsTest < Minitest::Spec
   #@ {Prepend} to element that doesn't exist
     add = { insert: [adds::Insert.method(:Prepend), "NOT HERE!"], row: pipeline::Row["trace-in-outer", "trace, prepare"] }
 
-    exception = assert_raises Activity::Adds::IndexError do
+    exception = assert_raises Trailblazer::Activity::Adds::IndexError do
       adds.apply_adds(pipe, [add])
     end
 
