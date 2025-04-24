@@ -27,7 +27,7 @@ class TaskAdapterTest < Minitest::Spec
     ctx             = {model: nil}
 
   # execute step in a circuit-interface environment
-    circuit_step = Activity::Circuit::Step(step) # circuit step receives circuit-interface but returns only value
+    circuit_step = Trailblazer::Activity::Circuit::Step(step) # circuit step receives circuit-interface but returns only value
     return_value, ctx = circuit_step.([ctx, flow_options], **circuit_options)
 
     assert_nil return_value
@@ -35,19 +35,19 @@ class TaskAdapterTest < Minitest::Spec
 
 
   #@ execute step-option in a circuit-interface environment
-    circuit_step = Activity::Circuit.Step(step, option: true) # wrap step with Trailblazer::Option
+    circuit_step = Trailblazer::Activity::Circuit.Step(step, option: true) # wrap step with Trailblazer::Option
     return_value, ctx = circuit_step.([ctx, flow_options], **circuit_options, exec_context: self)
     assert_nil return_value
     assert_equal CU.inspect(ctx), %{{:model=>nil}}
 
-    circuit_step = Activity::Circuit::Step(:process_type, option: true) # wrap step with Trailblazer::Option
+    circuit_step = Trailblazer::Activity::Circuit::Step(:process_type, option: true) # wrap step with Trailblazer::Option
     return_value, ctx = circuit_step.([ctx, flow_options], **circuit_options, exec_context: Operation.new)
     assert_nil return_value
     assert_equal CU.inspect(ctx), %{{:model=>nil}}
 
   #@ circuit-interface Option-compatible Step that does a Binary signal decision
     step          = :process_type
-    circuit_task  = Activity::Circuit::TaskAdapter.for_step(step, option: true)
+    circuit_task  = Trailblazer::Activity::Circuit::TaskAdapter.for_step(step, option: true)
 
     ctx = {model: nil}
     signal, (ctx, flow_options) = circuit_task.([ctx, flow_options], **circuit_options, exec_context: Operation.new)
@@ -77,34 +77,11 @@ class TaskAdapterTest < Minitest::Spec
     args = [1,2]
     ctx  = {model: Object}
 
-    pipeline_task = Activity::TaskWrap::Pipeline::TaskAdapter.for_step(step) # Task receives circuit-interface but it's compatible with Pipeline interface
+    pipeline_task = Trailblazer::Activity::TaskWrap::Pipeline::TaskAdapter.for_step(step) # Task receives circuit-interface but it's compatible with Pipeline interface
     wrap_ctx, args = pipeline_task.(ctx, args) # that's how pipeline tasks are called in {TaskWrap::Pipeline}.
 
     assert_equal CU.inspect(wrap_ctx), %{{:model=>Object, :type=>Class}}
     assert_equal args, [1,2]
-  end
-
-  it "deprecation of {TaskBuilder} and backward-compat" do
-    task_adapter = nil
-    _, warning = capture_io do
-      task_adapter = Activity::TaskBuilder.Binary(:process_type)
-    end
-    line_number_for_binary = __LINE__ - 2
-
-    lines = warning.split("\n")
-    lines[0] = lines[0][0..-5]+"." if lines[0] =~ /\d-\d+-\d/
-    warning = lines.join("\n")
-
-    assert_equal warning, %{NOTE: Trailblazer::Activity::TaskBuilder.Binary is deprecated; use Trailblazer::Activity::Circuit::TaskAdapter.for_step() instead. It will be removed on or after 2023-12.
-Trailblazer::Activity::TaskBuilder.Binary called from #{File.realpath(__FILE__)}:#{line_number_for_binary}.}
-
-    assert_equal task_adapter.inspect, %{#<Trailblazer::Activity::TaskBuilder::Task user_proc=process_type>}
-
-    signal, (ctx, flow_options) = task_adapter.([{model: Object}, {}], exec_context: Operation.new)
-
-    assert_equal signal, Trailblazer::Activity::Right
-    assert_equal CU.inspect(ctx), %{{:model=>Object, :type=>Class}}
-    assert_equal flow_options.inspect, %{{}}
   end
 
   # TODO: properly test {TaskAdapter#inspect}.
@@ -114,9 +91,9 @@ Trailblazer::Activity::TaskBuilder.Binary called from #{File.realpath(__FILE__)}
 
     decider = ->(ctx, mode:, **) { mode }
 
-    circuit_task = Activity::Circuit::TaskAdapter.Binary(
+    circuit_task = Trailblazer::Activity::Circuit::TaskAdapter.Binary(
       decider,
-      adapter_class: Activity::Circuit::TaskAdapter::Step::AssignVariable,
+      adapter_class: Trailblazer::Activity::Circuit::TaskAdapter::Step::AssignVariable,
       variable_name: :nested_activity
     )
 

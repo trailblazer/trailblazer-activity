@@ -96,18 +96,5 @@ module Trailblazer
         alias_method :to_s, :inspect
       end
     end # Circuit
-
-    # TODO: remove when we drop compatibility.
-    module TaskBuilder
-      # @deprecated Use {Trailblazer::Activity::Circuit::TaskAdapter.for_step()} instead.
-      def self.Binary(user_proc)
-        Activity::Circuit::TaskAdapter.for_step(user_proc, option: true)
-      end
-
-      class << self
-        extend Gem::Deprecate
-        deprecate :Binary, "Trailblazer::Activity::Circuit::TaskAdapter.for_step()", 2023, 12
-      end
-    end
   end # Activity
 end
