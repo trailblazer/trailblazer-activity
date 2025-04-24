@@ -4,11 +4,11 @@ class TaskWrapTest < Minitest::Spec
   def wrap_static(start, b, c, failure, success)
     # extensions could be used to extend a particular task_wrap.
     {
-      start => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      b => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      c => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      failure => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      success => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      start => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      b => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      c => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      failure => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      success => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
     }
   end
 
@@ -29,12 +29,12 @@ class TaskWrapTest < Minitest::Spec
 
     hsh = flat_activity(config: {wrap_static: wrap_static}).to_h
 
-    assert_equal hsh.keys, [:circuit, :outputs, :nodes, :config] # These four keys are required by the Activity interface.
+    assert_equal hsh.keys, [:circuit, :outputs, :nodes, :config] # These four keys are required by the Trailblazer::Activity interface.
     assert_equal hsh[:config].keys, [:wrap_static]
     assert_equal hsh[:config][:wrap_static].keys, tasks
 
-    pipeline_class = Activity::TaskWrap::Pipeline
-    call_task_inspect = [Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK].inspect
+    pipeline_class = Trailblazer::Activity::TaskWrap::Pipeline
+    call_task_inspect = [Trailblazer::Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK].inspect
 
     assert_equal hsh[:config][:wrap_static].values.collect { |value| value.class }, [pipeline_class, pipeline_class, pipeline_class, pipeline_class, pipeline_class]
     assert_equal hsh[:config][:wrap_static].values.collect { |value| value.to_a.inspect }, [call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect]
@@ -56,7 +56,7 @@ class TaskWrapTest < Minitest::Spec
 
     activity    = flat_activity(config: {wrap_static: wrap_static})
 
-    # tw is not used with normal {Activity#call}.
+    # tw is not used with normal {Trailblazer::Activity#call}.
     signal, (ctx, flow_options) = activity.call([{seq: []}, {}])
 
     assert_equal CU.inspect(ctx), %({:seq=>[:b, :c]})
@@ -126,11 +126,11 @@ class TaskWrapTest < Minitest::Spec
     start, b, c, failure, success = flat_builder.tasks
 
     flat_wrap_static = {
-      start => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      b => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      c => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      failure => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      success => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      start => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      b => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      c => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      failure => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      success => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
     }
 
     flat_activity = flat_builder.flat_activity(config: {wrap_static: flat_wrap_static})
@@ -144,11 +144,11 @@ class TaskWrapTest < Minitest::Spec
     )
 
     wrap_static = {
-      start => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      a => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      flat_activity => ext.(Activity::TaskWrap::INITIAL_TASK_WRAP), # extended.
-      failure => Activity::TaskWrap::INITIAL_TASK_WRAP,
-      success => Activity::TaskWrap::INITIAL_TASK_WRAP,
+      start => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      a => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      flat_activity => ext.(Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP), # extended.
+      failure => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+      success => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
     }
 
     activity = nesting_builder.activity(tasks: tasks, config: {wrap_static: wrap_static})
@@ -162,32 +162,32 @@ class TaskWrapTest < Minitest::Spec
 
   describe "{TaskWrap.container_activity_for}" do
     it "accepts {:wrap_static} option" do
-      host_activity = Activity::TaskWrap.container_activity_for(Object, wrap_static: {a: 1})
+      host_activity = Trailblazer::Activity::TaskWrap.container_activity_for(Object, wrap_static: {a: 1})
 
       assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>{:a=>1}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
     end
 
     it "if {:wrap_static} not given it adds {#initial_wrap_static}" do
-      host_activity = Activity::TaskWrap.container_activity_for(Object)
+      host_activity = Trailblazer::Activity::TaskWrap.container_activity_for(Object)
 
-      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Trailblazer::Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
     end
 
     it "accepts additional options for {:config}, e.g. {each: true}" do
-      host_activity = Activity::TaskWrap.container_activity_for(Object, each: true)
+      host_activity = Trailblazer::Activity::TaskWrap.container_activity_for(Object, each: true)
 
-      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}, :each=>true}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Trailblazer::Activity::TaskWrap.initial_wrap_static.inspect}}, :each=>true}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
 
     # allows mixing
-      host_activity = Activity::TaskWrap.container_activity_for(Object, each: true, wrap_static: {a: 1})
+      host_activity = Trailblazer::Activity::TaskWrap.container_activity_for(Object, each: true, wrap_static: {a: 1})
 
       assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>{:a=>1}}, :each=>true}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=nil, task=Object, data=nil, outputs=nil>}}"
     end
 
     it "accepts {:id}" do
-      host_activity = Activity::TaskWrap.container_activity_for(Object, id: :OBJECT)
+      host_activity = Trailblazer::Activity::TaskWrap.container_activity_for(Object, id: :OBJECT)
 
-      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=:OBJECT, task=Object, data=nil, outputs=nil>}}"
+      assert_equal CU.inspect(host_activity), "{:config=>{:wrap_static=>{Object=>#{Trailblazer::Activity::TaskWrap.initial_wrap_static.inspect}}}, :nodes=>{Object=>#<struct Trailblazer::Activity::Schema::Nodes::Attributes id=:OBJECT, task=Object, data=nil, outputs=nil>}}"
     end
   end # {TaskWrap.container_activity_for}
 end

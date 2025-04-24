@@ -2,7 +2,7 @@ require "test_helper"
 
 class StructuresTest < Minitest::Spec
   describe "End(semantic)" do
-    let(:evt) { Activity::End(:meaning) }
+    let(:evt) { Trailblazer::Activity::End(:meaning) }
 
     it "#call always returns the End instance itself" do
       signal, (_ctx, _flow_options) = evt.([{a: 1}, {}])
@@ -15,7 +15,7 @@ class StructuresTest < Minitest::Spec
     end
 
     it "has strict object identity" do
-      refute_equal evt, Activity::End(:meaning)
+      refute_equal evt, Trailblazer::Activity::End(:meaning)
     end
 
     it "responds to #inspect" do
@@ -23,7 +23,7 @@ class StructuresTest < Minitest::Spec
     end
 
     it "allows more variables" do
-      assert_equal Activity::End.new(semantic: :success, type: :event).to_h, { semantic: :success, type: :event }
+      assert_equal Trailblazer::Activity::End.new(semantic: :success, type: :event).to_h, { semantic: :success, type: :event }
     end
   end
 end
