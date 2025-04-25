@@ -116,11 +116,11 @@ class TaskWrapTest < Minitest::Spec
   # Instead of running {a -> {b -> c} -> success} it now goes {a -> {c} -> success}.
   it "allows changing {:circuit_options} via a taskWrap step" do
     nesting_builder = Class.new do
-      include NestingActivity
+      include Fixtures::NestingActivity
     end.new
 
     flat_builder = Class.new do
-      include FlatActivity
+      include Fixtures::FlatActivity
     end.new
 
     start, b, c, failure, success = flat_builder.tasks

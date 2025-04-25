@@ -117,11 +117,11 @@ module Fixtures
 
       nodes_attributes = [
         # # id, task, data, [outputs]
-        # ["Start.default", start, {}, [right_output]],
-        # ["b", b, {}, [right_output, left_output]],
-        # ["c", c, {}, [right_output]],
-        # ["End.failure", failure, {stop_event: true}, []],
-        # ["End.success", success, {stop_event: true}, []],
+        ["Start.default", start, {}, [right_output]],
+        ["a", a, {}, [right_output]],
+        ["flat_activity", flat_activity, {}, [right_output, left_output]],
+        ["End.failure", failure, {stop_event: true}, []],
+        ["End.success", success, {stop_event: true}, []],
       ]
 
       circuit = Trailblazer::Activity::Circuit.new(
@@ -149,8 +149,6 @@ end
 
 
 Minitest::Spec.class_eval do
-  include Fixtures # FIXME: remove
-
   include Fixtures::FlatActivity
   # include Fixtures::NestingActivity
 
