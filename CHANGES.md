@@ -3,6 +3,8 @@
 * Allow `:replace` in ADDS friendly interface.
 * Remove `TaskWrap::Extension::WrapStatic`. We only use `TaskWrap::Extension` now. Note that presently, you
   cannot add options to the `config` field anymore.
+* Internals: we don't use `Compiler` in tests anymore as this is a concept moved to `trailblazer-workflow`.
+* Remove `Trailblazer::Activity::TaskBuilder.Binary()` deprecation.`
 
 # 0.17.0
 

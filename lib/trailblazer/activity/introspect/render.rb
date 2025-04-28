@@ -27,7 +27,7 @@ module Trailblazer
           "\n#{content}".gsub(/0x\w+/, "0x") # DISCUSS: use sub logic from core-utils
         end
 
-        # If Ruby had pattern matching, this function wasn't necessary.
+        # If Ruby had pattern matching, this function wouldn't be necessary.
         def inspect_with_matcher(task, inspect_task: method(:inspect_task), inspect_end: method(:inspect_end))
           return inspect_task.(task) unless task.is_a?(Trailblazer::Activity::End)
           inspect_end.(task)

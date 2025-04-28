@@ -55,6 +55,7 @@ module Trailblazer
 
       ROW_ARGS_FOR_CALL_TASK = ["task_wrap.call_task", TaskWrap.method(:call_task)] # TODO: test me.
 
+      # FIXME: do we need this?
       INITIAL_WRAP_STATIC = Pipeline.new([Pipeline.Row(*ROW_ARGS_FOR_CALL_TASK)].freeze)
       INITIAL_TASK_WRAP   = INITIAL_WRAP_STATIC # FIXME: this is not a :wrap_static but a tw.
     end # TaskWrap

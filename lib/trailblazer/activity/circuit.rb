@@ -68,7 +68,7 @@ module Trailblazer
       def to_h
         {
           map: @map,
-          end_events: @termini,
+          end_events: @termini, # TODO: deprecate {:end_events} and name it {:termini}.
           start_task: @start_task
         }
       end
