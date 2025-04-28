@@ -122,7 +122,7 @@ class TaskWrapTest < Minitest::Spec
   # Set start_task of {flat_activity} (which is nested in {nesting_activity}) to something else than configured in the
   # nested activity itself.
   # Instead of running {a -> {b -> c} -> success} it now goes {a -> {c} -> success}.
-  it "allows changing {:circuit_options} via a taskWrap step" do
+  it "allows changing {:circuit_options} via a taskWrap step, but only locally" do
     flat_tasks = Fixtures.default_tasks
 
     flat_wrap_static = wrap_static(*flat_tasks.values)
@@ -150,6 +150,42 @@ class TaskWrapTest < Minitest::Spec
 
     # We run activity.c, then only flat_activity.c as we're skipping the inner {b} step.
     assert_equal CU.inspect(ctx), %({:seq=>[:b, :c], :start_at=>#{flat_tasks.fetch("c").inspect}})
+    assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
+  end
+
+  def change_circuit_options(wrap_ctx, original_args)
+    (ctx, flow_options), circuit_options = original_args
+
+    circuit_options.merge!( # DISCUSS: do this like an adult.
+      this_is_only_visible_in_this_very_step: true
+    )
+
+    return wrap_ctx, original_args
+  end
+
+  # DISCUSS: maybe we can set the {:runner} in a tw step and then check that only the "current" task is affected?
+  it "when changing {circuit_options}, it can only be seen in that very step. The following step sees the original {circuit_options}" do
+    # trace {circuit_options} in {c}.
+    step_c = ->((ctx, flow_options), **circuit_options) { ctx[:circuit_options] = circuit_options.keys; [Trailblazer::Activity::Right, [ctx, flow_options]] }
+
+    tasks = Fixtures.default_tasks("c" => step_c)
+
+    # in {b}'s taskWrap, we tamper with {circuit_options}.
+    ext = Trailblazer::Activity::TaskWrap.Extension(
+      [method(:change_circuit_options), id: "my.change_circuit_options", prepend: nil],
+    )
+
+    wrap_static = wrap_static(
+      *tasks.values,
+      tasks.fetch("b") => ext.(Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP), # extended.
+    )
+
+    activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static})
+
+    signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}], key_for_circuit_options: true)
+
+    # We run activity.c, then only flat_activity.c as we're skipping the inner {b} step.
+    assert_equal CU.inspect(ctx), %({:seq=>[:b], :circuit_options=>[:key_for_circuit_options, :wrap_runtime, :activity, :runner]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
   end
 

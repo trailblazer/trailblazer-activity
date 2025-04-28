@@ -61,10 +61,6 @@ class ActivityTest < Minitest::Spec
       assert_equal exception.signal, Trailblazer::Activity::Right
     end
 
-    it "what" do
-      raise "test that circuit_options stay the same, regardless of what tasks do"
-    end
-
     it "automatically passes the {:activity} option" do
       # DISCUSS: in Ruby 3, procs created from the same block are identical: https://rubyreferences.github.io/rubychanges/3.0.html#proc-and-eql
       step_a = ->((ctx, flow), **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, [ctx, flow]] }
