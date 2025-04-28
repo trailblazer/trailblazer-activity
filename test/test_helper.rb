@@ -33,7 +33,7 @@ module Fixtures
       "c" => Minitest::Spec::Implementing.method(:c),
       "End.failure" => Trailblazer::Activity::End(:failure),
       "End.success" => Trailblazer::Activity::End(:success),
-    }.merge(**tasks)
+    }.merge(tasks)
   end
 
   # TODO: test this.
@@ -44,8 +44,7 @@ module Fixtures
       start   => {Trailblazer::Activity::Right => b},
       b       => {Trailblazer::Activity::Right => c, Trailblazer::Activity::Left => failure},
       c       => {Trailblazer::Activity::Right => success},
-      **connections
-    }
+    }.merge(connections)
   end
 
   def self.flat_activity(wiring: nil, tasks: self.default_tasks, config: {})
