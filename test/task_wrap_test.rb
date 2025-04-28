@@ -1,16 +1,15 @@
 require "test_helper"
 
 class TaskWrapTest < Minitest::Spec
-  def wrap_static(start, b, c, failure, success, **options)
+  def wrap_static(tasks, _old_ruby_kws = {}, **options)
     # extensions could be used to extend a particular task_wrap.
-    {
-      start => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
-      b => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
-      c => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
-      failure => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
-      success => Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
-      **options
-    }
+    wrap_static =
+      tasks.collect do |task|
+        [task, Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP]
+      end.to_h
+
+    wrap_static = wrap_static.merge(_old_ruby_kws)
+    wrap_static = wrap_static.merge(options)
   end
 
   def add_1(wrap_ctx, original_args)
@@ -28,7 +27,7 @@ class TaskWrapTest < Minitest::Spec
   it "exposes {#to_h} that includes {:wrap_static}" do
     tasks = Fixtures.default_tasks
 
-    wrap_static = wrap_static(*tasks.values)
+    wrap_static = wrap_static(tasks.values)
 
     hsh = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static}).to_h
 
@@ -52,7 +51,7 @@ class TaskWrapTest < Minitest::Spec
     tasks = Fixtures.default_tasks
     _, b, c = tasks.values
 
-    wrap_static = wrap_static(*tasks.values)
+    wrap_static = wrap_static(tasks.values)
 
     # Replace the taskWrap fo {c} with an extended one.
     original_tw_for_c = wrap_static[c]
@@ -76,7 +75,7 @@ class TaskWrapTest < Minitest::Spec
   it "{:wrap_runtime} allows adding tw extensions to specific tasks when invoking the activity" do
     tasks = Fixtures.default_tasks
 
-    activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static(*tasks.values)})
+    activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static(tasks.values)})
     b        = tasks.fetch("b")
 
     wrap_runtime = {
@@ -95,7 +94,7 @@ class TaskWrapTest < Minitest::Spec
   it "{:wrap_runtime} can also be a defaulted Hash. maybe we could allow having both, default steps and specific ones?" do
     tasks = Fixtures.default_tasks
 
-    activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static(*tasks.values)})
+    activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static(tasks.values)})
 
     wrap_runtime = Hash.new(
       Trailblazer::Activity::TaskWrap.Extension(
@@ -125,7 +124,7 @@ class TaskWrapTest < Minitest::Spec
   it "allows changing {:circuit_options} via a taskWrap step, but only locally" do
     flat_tasks = Fixtures.default_tasks
 
-    flat_wrap_static = wrap_static(*flat_tasks.values)
+    flat_wrap_static = wrap_static(flat_tasks.values)
 
     flat_activity = Fixtures.flat_activity(tasks: flat_tasks, config: {wrap_static: flat_wrap_static})
 
@@ -137,7 +136,7 @@ class TaskWrapTest < Minitest::Spec
     )
 
     wrap_static = wrap_static(
-      *tasks.values,
+     tasks.values,
       flat_activity => ext.(Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP), # extended.
     )
 
@@ -176,7 +175,7 @@ class TaskWrapTest < Minitest::Spec
     )
 
     wrap_static = wrap_static(
-      *tasks.values,
+      tasks.values,
       tasks.fetch("b") => ext.(Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP), # extended.
     )
 
