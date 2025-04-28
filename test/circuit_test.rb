@@ -1,5 +1,6 @@
 require "test_helper"
 
+# DISCUSS: 2BRM?
 class CircuitTest < Minitest::Spec
   Start   = ->((options, *args), *_circuit_options) { options[:start] = 1; ["to a", [options, *args]] }
   A       = ->((options, *args), *_circuit_options) { options[:a] = 2;     ["from a", [options, *args]] }
