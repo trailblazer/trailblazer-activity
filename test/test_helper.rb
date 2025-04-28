@@ -23,7 +23,9 @@ T = Trailblazer::Activity::Testing
 
 module Fixtures
   # TODO: test this.
-  def self.default_tasks(**tasks)
+  def self.default_tasks(_old_ruby_kws = {}, **tasks)
+    tasks = tasks.merge(_old_ruby_kws)
+
     {
       "Start.default" => Trailblazer::Activity::Start.new(semantic: :default),
       # tasks
@@ -35,7 +37,7 @@ module Fixtures
   end
 
   # TODO: test this.
-  def self.default_wiring(tasks, **connections)
+  def self.default_wiring(tasks, _old_ruby_kws = {}, **connections)
     start, b, c, failure, success = tasks.values
 
     {

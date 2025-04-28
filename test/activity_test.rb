@@ -97,11 +97,6 @@ class ActivityTest < Minitest::Spec
     assert_equal hsh[:config].inspect, "{}"
   end
 
-
-
-  # TODO: remove remaining tests from here!
-
-
   it "allows overriding {Activity.call} (this is needed in trb-pro)" do
     activity = Class.new(Trailblazer::Activity)
 
