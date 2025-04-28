@@ -27,7 +27,7 @@ class TestingTest < Minitest::Spec
 
   it "#assert_call" do
     test = Class.new(Test) do
-      let(:activity) { flat_activity(implementing: T.def_tasks(:b, :c)) }
+      let(:activity) { Fixtures.flat_activity }
 
     #0001
       #@ {:seq} specifies expected `ctx[:seq]`.
@@ -104,8 +104,6 @@ Expected: :not_right
     test = Class.new(Test) do
       let(:activity) do
         implementing = Module.new do
-          extend T.def_tasks(:c)
-
           # b step adding additional ctx variables.
           def self.b((ctx, flow_options), **)
             ctx[:from_b] = 1
@@ -113,7 +111,9 @@ Expected: :not_right
           end
         end
 
-        activity = flat_activity(implementing: implementing)
+        tasks = Fixtures.default_tasks("b" => implementing.method(:b))
+
+        activity = Fixtures.flat_activity(tasks: tasks)
       end
 
     #0001
