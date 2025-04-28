@@ -95,7 +95,7 @@ class TaskWrapTest < Minitest::Spec
   it "{:wrap_runtime} can also be a defaulted Hash. maybe we could allow having both, default steps and specific ones?" do
     tasks = Fixtures.default_tasks
 
-    activity = flat_activity(tasks: tasks, config: {wrap_static: wrap_static(*tasks.values)})
+    activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static(*tasks.values)})
 
     wrap_runtime = Hash.new(
       Trailblazer::Activity::TaskWrap.Extension(

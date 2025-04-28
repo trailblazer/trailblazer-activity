@@ -3,6 +3,8 @@ require "test_helper"
 class ActivityTest < Minitest::Spec
   describe "Activity#call" do
     it "accepts circuit interface" do
+      flat_activity = Fixtures.flat_activity
+
       signal, (ctx, flow_options) = flat_activity.call([{seq: []}, {}])
 
       assert_equal CU.inspect(ctx), %({:seq=>[:b, :c]})
@@ -16,6 +18,8 @@ class ActivityTest < Minitest::Spec
     end
 
     it "accepts {:start_task}" do
+      flat_activity = Fixtures.flat_activity
+
       signal, (ctx, flow_options) = flat_activity.call([{seq: []}, {}], start_task: Implementing.method(:c))
 
       assert_equal CU.inspect(ctx), %({:seq=>[:c]})
@@ -23,6 +27,8 @@ class ActivityTest < Minitest::Spec
     end
 
     it "accepts {:runner}" do
+      flat_activity = Fixtures.flat_activity
+
       my_runner = ->(task, args, **circuit_options) do
         args[0][:seq] << :my_runner
 
@@ -37,7 +43,7 @@ class ActivityTest < Minitest::Spec
 
     it "if a signal is not connected, it throws an {IllegalSignalError} exception with helpful error message" do
       b_task          = Implementing.method(:b)
-      broken_activity = flat_activity(wiring: {b_task => {nonsense: false, bogus: true}}) # {b} task does not connect the {Right} signal.
+      broken_activity = Fixtures.flat_activity(wiring: {b_task => {nonsense: false, bogus: true}}) # {b} task does not connect the {Right} signal.
       class MyExecContext; end
 
       exception = assert_raises Trailblazer::Activity::Circuit::IllegalSignalError do
@@ -67,13 +73,13 @@ class ActivityTest < Minitest::Spec
 
       tasks = Fixtures.default_tasks("b" => step_b, "c" => step_c)
 
-      flat_activity = flat_activity(tasks: tasks)
+      flat_activity = Fixtures.flat_activity(tasks: tasks)
 
       tasks = Fixtures.default_tasks("b" => flat_activity, "c" => step_c)
       failure, success = flat_activity.to_h[:outputs]
       wiring = Fixtures.default_wiring(tasks, flat_activity => {failure.signal => tasks["End.failure"], success.signal => step_c} )
 
-      nesting_activity = flat_activity(tasks: tasks, wiring: wiring)
+      nesting_activity = Fixtures.flat_activity(tasks: tasks, wiring: wiring)
 
       _signal, (ctx,) = nesting_activity.([[], {}])
 
@@ -83,7 +89,7 @@ class ActivityTest < Minitest::Spec
   end
 
   it "exposes {#to_h}" do
-    hsh = flat_activity.to_h
+    hsh = Fixtures.flat_activity.to_h
 
     assert_equal hsh.keys, [:circuit, :outputs, :nodes, :config] # These four keys are required by the Activity interface.
 

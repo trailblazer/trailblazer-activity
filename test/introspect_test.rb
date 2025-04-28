@@ -3,25 +3,13 @@ require "test_helper"
 class IntrospectionTest < Minitest::Spec
   describe "Introspect.find_path" do
     it "#find_path" do
-      nested_builder = Class.new do
-        include Fixtures::NestingActivity
-      end
-
-      middle = nested_builder.new
-      nesting_tasks = middle.tasks(flat_activity: flat_activity)
-      middle_activity = middle.activity(tasks: nesting_tasks) # [a, [b, c]]
-
-      top = nested_builder.new
-      nesting_tasks = top.tasks(flat_activity: middle_activity)
-      activity = top.activity(tasks: nesting_tasks) # [a, [a, [b, c]]]
-
-      flat_activity = Fixtures.flat_activity
+      flat_activity = Fixtures.flat_activity # [b, c]
 
       middle_tasks = Fixtures.default_tasks("b" => flat_activity)
-      middle_activity = Fixtures.flat_activity(tasks: middle_tasks)
+      middle_activity = Fixtures.flat_activity(tasks: middle_tasks) # [b, [b, c]]
 
       tasks = Fixtures.default_tasks("b" => middle_activity)
-      activity = Fixtures.flat_activity(tasks: tasks)
+      activity = Fixtures.flat_activity(tasks: tasks) # [b, [b, [b,c]]]
 
 
       #@ find top-activity which returns a special Node.
@@ -49,7 +37,7 @@ class IntrospectionTest < Minitest::Spec
   end
 
   describe "Introspect.Nodes()" do
-    let(:task_map) { Trailblazer::Activity::Introspect.Nodes(flat_activity)  } # [B, C]
+    let(:task_map) { Trailblazer::Activity::Introspect.Nodes(Fixtures.flat_activity)  } # [B, C]
 
     it "returns Nodes that looks like a Hash" do
       assert_equal task_map.class, Trailblazer::Activity::Schema::Nodes
@@ -72,7 +60,7 @@ class IntrospectionTest < Minitest::Spec
     end
 
     it "accepts {:id} option" do
-      attrs = Trailblazer::Activity::Introspect.Nodes(flat_activity, id: "b")
+      attrs = Trailblazer::Activity::Introspect.Nodes(Fixtures.flat_activity, id: "b")
 
       assert_equal attrs.id, "b"
       assert_equal attrs.task, Implementing.method(:b)
@@ -91,7 +79,7 @@ class IntrospectionTest < Minitest::Spec
     end
 
     it "accepts {:task} option" do
-      attrs = Trailblazer::Activity::Introspect.Nodes(flat_activity, task: Implementing.method(:b))
+      attrs = Trailblazer::Activity::Introspect.Nodes(Fixtures.flat_activity, task: Implementing.method(:b))
 
       assert_equal attrs.id, "b"
       assert_equal attrs.task, Implementing.method(:b)
