@@ -32,7 +32,7 @@ module Trailblazer
       # Extend the static taskWrap from a macro or DSL call.
       # Gets executed in {Intermediate.call} which also provides {config}.
       def initial_wrap_static
-        INITIAL_WRAP_STATIC
+        INITIAL_TASK_WRAP
       end
 
       # This is the top-most "activity" that hosts the actual activity being run.
@@ -54,10 +54,7 @@ module Trailblazer
       end
 
       ROW_ARGS_FOR_CALL_TASK = ["task_wrap.call_task", TaskWrap.method(:call_task)] # TODO: test me.
-
-      # FIXME: do we need this?
-      INITIAL_WRAP_STATIC = Pipeline.new([Pipeline.Row(*ROW_ARGS_FOR_CALL_TASK)].freeze)
-      INITIAL_TASK_WRAP   = INITIAL_WRAP_STATIC # FIXME: this is not a :wrap_static but a tw.
+      INITIAL_TASK_WRAP = Pipeline.new([Pipeline.Row(*ROW_ARGS_FOR_CALL_TASK)].freeze)
     end # TaskWrap
   end
 end
