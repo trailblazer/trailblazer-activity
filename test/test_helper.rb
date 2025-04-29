@@ -38,6 +38,8 @@ module Fixtures
 
   # TODO: test this.
   def self.default_wiring(tasks, _old_ruby_kws = {}, **connections)
+    connections = connections.merge(_old_ruby_kws)
+
     start, b, c, failure, success = tasks.values
 
     {
