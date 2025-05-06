@@ -10,6 +10,13 @@ module Trailblazer
     module Adds
       module_function
 
+      # DISCUSS: Canonical entry point for pipeline altering?
+      def call(pipeline, *inserts)
+        instructions = FriendlyInterface.adds_for(inserts)
+
+        Adds.apply_adds(pipeline, instructions)
+      end
+
       # @returns Sequence/Pipeline New sequence instance
       # @private
       def insert_row(pipeline, row:, insert:)
@@ -27,13 +34,6 @@ module Trailblazer
         pipeline
       end
 
-      # @param inserts Array of friendly interface insertions
-      # def call(pipeline, *inserts)
-      #   adds = build_adds_for_friendly_interface(inserts)
-
-      #   Adds.apply_adds(pipeline, adds)
-      # end
-
       module FriendlyInterface
         # @public
         # @return Array of ADDS
@@ -47,16 +47,13 @@ module Trailblazer
         end
 
         # @private
-        def self.build_adds(task, id:, prepend: "task_wrap.call_task", append: false, replace: false)
-          insert, insert_id =
-            if replace
-              [:Replace, replace]
-            else
-              (append === false) ? [:Prepend, prepend] : [:Append, append]
-            end
+        def self.build_adds(task, id:, **options)
+          action, insert_id = options.to_a.first #|| raise
+
+          insert = OPTION_TO_METHOD.fetch(action)
 
           {
-            insert: [Activity::Adds::Insert.method(insert), insert_id],
+            insert: [insert, insert_id],
             row:    TaskWrap::Pipeline::Row(id, task)
           }
         end
@@ -144,6 +141,13 @@ module Trailblazer
           ary[0..index - 1]
         end
       end # Insert
+
+      OPTION_TO_METHOD = {
+        prepend: Insert.method(:Prepend),
+        append: Insert.method(:Append),
+        replace: Insert.method(:Replace),
+        delete: Insert.method(:Delete),
+      }
 
       class IndexError < ::IndexError
         def initialize(sequence, step_id)

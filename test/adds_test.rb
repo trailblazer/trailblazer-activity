@@ -12,48 +12,37 @@ class AddsTest < Minitest::Spec
     pipe1 = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]])
 
   #@ {Prepend} to element 0
-    add = { insert: [adds::Insert.method(:Prepend), "task_wrap.call_task"], row: pipeline::Row["trace-in-outer", "trace, prepare"] }
-    pipe2 = adds.apply_adds(pipe1, [add])
+    pipe2 = adds.(pipe1, ["trace, prepare", prepend: "task_wrap.call_task", id: "trace-in-outer"])
 
   #@ {Append} to element 0
-    add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: pipeline::Row["trace-out-outer", "trace, prepare"] }
-    pipe3 = adds.apply_adds(pipe2, [add])
+    pipe3 = adds.(pipe2, ["trace, prepare", append: "task_wrap.call_task", id: "trace-out-outer"])
 
   #@ {Prepend} again
-    add = { insert: [adds::Insert.method(:Prepend), "task_wrap.call_task"], row: pipeline::Row["trace-in-inner", "trace, prepare"] }
-    pipe4 = adds.apply_adds(pipe3, [add])
+    pipe4 = adds.(pipe3, ["trace, prepare", prepend: "task_wrap.call_task", id: "trace-in-inner"])
 
   #@ {Append} again
-    add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: pipeline::Row["trace-out-inner", "trace, prepare"] }
-    pipe5 = adds.apply_adds(pipe4, [add])
+    pipe5 = adds.(pipe4, ["trace, prepare", append: "task_wrap.call_task", id: "trace-out-inner"])
 
   #@ {Append} to last element
-    add = { insert: [adds::Insert.method(:Append), "trace-out-outer"], row: pipeline::Row["last-id", "log"] }
-    pipe6 = adds.apply_adds(pipe5, [add])
+    pipe6 = adds.(pipe5, ["log", append: "trace-out-outer", id: "last-id"])
 
   #@ {Replace} first element
-    add = { insert: [adds::Insert.method(:Replace), "trace-in-outer"], row: pipeline::Row["first-element", "log"] }
-    pipe7 = adds.apply_adds(pipe6, [add])
+    pipe7 = adds.(pipe6, ["log", replace: "trace-in-outer", id: "first-element"])
 
   #@ {Replace} last element
-    add = { insert: [adds::Insert.method(:Replace), "last-id"], row: pipeline::Row["last-element", "log"] }
-    pipe8 = adds.apply_adds(pipe7, [add])
+    pipe8 = adds.(pipe7, ["log", replace: "last-id", id: "last-element"])
 
   #@ {Replace} middle element
-    add = { insert: [adds::Insert.method(:Replace), "trace-out-outer"], row: pipeline::Row["middle-element", "log"] }
-    pipe9 = adds.apply_adds(pipe8, [add])
+    pipe9 = adds.(pipe8, ["log", replace: "trace-out-outer", id: "middle-element"])
 
   #@ {Delete} first element
-    add = { insert: [adds::Insert.method(:Delete), "first-element"], row: nil }
-    pipe10 = adds.apply_adds(pipe9, [add])
+    pipe10 = adds.(pipe9, ["log", delete: "first-element", id: nil])
 
   #@ {Delete} last element
-    add = { insert: [adds::Insert.method(:Delete), "last-element"], row: nil }
-    pipe11 = adds.apply_adds(pipe10, [add])
+    pipe11 = adds.(pipe10, ["log", delete: "last-element", id: nil])
 
   #@ {Delete} middle element
-    add = { insert: [adds::Insert.method(:Delete), "trace-out-inner"], row: nil }
-    pipe12 = adds.apply_adds(pipe11, [add])
+    pipe12 = adds.(pipe11, [nil, delete: "trace-out-inner", id: nil])
 
     assert_equal inspect(pipe1), %{#<Trailblazer::Activity::TaskWrap::Pipeline:
  @sequence=[["task_wrap.call_task", "task, call"]]>
