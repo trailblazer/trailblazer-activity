@@ -47,14 +47,14 @@ module Trailblazer
         end
 
         # @private
-        def self.build_adds(task, id:, **options)
-          action, insert_id = options.to_a.first #|| raise
+        def self.build_adds(task, id:, row: TaskWrap::Pipeline.Row(id, task), **options)
+          action, insert_id = options.to_a.first
 
           insert = OPTION_TO_METHOD.fetch(action)
 
           {
             insert: [insert, insert_id],
-            row:    TaskWrap::Pipeline::Row(id, task)
+            row:    row
           }
         end
       end

@@ -281,6 +281,19 @@ class AddsTest < Minitest::Spec
 }
   end
 
+  it "{.call} allows passing a {:row} option per instruction" do
+    pipe1 = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]])
+    my_row_class = Class.new(Array) do
+      def id
+        "my id"
+      end
+    end
+
+    pipe2 = adds.(pipeline.new([]), [nil, prepend: nil, id: "task_wrap.call_task", row: my_row_class[1,2,3]])
+
+    assert_equal pipe2.to_a.collect { |row| row.class }, [my_row_class]
+  end
+
   it "{Append} without ID on empty list" do
     pipe = pipeline.new([])
 

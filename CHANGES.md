@@ -6,6 +6,7 @@
   cannot add options to the `config` field anymore via an extension.
 * Internals: we don't use `Compiler` in tests anymore as this is a concept moved to `trailblazer-workflow`.
 * Remove `Trailblazer::Activity::TaskBuilder.Binary()` deprecation.`
+* Introduce `Adds.call` as the canonical entry point for altering pipelines.
 
 # 0.17.0
 
