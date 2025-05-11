@@ -299,7 +299,7 @@ class AddsTest < Minitest::Spec
       pipe1 = adds.(pipeline.new([]), [Object, prepend: nil])
     end
 
-    assert_equal exception.message, %(missing keyword: :id)
+    assert_equal exception.message.gsub(":", ""), %(missing keyword id)
   end
 
   it "{Append} without ID on empty list" do
