@@ -281,7 +281,7 @@ class AddsTest < Minitest::Spec
 }
   end
 
-  it "{.call} allows passing a {:row} option per instruction" do
+  it "{.call} allows passing a {:row} option per instruction, which implies omitting the {:id}" do
     pipe1 = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]])
     my_row_class = Class.new(Array) do
       def id
@@ -289,9 +289,17 @@ class AddsTest < Minitest::Spec
       end
     end
 
-    pipe2 = adds.(pipeline.new([]), [nil, prepend: nil, id: "task_wrap.call_task", row: my_row_class[1,2,3]])
+    pipe2 = adds.(pipeline.new([]), [nil, prepend: nil, row: my_row_class[1,2,3]])
 
     assert_equal pipe2.to_a.collect { |row| row.class }, [my_row_class]
+  end
+
+  it "raises when {:id} is omitted and no {:row} passed" do
+    exception = assert_raises do
+      pipe1 = adds.(pipeline.new([]), [Object, prepend: nil])
+    end
+
+    assert_equal exception.message, %(missing keyword: :id)
   end
 
   it "{Append} without ID on empty list" do

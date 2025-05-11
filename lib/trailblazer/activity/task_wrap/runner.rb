@@ -38,6 +38,7 @@ class Trailblazer::Activity
 
         # Apply runtime alterations.
         # Grab the additional task_wrap extensions for the particular {task} from {:wrap_runtime}.
+        # DISCUSS: should we allow an array of runtime extensions? And use {Normalizer::TaskWrap.compile_task_wrap_ary_from_extensions} logic?
         (dynamic_wrap = wrap_runtime[task]) ? dynamic_wrap.(static_task_wrap) : static_task_wrap
       end
     end # Runner

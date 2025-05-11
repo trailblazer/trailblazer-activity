@@ -47,8 +47,10 @@ module Trailblazer
         end
 
         # @private
-        def self.build_adds(task, id:, row: TaskWrap::Pipeline.Row(id, task), **options)
-          action, insert_id = options.to_a.first
+        def self.build_adds(task, **options)
+          row, options = build_row_for(task, **options)
+
+          action, insert_id = options.to_a.first # DISCUSS: maybe we can find another way to extract the DSL "insertion action" option.
 
           insert = OPTION_TO_METHOD.fetch(action)
 
@@ -56,6 +58,16 @@ module Trailblazer
             insert: [insert, insert_id],
             row:    row
           }
+        end
+
+        def self.build_row_for(task, row: nil, **options)
+          return row, options if row
+
+          return build_row(task, **options)
+        end
+
+        def self.build_row(task, id:, **options)
+          return TaskWrap::Pipeline.Row(id, task), options
         end
       end
 
