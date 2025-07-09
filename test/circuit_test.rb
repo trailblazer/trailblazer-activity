@@ -8,15 +8,27 @@ class CircuitTest < Minitest::Spec
   End     = ->((options, *args), *_circuit_options) { options[:_end] = 4;  ["the end", [options, *args]] }
   C       = ->((options, *args), *_circuit_options) { options[:c] = 6;     ["from c", [options, *args]] }
 
-  it do
-    map = {
+  let(:map) do
+    {
       Start => {"to a" => A, "to b" => B},
       A     => {"from a" => B},
       B     => {"from b" => End}
     }
+  end
 
-    circuit = Trailblazer::Activity::Circuit.new(map, [End], start_task: map.keys.first)
+  let(:circuit) do
+    Trailblazer::Activity::Circuit.new(map, [End], start_task: map.keys.first)
+  end
 
+  it "exposes {#to_h}" do
+    assert_equal circuit.to_h, {
+      map: map,
+      termini: [End],
+      start_task: Start
+    }
+  end
+
+  it do
     ctx = {}
 
     last_signal, (ctx, i, j, *bla) = circuit.([ctx, 1, 2], task: Start)
