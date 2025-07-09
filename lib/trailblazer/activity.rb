@@ -21,16 +21,6 @@ module Trailblazer
     def inspect
       %(#<Trailblazer::Activity:0x#{object_id}>)
     end
-
-    module Call
-      # Canonical entry-point to invoke an {Activity} or Strategy such as {Activity::Railway}
-      # with its taskWrap.
-      def call(activity, ctx)
-        TaskWrap.invoke(activity, [ctx, {}])
-      end
-    end
-
-    extend Call # {Activity.call}.
   end # Activity
 end
 

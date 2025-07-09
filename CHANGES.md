@@ -5,8 +5,12 @@
 * Remove `TaskWrap::Extension::WrapStatic`. We only use `TaskWrap::Extension` now. Note that presently, you
   cannot add options to the `config` field anymore via an extension.
 * Internals: we don't use `Compiler` in tests anymore as this is a concept moved to `trailblazer-workflow`.
-* Remove `Trailblazer::Activity::TaskBuilder.Binary()` deprecation.`
+* Remove `Trailblazer::Activity::TaskBuilder.Binary()` deprecation. This results in `Trailblazer::Activity::TaskBuilder` now being
+  `Trailblazer::Activity::Circuit::TaskAdapter`.
 * Introduce `Adds.call` as the canonical entry point for altering pipelines.
+* `Adds.call` accepts a `:row` option.
+* Rename `:end_events` to `:termini` in `Circuit#to_h`.
+* Remove `Activity.call` for the sake of the new canonical invoke. Use `Railway.__(activity, ctx)` instead.
 
 # 0.17.0
 
