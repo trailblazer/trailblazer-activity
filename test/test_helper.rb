@@ -7,11 +7,12 @@ Minitest::Spec.class_eval do
     super(expected, asserted, *args)
   end
 
-  require "trailblazer/activity/testing"
-  include Trailblazer::Activity::Testing::Assertions
+  require "trailblazer/core"
+  include Trailblazer::Core::Utils::Assertions
+  T = Trailblazer::Core
 
   module Minitest::Spec::Implementing
-    extend Trailblazer::Activity::Testing.def_tasks(:a, :b, :c, :d, :f, :g)
+    extend T.def_tasks(:a, :b, :c, :d, :f, :g)
 
     Start = Trailblazer::Activity::Start.new(semantic: :default)
     Failure = Trailblazer::Activity::End(:failure)
@@ -19,7 +20,6 @@ Minitest::Spec.class_eval do
   end
 end
 
-T = Trailblazer::Activity::Testing
 
 module Fixtures
   # TODO: test this.
