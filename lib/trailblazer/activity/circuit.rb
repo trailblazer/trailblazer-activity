@@ -5,7 +5,7 @@ module Trailblazer
     #
     # Note: Please use #Activity as a public circuit builder.
     #
-    # @param map         [Hash] Defines the wiring.
+    # @param map     [Hash] Defines the wiring.
     # @param termini [Array] Tasks that stop execution of the circuit.
     #
     #   result = circuit.(start_at, *args)

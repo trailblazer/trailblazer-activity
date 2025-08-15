@@ -10,7 +10,7 @@ module Trailblazer
     module Adds
       module_function
 
-      # DISCUSS: Canonical entry point for pipeline altering?
+      # Alter a pipeline using the "friendly interface".
       def call(pipeline, *inserts)
         instructions = FriendlyInterface.adds_for(inserts)
 

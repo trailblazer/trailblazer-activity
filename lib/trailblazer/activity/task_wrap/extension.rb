@@ -49,7 +49,7 @@ module Trailblazer
         # Create extensions from the friendly interface that can alter the wrap_static
         # of a step in an activity. The returned extensionn can be passed directly via {:extensions}
         # to the compiler, or when using the `#step` DSL.
-        # TODO: remove.
+        # TODO: remove in TRB 2.3.
         def self.WrapStatic(*inserts)
           Activity::Deprecate.warn caller_locations[0], "Using `TaskWrap::Extension.WrapStatic()` is deprecated. Please use `TaskWrap.Extension()`."
 
