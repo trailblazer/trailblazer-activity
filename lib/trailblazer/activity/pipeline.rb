@@ -1,5 +1,5 @@
-class Trailblazer::Activity
-  module TaskWrap
+module Trailblazer
+  class Activity
     # This "circuit" is optimized for
     #   a) merging speed at run-time, since features like tracing will be applied here.
     #   b) execution speed. Every task in the real circuit is wrapped with one of us.
@@ -32,27 +32,27 @@ class Trailblazer::Activity
           self[0]
         end
       end
+    end
 
-      # Implements adapter for a callable in a Pipeline.
-      class TaskAdapter < Circuit::TaskAdapter
-        # Returns a {Pipeline::TaskAdapter} instance that can be used directly in a Pipeline.
-        # When `call`ed, it returns a Pipeline-interface return set.
-        #
-        # @see Circuit::TaskAdapter.for_step
-        def self.for_step(callable, **)
-          circuit_step = Circuit.Step(callable, option: false) # Since we don't have {:exec_context} in Pipeline, Option doesn't make much sense.
+    def self.Pipeline(*args)
+      Pipeline.new(*args)
+    end
 
-          TaskAdapter.new(circuit_step) # return a {Pipeline::TaskAdapter}
+    # TODO: remove deprecation in 2.3.
+    module TaskWrap
+      class Pipeline
+        def initialize(*args)
+          Activity::Deprecate.warn caller_locations[0], "Using `TaskWrap::Pipeline.new()` is deprecated. Please use `Activity.Pipeline()`."
+
+          Activity.Pipeline(*args)
         end
 
-        def call(wrap_ctx, args)
-          _result, _new_wrap_ctx = @circuit_step.([wrap_ctx, args]) # For funny reasons, the Circuit::Step's call interface is compatible to the Pipeline's.
+        def self.Row(*args)
+          Activity::Deprecate.warn caller_locations[0], "Using `TaskWrap::Pipeline::Row()` is deprecated. Please use `Activity.Pipeline()`. XXXXXXXXXXXXXXXXXXXXXXXX # FIXME."
 
-          # DISCUSS: we're mutating wrap_ctx, that's the whole point of this abstraction (plus kwargs).
-
-          return wrap_ctx, args
+          Activity::Pipeline.Row(*args)
         end
-      end # TaskAdapter
+      end
     end
   end
 end

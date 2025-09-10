@@ -54,7 +54,7 @@ module Trailblazer
       end
 
       ROW_ARGS_FOR_CALL_TASK = ["task_wrap.call_task", TaskWrap.method(:call_task)] # TODO: test me.
-      INITIAL_TASK_WRAP = Pipeline.new([Pipeline.Row(*ROW_ARGS_FOR_CALL_TASK)].freeze)
+      INITIAL_TASK_WRAP = Activity.Pipeline([Pipeline.Row(*ROW_ARGS_FOR_CALL_TASK)].freeze)
     end # TaskWrap
   end
 end

@@ -24,18 +24,18 @@ module Trailblazer
   end # Activity
 end
 
+require "trailblazer/activity/deprecate"
 require "trailblazer/activity/structures"
 require "trailblazer/activity/schema"
 require "trailblazer/activity/circuit"
 require "trailblazer/activity/circuit/task_adapter"
 require "trailblazer/activity/introspect"
-require "trailblazer/activity/task_wrap/pipeline"
+require "trailblazer/activity/pipeline"
 require "trailblazer/activity/task_wrap/call_task"
 require "trailblazer/activity/task_wrap"
 require "trailblazer/activity/task_wrap/runner"
 require "trailblazer/activity/task_wrap/extension"
 require "trailblazer/activity/adds"
-require "trailblazer/activity/deprecate"
 require "trailblazer/activity/introspect/render"
 require "trailblazer/option"
 require "trailblazer/context"

@@ -1,5 +1,10 @@
 # 0.18.0
 
+## Pipeline / ADDS
+
+* Move `Activity::TaskWrap::Pipeline` to `Activity::Pipeline`
+* Deprecate `Pipeline.new`
+
 * Remove `TaskWrap::Extension::WrapStatic`. We only use `TaskWrap::Extension` now. Note that presently, you
   cannot add options to the `config` field anymore via an extension.
 * Remove `Trailblazer::Activity::TaskBuilder.Binary()` deprecation. This results in `Trailblazer::Activity::TaskBuilder` now being

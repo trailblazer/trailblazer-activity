@@ -77,11 +77,12 @@ class TaskAdapterTest < Minitest::Spec
     args = [1,2]
     ctx  = {model: Object}
 
-    pipeline_task = Trailblazer::Activity::TaskWrap::Pipeline::TaskAdapter.for_step(step) # Task receives circuit-interface but it's compatible with Pipeline interface
-    wrap_ctx, args = pipeline_task.(ctx, args) # that's how pipeline tasks are called in {TaskWrap::Pipeline}.
+    # FIXME: remove, this has been moved to DSL.
+    # pipeline_task = Trailblazer::Activity::TaskWrap::Pipeline::TaskAdapter.for_step(step) # Task receives circuit-interface but it's compatible with Pipeline interface
+    # wrap_ctx, args = pipeline_task.(ctx, args) # that's how pipeline tasks are called in {TaskWrap::Pipeline}.
 
-    assert_equal CU.inspect(wrap_ctx), %{{:model=>Object, :type=>Class}}
-    assert_equal args, [1,2]
+    # assert_equal CU.inspect(wrap_ctx), %{{:model=>Object, :type=>Class}}
+    # assert_equal args, [1,2]
   end
 
   # TODO: properly test {TaskAdapter#inspect}.

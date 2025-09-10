@@ -88,7 +88,9 @@ module Trailblazer
           end
         end
 
+        # FIXME: this method sucks as it shows the wrong name.
         def inspect # TODO: make me private!
+          # return super
           user_step = @circuit_step.instance_variable_get(:@user_proc) # DISCUSS: to we want Step#to_h?
 
           %(#<Trailblazer::Activity::TaskBuilder::Task user_proc=#{Trailblazer::Activity::Introspect.render_task(user_step)}>)

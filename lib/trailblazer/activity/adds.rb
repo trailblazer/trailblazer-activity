@@ -67,7 +67,7 @@ module Trailblazer
         end
 
         def self.build_row(task, id:, **options)
-          return TaskWrap::Pipeline.Row(id, task), options
+          return Pipeline.Row(id, task), options
         end
       end
 

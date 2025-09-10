@@ -35,7 +35,7 @@ class TaskWrapTest < Minitest::Spec
     assert_equal hsh[:config].keys, [:wrap_static]
     assert_equal hsh[:config][:wrap_static].keys, tasks.values
 
-    pipeline_class = Trailblazer::Activity::TaskWrap::Pipeline
+    pipeline_class = Trailblazer::Activity::Pipeline
     call_task_inspect = [Trailblazer::Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK].inspect
 
     assert_equal hsh[:config][:wrap_static].values.collect { |value| value.class }, [pipeline_class, pipeline_class, pipeline_class, pipeline_class, pipeline_class]
