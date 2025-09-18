@@ -18,27 +18,33 @@ module Trailblazer
         return wrap_ctx, original_args
       end
 
-      # Comply with the Adds interface.
+      # TODO: this should be @private as users should only use #collect outside?
+      # @private
       def to_a
         @sequence
       end
 
-      def self.Row(id, task)
-        Row[id, task]
+      def to_h
+        @sequence.to_h
       end
 
-      class Row < Array
-        def id
-          self[0]
-        end
+      # @semi-private
+      # DISCUSS: do we want to keep this? used in many places across dsl.
+      # This method exists to, obviously, hide internals about the structure.
+      # this is a "decorator method".
+      def self.find(sequence, id:)
+        _, row = sequence.to_a.find { |row_id, _| row_id == id }
+
+        row
       end
     end
 
-    def self.Pipeline(*args)
-      Pipeline.new(*args)
+    def self.Pipeline(hsh)
+      Pipeline.new(hsh.to_a)
     end
 
     # TODO: remove deprecation in 2.3.
+    # TODO: test deprecations.
     module TaskWrap
       class Pipeline
         def initialize(*args)
@@ -47,10 +53,10 @@ module Trailblazer
           Activity.Pipeline(*args)
         end
 
-        def self.Row(*args)
+        def self.Row(id, task)
           Activity::Deprecate.warn caller_locations[0], "Using `TaskWrap::Pipeline::Row()` is deprecated. Please use `Activity.Pipeline()`. XXXXXXXXXXXXXXXXXXXXXXXX # FIXME."
 
-          Activity::Pipeline.Row(*args)
+          [id, task]
         end
       end
     end

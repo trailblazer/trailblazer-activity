@@ -2,8 +2,13 @@
 
 ## Pipeline / ADDS
 
+* Remove (depracate) `Pipeline::Row` as a row is always an [ID, Object] tuple.
+* It's now `Activity::Pipeline` as this concept is used for many other cases.
+* The `Activity.Pipeline()` method is the only way to create a Pipeline instance.
+
 * Move `Activity::TaskWrap::Pipeline` to `Activity::Pipeline`
 * Deprecate `Pipeline.new`
+* Remove {:row} option from ADDS as we're not wrapping anything anymore.
 
 * Remove `TaskWrap::Extension::WrapStatic`. We only use `TaskWrap::Extension` now. Note that presently, you
   cannot add options to the `config` field anymore via an extension.

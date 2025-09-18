@@ -36,10 +36,10 @@ class TaskWrapTest < Minitest::Spec
     assert_equal hsh[:config][:wrap_static].keys, tasks.values
 
     pipeline_class = Trailblazer::Activity::Pipeline
-    call_task_inspect = [Trailblazer::Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK].inspect
+    call_task_inspect = Trailblazer::Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK.inspect
 
-    assert_equal hsh[:config][:wrap_static].values.collect { |value| value.class }, [pipeline_class, pipeline_class, pipeline_class, pipeline_class, pipeline_class]
-    assert_equal hsh[:config][:wrap_static].values.collect { |value| value.to_a.inspect }, [call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect]
+    assert_equal hsh[:config][:wrap_static].values.collect { |tw| tw.class }, [pipeline_class, pipeline_class, pipeline_class, pipeline_class, pipeline_class]
+    assert_equal hsh[:config][:wrap_static].values.collect { |tw| tw.to_h.inspect }, [call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect]
   end
 
   it "{:wrap_static} allows adding steps, e.g. via Extension" do

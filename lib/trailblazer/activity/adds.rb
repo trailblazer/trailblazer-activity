@@ -7,6 +7,10 @@ module Trailblazer
     #
     # To work with the instructions provided here, the pipeline structure
     # needs to expose {#to_a}.
+    #
+    # DEFINITIONS
+    #   * Row: [id, <Object>]
+    #   * Pipeline: [row, row] (only Arrays)
     module Adds
       module_function
 
@@ -47,8 +51,8 @@ module Trailblazer
         end
 
         # @private
-        def self.build_adds(task, **options)
-          row, options = build_row_for(task, **options)
+        def self.build_adds(task, id:, **options)
+          row = [id, task]
 
           action, insert_id = options.to_a.first # DISCUSS: maybe we can find another way to extract the DSL "insertion action" option.
 
@@ -58,16 +62,6 @@ module Trailblazer
             insert: [insert, insert_id],
             row:    row
           }
-        end
-
-        def self.build_row_for(task, row: nil, **options)
-          return row, options if row
-
-          return build_row(task, **options)
-        end
-
-        def self.build_row(task, id:, **options)
-          return Pipeline.Row(id, task), options
         end
       end
 
@@ -84,7 +78,7 @@ module Trailblazer
           build_from_ary(pipeline, insert_id) do |ary, index|
             index = ary.size if index.nil? # append to end of pipeline.
 
-            range_before_index(ary, index + 1) + [new_row] + Array(ary[index + 1..-1])
+            range_before_index(ary, index + 1) + [new_row] + range_after_index(ary, index, offset: 1)
           end
         end
 
@@ -93,19 +87,19 @@ module Trailblazer
           build_from_ary(pipeline, insert_id) do |ary, index|
             index = 0 if index.nil? # Prepend to beginning of pipeline.
 
-            range_before_index(ary, index) + [new_row] + ary[index..-1]
+            range_before_index(ary, index) + [new_row] + range_after_index(ary, index)
           end
         end
 
         def Replace(pipeline, new_row, insert_id)
           build_from_ary(pipeline, insert_id) do |ary, index|
-            range_before_index(ary, index) + [new_row] + ary[index + 1..-1]
+            range_before_index(ary, index) + [new_row] + range_after_index(ary, index, offset: 1)
           end
         end
 
         def Delete(pipeline, _, insert_id)
           build_from_ary(pipeline, insert_id) do |ary, index|
-            range_before_index(ary, index) + ary[index + 1..-1]
+            range_before_index(ary, index) + range_after_index(ary, index, offset: 1)
           end
         end
 
@@ -115,15 +109,15 @@ module Trailblazer
         end
 
         # @private
-        def find_index(ary, insert_id)
-          ary.find_index { |row| row.id == insert_id }
+        def find_index_for_ary(ary, insert_id)
+          ary.find_index { |id, _| id == insert_id }
         end
 
         # Converts the pipeline structure to an array,
         # automatically finds the index for {insert_id},
         # and calls the user block with the computed values.
         #
-        # Single-entry point, could be named {#call}.
+        # Single-entry point for insertions, could be named {#call}.
         # @private
         def apply_on_ary(pipeline, insert_id, raise_index_error: true, &block)
           ary = pipeline.to_a
@@ -131,7 +125,7 @@ module Trailblazer
           if insert_id.nil?
             index = nil
           else
-            index = find_index(ary, insert_id) # DISCUSS: this only makes sense if there are more than {Append} using this.
+            index = find_index_for_ary(ary, insert_id) # DISCUSS: this only makes sense if there are more than {Append} using this.
             raise IndexError.new(pipeline, insert_id) if index.nil? && raise_index_error
           end
 
@@ -152,6 +146,12 @@ module Trailblazer
           return [] if index == 0
           ary[0..index - 1]
         end
+
+        def range_after_index(ary, index, offset: 0)
+          start_at = index + offset
+
+          Array(ary[start_at..-1])
+        end
       end # Insert
 
       OPTION_TO_METHOD = {
@@ -163,7 +163,7 @@ module Trailblazer
 
       class IndexError < ::IndexError
         def initialize(sequence, step_id)
-          valid_ids = sequence.to_a.collect { |row| row.id.inspect }
+          valid_ids = sequence.to_a.collect { |(id, _)| id.inspect }
 
           message = "\n" \
             "\e[31m#{step_id.inspect} is not a valid step ID. Did you mean any of these ?\e[0m\n" \

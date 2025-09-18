@@ -28,9 +28,6 @@ module Trailblazer
         TaskWrap::Runner.(activity, args, **circuit_options)
       end
 
-      # {:extension} API
-      # Extend the static taskWrap from a macro or DSL call.
-      # Gets executed in {Intermediate.call} which also provides {config}.
       def initial_wrap_static
         INITIAL_TASK_WRAP
       end
@@ -53,8 +50,8 @@ module Trailblazer
         }
       end
 
-      ROW_ARGS_FOR_CALL_TASK = ["task_wrap.call_task", TaskWrap.method(:call_task)] # TODO: test me.
-      INITIAL_TASK_WRAP = Activity.Pipeline([Pipeline.Row(*ROW_ARGS_FOR_CALL_TASK)].freeze)
+      ROW_ARGS_FOR_CALL_TASK = {"task_wrap.call_task" => TaskWrap.method(:call_task)}.freeze # TODO: test me.
+      INITIAL_TASK_WRAP = Activity.Pipeline(ROW_ARGS_FOR_CALL_TASK).freeze
     end # TaskWrap
   end
 end

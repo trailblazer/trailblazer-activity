@@ -1,8 +1,47 @@
 require "test_helper"
 
+class PipelineTest < Minitest::Spec
+  it "provides #Pipeline that receives a hash" do
+    pipe = Trailblazer::Activity::Pipeline("a" => 1, "b" => 2)
+
+    assert_equal pipe.to_a.inspect, %([["a", 1], ["b", 2]])
+  end
+
+  # DISCUSS: this should be the only way, public API
+  # it "apply_on_ary" do
+  #   pipe = Trailblazer::Activity::Pipeline("a" => 1, "b" => 2, "c" => 3)
+
+  #   # 1. insert steps for tw (done via ADDS)
+  #   # 2. insert steps in sequence (done via ADDS)
+  #   # 3. extract a range from the pipeline to iterate through => in sequence Compiler (done via #apply_on_ary ?)
+
+  #   ary_inspect = nil
+
+  #   Trailblazer::Activity::Adds::Insert.apply_on_ary(pipe, "a") do |ary, index|
+  #     # raise index.inspect
+  #     ary_inspect = ary.inspect
+  #   end
+
+  #   assert_equal ary_inspect, %([["a", 1], ["b", 2], ["c", 3]])
+
+
+  #   result = Trailblazer::Activity::Adds::Insert.apply_on_ary(pipe, "a") do |ary, index|
+  #     _new_ary = Trailblazer::Activity::Adds::Insert.range_before_index(ary, index) + ary[index + 1..-1]
+  #   end
+
+  #   assert_equal result.inspect, %([["b", 2], ["c", 3]])
+
+  #   # DISCUSS: this feature is only used in dsl so far.
+  #   result = Trailblazer::Activity::Adds::Insert.collect(pipe) do |id, row|
+  #     [id, row.inspect]
+  #   end
+
+  #   assert_equal result, [["a", "1"], ["b", "2"], ["c", "3"]]
+  # end
+end
+
 class AddsTest < Minitest::Spec
   # DISCUSS: not tested here is Append to empty Pipeline because we always initialize it.
-  let(:pipeline) { Trailblazer::Activity::Pipeline }
   let(:adds)     { Trailblazer::Activity::Adds }
 
 #@ No mutation on original pipe
@@ -11,7 +50,7 @@ class AddsTest < Minitest::Spec
 
   # Canonical top-level API
   it "what" do
-    pipe1 = pipeline.new([pipeline::Row("task_wrap.call_task", "task, call")])
+    pipe1 = Trailblazer::Activity::Pipeline.new([["task_wrap.call_task", "task, call"]])
 
   #@ {Prepend} to element 0
     pipe2 = adds.(pipe1, ["trace, prepare", prepend: "task_wrap.call_task", id: "trace-in-outer"])
@@ -147,7 +186,7 @@ class AddsTest < Minitest::Spec
 
   # Internal API, currently used in dsl, too.
   it "what" do
-    pipe1 = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]])
+    pipe1 = Trailblazer::Activity::Pipeline.new([["task_wrap.call_task", "task, call"]])
 
   #@ {Prepend} to element 0
     pipe2 = adds.(pipe1, ["trace, prepare", prepend: "task_wrap.call_task", id: "trace-in-outer"])
@@ -281,31 +320,18 @@ class AddsTest < Minitest::Spec
 }
   end
 
-  it "{.call} allows passing a {:row} option per instruction, which implies omitting the {:id}" do
-    pipe1 = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]])
-    my_row_class = Class.new(Array) do
-      def id
-        "my id"
-      end
-    end
-
-    pipe2 = adds.(pipeline.new([]), [nil, prepend: nil, row: my_row_class[1,2,3]])
-
-    assert_equal pipe2.to_a.collect { |row| row.class }, [my_row_class]
-  end
-
-  it "raises when {:id} is omitted and no {:row} passed" do
+  it "raises when {:id} is omitted" do
     exception = assert_raises do
-      pipe1 = adds.(pipeline.new([]), [Object, prepend: nil])
+      pipe1 = adds.(Trailblazer::Activity::Pipeline.new([]), [Object, prepend: nil])
     end
 
     assert_equal exception.message.gsub(":", ""), %(missing keyword id)
   end
 
   it "{Append} without ID on empty list" do
-    pipe = pipeline.new([])
+    pipe = Trailblazer::Activity::Pipeline.new([])
 
-    add = { insert: [adds::Insert.method(:Append)], row: pipeline::Row["laster-id", "log"] }
+    add = { insert: [adds::Insert.method(:Append)], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(pipe, [add])
 
     assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
@@ -313,10 +339,10 @@ class AddsTest < Minitest::Spec
 }
   end
 
-  let(:one_element_pipeline) { pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"]]) }
+  let(:one_element_pipeline) { Trailblazer::Activity::Pipeline.new([["task_wrap.call_task", "task, call"]]) }
 
   it "{Append} on 1-element list" do
-    add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: pipeline::Row["laster-id", "log"] }
+    add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
     assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
@@ -325,7 +351,7 @@ class AddsTest < Minitest::Spec
   end
 
   it "{Replace} on 1-element list" do
-    add = { insert: [adds::Insert.method(:Replace), "task_wrap.call_task"], row: pipeline::Row["laster-id", "log"] }
+    add = { insert: [adds::Insert.method(:Replace), "task_wrap.call_task"], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
     assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
@@ -342,9 +368,9 @@ class AddsTest < Minitest::Spec
   end
 
   it "{Prepend} without ID on empty list" do
-    pipe = pipeline.new([])
+    pipe = Trailblazer::Activity::Pipeline.new([])
 
-    add = { insert: [adds::Insert.method(:Prepend)], row: pipeline::Row["laster-id", "log"] }
+    add = { insert: [adds::Insert.method(:Prepend)], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(pipe, [add])
 
     assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
@@ -353,7 +379,7 @@ class AddsTest < Minitest::Spec
   end
 
     it "{Prepend} without ID on 1-element list" do
-    add = { insert: [adds::Insert.method(:Prepend)], row: pipeline::Row["laster-id", "log"] }
+    add = { insert: [adds::Insert.method(:Prepend)], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
     assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
@@ -362,10 +388,10 @@ class AddsTest < Minitest::Spec
   end
 
   it "throws an Adds::Sequence error when ID non-existant" do
-    pipe = pipeline.new([pipeline::Row["task_wrap.call_task", "task, call"], pipeline::Row["task_wrap.log", "task, log"]])
+    pipe = Trailblazer::Activity::Pipeline.new([["task_wrap.call_task", "task, call"], ["task_wrap.log", "task, log"]])
 
   #@ {Prepend} to element that doesn't exist
-    add = { insert: [adds::Insert.method(:Prepend), "NOT HERE!"], row: pipeline::Row["trace-in-outer", "trace, prepare"] }
+    add = { insert: [adds::Insert.method(:Prepend), "NOT HERE!"], row: ["trace-in-outer", "trace, prepare"] }
 
     exception = assert_raises Trailblazer::Activity::Adds::IndexError do
       adds.apply_adds(pipe, [add])
@@ -381,3 +407,4 @@ class AddsTest < Minitest::Spec
     pipe.pretty_inspect.sub(/0x\w+/, "")
   end
 end
+
