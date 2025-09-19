@@ -334,9 +334,7 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Append)], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(pipe, [add])
 
-    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
- @sequence=[["laster-id", "log"]]>
-}
+    assert_equal CU.strip(pipe1.inspect), %{#<Trailblazer::Activity::Pipeline:0x @sequence=[["laster-id", "log"]]>}
   end
 
   let(:one_element_pipeline) { Trailblazer::Activity::Pipeline.new([["task_wrap.call_task", "task, call"]]) }
@@ -345,18 +343,14 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
-    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
- @sequence=[[\"task_wrap.call_task\", \"task, call\"], [\"laster-id\", \"log\"]]>
-}
+    assert_equal CU.strip(pipe1.inspect), %{#<Trailblazer::Activity::Pipeline:0x @sequence=[[\"task_wrap.call_task\", \"task, call\"], [\"laster-id\", \"log\"]]>}
   end
 
   it "{Replace} on 1-element list" do
     add = { insert: [adds::Insert.method(:Replace), "task_wrap.call_task"], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
-    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
- @sequence=[[\"laster-id\", \"log\"]]>
-}
+    assert_equal CU.strip(pipe1.inspect), %{#<Trailblazer::Activity::Pipeline:0x @sequence=[[\"laster-id\", \"log\"]]>}
   end
 
   it "{Delete} on 1-element list" do
@@ -373,9 +367,7 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Prepend)], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(pipe, [add])
 
-    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
- @sequence=[["laster-id", "log"]]>
-}
+    assert_equal CU.strip(pipe1.inspect), %{#<Trailblazer::Activity::Pipeline:0x @sequence=[["laster-id", "log"]]>}
   end
 
     it "{Prepend} without ID on 1-element list" do
