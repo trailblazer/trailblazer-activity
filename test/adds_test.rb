@@ -13,38 +13,6 @@ class PipelineTest < Minitest::Spec
     assert_equal Trailblazer::Activity::Pipeline.find(pipe, id: "b"), Object
     assert_equal Trailblazer::Activity::Pipeline.find(pipe, id: nil).inspect, %(nil)
   end
-
-  # DISCUSS: this should be the only way, public API
-  # it "apply_on_ary" do
-  #   pipe = Trailblazer::Activity::Pipeline("a" => 1, "b" => 2, "c" => 3)
-
-  #   # 1. insert steps for tw (done via ADDS)
-  #   # 2. insert steps in sequence (done via ADDS)
-  #   # 3. extract a range from the pipeline to iterate through => in sequence Compiler (done via #apply_on_ary ?)
-
-  #   ary_inspect = nil
-
-  #   Trailblazer::Activity::Adds::Insert.apply_on_ary(pipe, "a") do |ary, index|
-  #     # raise index.inspect
-  #     ary_inspect = ary.inspect
-  #   end
-
-  #   assert_equal ary_inspect, %([["a", 1], ["b", 2], ["c", 3]])
-
-
-  #   result = Trailblazer::Activity::Adds::Insert.apply_on_ary(pipe, "a") do |ary, index|
-  #     _new_ary = Trailblazer::Activity::Adds::Insert.range_before_index(ary, index) + ary[index + 1..-1]
-  #   end
-
-  #   assert_equal result.inspect, %([["b", 2], ["c", 3]])
-
-  #   # DISCUSS: this feature is only used in dsl so far.
-  #   result = Trailblazer::Activity::Adds::Insert.collect(pipe) do |id, row|
-  #     [id, row.inspect]
-  #   end
-
-  #   assert_equal result, [["a", "1"], ["b", "2"], ["c", "3"]]
-  # end
 end
 
 class AddsTest < Minitest::Spec

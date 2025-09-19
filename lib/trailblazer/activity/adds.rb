@@ -121,6 +121,7 @@ module Trailblazer
         # @private
         def apply_on_ary(pipeline, insert_id, raise_index_error: true, &block)
           ary = pipeline.to_a
+          # the idea here is that beyond this line, we're operating on an array and not a Pipeline.
 
           if insert_id.nil?
             index = nil
