@@ -85,24 +85,24 @@ class AddsTest < Minitest::Spec
   #@ {Delete} middle element
     pipe12 = adds.(pipe11, [nil, delete: "trace-out-inner", id: nil])
 
-    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=[["task_wrap.call_task", "task, call"]]>
 }
 
-    assert_equal inspect(pipe2), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe2.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["task_wrap.call_task", "task, call"]]>
 }
 
-    assert_equal inspect(pipe3), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe3.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["task_wrap.call_task", "task, call"],
    ["trace-out-outer", "trace, prepare"]]>
 }
 
-    assert_equal inspect(pipe4), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe4.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["trace-in-inner", "trace, prepare"],
@@ -110,7 +110,7 @@ class AddsTest < Minitest::Spec
    ["trace-out-outer", "trace, prepare"]]>
 }
 
-    assert_equal inspect(pipe5), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe5.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["trace-in-inner", "trace, prepare"],
@@ -119,7 +119,7 @@ class AddsTest < Minitest::Spec
    ["trace-out-outer", "trace, prepare"]]>
 }
 
-    assert_equal inspect(pipe6), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe6.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["trace-in-inner", "trace, prepare"],
@@ -129,7 +129,7 @@ class AddsTest < Minitest::Spec
    ["last-id", "log"]]>
 }
 
-    assert_equal inspect(pipe7), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe7.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["first-element", "log"],
    ["trace-in-inner", "trace, prepare"],
@@ -139,7 +139,7 @@ class AddsTest < Minitest::Spec
    ["last-id", "log"]]>
 }
 
-    assert_equal inspect(pipe8), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe8.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["first-element", "log"],
    ["trace-in-inner", "trace, prepare"],
@@ -149,7 +149,7 @@ class AddsTest < Minitest::Spec
    ["last-element", "log"]]>
 }
 
-    assert_equal inspect(pipe9), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe9.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["first-element", "log"],
    ["trace-in-inner", "trace, prepare"],
@@ -159,7 +159,7 @@ class AddsTest < Minitest::Spec
    ["last-element", "log"]]>
 }
 
-    assert_equal inspect(pipe10), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe10.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-inner", "trace, prepare"],
    ["task_wrap.call_task", "task, call"],
@@ -168,7 +168,7 @@ class AddsTest < Minitest::Spec
    ["last-element", "log"]]>
 }
 
-    assert_equal inspect(pipe11), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe11.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-inner", "trace, prepare"],
    ["task_wrap.call_task", "task, call"],
@@ -176,7 +176,7 @@ class AddsTest < Minitest::Spec
    ["middle-element", "log"]]>
 }
 
-    assert_equal inspect(pipe12), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe12.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-inner", "trace, prepare"],
    ["task_wrap.call_task", "task, call"],
@@ -221,24 +221,24 @@ class AddsTest < Minitest::Spec
   #@ {Delete} middle element
     pipe12 = adds.(pipe11, [nil, delete: "trace-out-inner", id: nil])
 
-    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=[["task_wrap.call_task", "task, call"]]>
 }
 
-    assert_equal inspect(pipe2), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe2.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["task_wrap.call_task", "task, call"]]>
 }
 
-    assert_equal inspect(pipe3), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe3.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["task_wrap.call_task", "task, call"],
    ["trace-out-outer", "trace, prepare"]]>
 }
 
-    assert_equal inspect(pipe4), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe4.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["trace-in-inner", "trace, prepare"],
@@ -246,7 +246,7 @@ class AddsTest < Minitest::Spec
    ["trace-out-outer", "trace, prepare"]]>
 }
 
-    assert_equal inspect(pipe5), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe5.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["trace-in-inner", "trace, prepare"],
@@ -255,7 +255,7 @@ class AddsTest < Minitest::Spec
    ["trace-out-outer", "trace, prepare"]]>
 }
 
-    assert_equal inspect(pipe6), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe6.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-outer", "trace, prepare"],
    ["trace-in-inner", "trace, prepare"],
@@ -265,7 +265,7 @@ class AddsTest < Minitest::Spec
    ["last-id", "log"]]>
 }
 
-    assert_equal inspect(pipe7), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe7.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["first-element", "log"],
    ["trace-in-inner", "trace, prepare"],
@@ -275,7 +275,7 @@ class AddsTest < Minitest::Spec
    ["last-id", "log"]]>
 }
 
-    assert_equal inspect(pipe8), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe8.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["first-element", "log"],
    ["trace-in-inner", "trace, prepare"],
@@ -285,7 +285,7 @@ class AddsTest < Minitest::Spec
    ["last-element", "log"]]>
 }
 
-    assert_equal inspect(pipe9), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe9.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["first-element", "log"],
    ["trace-in-inner", "trace, prepare"],
@@ -295,7 +295,7 @@ class AddsTest < Minitest::Spec
    ["last-element", "log"]]>
 }
 
-    assert_equal inspect(pipe10), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe10.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-inner", "trace, prepare"],
    ["task_wrap.call_task", "task, call"],
@@ -304,7 +304,7 @@ class AddsTest < Minitest::Spec
    ["last-element", "log"]]>
 }
 
-    assert_equal inspect(pipe11), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe11.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-inner", "trace, prepare"],
    ["task_wrap.call_task", "task, call"],
@@ -312,7 +312,7 @@ class AddsTest < Minitest::Spec
    ["middle-element", "log"]]>
 }
 
-    assert_equal inspect(pipe12), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe12.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=
   [["trace-in-inner", "trace, prepare"],
    ["task_wrap.call_task", "task, call"],
@@ -334,7 +334,7 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Append)], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(pipe, [add])
 
-    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=[["laster-id", "log"]]>
 }
   end
@@ -345,7 +345,7 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Append), "task_wrap.call_task"], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
-    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=[[\"task_wrap.call_task\", \"task, call\"], [\"laster-id\", \"log\"]]>
 }
   end
@@ -354,7 +354,7 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Replace), "task_wrap.call_task"], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
-    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=[[\"laster-id\", \"log\"]]>
 }
   end
@@ -363,7 +363,7 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Delete), "task_wrap.call_task"], row: nil }
     pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
-    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline: @sequence=[]>
+    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x @sequence=[]>
 }
   end
 
@@ -373,7 +373,7 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Prepend)], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(pipe, [add])
 
-    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=[["laster-id", "log"]]>
 }
   end
@@ -382,7 +382,7 @@ class AddsTest < Minitest::Spec
     add = { insert: [adds::Insert.method(:Prepend)], row: ["laster-id", "log"] }
     pipe1 = adds.apply_adds(one_element_pipeline, [add])
 
-    assert_equal inspect(pipe1), %{#<Trailblazer::Activity::Pipeline:
+    assert_equal CU.strip(pipe1.pretty_inspect), %{#<Trailblazer::Activity::Pipeline:0x
  @sequence=[[\"laster-id\", \"log\"], [\"task_wrap.call_task\", \"task, call\"]]>
 }
   end
@@ -401,10 +401,6 @@ class AddsTest < Minitest::Spec
 \e[31m\"NOT HERE!\" is not a valid step ID. Did you mean any of these ?\e[0m
 \e[32m\"task_wrap.call_task\"
 \"task_wrap.log\"\e[0m}
-  end
-
-  def inspect(pipe)
-    pipe.pretty_inspect.sub(/0x\w+/, "")
   end
 end
 
