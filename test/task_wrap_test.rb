@@ -42,6 +42,10 @@ class TaskWrapTest < Minitest::Spec
     assert_equal hsh[:config][:wrap_static].values.collect { |tw| tw.to_a.inspect }, [call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect, call_task_inspect]
   end
 
+  it "ROW_ARGS_FOR_CALL_TASK" do
+    assert_equal Trailblazer::Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK.inspect, %(["task_wrap.call_task", #<Method: Trailblazer::Activity::TaskWrap.call_task(wrap_ctx, original_args) /home/nick/projects/trailblazer-activity/lib/trailblazer/activity/task_wrap/call_task.rb:6>])
+  end
+
   it "{:wrap_static} allows adding steps, e.g. via Extension" do
     ext = Trailblazer::Activity::TaskWrap.Extension(
       [method(:add_1), id: "user.add_1", prepend: "task_wrap.call_task"],
