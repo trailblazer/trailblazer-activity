@@ -43,7 +43,7 @@ class TaskWrapTest < Minitest::Spec
   end
 
   it "ROW_ARGS_FOR_CALL_TASK" do
-    assert_equal Trailblazer::Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK.inspect, %(["task_wrap.call_task", #<Method: Trailblazer::Activity::TaskWrap.call_task(wrap_ctx, original_args) /home/nick/projects/trailblazer-activity/lib/trailblazer/activity/task_wrap/call_task.rb:6>])
+    assert_equal Trailblazer::Activity::TaskWrap::ROW_ARGS_FOR_CALL_TASK, ["task_wrap.call_task", Trailblazer::Activity::TaskWrap.method(:call_task)]
   end
 
   it "{:wrap_static} allows adding steps, e.g. via Extension" do
