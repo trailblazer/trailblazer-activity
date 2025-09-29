@@ -36,14 +36,14 @@ module Trailblazer
       #
       # NOTE: returned circuit_options are discarded when calling the runner.
       def call(args, start_task: @start_task, runner: Runner, **circuit_options)
-        circuit_options = circuit_options.merge(runner: runner) # TODO: set the :runner option via arguments_for_call to save the merge?
-        task            = start_task
+        task = start_task
 
         loop do
           last_signal, args = runner.( # we silently discard returned {circuit_options}.
             task,
             args,
-            **circuit_options
+            **circuit_options,
+            runner: runner
           )
 
           # Stop execution of the circuit when we hit a terminus.
