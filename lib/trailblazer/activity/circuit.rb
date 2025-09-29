@@ -3,8 +3,6 @@ module Trailblazer
     # Running a Circuit instance will run all tasks sequentially depending on the former's result.
     # Each task is called and retrieves the former task's return values.
     #
-    # Note: Please use #Activity as a public circuit builder.
-    #
     # @param map     [Hash] Defines the wiring.
     # @param termini [Array] Tasks that stop execution of the circuit.
     #
@@ -42,7 +40,7 @@ module Trailblazer
         task            = start_task
 
         loop do
-          last_signal, args, _discarded_circuit_options = runner.(
+          last_signal, args = runner.( # we silently discard returned {circuit_options}.
             task,
             args,
             **circuit_options
