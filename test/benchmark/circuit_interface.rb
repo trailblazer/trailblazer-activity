@@ -156,7 +156,11 @@ end
 
 module TWRunner
   def self.call(task, ctx, flow_options, **circuit_options)
-    wrap_ctx = {task: task, original_ctx: ctx}
+    wrap_ctx = {
+      task: task,
+      original_ctx: ctx,
+      original_circuit_options: circuit_options
+    }
 
     # this pipeline is "wrapped around" the actual `task`.
     task_wrap_pipeline = Trailblazer::Activity::TaskWrap::Runner.merge_static_with_runtime(task, **circuit_options, wrap_runtime: {}) || raise
@@ -169,11 +173,15 @@ module TWRunner
     # wrap_ctx, _ = task_wrap_pipeline.(wrap_ctx, flow_options, **circuit_options) # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
     task_wrap_pipeline.to_a.each do |id, task|
       # wrap_ctx, flow_options = task.(wrap_ctx, flow_options, ) # 2. this is a bit faster, and apart from that: do we need the circuit_options?
-      wrap_ctx, flow_options = task.(wrap_ctx, flow_options, **circuit_options) # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
-    end
 
-    # don't return the wrap's end signal, but the one from call_task.
-    # return all original_args for the next "real" task in the circuit (this includes circuit_options).
+      # DISCUSS: in 99.9% we don't need the **circuit_options (they cannont be changed/returned anyway).
+      #          so if a special circuit needs **circuit_options (because the task might be an Activity),
+      #          we can use a special Runner?
+      #
+      #          BENCHMARK: passing the **circuit_options makes it 1.06x slower, if omitted, the args version is 1.04x slower.
+      wrap_ctx, flow_options = task.(wrap_ctx, flow_options, **circuit_options) # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
+      # wrap_ctx, flow_options = task.(wrap_ctx, flow_options) # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
+    end
 
     return wrap_ctx[:return_signal], wrap_ctx[:return_args]
   end
