@@ -9,23 +9,27 @@ class Trailblazer::Activity
       #
       # @api private
       # @interface Runner
-      def self.call(task, args, **circuit_options)
-        wrap_ctx = {task: task}
+      def self.call(task, ctx, flow_options, **circuit_options)
+        wrap_ctx = {
+          task: task,
+          original_ctx: ctx,
+          original_circuit_options: circuit_options
+        }
 
         # this pipeline is "wrapped around" the actual `task`.
         task_wrap_pipeline = merge_static_with_runtime(task, **circuit_options) || raise
 
-        # We save all original args passed into this Runner.call, because we want to return them later after this wrap
-        # is finished.
-        original_args = [args, circuit_options]
-
-        # call the wrap {Activity} around the task.
-        wrap_ctx, _ = task_wrap_pipeline.(wrap_ctx, original_args) # we omit circuit_options here on purpose, so the wrapping activity uses the default, plain Runner.
+        # DISCUSS: in 99.9% we don't need the **circuit_options (they cannont be changed/returned anyway).
+        #          so if a special circuit needs **circuit_options (because the task might be an Activity),
+        #          we can use a special Runner?
+        #
+        #          BENCHMARK: passing the **circuit_options makes it 1.06x slower, if omitted, the args version is 1.04x slower.
+        wrap_ctx, _ = task_wrap_pipeline.(wrap_ctx, flow_options, **circuit_options)
 
         # don't return the wrap's end signal, but the one from call_task.
         # return all original_args for the next "real" task in the circuit (this includes circuit_options).
 
-        return wrap_ctx[:return_signal], wrap_ctx[:return_args]
+        return wrap_ctx[:return_signal], *wrap_ctx[:return_args]
       end
 
       # Compute the task's wrap by applying alterations both static and from runtime.
@@ -33,7 +37,8 @@ class Trailblazer::Activity
       # NOTE: this is for performance reasons: we could have only one hash containing everything but that'd mean
       # unnecessary computations at `call`-time since steps might not even be executed.
       # TODO: make this faster.
-      private_class_method def self.merge_static_with_runtime(task, wrap_runtime:, activity:, **circuit_options)
+      # private_class_method
+      def self.merge_static_with_runtime(task, wrap_runtime:, activity:, **circuit_options)
         static_task_wrap = TaskWrap.wrap_static_for(task, activity) # find static wrap for this specific task [, or default wrap activity].
 
         # Apply runtime alterations.

@@ -12,10 +12,12 @@ module Trailblazer
       end
 
       # Execute the pipeline and call all its steps, passing around the {wrap_ctx}.
-      def call(wrap_ctx, original_args)
-        @sequence.each { |(_id, task)| wrap_ctx, original_args = task.(wrap_ctx, original_args) }
+      def call(wrap_ctx, flow_options, **circuit_options)
+        @sequence.each do |(_id, task)|
+          wrap_ctx, flow_options = task.(wrap_ctx, flow_options, **circuit_options)
+        end
 
-        return wrap_ctx, original_args
+        return wrap_ctx, flow_options
       end
 
       # TODO: this should be @private as users should only use #collect outside?

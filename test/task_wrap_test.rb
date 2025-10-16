@@ -12,16 +12,18 @@ class TaskWrapTest < Minitest::Spec
     wrap_static = wrap_static.merge(options)
   end
 
-  def add_1(wrap_ctx, original_args)
-    ctx, = original_args[0]
+  def add_1(wrap_ctx, flow_options, **)
+    ctx = wrap_ctx[:original_ctx]
     ctx[:seq] << 1
-    return wrap_ctx, original_args # yay to mutable state. not.
+
+    return wrap_ctx, flow_options
   end
 
-  def add_2(wrap_ctx, original_args)
-    ctx, = original_args[0]
+  def add_2(wrap_ctx, flow_options, **)
+    ctx, = wrap_ctx[:original_ctx]
     ctx[:seq] << 2
-    return wrap_ctx, original_args # yay to mutable state. not.
+
+    return wrap_ctx, flow_options
   end
 
   it "exposes {#to_h} that includes {:wrap_static}" do
@@ -64,16 +66,17 @@ class TaskWrapTest < Minitest::Spec
     activity    = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static})
 
     # tw is not used with normal {Trailblazer::Activity#call}.
-    signal, (ctx, flow_options) = activity.call([{seq: []}, {}])
+    signal, ctx, flow_options = activity.call({seq: []}, {})
 
     assert_equal CU.inspect(ctx), %({:seq=>[:b, :c]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
 
     # With TaskWrap.invoke the tw is obviously incorporated.
-    signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}])
+    signal, ctx, flow_options = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: []}, {version: 1})
 
     assert_equal CU.inspect(ctx), %({:seq=>[:b, 1, :c, 2]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
+    assert_equal CU.inspect(flow_options), %({:version=>1})
   end
 
   it "{:wrap_runtime} allows adding tw extensions to specific tasks when invoking the activity" do
@@ -89,7 +92,7 @@ class TaskWrapTest < Minitest::Spec
       )
     }
 
-    signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}], wrap_runtime: wrap_runtime)
+    signal, ctx, flow_options = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}], wrap_runtime: wrap_runtime)
 
     assert_equal CU.inspect(ctx), %({:seq=>[1, :b, 2, :c]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
@@ -107,19 +110,19 @@ class TaskWrapTest < Minitest::Spec
       )
     )
 
-    signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}], wrap_runtime: wrap_runtime)
+    signal, ctx, flow_options = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}], wrap_runtime: wrap_runtime)
 
     assert_equal CU.inspect(ctx), %({:seq=>[1, 1, 2, 1, :b, 2, 1, :c, 2, 1, 2, 2]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
   end
 
-  def change_start_task(wrap_ctx, original_args)
+  def change_start_task(wrap_ctx, flow_options, **)
     (ctx, flow_options), circuit_options = original_args
 
     circuit_options = circuit_options.merge(start_task: ctx[:start_at])
     original_args   = [[ctx, flow_options], circuit_options]
 
-    return wrap_ctx, original_args
+    return wrap_ctx, flow_options, **
   end
 
   # Set start_task of {flat_activity} (which is nested in {nesting_activity}) to something else than configured in the
@@ -149,21 +152,21 @@ class TaskWrapTest < Minitest::Spec
     activity = Fixtures.flat_activity(tasks: tasks, wiring: wiring, config: {wrap_static: wrap_static})
 
     # Note the custom user-defined {:start_at} circuit option.
-    signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: [], start_at: flat_tasks.fetch("c")}, {}])
+    signal, ctx, flow_options = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: [], start_at: flat_tasks.fetch("c")}, {}])
 
     # We run activity.c, then only flat_activity.c as we're skipping the inner {b} step.
     assert_equal CU.inspect(ctx), %({:seq=>[:b, :c], :start_at=>#{flat_tasks.fetch("c").inspect}})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
   end
 
-  def change_circuit_options(wrap_ctx, original_args)
+  def change_circuit_options(wrap_ctx, flow_options, **)
     (ctx, flow_options), circuit_options = original_args
 
     circuit_options.merge!( # DISCUSS: do this like an adult.
       this_is_only_visible_in_this_very_step: true
     )
 
-    return wrap_ctx, original_args
+    return wrap_ctx, flow_options, **
   end
 
   # DISCUSS: maybe we can set the {:runner} in a tw step and then check that only the "current" task is affected?
@@ -185,7 +188,7 @@ class TaskWrapTest < Minitest::Spec
 
     activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static})
 
-    signal, (ctx, flow_options) = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}], key_for_circuit_options: true)
+    signal, ctx, flow_options = Trailblazer::Activity::TaskWrap.invoke(activity, [{seq: []}, {}], key_for_circuit_options: true)
 
     # We run activity.c, then only flat_activity.c as we're skipping the inner {b} step.
     assert_equal CU.inspect(ctx), %({:seq=>[:b], :circuit_options=>[:key_for_circuit_options, :wrap_runtime, :activity, :runner]})

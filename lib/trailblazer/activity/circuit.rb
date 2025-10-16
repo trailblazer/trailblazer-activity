@@ -22,7 +22,7 @@ module Trailblazer
 
       # @param args [Array] all arguments to be passed to the task's `call`
       # @param task [callable] task to call
-      Runner = ->(task, args, **circuit_options) { task.(args, **circuit_options) }
+      Runner = ->(task, ctx, flow_options, **circuit_options) { task.(ctx, flow_options, **circuit_options) }
 
       # Runs the circuit until we hit a stop event.
       #
@@ -35,19 +35,20 @@ module Trailblazer
       # @return [last_signal, options, flow_options, *args]
       #
       # NOTE: returned circuit_options are discarded when calling the runner.
-      def call(args, start_task: @start_task, runner: Runner, **circuit_options)
+      def call(ctx, flow_options, start_task: @start_task, runner: Runner, **circuit_options)
         task = start_task
 
         loop do
-          last_signal, args = runner.( # we silently discard returned {circuit_options}.
+          last_signal, ctx, flow_options = runner.( # we silently discard returned {circuit_options} if there were any.
             task,
-            args,
+            ctx,
+            flow_options,
             **circuit_options,
             runner: runner
           )
 
           # Stop execution of the circuit when we hit a terminus.
-          return [last_signal, args] if @termini.include?(task)
+          return [last_signal, ctx, flow_options] if @termini.include?(task)
 
           if (next_task = next_for(task, last_signal))
             task = next_task
@@ -56,7 +57,7 @@ module Trailblazer
               task,
               signal: last_signal,
               outputs: @map[task],
-              exec_context: circuit_options[:exec_context] # passed at run-time from DSL
+              exec_context: circuit_options[:exec_context] # passed at run-time from {Activity::Railway.call}. See {dsl-linear} gem.
             )
           end
         end
