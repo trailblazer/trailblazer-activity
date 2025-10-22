@@ -4,7 +4,7 @@ module Trailblazer
     # Each task is called and retrieves the former task's return values.
     #
     # @param map     [Hash] Defines the wiring.
-    # @param termini [Array] Tasks that stop execution of the circuit.
+    # @param termini [Array] Tasks that indicate execution stop, the "last steps".
     #
     # @see Activity
     # @api semi-private

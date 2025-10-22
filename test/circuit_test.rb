@@ -97,6 +97,30 @@ class CircuitTest < Minitest::Spec
       assert_equal CU.inspect(ctx), %({:seq=>[:a, :a, :b, :c, :stop, :stop]})
       assert_equal CU.inspect(flow_options), %({:stack=>[]})
     end
+
+    it "every {Runner.call} receives identical {circuit_options} and returned {circuit_options} are discarded" do
+      my_runner = ->(task, ctx, flow_options, circuit_options) do
+        ctx[:recorded] << [task, circuit_options.inspect]
+
+        return Trailblazer::Activity::Right, ctx, flow_options,
+          {ignore: "me!"} # returned {circuit_options} are discarded in Circuit's loop.
+      end
+
+      ctx = {recorded: []}
+      flow_options = {stack: []}
+
+      signal, ctx, flow_options, circuit_options = circuit.call(ctx, flow_options, original_circuit_options = {a: 9, runner: my_runner}.freeze)
+
+      assert_equal signal, Trailblazer::Activity::Right
+      assert_equal ctx[:recorded],
+        [
+          [a, original_circuit_options.inspect],
+          [b, original_circuit_options.inspect],
+          [c, original_circuit_options.inspect],
+          [stop, original_circuit_options.inspect],
+        ]
+      assert_equal CU.inspect(flow_options), %({:stack=>[]})
+    end
   end
 
   it "Circuit#to_h" do
