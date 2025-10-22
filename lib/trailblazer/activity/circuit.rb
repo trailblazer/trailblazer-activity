@@ -6,12 +6,8 @@ module Trailblazer
     # @param map     [Hash] Defines the wiring.
     # @param termini [Array] Tasks that stop execution of the circuit.
     #
-    #   result = circuit.(start_at, *args)
-    #
     # @see Activity
     # @api semi-private
-    #
-    # This is the "pipeline operator"'s implementation.
     class Circuit
       def initialize(map, termini, start_task:, name: nil)
         @map         = map
@@ -21,20 +17,18 @@ module Trailblazer
       end
 
       # Invokes the passed task with the circuit interface, nothing more.
-      #
-      # @param args [Array] all arguments to be passed to the task's `call`
-      # @param task [callable] task to call
       Runner = ->(task, ctx, flow_options, circuit_options) { task.(ctx, flow_options, circuit_options) }
 
-      # Runs the circuit until we hit a stop event.
+      # Runs the circuit until we hit a terminus.
       #
       # This method throws exceptions when the returned value of a task doesn't match
       # any wiring.
       #
       # @param task An event or task of this circuit from where to start
-      # @param options anything you want to pass to the first task
-      # @param flow_options Library-specific flow control data
-      # @return [last_signal, options, flow_options, *args]
+      # @param ctx application/user specific data structure
+      # @param flow_options Library-specific data, e.g. for tracing.
+      # @param circuit_options flow control data for the circuit and nested circuits
+      # @return [last_signal, ctx, flow_options]
       #
       # NOTE: returned circuit_options are discarded when calling the runner.
       def call(ctx, flow_options, circuit_options)
