@@ -120,6 +120,7 @@ class CircuitTest < Minitest::Spec
           [stop, original_circuit_options.inspect],
         ]
       assert_equal CU.inspect(flow_options), %({:stack=>[]})
+      assert_nil circuit_options
     end
   end
 
