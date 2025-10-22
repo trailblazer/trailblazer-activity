@@ -17,7 +17,11 @@ module Trailblazer
       end
 
       # Invokes the passed task with the circuit interface, nothing more.
-      Runner = ->(task, ctx, flow_options, circuit_options) { task.(ctx, flow_options, circuit_options) }
+      class Runner
+        def self.call(task, ctx, flow_options, circuit_options)
+          task.(ctx, flow_options, circuit_options)
+        end
+      end
 
       # Runs the circuit until we hit a terminus.
       #
@@ -50,16 +54,16 @@ module Trailblazer
           )
 
           # Stop execution of the circuit when we hit a terminus.
-          return [last_signal, ctx, flow_options] if @termini.include?(task)
+          return last_signal, ctx, flow_options if @termini.include?(task)
 
-          if (next_task = next_for(task, last_signal))
+          if next_task = next_for(task, last_signal)
             task = next_task
           else
             raise IllegalSignalError.new(
               task,
+              **circuit_options,
               signal: last_signal,
               outputs: @map[task],
-              exec_context: circuit_options[:exec_context] # passed at run-time from {Activity::Railway.call}. See {dsl-linear} gem.
             )
           end
         end
@@ -88,7 +92,7 @@ module Trailblazer
       class IllegalSignalError < RuntimeError
         attr_reader :task, :signal
 
-        def initialize(task, signal:, outputs:, exec_context:)
+        def initialize(task, signal:, outputs:, exec_context:, **)
           @task = task
           @signal = signal
 
