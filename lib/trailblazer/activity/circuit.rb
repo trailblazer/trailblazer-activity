@@ -20,9 +20,11 @@ module Trailblazer
         @start_task  = start_task
       end
 
+      # Invokes the passed task with the circuit interface, nothing more.
+      #
       # @param args [Array] all arguments to be passed to the task's `call`
       # @param task [callable] task to call
-      Runner = ->(task, ctx, flow_options, **circuit_options) { task.(ctx, flow_options, **circuit_options) }
+      Runner = ->(task, ctx, flow_options, circuit_options) { task.(ctx, flow_options, circuit_options) }
 
       # Runs the circuit until we hit a stop event.
       #
@@ -35,7 +37,12 @@ module Trailblazer
       # @return [last_signal, options, flow_options, *args]
       #
       # NOTE: returned circuit_options are discarded when calling the runner.
-      def call(ctx, flow_options, start_task: @start_task, runner: Runner, **circuit_options)
+      def call(ctx, flow_options, circuit_options)
+        run(ctx, flow_options, **circuit_options)
+      end
+
+      # @private
+      def run(ctx, flow_options, start_task: @start_task, runner: Runner, **circuit_options)
         task = start_task
 
         loop do
@@ -43,8 +50,9 @@ module Trailblazer
             task,
             ctx,
             flow_options,
-            **circuit_options,
-            runner: runner
+            circuit_options.merge(
+              runner: runner,
+            )
           )
 
           # Stop execution of the circuit when we hit a terminus.
