@@ -3,6 +3,7 @@ module Trailblazer
     # This "circuit" is optimized for
     #   a) merging speed at run-time, since features like tracing will be applied here.
     #   b) execution speed. Every task in the real circuit is wrapped with one of us.
+    # TODO: better docs here, it's a special {circuit}.
     #
     # It doesn't come with built-in insertion mechanics (except for {Pipeline.prepend}).
     # Please add/remove steps using the {Activity::Adds} methods.
@@ -12,9 +13,10 @@ module Trailblazer
       end
 
       # Execute the pipeline and call all its steps, passing around the {wrap_ctx}.
-      def call(wrap_ctx, flow_options, **circuit_options)
+      def call(wrap_ctx, flow_options, circuit_options = {})
+        # DISCUSS: to be completely consistent, we should be using a runner to invoke the task here.
         @sequence.each do |(_id, task)|
-          wrap_ctx, flow_options = task.(wrap_ctx, flow_options, **circuit_options)
+          wrap_ctx, flow_options = task.(wrap_ctx, flow_options, circuit_options)
         end
 
         return wrap_ctx, flow_options

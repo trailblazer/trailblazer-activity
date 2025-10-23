@@ -1,20 +1,5 @@
 require "test_helper"
 
-class PipelineTest < Minitest::Spec
-  it "provides .Pipeline that receives a hash" do
-    pipe = Trailblazer::Activity::Pipeline("a" => 1, "b" => 2)
-
-    assert_equal pipe.to_a.inspect, %([["a", 1], ["b", 2]])
-  end
-
-  it "provides #find(id:)" do
-    pipe = Trailblazer::Activity::Pipeline("a" => 1, "b" => Object)
-
-    assert_equal Trailblazer::Activity::Pipeline.find(pipe, id: "b"), Object
-    assert_equal Trailblazer::Activity::Pipeline.find(pipe, id: nil).inspect, %(nil)
-  end
-end
-
 class AddsTest < Minitest::Spec
   # DISCUSS: not tested here is Append to empty Pipeline because we always initialize it.
   let(:adds)     { Trailblazer::Activity::Adds }

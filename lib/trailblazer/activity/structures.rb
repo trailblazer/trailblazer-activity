@@ -12,7 +12,7 @@ module Trailblazer
         @options = options.merge(semantic: semantic)
       end
 
-      def call(ctx, flow_options, **)
+      def call(ctx, flow_options, circuit_options)
         return self, ctx, flow_options
       end
 
@@ -28,7 +28,7 @@ module Trailblazer
     end
 
     class Start < End
-      def call(ctx, flow_options, **)
+      def call(ctx, flow_options, circuit_options)
         return Activity::Right, ctx, flow_options
       end
     end

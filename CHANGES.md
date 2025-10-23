@@ -1,4 +1,17 @@
-# 0.18.0
+# 1.0.0
+
+## TaskWrap
+
+* positional circuit interface even in Pipeline.
+* :return_args is now :return_ctx, since flow_options are passed through the pipeline anyway, thanks to the consistency introduced in this version.
+
+===> :application_ctx
+     :application_circuit_options
+
+## Positional circuit interface™
+
+* pipes can now, theoretically, be traced, too.
+* simpler! all executables have the same signature.
 
 ## Pipeline / ADDS
 

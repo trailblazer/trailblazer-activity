@@ -9,27 +9,22 @@ class Trailblazer::Activity
       #
       # @api private
       # @interface Runner
-      def self.call(task, ctx, flow_options, **circuit_options)
+      def self.call(task, ctx, flow_options, circuit_options)
+        # Since we're in a taskWrap-specific environment here, the ctx is a different one.
         wrap_ctx = {
           task: task,
-          original_ctx: ctx,
-          original_circuit_options: circuit_options
+          application_ctx: ctx,
+          application_circuit_options: circuit_options,
         }
 
         # this pipeline is "wrapped around" the actual `task`.
         task_wrap_pipeline = merge_static_with_runtime(task, **circuit_options) || raise
 
-        # DISCUSS: in 99.9% we don't need the **circuit_options (they cannont be changed/returned anyway).
-        #          so if a special circuit needs **circuit_options (because the task might be an Activity),
-        #          we can use a special Runner?
-        #
-        #          BENCHMARK: passing the **circuit_options makes it 1.06x slower, if omitted, the args version is 1.04x slower.
-        wrap_ctx, _ = task_wrap_pipeline.(wrap_ctx, flow_options, **circuit_options)
+        wrap_ctx, flow_options = task_wrap_pipeline.(wrap_ctx, flow_options, circuit_options) # FIXME: return those flow_options!
 
-        # don't return the wrap's end signal, but the one from call_task.
-        # return all original_args for the next "real" task in the circuit (this includes circuit_options).
-
-        return wrap_ctx[:return_signal], *wrap_ctx[:return_args]
+        # Both {:return_signal} and {:return_ctx} are set in {#call_task}, the very tw step that
+        # executes the actual task which is wrapped.
+        return wrap_ctx[:return_signal], wrap_ctx[:return_ctx], flow_options
       end
 
       # Compute the task's wrap by applying alterations both static and from runtime.

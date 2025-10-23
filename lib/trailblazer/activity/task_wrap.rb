@@ -17,15 +17,19 @@ module Trailblazer
       # [:container_activity] the top-most "activity". This only has to look like an Activity
       #   and exposes a #[] interface so [:wrap_static] can be read and it's compatible to {Trace}.
       #   It is the virtual activity that "hosts" the actual {activity}.
-      def invoke(activity, ctx, flow_options = {}, wrap_runtime: {}, container_activity: container_activity_for(activity), **circuit_options)
+      # def invoke(activity, ctx, flow_options = {}, wrap_runtime: {}, container_activity: container_activity_for(activity), **circuit_options)
+      def invoke(activity, ctx, flow_options = {}, circuit_options = {})
+        run(activity, ctx, flow_options, **circuit_options)
+      end
+
+      def run(activity, ctx, flow_options, wrap_runtime: {}, container_activity: container_activity_for(activity), **circuit_options)
         circuit_options = circuit_options.merge(
-          runner:       TaskWrap::Runner,
+          runner:       TaskWrap::Runner, # invoke each task/activity with this Runner.
           wrap_runtime: wrap_runtime,
-          activity:     container_activity # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
+          activity:     container_activity, # for Runner. Ideally we'd have a list of all static_wraps here (even nested).
         )
 
-        # signal, (ctx, flow), circuit_options =
-        TaskWrap::Runner.(activity, ctx, flow_options, **circuit_options)
+        TaskWrap::Runner.(activity, ctx, flow_options, circuit_options)
       end
 
       def initial_wrap_static # FIXME: initial_task_wrap

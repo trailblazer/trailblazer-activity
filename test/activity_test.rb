@@ -2,7 +2,7 @@ require "test_helper"
 
 class ActivityTest < Minitest::Spec
   describe "Activity#call" do
-    it "accepts circuit interface" do
+    it "accepts circuit interface and defaults {circuit_options}" do
       flat_activity = Fixtures.flat_activity
 
       signal, ctx, flow_options = flat_activity.call({seq: []}, {})
@@ -29,10 +29,10 @@ class ActivityTest < Minitest::Spec
     it "accepts {:runner}" do
       flat_activity = Fixtures.flat_activity
 
-      my_runner = ->(task, ctx, flow_options, **circuit_options) do
+      my_runner = ->(task, ctx, flow_options, circuit_options) do
         ctx[:seq] << :my_runner
 
-        task.(ctx, flow_options, **circuit_options)
+        task.(ctx, flow_options, circuit_options)
       end
 
       signal, ctx, flow_options = flat_activity.call({seq: []}, {}, runner: my_runner)
@@ -63,9 +63,9 @@ class ActivityTest < Minitest::Spec
 
     it "automatically passes the {:activity} option" do
       # DISCUSS: in Ruby 3, procs created from the same block are identical: https://rubyreferences.github.io/rubychanges/3.0.html#proc-and-eql
-      step_a = ->(ctx, flow_options, **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, ctx, flow_options] }
-      step_b = ->(ctx, flow_options, **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, ctx, flow_options] }
-      step_c = ->(ctx, flow_options, **circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, ctx, flow_options] }
+      step_a = ->(ctx, flow_options, circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, ctx, flow_options] }
+      step_b = ->(ctx, flow_options, circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, ctx, flow_options] }
+      step_c = ->(ctx, flow_options, circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, ctx, flow_options] }
 
       tasks = Fixtures.default_tasks("b" => step_b, "c" => step_c)
 

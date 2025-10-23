@@ -41,7 +41,7 @@ module Trailblazer
         # This is often needed for "decider" chunks where the user can run either a method or a callable
         # but you only want back the return value, not a Binary circuit-interface return set.
         class Option < Step
-          def call(ctx, flow_options, **circuit_options)
+          def call(ctx, flow_options, circuit_options)
             result = @step.(ctx, keyword_arguments: ctx.to_hash, **circuit_options) # circuit_options contains :exec_context.
             # in an immutable environment we should return the ctx from the step.
             return result, ctx
@@ -69,8 +69,8 @@ module Trailblazer
           @circuit_step = circuit_step
         end
 
-        def call(ctx, flow_options, **circuit_options)
-          result, ctx = @circuit_step.(ctx, flow_options, **circuit_options) # DISCUSS: do we want to return {flow_options} here?
+        def call(ctx, flow_options, circuit_options)
+          result, ctx = @circuit_step.(ctx, flow_options, circuit_options) # DISCUSS: do we want to return {flow_options} here?
 
           # Return an appropriate signal which direction to go next.
           signal = TaskAdapter.binary_signal_for(result, Activity::Right, Activity::Left)
