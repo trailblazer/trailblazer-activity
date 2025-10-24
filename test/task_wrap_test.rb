@@ -52,10 +52,10 @@ class TaskWrapTest < Minitest::Spec
     tasks = Fixtures.default_tasks
 
     c_task = tasks["c"]
+
     capture_ext = ->(wrap_ctx, flow_options, _) do
       # after {call_task} we have certain new {wrap_ctx} variables.
       wrap_ctx[:return_ctx] = wrap_ctx[:return_ctx].merge(message: "original return signal: #{wrap_ctx[:return_signal]}")
-      # wrap_ctx[:return_signal] = Trailblazer::Activity::Left
 
       return wrap_ctx, flow_options
     end
@@ -78,7 +78,32 @@ class TaskWrapTest < Minitest::Spec
   end
 
   it "we can change the {:return_signal} from {call_task} and make the Circuit take a different path" do
-    raise
+    tasks = Fixtures.default_tasks
+
+    # {b} got Right and Left outputs.
+    b_task = tasks["b"]
+
+    return_left_ext = ->(wrap_ctx, flow_options, _) do
+      wrap_ctx[:return_signal] = Trailblazer::Activity::Left
+
+      return wrap_ctx, flow_options
+    end
+
+    wrap_static = wrap_static(
+      tasks.values,
+      b_task => Trailblazer::Activity::Adds.(
+        Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP,
+        [return_left_ext, id: "my.left", append: "task_wrap.call_task"]
+      )
+    )
+
+    activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static})
+
+    ctx, flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: []}, {})
+
+    assert_equal CU.inspect(ctx), %({:seq=>[:b]})
+    assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:failure>)
+    assert_equal CU.inspect(flow_options), %({})
   end
 
   it "{:wrap_static} allows adding steps, e.g. via Extension" do
