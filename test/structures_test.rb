@@ -5,7 +5,7 @@ class StructuresTest < Minitest::Spec
     let(:evt) { Trailblazer::Activity::End(:meaning) }
 
     it "#call always returns the End instance itself" do
-      signal, _ctx, _flow_options = evt.({a: 1}, {}, {})
+      _ctx, _flow_options, signal = evt.({a: 1}, {}, {})
 
       assert_equal signal, evt
     end

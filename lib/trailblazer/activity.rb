@@ -7,12 +7,13 @@ module Trailblazer
       @schema = schema
     end
 
-    def call(ctx, flow_options, **circuit_options)
+    def call(ctx, flow_options, circuit_options = {})
       @schema[:circuit].(
         ctx,
         flow_options,
-        **circuit_options,
-        activity: self # TODO: should this be set on the outside?
+        circuit_options.merge(
+          activity: self, # TODO: should this be set on the outside?
+        )
       )
     end
 

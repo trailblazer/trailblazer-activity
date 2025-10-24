@@ -44,7 +44,7 @@ module Trailblazer
         task = start_task
 
         loop do
-          last_signal, ctx, flow_options = runner.( # we silently discard returned {circuit_options} if there were any.
+          ctx, flow_options, last_signal = runner.( # we silently discard returned {circuit_options} if there were any.
             task,
             ctx,
             flow_options,
@@ -54,7 +54,7 @@ module Trailblazer
           )
 
           # Stop execution of the circuit when we hit a terminus.
-          return last_signal, ctx, flow_options if @termini.include?(task)
+          return ctx, flow_options, last_signal if @termini.include?(task)
 
           if next_task = next_for(task, last_signal)
             task = next_task

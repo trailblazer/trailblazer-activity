@@ -12,8 +12,12 @@
 
 * pipes can now, theoretically, be traced, too.
 * simpler! all executables have the same signature.
+* return ctx, flow_options, signal
 
 ## Pipeline / ADDS
+
+Pipeline.call now behaves like just another circuit.
+pipeline tasks: circuit interface, returned signal is ignored.
 
 * Remove (depracate) `Pipeline::Row` as a row is always an [ID, Object] tuple.
 * It's now `Activity::Pipeline` as this concept is used for many other cases.

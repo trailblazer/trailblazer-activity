@@ -13,7 +13,7 @@ module Trailblazer
       end
 
       def call(ctx, flow_options, circuit_options)
-        return self, ctx, flow_options
+        return ctx, flow_options, self
       end
 
       def to_h
@@ -29,7 +29,7 @@ module Trailblazer
 
     class Start < End
       def call(ctx, flow_options, circuit_options)
-        return Activity::Right, ctx, flow_options
+        return ctx, flow_options, Activity::Right
       end
     end
 

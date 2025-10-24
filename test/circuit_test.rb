@@ -28,7 +28,7 @@ class CircuitTest < Minitest::Spec
       ctx = {seq: []}
       flow_options = {stack: []}
 
-      signal, ctx, flow_options = circuit.call(ctx, flow_options, {})
+      ctx, flow_options, signal = circuit.call(ctx, flow_options, {})
 
       assert_equal signal, Trailblazer::Activity::Right
       assert_equal CU.inspect(ctx), %({:seq=>[:a, :b, :c, :stop]})
@@ -42,7 +42,7 @@ class CircuitTest < Minitest::Spec
       }
       flow_options = {stack: []}
 
-      signal, ctx, flow_options = circuit.call(ctx, flow_options, {})
+      ctx, flow_options, signal = circuit.call(ctx, flow_options, {})
 
       assert_equal signal, Trailblazer::Activity::Right
       assert_equal CU.inspect(ctx), %({:seq=>[:a, :stop], :a=>Trailblazer::Activity::Left})
@@ -53,7 +53,7 @@ class CircuitTest < Minitest::Spec
       ctx = {seq: []}
       flow_options = {stack: []}
 
-      signal, ctx, flow_options = circuit.call(ctx, flow_options, {start_task: b})
+      ctx, flow_options, signal = circuit.call(ctx, flow_options, {start_task: b})
 
       assert_equal signal, Trailblazer::Activity::Right
       assert_equal CU.inspect(ctx), %({:seq=>[:b, :c, :stop]})
@@ -72,7 +72,7 @@ class CircuitTest < Minitest::Spec
       ctx = {seq: []}
       flow_options = {stack: []}
 
-      signal, ctx, flow_options = circuit.call(ctx, flow_options, {runner: MyRunner})
+      ctx, flow_options, signal = circuit.call(ctx, flow_options, {runner: MyRunner})
 
       assert_equal signal, Trailblazer::Activity::Right
       assert_equal CU.inspect(ctx), %({:seq=>[:a, :b, :c, :stop]})
@@ -91,7 +91,7 @@ class CircuitTest < Minitest::Spec
       ctx = {seq: []}
       flow_options = {stack: []}
 
-      signal, ctx, flow_options = outer_circuit.call(ctx, flow_options, {})
+      ctx, flow_options, signal = outer_circuit.call(ctx, flow_options, {})
 
       assert_equal signal, Trailblazer::Activity::Right
       assert_equal CU.inspect(ctx), %({:seq=>[:a, :a, :b, :c, :stop, :stop]})
@@ -102,14 +102,14 @@ class CircuitTest < Minitest::Spec
       my_runner = ->(task, ctx, flow_options, circuit_options) do
         ctx[:recorded] << [task, circuit_options.inspect]
 
-        return Trailblazer::Activity::Right, ctx, flow_options,
+        return ctx, flow_options, Trailblazer::Activity::Right,
           {ignore: "me!"} # returned {circuit_options} are discarded in Circuit's loop.
       end
 
       ctx = {recorded: []}
       flow_options = {stack: []}
 
-      signal, ctx, flow_options, circuit_options = circuit.call(ctx, flow_options, original_circuit_options = {a: 9, runner: my_runner}.freeze)
+      ctx, flow_options, signal, circuit_options = circuit.call(ctx, flow_options, original_circuit_options = {a: 9, runner: my_runner}.freeze)
 
       assert_equal signal, Trailblazer::Activity::Right
       assert_equal ctx[:recorded],

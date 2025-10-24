@@ -5,13 +5,13 @@ class ActivityTest < Minitest::Spec
     it "accepts circuit interface and defaults {circuit_options}" do
       flat_activity = Fixtures.flat_activity
 
-      signal, ctx, flow_options = flat_activity.call({seq: []}, {})
+      ctx, flow_options, signal = flat_activity.call({seq: []}, {})
 
       assert_equal CU.inspect(ctx), %({:seq=>[:b, :c]})
       assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
 
       # b step fails.
-      signal, ctx, flow_options = flat_activity.call({seq: [], b: Trailblazer::Activity::Left}, {})
+      ctx, flow_options, signal = flat_activity.call({seq: [], b: Trailblazer::Activity::Left}, {})
 
       assert_equal CU.inspect(ctx), %({:seq=>[:b], :b=>Trailblazer::Activity::Left})
       assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:failure>)
@@ -20,7 +20,7 @@ class ActivityTest < Minitest::Spec
     it "accepts {:start_task}" do
       flat_activity = Fixtures.flat_activity
 
-      signal, ctx, flow_options = flat_activity.call({seq: []}, {}, start_task: Implementing.method(:c))
+      ctx, flow_options, signal = flat_activity.call({seq: []}, {}, start_task: Implementing.method(:c))
 
       assert_equal CU.inspect(ctx), %({:seq=>[:c]})
       assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
@@ -35,7 +35,7 @@ class ActivityTest < Minitest::Spec
         task.(ctx, flow_options, circuit_options)
       end
 
-      signal, ctx, flow_options = flat_activity.call({seq: []}, {}, runner: my_runner)
+      ctx, flow_options, signal = flat_activity.call({seq: []}, {}, runner: my_runner)
 
       assert_equal CU.inspect(ctx), %({:seq=>[:my_runner, :my_runner, :b, :my_runner, :c, :my_runner]})
       assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
@@ -47,7 +47,7 @@ class ActivityTest < Minitest::Spec
       class MyExecContext; end
 
       exception = assert_raises Trailblazer::Activity::Circuit::IllegalSignalError do
-        signal, ctx, flow_options = broken_activity.call({seq: []}, {}, start_task: b_task, exec_context: MyExecContext.new)
+        ctx, flow_options, signal = broken_activity.call({seq: []}, {}, start_task: b_task, exec_context: MyExecContext.new)
       end
 
       message = "ActivityTest::MyExecContext:
@@ -63,9 +63,9 @@ class ActivityTest < Minitest::Spec
 
     it "automatically passes the {:activity} option" do
       # DISCUSS: in Ruby 3, procs created from the same block are identical: https://rubyreferences.github.io/rubychanges/3.0.html#proc-and-eql
-      step_a = ->(ctx, flow_options, circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, ctx, flow_options] }
-      step_b = ->(ctx, flow_options, circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, ctx, flow_options] }
-      step_c = ->(ctx, flow_options, circuit_options) { ctx += [circuit_options[:activity]]; [Trailblazer::Activity::Right, ctx, flow_options] }
+      step_a = ->(ctx, flow_options, circuit_options) { ctx += [circuit_options[:activity]]; [ctx, flow_options, Trailblazer::Activity::Right] }
+      step_b = ->(ctx, flow_options, circuit_options) { ctx += [circuit_options[:activity]]; [ctx, flow_options, Trailblazer::Activity::Right] }
+      step_c = ->(ctx, flow_options, circuit_options) { ctx += [circuit_options[:activity]]; [ctx, flow_options, Trailblazer::Activity::Right] }
 
       tasks = Fixtures.default_tasks("b" => step_b, "c" => step_c)
 
@@ -77,7 +77,7 @@ class ActivityTest < Minitest::Spec
 
       nesting_activity = Fixtures.flat_activity(tasks: tasks, wiring: wiring)
 
-      _signal, ctx, = nesting_activity.([], {})
+      ctx, _ = nesting_activity.([], {})
 
       # each task receives the containing {:activity}
       assert_equal ctx, [flat_activity, flat_activity, nesting_activity]
