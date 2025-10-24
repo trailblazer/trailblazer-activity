@@ -27,6 +27,7 @@ module Trailblazer
       alias inspect to_s
     end
 
+    # DISCUSS: we actually don't need this here anymore, this is only good for modeling in the DSL.
     class Start < End
       def call(ctx, flow_options, circuit_options)
         return ctx, flow_options, Activity::Right

@@ -59,12 +59,7 @@ module Trailblazer
           if next_task = next_for(task, last_signal)
             task = next_task
           else
-            raise IllegalSignalError.new(
-              task,
-              **circuit_options,
-              signal: last_signal,
-              outputs: @map[task],
-            )
+            raise_illegal_signal_error!(task, last_signal, @map[task], **circuit_options)
           end
         end
       end
@@ -83,6 +78,15 @@ module Trailblazer
       def next_for(last_task, signal)
         outputs = @map[last_task]
         outputs[signal]
+      end
+
+      def raise_illegal_signal_error!(task, last_signal, outputs, **circuit_options)
+        raise IllegalSignalError.new(
+          task,
+          **circuit_options,
+          signal: last_signal,
+          outputs: @map[task],
+        )
       end
 
       # Common reasons to raise IllegalSignalError are when returning signals from

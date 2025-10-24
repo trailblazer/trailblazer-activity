@@ -4,14 +4,13 @@ class Trailblazer::Activity
     #
     # It writes to wrap_ctx[:return_signal], wrap_ctx[:return_args]
     def self.call_task(wrap_ctx, flow_options, _)
-      task = wrap_ctx[:task]
-
-      application_ctx = wrap_ctx[:application_ctx]
+      task                        = wrap_ctx[:task]
+      application_ctx             = wrap_ctx[:application_ctx]
       application_circuit_options = wrap_ctx[:application_circuit_options]
 
       # Call the actual task we're wrapping here.
       # puts "~~~~wrap.call: #{task}"
-      return_signal, ctx, flow_options =
+      ctx, flow_options, return_signal =
         task.call(
           application_ctx,
           flow_options,
@@ -23,6 +22,7 @@ class Trailblazer::Activity
         return_signal: return_signal,
         return_ctx:   ctx
       )
+
       return wrap_ctx, flow_options
     end
   end # Wrap

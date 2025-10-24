@@ -24,7 +24,7 @@ class Trailblazer::Activity
 
         # Both {:return_signal} and {:return_ctx} are set in {#call_task}, the very tw step that
         # executes the actual task which is wrapped.
-        return wrap_ctx[:return_signal], wrap_ctx[:return_ctx], flow_options
+        return wrap_ctx[:return_ctx], flow_options, wrap_ctx[:return_signal]
       end
 
       # Compute the task's wrap by applying alterations both static and from runtime.
