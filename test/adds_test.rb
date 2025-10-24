@@ -282,7 +282,7 @@ class AddsTest < Minitest::Spec
 
   it "raises when {:id} is omitted" do
     exception = assert_raises do
-      pipe1 = adds.(Trailblazer::Activity::Pipeline.new([]), [Object, prepend: nil])
+      adds.(Trailblazer::Activity::Pipeline.new([]), [Object, prepend: nil])
     end
 
     assert_equal exception.message.gsub(":", ""), %(missing keyword id)

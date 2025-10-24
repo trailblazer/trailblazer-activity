@@ -113,7 +113,7 @@ class TaskWrapTest < Minitest::Spec
     )
 
     tasks = Fixtures.default_tasks
-    _, b, c = tasks.values
+    _, _b, c = tasks.values
 
     wrap_static = wrap_static(tasks.values)
 
@@ -124,7 +124,7 @@ class TaskWrapTest < Minitest::Spec
     activity    = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static})
 
     # tw is not used with normal {Trailblazer::Activity#call}.
-    ctx, flow_options, signal = activity.call({seq: []}, {})
+    ctx, _flow_options, signal = activity.call({seq: []}, {})
 
     assert_equal CU.inspect(ctx), %({:seq=>[:b, :c]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
@@ -150,7 +150,7 @@ class TaskWrapTest < Minitest::Spec
       )
     }
 
-    ctx, flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: []}, {}, wrap_runtime: wrap_runtime)
+    ctx, _flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: []}, {}, wrap_runtime: wrap_runtime)
 
     assert_equal CU.inspect(ctx), %({:seq=>[1, :b, 2, :c]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
@@ -168,7 +168,7 @@ class TaskWrapTest < Minitest::Spec
       )
     )
 
-    ctx, flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: []}, {}, wrap_runtime: wrap_runtime)
+    ctx, _flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: []}, {}, wrap_runtime: wrap_runtime)
 
     assert_equal CU.inspect(ctx), %({:seq=>[1, 1, 2, 1, :b, 2, 1, :c, 2, 1, 2, 2]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
@@ -210,7 +210,7 @@ class TaskWrapTest < Minitest::Spec
     activity = Fixtures.flat_activity(tasks: tasks, wiring: wiring, config: {wrap_static: wrap_static})
 
     # Note the custom user-defined {:start_at} circuit option.
-    ctx, flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: [], start_at: flat_tasks.fetch("c")}, {})
+    ctx, _flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: [], start_at: flat_tasks.fetch("c")}, {})
 
     # We run activity.c, then only flat_activity.c as we're skipping the inner {b} step.
     assert_equal CU.inspect(ctx), %({:seq=>[:b, :c], :start_at=>#{flat_tasks.fetch("c").inspect}})
@@ -248,7 +248,7 @@ class TaskWrapTest < Minitest::Spec
 
     activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static})
 
-    ctx, flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: []}, {}, key_for_circuit_options: true)
+    ctx, _flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: []}, {}, key_for_circuit_options: true)
 
     # We run activity.c, then only flat_activity.c as we're skipping the inner {b} step.
     assert_equal CU.inspect(ctx), %({:seq=>[:b], :circuit_options=>[:key_for_circuit_options, :wrap_runtime, :activity, :runner]})
