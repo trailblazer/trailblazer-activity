@@ -1,60 +1,45 @@
 module Trailblazer
   class Activity
-    # Since we're always assuming filters exposing a circuit interface, this has been moved
-    # into the Activity namespace, yo.
-    #
-    # TODO: make Option a private concept, make devs use {Circuit.Step} instead.
-    class Option # FIXME: remove trailblazer-option.
-      def initialize(filter)
-        @filter = filter
-      end
-
-      # To invoke an instance_method, additional logic is needed, e.g. figuring out the {exec_context}.
-      #
-      # PROBLEM: we don't know the signature of the instance_method, is it a step, is it circuit interface?
-      class InstanceMethod < Option
-        def call(*args, keyword_arguments: {}, exec_context: raise("No :exec_context given."), **)
-          exec_context.send(@filter, *args, **keyword_arguments)
-        end
-      end
-    end
-
     # Circuit::TaskAdapter:   Uses Circuit::Step to translate incoming, and returns a circuit-interface
     #                 compatible return set.
     class Circuit
-      # Create a `Circuit::Step` instance. Mostly this is used inside a `TaskAdapter`.
+      # Single-entry point to build a step with a circuit interface that is internally
+      # calling a user code chunk with a step interface (ctx, **ctx).
       #
-      # @param    [callable_with_step_interface] Any kind of callable object or `:instance_method` that receives
-      #   a step interface.
-      # @param    [:option] If true, the user's callable argument is wrapped in `Trailblazer::Option`.
-      # @return   [Circuit::Step, Circuit::Step::Option] Returns a callable circuit-step.
-      # @see      https://trailblazer.to/2.1/docs/activity#activity-internals-step-interface
-      def self.Step(callable_with_step_interface, option: false, instance_method: false, binary: nil)
+      # In TRB 2.1, this used to sit in the Trailblazer::Option gem, but never really made sense
+      # as we're building
+      def self.Step(user_filter_with_step_interface, option: nil, **options)
+raise if option # FIXME: remove once this is sorted.
 
-        raise if option # FIXME: remove once this is sorted.
+        options = options.merge(instance_method: true) if user_filter_with_step_interface.is_a?(Symbol)
 
-        # This will result in a step being wrapped in a Binary step.
-        binary = Step::Binary if binary === true
-
-        circuit_step =
-          # TODO: should we detect here if Option wrapping is needed?
-          if instance_method
-            # currently, this is only used for {:instance_method} filters.
-            Step::Option.new(Activity::Option::InstanceMethod.new(callable_with_step_interface))
-          else
-            Step.new(callable_with_step_interface)
-          end
-
-        if binary
-          circuit_step = binary.new(circuit_step) # DISCUSS: i hate wrapping, but we cannot use an Activity-based approach, yet.
-        end
-
-        return circuit_step
+        Step.build(user_filter_with_step_interface, **options)
       end
+
 
       # {Step#call} translates the incoming circuit-interface to the step-interface,
       # and returns the return value of the user's callable.
       class Step
+        def self.build(callable_with_step_interface, option: false, instance_method: false, binary: nil)
+          # This will result in a step being wrapped in a Binary step.
+          binary = Step::Binary if binary === true
+
+          circuit_step =
+            # TODO: should we detect here if Option wrapping is needed?
+            if instance_method
+              # currently, this is only used for {:instance_method} filters.
+              Step::Option.new(Activity::Option::InstanceMethod.new(callable_with_step_interface))
+            else
+              Step.new(callable_with_step_interface)
+            end
+
+          if binary
+            circuit_step = binary.new(circuit_step) # DISCUSS: i hate wrapping, but we cannot use an Activity-based approach, yet.
+          end
+
+          return circuit_step
+        end
+
         def initialize(step)
           @step = step
         end

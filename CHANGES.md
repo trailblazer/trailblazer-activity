@@ -1,5 +1,9 @@
 # 1.0.0
 
+## TaskAdapter
+
+Step: filters can now return true or false which can be directly wired as a signal.
+
 ## TaskWrap
 
 * positional circuit interface even in Pipeline.

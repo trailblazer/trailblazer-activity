@@ -1,14 +1,6 @@
 require "test_helper"
 
-class TaskAdapterTest < Minitest::Spec
-  class Operation
-    def process_type(ctx, model:, **)
-      return if model.nil?
-
-      ctx[:type] = model.class
-    end
-  end
-
+class CircuitStepTest < Minitest::Spec
   def my_output(ctx, params:, **)
     {
       id: params[:id],
@@ -26,25 +18,6 @@ class TaskAdapterTest < Minitest::Spec
 
   let(:ctx) { {params: {id: 1}, action: :update} }
 
-  it "Option::InstanceMethod" do
-  # instance method with step interface
-    option = Trailblazer::Activity::Option::InstanceMethod.new(:my_output)
-
-    circuit_options = {exec_context: self, wrap_runtime: {}}
-
-    value = option.(self.ctx, keyword_arguments: self.ctx.to_hash, **circuit_options)
-
-    assert_equal value, {id: 1}
-
-  # instance method with different interface, for example, circuit interface (how surprising!)
-    option = Trailblazer::Activity::Option::InstanceMethod.new(:my_output_with_circuit_interface)
-
-    ctx, flow_options, value = option.(self.ctx, flow_options, circuit_options, **circuit_options) # DISCUSS: omitting {:keyword_arguments} might lead to problems in Ruby < 2.7.
-
-    assert_equal value, {id: 1, exec_context: self}
-    assert_equal ctx, self.ctx
-  end
-
   it "Circuit.Step" do
   # callable with step interface
     task_to_step = Trailblazer::Activity::Circuit.Step(method(:my_output))
@@ -56,7 +29,7 @@ class TaskAdapterTest < Minitest::Spec
     assert_equal value, {id: 1}
 
   # :instance_method with step interface
-    task_to_step = Trailblazer::Activity::Circuit.Step(:my_output, instance_method: true)
+    task_to_step = Trailblazer::Activity::Circuit.Step(:my_output)
 
     ctx, flow_options, value = task_to_step.(self.ctx, {stack: []}, {exec_context: self})
     assert_equal ctx, self.ctx
@@ -96,7 +69,7 @@ class TaskAdapterTest < Minitest::Spec
     end
 
     it "{:instance_method} with step interface" do
-      step = Trailblazer::Activity::Circuit.Step(:my_output_decider, instance_method: true, binary: true)
+      step = Trailblazer::Activity::Circuit.Step(:my_output_decider, binary: true)
 
       ctx, flow_options, signal = step.(self.ctx, {stack: []}, {exec_context: self})
       assert_equal CU.inspect(ctx), %({:seq=>[:my_output_decider], :valid=>true})
