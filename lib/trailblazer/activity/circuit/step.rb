@@ -67,7 +67,7 @@ raise if option # FIXME: remove once this is sorted.
         class Option < Step
           def call(ctx, flow_options, circuit_options)
             # Invoke Option::InstanceMethod#call():
-            result = @step.(ctx, keyword_arguments: ctx.to_hash, **circuit_options) # circuit_options contains :exec_context.
+            result = @step.(ctx, keyword_arguments: ctx.to_hash, **circuit_options) # {circuit_options} contain {:exec_context}.
 
             return ctx, flow_options, result
           end
