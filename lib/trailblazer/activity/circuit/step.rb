@@ -58,6 +58,9 @@ raise if option # FIXME: remove once this is sorted.
           return ctx, flow_options, result
         end
 
+        # DISCUSS: here, we have knowledge about how an Option::InstanceMethod is being called, and what it
+        #          returns. here, we assume that it's always one particular value. what if we want to call a @step with a circuit interface?
+        #
         # In {Step::Option}, {@step} is expected to be wrapped in a {Trailblazer::Option}.
         # To remember: when calling an Option instance, you need to pass {:keyword_arguments} explicitly,
         # because of beautiful Ruby 2.5 and 2.6.
