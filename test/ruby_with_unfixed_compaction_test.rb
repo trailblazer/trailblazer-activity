@@ -8,7 +8,7 @@ if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.1") && RUBY_ENGINE == "
 
       activity = Fixtures.flat_activity() # {b} and {c} are {.method(:b)} tasks.
 
-      signal, (ctx, _) = activity.([{seq: []}, {}])
+      ctx, _, signal = activity.({seq: []}, {})
 
       assert_equal CU.inspect(ctx), %({:seq=>[:b, :c]})
 
@@ -40,7 +40,7 @@ if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.1") && RUBY_ENGINE == "
       # NoMethodError: undefined method `[]' for nil
       #     /home/nick/projects/trailblazer-activity/lib/trailblazer/activity/circuit.rb:80:in `next_for'
 
-      signal, (ctx, _) = activity.([{seq: []}, {}])
+      ctx, _, signal = activity.({seq: []}, {})
 
       assert_equal CU.inspect(ctx), %({:seq=>[:b, :c]})
     end
