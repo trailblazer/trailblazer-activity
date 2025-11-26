@@ -22,6 +22,18 @@ module Trailblazer
         return wrap_ctx, flow_options
       end
 
+      # FIXME: experimental.
+      # FIXME: experimenting with a Pipeline#call behavior plus Runner, like a Circuit.
+      def self.call(pipeline, ctx, flow_options, circuit_options = {})
+        runner = circuit_options[:runner]
+
+        pipeline.to_a.each do |(_id, task)|
+          ctx, flow_options = runner.(task, ctx, flow_options, circuit_options)
+        end
+
+        return ctx, flow_options # FIXME: experimenting here.
+      end
+
       # TODO: this should be @private as users should only use #collect outside?
       # @private
       def to_a
