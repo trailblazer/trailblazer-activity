@@ -12,6 +12,9 @@ module Trailblazer
       # To invoke an instance_method, additional logic is needed, e.g. figuring out the {exec_context}.
       #
       # PROBLEM: we don't know the signature of the instance_method, is it a step, is it circuit interface?
+      #
+      # Allows calling an instance method on {:exec_context} with any interfce, both
+      # step and circuit interface are possible.
       class InstanceMethod < Option
         def call(*args, keyword_arguments: {}, exec_context:, **)
           exec_context.send(@filter, *args, **keyword_arguments)

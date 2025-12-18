@@ -24,7 +24,6 @@ class ActivityOptionTest < Minitest::Spec
       # instance method with step interface
       option = Trailblazer::Activity::Option::InstanceMethod.new(:my_output)
 
-
       value = option.(self.ctx, keyword_arguments: self.ctx.to_hash, **circuit_options)
 
       assert_equal value, {id: 1}
