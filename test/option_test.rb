@@ -38,5 +38,18 @@ class ActivityOptionTest < Minitest::Spec
       assert_equal value, {id: 1, exec_context: self}
       assert_equal ctx, self.ctx
     end
+
+    it "can run instance method with circuit interface and {:keyword_arguments}" do
+      def my_handler_with_circuit_interface_and_kwargs(ctx, flow_options, circuit_options, exception:, **options)
+        return ctx, flow_options, {exception: exception, ctx_inspect: CU.inspect(ctx)}
+      end
+
+      option = Trailblazer::Activity::Option::InstanceMethod.new(:my_handler_with_circuit_interface_and_kwargs)
+
+      ctx, flow_options, value = option.(self.ctx, flow_options, circuit_options, **circuit_options, keyword_arguments: {exception: 1}) # DISCUSS: omitting {:keyword_arguments} might lead to problems in Ruby < 2.7.
+
+      assert_equal value, {:exception=>1, :ctx_inspect=>"{:params=>{:id=>1}, :action=>:update}"}
+      assert_equal ctx, self.ctx
+    end
   end
 end
