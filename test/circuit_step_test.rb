@@ -55,7 +55,7 @@ class CircuitStepTest < Minitest::Spec
     return_set = callable.(self.ctx, {stack: []}, {exec_context: self}, exception: Object.new)
     # translate binary etc
 
-    assert_equal return_set, [self.ctx.merge(:exception_class=>Object), {stack: []}, :Right]
+    assert_equal return_set, [self.ctx.merge(:exception_class=>Object), {}, :Right]
   end
 
   def my_rescue_handler_step(ctx, params:, **)

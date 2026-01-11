@@ -8,7 +8,7 @@ module Trailblazer
         def self.build(user_filter_with_circuit_interface)
           if user_filter_with_circuit_interface.is_a?(Symbol)
             # TODO: Let Option/Filter::InstanceMethod do that
-            return InstanceMethod.build_for_runtime(user_filter_with_circuit_interface)
+            return InstanceMethod.new(user_filter_with_circuit_interface)
           end
 
           # No need for any wrapping.
@@ -16,11 +16,11 @@ module Trailblazer
         end
 
         class InstanceMethod < Struct.new(:filter)
-          # BUILD SOMETHING CALLABLE for an instnace method, but at runtime
-          # def self.build_for_runtime(ctx, flow_options, circuit_options) # DISCUSS: kwargs, too?
-          def self.build_for_runtime(filter)
+          # This is one "step" for the Task/Step adapter, specific to instance methods,
+          # and it allows calling the returned callable as if it was a MyHandler.
+          def call(ctx, flow_options, circuit_options, **kws)
             # RUNTIME, THIS IS EXECUTED BY THE TASK/STEP instance.
-            ->(ctx, flow_options, circuit_options, **kws) {
+            # -> {
               exec_context  = circuit_options.fetch(:exec_context)
             # That was my first idea, but it doesn't play if devs would use dispatching based on {#method_missing}.
             # callable      = exec_context.method(filter) # this is the actual change from Option thinking.
@@ -29,7 +29,7 @@ module Trailblazer
 
               # exec_context.send(filter, *args, **kws)
               callable = ->(*args, **kws) { exec_context.send(filter, *args, **kws) } # this should be generic, so we can use it with Task and Step interfaces (and ext-ci)
-            }
+            # }
 
 # tHE IDEA here is that the only difference to a raw filter is that we extract the "callable" before we do the rest
 # (invoking with whatever interface, interpreting the result etc)
