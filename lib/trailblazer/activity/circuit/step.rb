@@ -3,6 +3,42 @@ module Trailblazer
     # Circuit::TaskAdapter:   Uses Circuit::Step to translate incoming, and returns a circuit-interface
     #                 compatible return set.
     class Circuit
+
+      module Task
+        def self.build(user_filter_with_circuit_interface)
+          if user_filter_with_circuit_interface.is_a?(Symbol)
+            # TODO: Let Option/Filter::InstanceMethod do that
+            return InstanceMethod.build_for_runtime(user_filter_with_circuit_interface)
+          end
+
+          # No need for any wrapping.
+          return user_filter_with_circuit_interface
+        end
+
+        class InstanceMethod < Struct.new(:filter)
+          # BUILD SOMETHING CALLABLE for an instnace method, but at runtime
+          # def self.build_for_runtime(ctx, flow_options, circuit_options) # DISCUSS: kwargs, too?
+          def self.build_for_runtime(filter)
+            # RUNTIME, THIS IS EXECUTED BY THE TASK/STEP instance.
+            ->(ctx, flow_options, circuit_options, **kws) {
+              exec_context  = circuit_options.fetch(:exec_context)
+            # That was my first idea, but it doesn't play if devs would use dispatching based on {#method_missing}.
+            # callable      = exec_context.method(filter) # this is the actual change from Option thinking.
+
+              # instance_method = filter
+
+              # exec_context.send(filter, *args, **kws)
+              callable = ->(*args, **kws) { exec_context.send(filter, *args, **kws) } # this should be generic, so we can use it with Task and Step interfaces (and ext-ci)
+            }
+
+# tHE IDEA here is that the only difference to a raw filter is that we extract the "callable" before we do the rest
+# (invoking with whatever interface, interpreting the result etc)
+
+            # return callable.(ctx, flow_options, circuit_options, **kws) # this would happen in another "step" in Task/Step (adapter).
+          end
+        end
+      end
+
       # Single-entry point to build a step with a circuit interface that is internally
       # calling a user code chunk with a step interface (ctx, **ctx).
       #
@@ -53,7 +89,7 @@ raise if option # FIXME: remove once this is sorted.
 
           # DISCUSS: in an immutable environment we should return the ctx from the step.
           # in an additional "layer" we could treat the result as something coming from return Result(ctx, Success|true),
-          # and then return the new ctx here. it's much more convenient letting OP steps mutate the ctx directly, though.
+          # and then return the new ctx here. it's much more convenient letting OP steps alter the ctx directly, though.
 
           return ctx, flow_options, result
         end

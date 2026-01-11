@@ -16,7 +16,65 @@ class CircuitStepTest < Minitest::Spec
     return ctx, flow_options, value
   end
 
+  # TODO: test that this would also work.
+  # def method_missing(*)
+  #   raise
+  # end
+
   let(:ctx) { {params: {id: 1}, action: :update} }
+
+  it "Circuit::Task.build" do
+    callable = Trailblazer::Activity::Circuit::Task.build(method(:my_output_with_circuit_interface)) # compile-toime
+
+    return_set = callable.(self.ctx, {stack: []}, {exec_context: self})
+    # bla, translate binary...
+
+    assert_equal return_set, [self.ctx, {stack: []}, {id: 1, exec_context: self}]
+
+
+
+    callable_builder = Trailblazer::Activity::Circuit::Task.build(:my_output_with_circuit_interface)
+    # Runtime
+    callable = callable_builder.(self.ctx, {stack: []}, {exec_context: self})
+    return_set = callable.(self.ctx, {stack: []}, {exec_context: self}) # this calls the instance method on {exec_context} which is "extracted" before.
+    # translate binary etc
+
+    assert_equal return_set, [self.ctx, {stack: []}, {id: 1, exec_context: self}]
+  end
+
+  def my_rescue_handler(ctx, *, exception:)
+    ctx[:exception_class] = exception.class
+    return ctx, {}, :Right
+  end
+  it "Circuit::Task with kwargs" do
+    callable_builder = Trailblazer::Activity::Circuit::Task.build(:my_rescue_handler)
+
+    # Runtime
+    callable = callable_builder.(self.ctx, {stack: []}, {exec_context: self})
+    # return_set = callable.(self.ctx, {stack: []}, {exec_context: self}) # this calls the instance method on {exec_context} which is "extracted" before.
+    return_set = callable.(self.ctx, {stack: []}, {exec_context: self}, exception: Object.new)
+    # translate binary etc
+
+    assert_equal return_set, [self.ctx.merge(:exception_class=>Object), {stack: []}, :Right]
+  end
+
+  def my_rescue_handler_step(ctx, params:, **)
+    ctx[:yo] = params.class
+  end
+  it "Circuit::Step with kwargs" do
+    callable_builder = Trailblazer::Activity::Circuit::Task.build(:my_rescue_handler_step)
+
+    # Runtime
+    ctx = self.ctx
+    callable = callable_builder.(ctx, flow_options={stack: []}, {exec_context: self})
+    # return_set = callable.(ctx, {stack: []}, {exec_context: self}) # this calls the instance method on {exec_context} which is "extracted" before.
+    return_set = callable.(ctx, **ctx.to_h)
+    # translate binary etc
+    return_set = [ctx, flow_options, :Right]
+
+    assert_equal return_set, [self.ctx.merge(yo: Hash), {stack: []}, :Right]
+  end
+
 
   it "Circuit.Step" do
   # callable with step interface
