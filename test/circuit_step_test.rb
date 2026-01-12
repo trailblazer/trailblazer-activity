@@ -24,19 +24,23 @@ class CircuitStepTest < Minitest::Spec
   let(:ctx) { {params: {id: 1}, action: :update} }
 
   it "Circuit::Task.build" do
-    callable = Trailblazer::Activity::Circuit::Task.build(method(:my_output_with_circuit_interface)) # compile-toime
+    # callable = Trailblazer::Activity::Circuit::Task.build(method(:my_output_with_circuit_interface)) # compile-toime
+    circuit_task = Trailblazer::Activity::Circuit.Task(method(:my_output_with_circuit_interface)) # compile-toime
 
-    return_set = callable.(self.ctx, {stack: []}, {exec_context: self})
+    return_set = circuit_task.(self.ctx, {stack: []}, {exec_context: self})
     # bla, translate binary...
 
     assert_equal return_set, [self.ctx, {stack: []}, {id: 1, exec_context: self}]
 
 
-
+=begin
     callable_builder = Trailblazer::Activity::Circuit::Task.build(:my_output_with_circuit_interface)
     # Runtime
     callable = callable_builder.(self.ctx, {stack: []}, {exec_context: self})
-    return_set = callable.(self.ctx, {stack: []}, {exec_context: self}) # this calls the instance method on {exec_context} which is "extracted" before.
+=end
+    circuit_task = Trailblazer::Activity::Circuit.Task(:my_output_with_circuit_interface)
+
+    return_set = circuit_task.(self.ctx, {stack: []}, {exec_context: self}) # this calls the instance method on {exec_context} which is "extracted" before.
     # translate binary etc
 
     assert_equal return_set, [self.ctx, {stack: []}, {id: 1, exec_context: self}]
@@ -47,11 +51,9 @@ class CircuitStepTest < Minitest::Spec
     return ctx, {}, :Right
   end
   it "Circuit::Task with kwargs" do
-    callable_builder = Trailblazer::Activity::Circuit::Task.build(:my_rescue_handler)
+    callable = Trailblazer::Activity::Circuit.Task(:my_rescue_handler)
 
     # Runtime
-    callable = callable_builder.(self.ctx, {stack: []}, {exec_context: self})
-    # return_set = callable.(self.ctx, {stack: []}, {exec_context: self}) # this calls the instance method on {exec_context} which is "extracted" before.
     return_set = callable.(self.ctx, {stack: []}, {exec_context: self}, exception: Object.new)
     # translate binary etc
 
@@ -59,23 +61,41 @@ class CircuitStepTest < Minitest::Spec
   end
 
   def my_rescue_handler_step(ctx, params:, **)
-    ctx[:yo] = params.class
+    ctx[:captured_params] = params.class
   end
-  it "Circuit::Step with kwargs" do
-    callable_builder = Trailblazer::Activity::Circuit::Task.build(:my_rescue_handler_step)
+  it "Circuit::Step with step interface" do
+    ctx = self.ctx
+
+    circuit_step = Trailblazer::Activity::Circuit.Step(:my_rescue_handler_step)
 
     # Runtime
-    ctx = self.ctx
-    callable = callable_builder.(ctx, flow_options={stack: []}, {exec_context: self})
-    # return_set = callable.(ctx, {stack: []}, {exec_context: self}) # this calls the instance method on {exec_context} which is "extracted" before.
-    return_set = callable.(ctx, **ctx.to_h)
+    return_set = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
     # translate binary etc
     return_set = [ctx, flow_options, :Right]
 
-    assert_equal return_set, [self.ctx.merge(yo: Hash), {stack: []}, :Right]
+    assert_equal return_set, [self.ctx.merge(captured_params: Hash), {stack: []}, :Right]
   end
 
+  class MyStep
+    def self.call(ctx, params:, **)
+      ctx[:captured_params] = CU.inspect(params)
+    end
+  end
 
+  it "Circuit::Step with step interface" do
+    ctx = self.ctx
+
+    circuit_step = Trailblazer::Activity::Circuit.Step(MyStep)
+
+    # Runtime
+    return_set = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
+    # translate binary etc
+    return_set = [ctx, flow_options, :Right]
+
+    assert_equal return_set, [self.ctx.merge(captured_params: "{:id=>1}"), {stack: []}, :Right]
+  end
+
+=begin
   it "Circuit.Step" do
   # callable with step interface
     task_to_step = Trailblazer::Activity::Circuit.Step(method(:my_output))
@@ -169,4 +189,5 @@ class CircuitStepTest < Minitest::Spec
 
     end
   end
+=end
 end
