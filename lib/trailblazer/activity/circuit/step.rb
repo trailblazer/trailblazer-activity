@@ -8,41 +8,44 @@ module Trailblazer
       end
 
       # DISCUSS: currently, a Task instance always wraps an InstanceMethod.
-      class Task < Struct.new(:task_instance_method_wrap)
-        def call(ctx, flow_options, circuit_options, **kwargs)
-          callable = task_instance_method_wrap.(ctx, flow_options, circuit_options, **kwargs)  #this step is specific to instance methods
+      class Task
+        class InstanceMethod < Struct.new(:task_instance_method_wrap)
+          def call(ctx, flow_options, circuit_options, **kwargs)
+            callable = task_instance_method_wrap.(ctx, flow_options, circuit_options, **kwargs)  #this step is specific to instance methods
 
-          callable.(ctx, flow_options, circuit_options, **kwargs) # This is how any Task is invoked!
-          # return
+            callable.(ctx, flow_options, circuit_options, **kwargs) # This is how any Task is invoked!
+            # return
+          end
         end
 
         # here, we decide what needs wrapping.
         def self.build(user_filter_with_circuit_interface)
           if user_filter_with_circuit_interface.is_a?(Symbol)
             # TODO: Let Option/Filter::InstanceMethod do that
-            return new(InstanceMethod.new(user_filter_with_circuit_interface))
+            return Task::InstanceMethod::new(Callable::InstanceMethod.new(user_filter_with_circuit_interface))
           end
 
           # No need for any wrapping.
           return user_filter_with_circuit_interface
         end
+        module Callable
+          # TODO: this is generic, applies to Task and Step!!!
+          class InstanceMethod < Struct.new(:filter)
+            # This is one "step" for the Task/Step adapter, specific to instance methods,
+            # and it allows calling the returned callable as if it was a MyHandler.
+            # RUNTIME, THIS IS EXECUTED BY THE TASK/STEP instance.
+            def call(ctx, flow_options, circuit_options, **kws)
+              exec_context  = circuit_options.fetch(:exec_context)
+              # That was my first idea, but it doesn't play if devs would use dispatching based on {#method_missing}.
+              # callable      = exec_context.method(filter) # this is the actual change from Option thinking.
 
-        # TODO: this is generic, applies to Task and Step!!!
-        class InstanceMethod < Struct.new(:filter)
-          # This is one "step" for the Task/Step adapter, specific to instance methods,
-          # and it allows calling the returned callable as if it was a MyHandler.
-          # RUNTIME, THIS IS EXECUTED BY THE TASK/STEP instance.
-          def call(ctx, flow_options, circuit_options, **kws)
-            exec_context  = circuit_options.fetch(:exec_context)
-            # That was my first idea, but it doesn't play if devs would use dispatching based on {#method_missing}.
-            # callable      = exec_context.method(filter) # this is the actual change from Option thinking.
+              callable = ->(*args, **kws) { exec_context.send(filter, *args, **kws) } # this should be generic, so we can use it with Task and Step interfaces (and ext-ci)
 
-            callable = ->(*args, **kws) { exec_context.send(filter, *args, **kws) } # this should be generic, so we can use it with Task and Step interfaces (and ext-ci)
-
-# tHE IDEA here is that the only difference to a raw filter is that we extract the "callable" before we do the rest
-# (invoking with whatever interface, interpreting the result etc)
+  # tHE IDEA here is that the only difference to a raw filter is that we extract the "callable" before we do the rest
+  # (invoking with whatever interface, interpreting the result etc)
+            end
           end
-        end
+        end # Callable
       end
 
       # Single-entry point to build a step with a circuit interface that is internally
@@ -62,11 +65,11 @@ module Trailblazer
         Step___.build(filter_with_step_interface)
       end
 
-      class Step___ < Task
+      class Step___ < Struct.new(:task_instance_method_wrap)
         def self.build(filter_with_step_interface)
           if filter_with_step_interface.is_a?(Symbol)
             # TODO: Let Option/Filter::InstanceMethod do that
-            return InstanceMethod.new(Task::InstanceMethod.new(filter_with_step_interface))
+            return InstanceMethod.new(Task::Callable::InstanceMethod.new(filter_with_step_interface))
           end
 
           return new(filter_with_step_interface)
@@ -76,7 +79,7 @@ module Trailblazer
           def call(ctx, flow_options, circuit_options) # FIXME: applies only to {:instance_method}
             # TODO: only do this for InstanceMethod!
             callable = task_instance_method_wrap.(ctx, flow_options, circuit_options) # DISCUSS: copied from {Task#call}.
-            result   = invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
+            result   = invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options) # FIXME: from here downwards, it's generic!
           end
         end
 
