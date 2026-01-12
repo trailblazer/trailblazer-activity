@@ -65,31 +65,31 @@ module Trailblazer
         Step___.build(filter_with_step_interface)
       end
 
-      class Step___ < Struct.new(:task_instance_method_wrap)
+      class Step___ < Struct.new(:user_filter)
         def self.build(filter_with_step_interface)
           if filter_with_step_interface.is_a?(Symbol)
             # TODO: Let Option/Filter::InstanceMethod do that
-            return InstanceMethod.new(Task::Callable::InstanceMethod.new(filter_with_step_interface))
+            return InstanceMethod.new(filter_with_step_interface, Task::Callable::InstanceMethod.new(filter_with_step_interface))
           end
 
           return new(filter_with_step_interface)
         end
 
-        class InstanceMethod < Step___
+        class InstanceMethod < Struct.new(:user_filter, :task_instance_method_wrap)
           def call(ctx, flow_options, circuit_options) # FIXME: applies only to {:instance_method}
             # TODO: only do this for InstanceMethod!
             callable = task_instance_method_wrap.(ctx, flow_options, circuit_options) # DISCUSS: copied from {Task#call}.
-            result   = invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options) # FIXME: from here downwards, it's generic!
+            result   = Step___.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options) # FIXME: from here downwards, it's generic!
           end
         end
 
         def call(ctx, flow_options, circuit_options)
-          result = invoke_callable_with_step_interface(task_instance_method_wrap, ctx, flow_options, circuit_options)
+          result = Step___.invoke_callable_with_step_interface(user_filter, ctx, flow_options, circuit_options)
 
           # TODO: apply binary translation.
         end
 
-        def invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
+        def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
           _result = callable.(ctx, **ctx.to_h) # This is how any Step should be called!
         end
         # FIXME: every step needs wrapping.
