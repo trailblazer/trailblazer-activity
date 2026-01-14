@@ -66,7 +66,7 @@ class CircuitStepTest < Minitest::Spec
   it "Circuit::Step with step interface" do
     ctx = self.ctx
 
-    circuit_step = Trailblazer::Activity::Circuit.Step(:my_rescue_handler_step)
+    circuit_step = Trailblazer::Activity::Circuit.Step(:my_rescue_handler_step, binary: false)
 
     # Runtime
     return_set = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
@@ -82,10 +82,14 @@ class CircuitStepTest < Minitest::Spec
     end
   end
 
+  def my_handler_with_step_interface(ctx, params:, **)
+    ctx[:captured_params] = CU.inspect(params)
+  end
+
   it "Circuit::Step with step interface" do
     ctx = self.ctx
 
-    circuit_step = Trailblazer::Activity::Circuit.Step(MyStep)
+    circuit_step = Trailblazer::Activity::Circuit.Step(MyStep, binary: false)
 
     # Runtime
     return_set = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
@@ -93,6 +97,25 @@ class CircuitStepTest < Minitest::Spec
     return_set = [ctx, flow_options, :Right]
 
     assert_equal return_set, [self.ctx.merge(captured_params: "{:id=>1}"), {stack: []}, :Right]
+  end
+
+  it "Circuit::Step with step interface, binary translation" do
+    circuit_step = Trailblazer::Activity::Circuit.Step(MyStep)
+
+    # Runtime
+    return_set = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
+
+    assert_equal return_set, [self.ctx.merge(captured_params: "{:id=>1}"), {stack: []}, Trailblazer::Activity::Right]
+  end
+
+
+  it "Circuit::Step with step interface :instance_method, binary translation" do
+    circuit_step = Trailblazer::Activity::Circuit.Step(:my_handler_with_step_interface)
+
+    # Runtime
+    return_set = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
+
+    assert_equal return_set, [self.ctx.merge(captured_params: "{:id=>1}"), {stack: []}, Trailblazer::Activity::Right]
   end
 
 =begin
