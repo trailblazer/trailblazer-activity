@@ -86,13 +86,15 @@ class CircuitStepTest < Minitest::Spec
     ctx[:captured_params] = CU.inspect(params)
   end
 
-  it "Circuit::Step with step interface" do
+  it "Circuit::Step with step interface, no binary, returning a value, only" do
     ctx = self.ctx
 
     circuit_step = Trailblazer::Activity::Circuit.Step(MyStep, binary: false)
 
     # Runtime
-    return_set = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
+    value = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
+    # TODO: assert value?
+
     # translate binary etc
     return_set = [ctx, flow_options, :Right]
 

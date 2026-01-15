@@ -66,48 +66,13 @@ module Trailblazer
       end
 
       class Step___ < Struct.new(:user_filter, :binary?)
-        def self.build(filter_with_step_interface, binary: true)
-          if filter_with_step_interface.is_a?(Symbol)
-            # TODO: Let Option/Filter::InstanceMethod do that
-            return InstanceMethod.new(filter_with_step_interface, Task::Callable::InstanceMethod.new(filter_with_step_interface), binary)
-          end
-
-          return new(filter_with_step_interface, binary)
-        end
-
-        class InstanceMethod < Struct.new(:user_filter, :task_instance_method_wrap, :binary?)
-          def call(ctx, flow_options, circuit_options) # FIXME: applies only to {:instance_method}
-            callable = task_instance_method_wrap.(ctx, flow_options, circuit_options) # DISCUSS: copied from {Task#call}.
-
-            result   = Step___.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options) # FIXME: from here downwards, it's generic!
-
-            # raise "call super here?"
-            # or
-            if binary?
-              result = Binary.compute_signal(ctx, flow_options, result)
-            end
-
-            return result
-          end
-        end
-
-        def call(ctx, flow_options, circuit_options)
-          result = Step___.invoke_callable_with_step_interface(user_filter, ctx, flow_options, circuit_options)
-
-          # TODO: apply binary translation.
-          if binary?
-              result = Binary.compute_signal(ctx, flow_options, result)
-            end
-
-            return result
-        end
-
-        def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
-          _result = callable.(ctx, **ctx.to_h) # This is how any Step should be called!
-        end
-        # FIXME: every step needs wrapping.
-        # FIXME: we don't handle binary and raw handler here, yet
         module Binary
+          # overriding Step#call.
+          def call(ctx, flow_options, circuit_options)
+            result = super
+            Binary.compute_signal(ctx, flow_options, result) # returns circuit interface.
+          end
+
           def self.compute_signal(ctx, flow_options, result)
             signal = Binary.binary_signal_for(result, Activity::Right, Activity::Left)
 
@@ -124,6 +89,58 @@ module Trailblazer
             end
           end
         end
+
+        class Binary___ < Step___
+          include Binary
+        end
+
+        def self.build(filter_with_step_interface, binary: true)
+          step_class = Step___
+          if binary
+            step_class = Binary___
+          end
+
+          if filter_with_step_interface.is_a?(Symbol)
+            step_class = InstanceMethod
+
+            if binary
+              step_class = InstanceMethod::Binary___
+            end
+            # TODO: Let Option/Filter::InstanceMethod do that
+            return step_class.new(filter_with_step_interface, Task::Callable::InstanceMethod.new(filter_with_step_interface), binary)
+          end
+
+          return step_class.new(filter_with_step_interface, binary)
+        end
+
+        class InstanceMethod < Struct.new(:user_filter, :task_instance_method_wrap, :binary?)
+          class Binary___ < InstanceMethod
+            include Binary
+          end
+
+          def call(ctx, flow_options, circuit_options) # FIXME: applies only to {:instance_method}
+            callable = task_instance_method_wrap.(ctx, flow_options, circuit_options) # DISCUSS: copied from {Task#call}.
+
+            result   = Step___.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options) # FIXME: from here downwards, it's generic!
+
+            return result
+          end
+        end
+
+        def call(ctx, flow_options, circuit_options)
+          result = Step___.invoke_callable_with_step_interface(user_filter, ctx, flow_options, circuit_options)
+
+          return result
+        end
+
+        def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
+          _result = callable.(ctx, **ctx.to_h) # This is how any Step should be called!
+        end
+
+# raise "get rid of the if, with four subclasses"
+        # FIXME: every step needs wrapping.
+        # FIXME: we don't handle binary and raw handler here, yet
+
       end
 
       # {Step#call} translates the incoming circuit-interface to the step-interface,
