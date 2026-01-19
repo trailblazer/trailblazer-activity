@@ -107,11 +107,13 @@ module Trailblazer
           return step
         end
 
-        class InstanceMethod < Struct.new(:task_instance_method_wrap)
+        class InstanceMethod < Struct.new(:generic_instance_method_caller)
           def call(ctx, flow_options, circuit_options) # FIXME: applies only to {:instance_method}
-            callable = task_instance_method_wrap.(ctx, flow_options, circuit_options) # DISCUSS: copied from {Task#call}.
+            callable = generic_instance_method_caller.(ctx, flow_options, circuit_options) # DISCUSS: copied from {Task#call}.
 
             # Problem: we only know the callable at runtime!
+            # We also don't want to expose private affairs of the Step implementation here, here we
+            # want to use its public API.
             step = Step___.new(callable) # FIXME: using the Wrapping approach shows its flaws here.
             result = step.(ctx, flow_options, circuit_options)
 
