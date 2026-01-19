@@ -90,6 +90,8 @@ module Trailblazer
           end
         end
 
+        # NOTE: we need four classes to cover all cases,
+        #       Step, Step::InstanceMethod, plus Binary for both.
         class Binary___ < Step___
           include Binary
         end
