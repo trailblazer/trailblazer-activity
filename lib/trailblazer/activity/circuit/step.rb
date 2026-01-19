@@ -22,30 +22,31 @@ module Trailblazer
         def self.build(user_filter_with_circuit_interface)
           if user_filter_with_circuit_interface.is_a?(Symbol)
             # TODO: Let Option/Filter::InstanceMethod do that
-            return Task::InstanceMethod::new(Callable::InstanceMethod.new(user_filter_with_circuit_interface))
+            return Task::InstanceMethod::new(Generic::InstanceMethod.new(user_filter_with_circuit_interface))
           end
 
           # No need for any wrapping.
           return user_filter_with_circuit_interface
         end
-        module Callable
+
+        module Generic # DISCUSS: rename back to {Callable}?
           # TODO: this is generic, applies to Task and Step!!!
-          class InstanceMethod < Struct.new(:filter)
+          class InstanceMethod < Struct.new(:method_name)
             # This is one "step" for the Task/Step adapter, specific to instance methods,
             # and it allows calling the returned callable as if it was a MyHandler.
             # RUNTIME, THIS IS EXECUTED BY THE TASK/STEP instance.
             def call(ctx, flow_options, circuit_options, **kws)
               exec_context  = circuit_options.fetch(:exec_context)
               # That was my first idea, but it doesn't play if devs would use dispatching based on {#method_missing}.
-              # callable      = exec_context.method(filter) # this is the actual change from Option thinking.
+              # callable      = exec_context.method(method_name) # this is the actual change from Option thinking.
 
-              callable = ->(*args, **kws) { exec_context.send(filter, *args, **kws) } # this should be generic, so we can use it with Task and Step interfaces (and ext-ci)
+              callable = ->(*args, **kws) { exec_context.send(method_name, *args, **kws) } # this should be generic, so we can use it with Task and Step interfaces (and ext-ci)
 
   # tHE IDEA here is that the only difference to a raw filter is that we extract the "callable" before we do the rest
   # (invoking with whatever interface, interpreting the result etc)
             end
           end
-        end # Callable
+        end # Generic
       end
 
       # Single-entry point to build a step with a circuit interface that is internally
@@ -109,7 +110,7 @@ module Trailblazer
               step_class = InstanceMethod::Binary___
             end
             # TODO: Let Option/Filter::InstanceMethod do that
-            return step_class.new(filter_with_step_interface, Task::Callable::InstanceMethod.new(filter_with_step_interface), binary)
+            return step_class.new(filter_with_step_interface, Task::Generic::InstanceMethod.new(filter_with_step_interface), binary)
           end
 
           return step_class.new(filter_with_step_interface, binary)
@@ -123,20 +124,17 @@ module Trailblazer
           def call(ctx, flow_options, circuit_options) # FIXME: applies only to {:instance_method}
             callable = task_instance_method_wrap.(ctx, flow_options, circuit_options) # DISCUSS: copied from {Task#call}.
 
-            result   = Step___.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options) # FIXME: from here downwards, it's generic!
+            # Problem: we only know the callable at runtime!
+            step = Step___.new(callable) # FIXME: using the Wrapping approach shows its flaws here.
+            result = step.(ctx, flow_options, circuit_options)
 
             return result
           end
         end
 
+        # def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
         def call(ctx, flow_options, circuit_options)
-          result = Step___.invoke_callable_with_step_interface(user_filter, ctx, flow_options, circuit_options)
-
-          return result
-        end
-
-        def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
-          _result = callable.(ctx, **ctx.to_h) # This is how any Step should be called!
+          _result = user_filter.(ctx, **ctx.to_h) # This is how any Step should be called!
         end
 
 # raise "get rid of the if, with four subclasses"
