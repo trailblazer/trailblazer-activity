@@ -67,10 +67,10 @@ module Trailblazer
       end
 
       class Step___ < Struct.new(:user_filter, :binary?)
-        module Binary
-          # overriding Step#call.
+        class Binary < Struct.new(:step)
           def call(ctx, flow_options, circuit_options)
-            result = super
+            result = step.call(ctx, flow_options, circuit_options) # whatever step is
+
             Binary.compute_signal(ctx, flow_options, result) # returns circuit interface.
           end
 
@@ -91,36 +91,23 @@ module Trailblazer
           end
         end
 
-        # NOTE: we need four classes to cover all cases,
-        #       Step, Step::InstanceMethod, plus Binary for both.
-        class Binary___ < Step___
-          include Binary
-        end
-
         def self.build(filter_with_step_interface, binary: true)
-          step_class = Step___
-          if binary
-            step_class = Binary___
-          end
-
-          if filter_with_step_interface.is_a?(Symbol)
-            step_class = InstanceMethod
-
-            if binary
-              step_class = InstanceMethod::Binary___
+          step =
+            if filter_with_step_interface.is_a?(Symbol)
+              generic_instance_method_caller = Task::Generic::InstanceMethod.new(filter_with_step_interface)
+              Step___::InstanceMethod.new(generic_instance_method_caller)
+            else
+              Step___.new(filter_with_step_interface)
             end
-            # TODO: Let Option/Filter::InstanceMethod do that
-            return step_class.new(filter_with_step_interface, Task::Generic::InstanceMethod.new(filter_with_step_interface), binary)
+
+          if binary
+            step = Step___::Binary.new(step)
           end
 
-          return step_class.new(filter_with_step_interface, binary)
+          return step
         end
 
-        class InstanceMethod < Struct.new(:user_filter, :task_instance_method_wrap, :binary?)
-          class Binary___ < InstanceMethod
-            include Binary
-          end
-
+        class InstanceMethod < Struct.new(:task_instance_method_wrap)
           def call(ctx, flow_options, circuit_options) # FIXME: applies only to {:instance_method}
             callable = task_instance_method_wrap.(ctx, flow_options, circuit_options) # DISCUSS: copied from {Task#call}.
 
