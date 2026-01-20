@@ -67,6 +67,22 @@ module Trailblazer
       end
 
       class Step___ < Struct.new(:user_filter, :binary?)
+        def self.build(filter_with_step_interface, binary: true)
+          step =
+            if filter_with_step_interface.is_a?(Symbol)
+              generic_instance_method_caller = Task::Generic::InstanceMethod.new(filter_with_step_interface)
+              Step___::InstanceMethod.new(generic_instance_method_caller)
+            else
+              Step___.new(filter_with_step_interface)
+            end
+
+          if binary
+            step = Step___::Binary.new(step)
+          end
+
+          return step
+        end
+
         class Binary < Struct.new(:step)
           def call(ctx, flow_options, circuit_options)
             result = step.call(ctx, flow_options, circuit_options) # whatever step is
@@ -89,22 +105,6 @@ module Trailblazer
               result ? on_true : on_false
             end
           end
-        end
-
-        def self.build(filter_with_step_interface, binary: true)
-          step =
-            if filter_with_step_interface.is_a?(Symbol)
-              generic_instance_method_caller = Task::Generic::InstanceMethod.new(filter_with_step_interface)
-              Step___::InstanceMethod.new(generic_instance_method_caller)
-            else
-              Step___.new(filter_with_step_interface)
-            end
-
-          if binary
-            step = Step___::Binary.new(step)
-          end
-
-          return step
         end
 
         class InstanceMethod < Struct.new(:generic_instance_method_caller)
