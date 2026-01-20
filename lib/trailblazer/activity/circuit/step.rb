@@ -122,14 +122,10 @@ module Trailblazer
         end
 
         # def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
+        # Generic #call that invokes callable with step interface.
         def call(ctx, flow_options, circuit_options)
           _result = user_filter.(ctx, **ctx.to_h) # This is how any Step should be called!
         end
-
-# raise "get rid of the if, with four subclasses"
-        # FIXME: every step needs wrapping.
-        # FIXME: we don't handle binary and raw handler here, yet
-
       end
 
       # {Step#call} translates the incoming circuit-interface to the step-interface,
