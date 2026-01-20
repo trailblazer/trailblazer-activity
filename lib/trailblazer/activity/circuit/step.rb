@@ -8,6 +8,18 @@ module Trailblazer
       end
 
       class Task___Activity# < Activity::Railway # TODO: naming.
+      # DISCUSS: make the third argument pass-through?
+      #   def self.call(pipeline, ctx, flow_options, circuit_options = {})
+      #   runner = circuit_options[:runner]
+
+      #   pipeline.to_a.each do |(_id, task)|
+      #     ctx, flow_options = runner.(task, ctx, flow_options, circuit_options)
+      #   end
+
+      #   return ctx, flow_options # FIXME: experimenting here.
+      # end
+
+
         module Generic # DISCUSS: rename back to {Callable}?
           # TODO: this is generic, applies to Task and Step!!!
           class InstanceMethod
@@ -114,21 +126,19 @@ module Trailblazer
         Step___.build(filter_with_step_interface, **options)
       end
 
+
+
       class Step___ < Struct.new(:user_filter, :binary?)
-        def self.build(filter_with_step_interface, binary: true)
-          step =
-            if filter_with_step_interface.is_a?(Symbol)
-              generic_instance_method_caller = Task::Generic::InstanceMethod.new(filter_with_step_interface)
-              Step___::InstanceMethod.new(generic_instance_method_caller)
-            else
-              Step___.new(filter_with_step_interface)
-            end
+        def self.invoke_callable_with_step_interface(ctx, flow_options, circuit_options)
+          callable = ctx[:callable]
 
-          if binary
-            step = Step___::Binary.new(step)
-          end
+          application_ctx = ctx[:application_ctx]
 
-          return step
+          _result = callable.(application_ctx, **application_ctx.to_h) # This is how any Step should be called!
+
+          ctx[:result] = _result
+
+          return ctx, flow_options, Trailblazer::Activity::Right
         end
 
         class Binary < Struct.new(:step)
@@ -139,6 +149,15 @@ module Trailblazer
           end
 
           def self.compute_signal(ctx, flow_options, result)
+            signal = Binary.binary_signal_for(result, Activity::Right, Activity::Left)
+
+            return ctx, flow_options, signal
+          end
+
+
+          def self.___compute_signal(ctx, flow_options, circuit_options)
+            result = ctx.fetch(:result)
+
             signal = Binary.binary_signal_for(result, Activity::Right, Activity::Left)
 
             return ctx, flow_options, signal
@@ -155,6 +174,40 @@ module Trailblazer
           end
         end
 
+        Step___Activity = Activity.Pipeline(
+          invoke_callable: Step___.method(:invoke_callable_with_step_interface),
+        )
+        Step___Activity___InstanceMethod = Activity::Adds.(
+          Step___Activity,                      # "inherit" from Step___Activity.
+          [Task___Activity::Generic::InstanceMethod.method(:compute_callable), id: :compute_callable, prepend: :invoke_callable]
+        )
+        Step___Activity___InstanceMethod___Binary =  Activity::Adds.(
+          Step___Activity___InstanceMethod,                      # "inherit" from Step___Activity___InstanceMethod.
+          [Binary.method(:___compute_signal), id: :compute_signal, append: nil]
+        )
+
+        def self.build(filter_with_step_interface, binary: true)
+          step =
+            if filter_with_step_interface.is_a?(Symbol)
+              generic_instance_method_caller = Task::Generic::InstanceMethod.new(filter_with_step_interface)
+              Step___::InstanceMethod.new(generic_instance_method_caller)
+            else
+              Step___.new(filter_with_step_interface)
+            end
+
+          if binary
+            step = Step___::Binary.new(step)
+          end
+
+          return step
+        end
+
+        # def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
+        # Generic #call that invokes callable with step interface.
+        def call(ctx, flow_options, circuit_options)
+          _result = user_filter.(ctx, **ctx.to_h) # This is how any Step should be called!
+        end
+
         class InstanceMethod < Struct.new(:generic_instance_method_caller)
           def call(ctx, flow_options, circuit_options) # FIXME: applies only to {:instance_method}
             callable = generic_instance_method_caller.(ctx, flow_options, circuit_options) # DISCUSS: copied from {Task#call}.
@@ -167,12 +220,6 @@ module Trailblazer
 
             return result
           end
-        end
-
-        # def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
-        # Generic #call that invokes callable with step interface.
-        def call(ctx, flow_options, circuit_options)
-          _result = user_filter.(ctx, **ctx.to_h) # This is how any Step should be called!
         end
       end
 

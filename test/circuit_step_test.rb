@@ -82,17 +82,50 @@ class CircuitStepTest < Minitest::Spec
     end
   end
 
+  # step interface returning a value.
+  # def self.my_step(ctx, params:, **)
+  #   ctx[:captured_params] = CU.inspect(params)
+  # end
+
   def my_handler_with_step_interface(ctx, params:, **)
     ctx[:captured_params] = CU.inspect(params)
   end
 
+  def my_binary_step_handler(ctx, outcome:, **)
+    ctx[:my_binary_step_handler] = true
+
+    outcome
+  end
+
   it "ads;lfjsddsjfaksjflasflkaflajflkajfaj" do
-    pp Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod.(
+    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod.(
       {
         application_ctx: self.ctx,
         method_name: :my_output_with_circuit_interface
       }, {}, {exec_context: self}
       )
+
+    assert_equal CU.strip(CU.inspect(ctx[:result][2]))[0..18], %({:id=>1, :exec_cont) # FIXME.
+    assert_equal signal, Trailblazer::Activity::Right
+
+    ctx, _ = Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod.(
+      {
+        application_ctx: self.ctx,
+        method_name: :my_handler_with_step_interface,
+      }, {}, {exec_context: self}
+      )
+
+    assert_equal CU.strip(CU.inspect(ctx[:application_ctx]))[0..18], %({:params=>{:id=>1},) # FIXME.
+
+    ctx, flow_options, signal = Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod___Binary.(
+      {
+        application_ctx: {outcome: false, params: {id: 1}},
+        method_name: :my_binary_step_handler,
+      }, {}, {exec_context: self}
+      )
+
+    assert_equal signal, Trailblazer::Activity::Left
+    assert_equal CU.strip(CU.inspect(ctx))[0..18], %({:id=>1}) # FIXME.
   end
 
   it "Circuit::Step with step interface, no binary, returning a value, only" do
