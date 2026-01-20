@@ -86,6 +86,15 @@ class CircuitStepTest < Minitest::Spec
     ctx[:captured_params] = CU.inspect(params)
   end
 
+  it "ads;lfjsddsjfaksjflasflkaflajflkajfaj" do
+    pp Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod.(
+      {
+        application_ctx: self.ctx,
+        method_name: :my_output_with_circuit_interface
+      }, {}, {exec_context: self}
+      )
+  end
+
   it "Circuit::Step with step interface, no binary, returning a value, only" do
     ctx = self.ctx
 

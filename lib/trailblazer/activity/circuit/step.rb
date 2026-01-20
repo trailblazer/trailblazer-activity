@@ -7,6 +7,54 @@ module Trailblazer
         Task.build(filter_with_circuit_interface)
       end
 
+      class Task___Activity# < Activity::Railway # TODO: naming.
+        module Generic # DISCUSS: rename back to {Callable}?
+          # TODO: this is generic, applies to Task and Step!!!
+          class InstanceMethod
+            # This is one "step" for the Task/Step adapter, specific to instance methods,
+            # and it allows calling the returned callable as if it was a MyHandler.
+            # RUNTIME, THIS IS EXECUTED BY THE TASK/STEP instance.
+            def self.compute_callable(ctx, flow_options, circuit_options, **kws)
+              exec_context  = circuit_options.fetch(:exec_context)
+              # That was my first idea, but it doesn't play if devs would use dispatching based on {#method_missing}.
+              # callable      = exec_context.method(method_name) # this is the actual change from Option thinking.
+
+              method_name = ctx.fetch(:method_name)
+
+              callable = ->(*args, **kws) { exec_context.send(method_name, *args, **kws) } # this should be generic, so we can use it with Task and Step interfaces (and ext-ci)
+
+  # tHE IDEA here is that the only difference to a raw filter is that we extract the "callable" before we do the rest
+  # (invoking with whatever interface, interpreting the result etc)
+              ctx[:callable] = callable
+
+              return ctx, flow_options, Trailblazer::Activity::Right
+            end
+          end
+
+          def self.invoke_callable(ctx, flow_options, circuit_options, **kwargs)
+            callable = ctx[:callable]
+            application_ctx = ctx[:application_ctx]
+
+            result = callable.(application_ctx, flow_options, circuit_options, **kwargs) # This is how any Task is invoked!
+
+            ctx[:result] = result
+            return ctx, flow_options, Trailblazer::Activity::Right
+          end
+        end # Generic
+
+
+
+
+
+        # class InstanceMethod  #< Activity::Railway
+          # step # DISCUSS: whoopsi, we don't have the DSL here :D
+        # end
+        InstanceMethod = Activity.Pipeline(
+          compute_callable: Generic::InstanceMethod.method(:compute_callable),
+          invoke_callable: Generic.method(:invoke_callable),
+        )
+      end
+
       # DISCUSS: currently, a Task instance always wraps an InstanceMethod.
       class Task
         class InstanceMethod < Struct.new(:task_instance_method_wrap)
