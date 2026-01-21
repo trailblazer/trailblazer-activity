@@ -97,7 +97,21 @@ class CircuitStepTest < Minitest::Spec
     outcome
   end
 
+  class MyBinaryStepHandler
+    def self.call(ctx, outcome:, **)
+      ctx[:my_binary_step_handler] = true
+
+      outcome
+    end
+  end
+
   it "ads;lfjsddsjfaksjflasflkaflajflkajfaj" do
+    # DISCUSS: we currently don't wrap a Task as it exposes a Task interface anyway.
+
+
+    # ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod.(
+
+    # Let's invoke a Task :instance_method.
     ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod.(
       {
         application_ctx: self.ctx,
@@ -105,8 +119,13 @@ class CircuitStepTest < Minitest::Spec
       }, {}, {exec_context: self}
       )
 
-    assert_equal CU.strip(CU.inspect(ctx[:result][2]))[0..18], %({:id=>1, :exec_cont) # FIXME.
-    assert_equal signal, Trailblazer::Activity::Right
+# NOTE: problem here: we need to create a "work ctx" and we need to disect the :result key, just like in a tW.
+#       is it worth that?
+    value = ctx[:result][2] # FIXME: hm.
+    ctx = ctx[:application_ctx]
+
+    assert_equal CU.strip(CU.inspect(ctx)), %({:params=>{:id=>1}, :action=>:update}) # FIXME.
+    assert_equal value, {id: 1, exec_context: self}
 
     ctx, _ = Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod.(
       {
@@ -124,8 +143,22 @@ class CircuitStepTest < Minitest::Spec
       }, {}, {exec_context: self}
       )
 
+    signal = ctx[:result][2] # FIXME: hm.
+    ctx = ctx[:application_ctx]
     assert_equal signal, Trailblazer::Activity::Left
-    assert_equal CU.strip(CU.inspect(ctx))[0..18], %({:id=>1}) # FIXME.
+    assert_equal CU.strip(CU.inspect(ctx)), %({:outcome=>false, :params=>{:id=>1}, :my_binary_step_handler=>true})
+
+    ctx, flow_options, signal = Trailblazer::Activity::Circuit::Step___::Step___Activity___Binary.(
+      {
+        application_ctx: {outcome: false, params: {id: 1}},
+        callable: MyBinaryStepHandler,
+      }, {}, {exec_context: self}
+      )
+
+    signal = ctx[:result][2] # FIXME: hm.
+    ctx = ctx[:application_ctx]
+    assert_equal signal, Trailblazer::Activity::Left
+    assert_equal CU.strip(CU.inspect(ctx)), %({:outcome=>false, :params=>{:id=>1}, :my_binary_step_handler=>true}) # FIXME.
   end
 
   it "Circuit::Step with step interface, no binary, returning a value, only" do

@@ -7,17 +7,19 @@ module Trailblazer
         Task.build(filter_with_circuit_interface)
       end
 
+      # class Processor #< Pipeline
+      #   def self.call(pipeline, ctx, flow_options, value = {})
+      #     pipeline.to_a.each do |(_id, task)|
+      #       puts "@@@@@ #{task.inspect}"
+      #       ctx, flow_options, value = task.(ctx, flow_options, value)
+      #     end
+
+        #   return ctx, flow_options, value # FIXME: experimenting here.
+        # end
+      # end
+
       class Task___Activity# < Activity::Railway # TODO: naming.
       # DISCUSS: make the third argument pass-through?
-      #   def self.call(pipeline, ctx, flow_options, circuit_options = {})
-      #   runner = circuit_options[:runner]
-
-      #   pipeline.to_a.each do |(_id, task)|
-      #     ctx, flow_options = runner.(task, ctx, flow_options, circuit_options)
-      #   end
-
-      #   return ctx, flow_options # FIXME: experimenting here.
-      # end
 
 
         module Generic # DISCUSS: rename back to {Callable}?
@@ -49,6 +51,7 @@ module Trailblazer
 
             result = callable.(application_ctx, flow_options, circuit_options, **kwargs) # This is how any Task is invoked!
 
+            # DISCUSS: do we want another return set? Shouldn't that be the Task's responsibility?
             ctx[:result] = result
             return ctx, flow_options, Trailblazer::Activity::Right
           end
@@ -156,10 +159,11 @@ module Trailblazer
 
 
           def self.___compute_signal(ctx, flow_options, circuit_options)
-            result = ctx.fetch(:result)
+            result = ctx.fetch(:result) # we're a step, {result} is always a "boolean".
 
             signal = Binary.binary_signal_for(result, Activity::Right, Activity::Left)
 
+ctx[:result] = [ctx, flow_options, signal]
             return ctx, flow_options, signal
           end
 
@@ -183,6 +187,10 @@ module Trailblazer
         )
         Step___Activity___InstanceMethod___Binary =  Activity::Adds.(
           Step___Activity___InstanceMethod,                      # "inherit" from Step___Activity___InstanceMethod.
+          [Binary.method(:___compute_signal), id: :compute_signal, append: nil]
+        )
+        Step___Activity___Binary = Activity::Adds.(
+          Step___Activity,                      # "inherit" from Step___Activity
           [Binary.method(:___compute_signal), id: :compute_signal, append: nil]
         )
 
