@@ -128,38 +128,44 @@ class CircuitStepTest < Minitest::Spec
     assert_equal CU.strip(CU.inspect(ctx)), %({:params=>{:id=>1}, :action=>:update})
     assert_equal signal, {id: 1, exec_context: self} # the handler returns a Hash as a signal?
 
-    ctx, _ = Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod.(
-      {
-        application_ctx: self.ctx,
+    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
+      Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod,
+      self.ctx,
+      {},
+      {exec_context: self},
+      "value",
+      **library_ctx = {
         method_name: :my_handler_with_step_interface,
-      }, {}, {exec_context: self}
+      }
       )
 
-    assert_equal CU.strip(CU.inspect(ctx[:application_ctx]))[0..18], %({:params=>{:id=>1},) # FIXME.
+    assert_equal CU.strip(CU.inspect(ctx)), %({:params=>{:id=>1}, :action=>:update, :captured_params=>\"{:id=>1}\"})
+    assert_equal CU.inspect(signal), %({:id=>1})
 
-    ctx, flow_options, signal = Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod___Binary.(
-      {
-        application_ctx: {outcome: false, params: {id: 1}},
+    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
+      Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod___Binary,
+      {outcome: false, params: {id: 1}},
+      {},
+      {exec_context: self},
+      "value",
+      **library_ctx = {
         method_name: :my_binary_step_handler,
-      }, {}, {exec_context: self}
+      }
       )
 
-    signal = ctx[:result][2] # FIXME: hm.
-    ctx = ctx[:application_ctx]
     assert_equal signal, Trailblazer::Activity::Left
-    assert_equal CU.strip(CU.inspect(ctx)), %({:outcome=>false, :params=>{:id=>1}, :my_binary_step_handler=>true})
+    assert_equal CU.inspect(ctx), %({:outcome=>false, :params=>{:id=>1}, :my_binary_step_handler=>true})
 
-    ctx, flow_options, signal = Trailblazer::Activity::Circuit::Step___::Step___Activity___Binary.(
-      {
-        application_ctx: {outcome: false, params: {id: 1}},
-        callable: MyBinaryStepHandler,
-      }, {}, {exec_context: self}
+    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
+      Trailblazer::Activity::Circuit::Step___::Step___Activity___Binary,
+      {outcome: false, params: {id: 1}},
+      {},
+      {exec_context: self},
+      MyBinaryStepHandler,
       )
 
-    signal = ctx[:result][2] # FIXME: hm.
-    ctx = ctx[:application_ctx]
     assert_equal signal, Trailblazer::Activity::Left
-    assert_equal CU.strip(CU.inspect(ctx)), %({:outcome=>false, :params=>{:id=>1}, :my_binary_step_handler=>true}) # FIXME.
+    assert_equal CU.inspect(ctx), %({:outcome=>false, :params=>{:id=>1}, :my_binary_step_handler=>true})
   end
 
   it "Circuit::Step with step interface, no binary, returning a value, only" do

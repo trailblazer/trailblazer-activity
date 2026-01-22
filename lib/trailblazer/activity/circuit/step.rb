@@ -135,16 +135,11 @@ module Trailblazer
 
 
       class Step___ < Struct.new(:user_filter, :binary?)
-        def self.invoke_callable_with_step_interface(ctx, flow_options, circuit_options)
-          callable = ctx[:callable]
+        def self.invoke_callable_with_step_interface(ctx, flow_options, circuit_options, callable, **kwargs)
 
-          application_ctx = ctx[:application_ctx]
+          result = callable.(ctx, **ctx.to_h) # This is how any Step should be called!
 
-          _result = callable.(application_ctx, **application_ctx.to_h) # This is how any Step should be called!
-
-          ctx[:result] = _result
-
-          return ctx, flow_options, Trailblazer::Activity::Right
+          return ctx, flow_options, result
         end
 
         class Binary < Struct.new(:step)
@@ -161,12 +156,10 @@ module Trailblazer
           end
 
 
-          def self.___compute_signal(ctx, flow_options, circuit_options)
-            result = ctx.fetch(:result) # we're a step, {result} is always a "boolean".
-
+          def self.___compute_signal(ctx, flow_options, circuit_options, result, **)
+            # we're a step, {result} is always a "boolean".
             signal = Binary.binary_signal_for(result, Activity::Right, Activity::Left)
 
-ctx[:result] = [ctx, flow_options, signal]
             return ctx, flow_options, signal
           end
 
