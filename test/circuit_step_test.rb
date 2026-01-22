@@ -109,23 +109,24 @@ class CircuitStepTest < Minitest::Spec
     # DISCUSS: we currently don't wrap a Task as it exposes a Task interface anyway.
 
 
-    # ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod.(
-
     # Let's invoke a Task :instance_method.
-    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod.(
-      {
-        application_ctx: self.ctx,
+    # ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod.(
+    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
+      Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod,
+      self.ctx,
+      {},
+      {exec_context: self},
+      "value",
+      **library_ctx = {
         method_name: :my_output_with_circuit_interface
-      }, {}, {exec_context: self}
+      }
       )
 
 # NOTE: problem here: we need to create a "work ctx" and we need to disect the :result key, just like in a tW.
 #       is it worth that?
-    value = ctx[:result][2] # FIXME: hm.
-    ctx = ctx[:application_ctx]
 
-    assert_equal CU.strip(CU.inspect(ctx)), %({:params=>{:id=>1}, :action=>:update}) # FIXME.
-    assert_equal value, {id: 1, exec_context: self}
+    assert_equal CU.strip(CU.inspect(ctx)), %({:params=>{:id=>1}, :action=>:update})
+    assert_equal signal, {id: 1, exec_context: self} # the handler returns a Hash as a signal?
 
     ctx, _ = Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod.(
       {

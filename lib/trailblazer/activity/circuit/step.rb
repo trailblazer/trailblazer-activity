@@ -7,16 +7,17 @@ module Trailblazer
         Task.build(filter_with_circuit_interface)
       end
 
-      # class Processor #< Pipeline
-      #   def self.call(pipeline, ctx, flow_options, value = {})
-      #     pipeline.to_a.each do |(_id, task)|
-      #       puts "@@@@@ #{task.inspect}"
-      #       ctx, flow_options, value = task.(ctx, flow_options, value)
-      #     end
+      class Processor #< Pipeline
+        def self.call(pipeline, ctx, flow_options, circuit_options, value = nil, **kws)
+          pipeline.to_a.each do |(_id, task)|
+            puts "@@@@@ #{task.inspect}"
+            # raise "should we pass around value in kws?"
+            ctx, flow_options, value = task.(ctx, flow_options, circuit_options, value, **kws)
+          end
 
-        #   return ctx, flow_options, value # FIXME: experimenting here.
-        # end
-      # end
+          return ctx, flow_options, value # FIXME: experimenting here.
+        end
+      end
 
       class Task___Activity# < Activity::Railway # TODO: naming.
       # DISCUSS: make the third argument pass-through?
@@ -28,32 +29,34 @@ module Trailblazer
             # This is one "step" for the Task/Step adapter, specific to instance methods,
             # and it allows calling the returned callable as if it was a MyHandler.
             # RUNTIME, THIS IS EXECUTED BY THE TASK/STEP instance.
-            def self.compute_callable(ctx, flow_options, circuit_options, **kws)
+            def self.compute_callable(ctx, flow_options, circuit_options, value, method_name:, **)
               exec_context  = circuit_options.fetch(:exec_context)
               # That was my first idea, but it doesn't play if devs would use dispatching based on {#method_missing}.
               # callable      = exec_context.method(method_name) # this is the actual change from Option thinking.
 
-              method_name = ctx.fetch(:method_name)
+              # method_name = ctx.fetch(:method_name)
 
               callable = ->(*args, **kws) { exec_context.send(method_name, *args, **kws) } # this should be generic, so we can use it with Task and Step interfaces (and ext-ci)
 
   # tHE IDEA here is that the only difference to a raw filter is that we extract the "callable" before we do the rest
   # (invoking with whatever interface, interpreting the result etc)
-              ctx[:callable] = callable
+              # ctx[:callable] = callable
 
-              return ctx, flow_options, Trailblazer::Activity::Right
+              return ctx, flow_options, callable
             end
           end
 
-          def self.invoke_callable(ctx, flow_options, circuit_options, **kwargs)
-            callable = ctx[:callable]
-            application_ctx = ctx[:application_ctx]
+          def self.invoke_callable(ctx, flow_options, circuit_options, callable, callable_keyword_arguments: {}, **kwargs)
+            # callable = ctx[:callable]
+            # application_ctx = ctx[:application_ctx]
 
-            result = callable.(application_ctx, flow_options, circuit_options, **kwargs) # This is how any Task is invoked!
+            # DISCUSS: we currently need {callable_keyword_arguments} only in one spot (if I remember correctly, that's the Rescue handler and :exception)
+
+            ctx, flow_options, signal = callable.(ctx, flow_options, circuit_options, **callable_keyword_arguments) # This is how any Task is invoked!
 
             # DISCUSS: do we want another return set? Shouldn't that be the Task's responsibility?
-            ctx[:result] = result
-            return ctx, flow_options, Trailblazer::Activity::Right
+            # ctx[:result] = result
+            return ctx, flow_options, signal
           end
         end # Generic
 
@@ -66,7 +69,7 @@ module Trailblazer
         # end
         InstanceMethod = Activity.Pipeline(
           compute_callable: Generic::InstanceMethod.method(:compute_callable),
-          invoke_callable: Generic.method(:invoke_callable),
+          invoke_callable: Generic.method(:invoke_callable), # FIXME: is this generic or Task-specific? we don't use it for Step?
         )
       end
 
