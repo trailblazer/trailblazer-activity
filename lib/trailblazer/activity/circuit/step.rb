@@ -8,55 +8,43 @@ module Trailblazer
       end
 
       class Processor #< Pipeline
-        def self.call(pipeline, ctx, flow_options, circuit_options, value = nil, **kws)
+        def self.call(pipeline, ctx, flow_options, circuit_options, signal = nil, lib_ctx)
           pipeline.to_a.each do |(_id, task)|
             puts "@@@@@ #{task.inspect}"
-            # raise "should we pass around value in kws?"
-            ctx, flow_options, value = task.(ctx, flow_options, circuit_options, value, **kws)
+            ctx, flow_options, signal, lib_ctx = task.(ctx, flow_options, circuit_options, signal, lib_ctx, **lib_ctx)
           end
 
-          return ctx, flow_options, value # FIXME: experimenting here.
+          return ctx, flow_options, signal, lib_ctx # FIXME: experimenting here.
         end
       end
 
       class Task___Activity# < Activity::Railway # TODO: naming.
-      # DISCUSS: make the third argument pass-through?
-
-
         module Generic # DISCUSS: rename back to {Callable}?
           # TODO: this is generic, applies to Task and Step!!!
           class InstanceMethod
             # This is one "step" for the Task/Step adapter, specific to instance methods,
             # and it allows calling the returned callable as if it was a MyHandler.
             # RUNTIME, THIS IS EXECUTED BY THE TASK/STEP instance.
-            def self.compute_callable(ctx, flow_options, circuit_options, value, method_name:, **)
+            def self.compute_callable(ctx, flow_options, circuit_options, signal, lib_ctx, method_name:, **)
               exec_context  = circuit_options.fetch(:exec_context)
               # That was my first idea, but it doesn't play if devs would use dispatching based on {#method_missing}.
               # callable      = exec_context.method(method_name) # this is the actual change from Option thinking.
-
-              # method_name = ctx.fetch(:method_name)
 
               callable = ->(*args, **kws) { exec_context.send(method_name, *args, **kws) } # this should be generic, so we can use it with Task and Step interfaces (and ext-ci)
 
   # tHE IDEA here is that the only difference to a raw filter is that we extract the "callable" before we do the rest
   # (invoking with whatever interface, interpreting the result etc)
-              # ctx[:callable] = callable
 
-              return ctx, flow_options, callable
+              return ctx, flow_options, callable, lib_ctx
             end
           end
 
-          def self.invoke_callable(ctx, flow_options, circuit_options, callable, callable_keyword_arguments: {}, **kwargs)
-            # callable = ctx[:callable]
-            # application_ctx = ctx[:application_ctx]
-
+          def self.invoke_callable(ctx, flow_options, circuit_options, callable, lib_ctx, callable_keyword_arguments: {}, **)
             # DISCUSS: we currently need {callable_keyword_arguments} only in one spot (if I remember correctly, that's the Rescue handler and :exception)
 
             ctx, flow_options, signal = callable.(ctx, flow_options, circuit_options, **callable_keyword_arguments) # This is how any Task is invoked!
 
-            # DISCUSS: do we want another return set? Shouldn't that be the Task's responsibility?
-            # ctx[:result] = result
-            return ctx, flow_options, signal
+            return ctx, flow_options, signal, lib_ctx
           end
         end # Generic
 
@@ -80,7 +68,6 @@ module Trailblazer
             callable = task_instance_method_wrap.(ctx, flow_options, circuit_options, **kwargs)  #this step is specific to instance methods
 
             callable.(ctx, flow_options, circuit_options, **kwargs) # This is how any Task is invoked!
-            # return
           end
         end
 
@@ -135,11 +122,11 @@ module Trailblazer
 
 
       class Step___ < Struct.new(:user_filter, :binary?)
-        def self.invoke_callable_with_step_interface(ctx, flow_options, circuit_options, callable, **kwargs)
+        def self.invoke_callable_with_step_interface(ctx, flow_options, circuit_options, callable, lib_ctx, **)
 
           result = callable.(ctx, **ctx.to_h) # This is how any Step should be called!
 
-          return ctx, flow_options, result
+          return ctx, flow_options, result, lib_ctx
         end
 
         class Binary < Struct.new(:step)
@@ -156,11 +143,11 @@ module Trailblazer
           end
 
 
-          def self.___compute_signal(ctx, flow_options, circuit_options, result, **)
+          def self.___compute_signal(ctx, flow_options, circuit_options, result, lib_ctx, **)
             # we're a step, {result} is always a "boolean".
             signal = Binary.binary_signal_for(result, Activity::Right, Activity::Left)
 
-            return ctx, flow_options, signal
+            return ctx, flow_options, signal, lib_ctx
           end
 
           # Translates the return value of the user step into a valid signal.

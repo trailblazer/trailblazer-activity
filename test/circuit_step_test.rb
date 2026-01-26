@@ -111,13 +111,13 @@ class CircuitStepTest < Minitest::Spec
 
     # Let's invoke a Task :instance_method.
     # ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod.(
-    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
+    ctx, _flow_options, signal, _library_ctx = Trailblazer::Activity::Circuit::Processor.(
       Trailblazer::Activity::Circuit::Task___Activity::InstanceMethod,
       self.ctx,
       {},
       {exec_context: self},
-      "value",
-      **library_ctx = {
+      nil, # "signal"
+      library_ctx = {
         method_name: :my_output_with_circuit_interface
       }
       )
@@ -126,15 +126,17 @@ class CircuitStepTest < Minitest::Spec
 #       is it worth that?
 
     assert_equal CU.strip(CU.inspect(ctx)), %({:params=>{:id=>1}, :action=>:update})
+    assert_equal _flow_options, {}
     assert_equal signal, {id: 1, exec_context: self} # the handler returns a Hash as a signal?
+    assert_equal _library_ctx, library_ctx
 
-    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
+    ctx, _flow_options, signal, _library_ctx = Trailblazer::Activity::Circuit::Processor.(
       Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod,
       self.ctx,
       {},
       {exec_context: self},
-      "value",
-      **library_ctx = {
+      nil, # "signal"
+      library_ctx = {
         method_name: :my_handler_with_step_interface,
       }
       )
@@ -162,6 +164,7 @@ class CircuitStepTest < Minitest::Spec
       {},
       {exec_context: self},
       MyBinaryStepHandler,
+      {} # library_ctx
       )
 
     assert_equal signal, Trailblazer::Activity::Left
