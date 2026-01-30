@@ -145,6 +145,18 @@ class CircuitStepTest < Minitest::Spec
     assert_equal CU.inspect(signal), %({:id=>1})
 
     ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
+      Trailblazer::Activity::Circuit::Step___::Step___Activity,
+      {outcome: false, params: {id: 1}},
+      {},
+      {exec_context: self},
+      MyStep,
+      {} # library_ctx
+      )
+
+    assert_equal signal, CU.inspect({id: 1})
+    assert_equal CU.inspect(ctx), %({:outcome=>false, :params=>{:id=>1}, :captured_params=>"{:id=>1}"})
+
+    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
       Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod___Binary,
       {outcome: false, params: {id: 1}},
       {},
