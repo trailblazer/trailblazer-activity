@@ -54,20 +54,24 @@ module Trailblazer
       end
 
       # DISCUSS: currently, a Task instance always wraps an InstanceMethod.
-      class Task
-        class InstanceMethod < Struct.new(:task_instance_method_wrap)
-          def call(ctx, flow_options, circuit_options, **kwargs)
-            callable = task_instance_method_wrap.(ctx, flow_options, circuit_options, **kwargs)  #this step is specific to instance methods
-
-            callable.(ctx, flow_options, circuit_options, **kwargs) # This is how any Task is invoked!
-          end
+      class Task < Struct.new(:activity, :user_filter)
+        def call(ctx, flow_options, circuit_options, **lib_ctx) # FIXME: not sure I like lib_ctx here, maybe make it a separate class.
+          # ctx, _flow_options, signal =
+          Processor.(
+            activity,
+            ctx,
+            flow_options,
+            circuit_options,
+            user_filter,
+            lib_ctx # library_ctx
+          )
         end
 
         # here, we decide what needs wrapping.
         def self.build(user_filter_with_circuit_interface)
           if user_filter_with_circuit_interface.is_a?(Symbol)
             # TODO: Let Option/Filter::InstanceMethod do that
-            return Task::InstanceMethod::new(Generic::InstanceMethod.new(user_filter_with_circuit_interface))
+            return Task.new(Task___Activity::InstanceMethod, user_filter_with_circuit_interface)
           end
 
           # No need for any wrapping.
@@ -108,12 +112,12 @@ module Trailblazer
 #       end
 
       def self.Step(filter_with_step_interface, **options)
-        Step___.build(filter_with_step_interface, **options)
+        Step.build(filter_with_step_interface, **options)
       end
 
 
 
-      class Step___ < Struct.new(:activity, :user_filter)
+      class Step < Struct.new(:activity, :user_filter)
         def self.invoke_callable_with_step_interface(ctx, flow_options, circuit_options, callable, lib_ctx, **)
 
           result = callable.(ctx, **ctx.to_h) # This is how any Step should be called!
@@ -122,20 +126,7 @@ module Trailblazer
         end
 
         class Binary < Struct.new(:step)
-          def call(ctx, flow_options, circuit_options)
-            result = step.call(ctx, flow_options, circuit_options) # whatever step is
-
-            Binary.compute_signal(ctx, flow_options, result) # returns circuit interface.
-          end
-
-          def self.compute_signal(ctx, flow_options, result)
-            signal = Binary.binary_signal_for(result, Activity::Right, Activity::Left)
-
-            return ctx, flow_options, signal
-          end
-
-
-          def self.___compute_signal(ctx, flow_options, circuit_options, result, lib_ctx, **)
+          def self.compute_signal(ctx, flow_options, circuit_options, result, lib_ctx, **)
             # we're a step, {result} is always a "boolean".
             signal = Binary.binary_signal_for(result, Activity::Right, Activity::Left)
 
@@ -154,7 +145,7 @@ module Trailblazer
         end
 
         Step___Activity = Activity.Pipeline(
-          invoke_callable: Step___.method(:invoke_callable_with_step_interface),
+          invoke_callable: Step.method(:invoke_callable_with_step_interface),
         )
         Step___Activity___InstanceMethod = Activity::Adds.(
           Step___Activity,                      # "inherit" from Step___Activity.
@@ -162,28 +153,28 @@ module Trailblazer
         )
         Step___Activity___InstanceMethod___Binary =  Activity::Adds.(
           Step___Activity___InstanceMethod,                      # "inherit" from Step___Activity___InstanceMethod.
-          [Binary.method(:___compute_signal), id: :compute_signal, append: nil]
+          [Binary.method(:compute_signal), id: :compute_signal, append: nil]
         )
         Step___Activity___Binary = Activity::Adds.(
           Step___Activity,                      # "inherit" from Step___Activity
-          [Binary.method(:___compute_signal), id: :compute_signal, append: nil]
+          [Binary.method(:compute_signal), id: :compute_signal, append: nil]
         )
 
         def self.build(filter_with_step_interface, binary: true)
           step =
-            if filter_with_step_interface.is_a?(Symbol)
+            if filter_with_step_interface.is_a?(Symbol) # FIXME: redundant
               # generic_instance_method_caller = Task::Generic::InstanceMethod.new(filter_with_step_interface)
               # Step___::InstanceMethod.new(generic_instance_method_caller)
               if binary
-                Step___.new(Step___Activity___InstanceMethod___Binary, filter_with_step_interface)
+                Step.new(Step___Activity___InstanceMethod___Binary, filter_with_step_interface)
               else
-                Step___.new(Step___Activity___InstanceMethod, filter_with_step_interface)
+                Step.new(Step___Activity___InstanceMethod, filter_with_step_interface)
               end
             else
               if binary
-                Step___.new(Step___Activity___Binary, filter_with_step_interface)
+                Step.new(Step___Activity___Binary, filter_with_step_interface)
               else
-                Step___.new(Step___Activity, filter_with_step_interface)
+                Step.new(Step___Activity, filter_with_step_interface)
               end
             end
 

@@ -27,37 +27,36 @@ class CircuitStepTest < Minitest::Spec
     # callable = Trailblazer::Activity::Circuit::Task.build(method(:my_output_with_circuit_interface)) # compile-toime
     circuit_task = Trailblazer::Activity::Circuit.Task(method(:my_output_with_circuit_interface)) # compile-toime
 
-    return_set = circuit_task.(self.ctx, {stack: []}, {exec_context: self})
+    ctx, flow_options, signal = circuit_task.(self.ctx, {stack: []}, {exec_context: self})
     # bla, translate binary...
 
-    assert_equal return_set, [self.ctx, {stack: []}, {id: 1, exec_context: self}]
+    assert_equal CU.inspect(ctx), %({:params=>{:id=>1}, :action=>:update})
+    assert_equal flow_options, {stack: []}
+    assert_equal signal, {id: 1, exec_context: self}
 
-
-=begin
-    callable_builder = Trailblazer::Activity::Circuit::Task.build(:my_output_with_circuit_interface)
-    # Runtime
-    callable = callable_builder.(self.ctx, {stack: []}, {exec_context: self})
-=end
     circuit_task = Trailblazer::Activity::Circuit.Task(:my_output_with_circuit_interface)
 
-    return_set = circuit_task.(self.ctx, {stack: []}, {exec_context: self}) # this calls the instance method on {exec_context} which is "extracted" before.
+    ctx, flow_options, signal = circuit_task.(self.ctx, {stack: []}, {exec_context: self}) # this calls the instance method on {exec_context} which is "extracted" before.
     # translate binary etc
 
-    assert_equal return_set, [self.ctx, {stack: []}, {id: 1, exec_context: self}]
+    assert_equal CU.inspect(ctx), %({:params=>{:id=>1}, :action=>:update})
+    assert_equal flow_options, {stack: []}
+    assert_equal signal, {id: 1, exec_context: self}
   end
 
-  def my_rescue_handler(ctx, *, exception:)
+  def my_rescue_handler(ctx, flow_options, *, exception:)
     ctx[:exception_class] = exception.class
-    return ctx, {}, :Right
+    return ctx, flow_options, :Right
   end
   it "Circuit::Task with kwargs" do
     callable = Trailblazer::Activity::Circuit.Task(:my_rescue_handler)
 
     # Runtime
-    return_set = callable.(self.ctx, {stack: []}, {exec_context: self}, exception: Object.new)
-    # translate binary etc
+    ctx, flow_options, signal = callable.(self.ctx, {stack: []}, {exec_context: self}, callable_keyword_arguments: {exception: Object.new})
 
-    assert_equal return_set, [self.ctx.merge(:exception_class=>Object), {}, :Right]
+    assert_equal CU.inspect(ctx), %({:params=>{:id=>1}, :action=>:update, :exception_class=>Object})
+    assert_equal flow_options, {stack: []}
+    assert_equal signal, :Right
   end
 
   def my_rescue_handler_step(ctx, params:, **)
@@ -134,7 +133,7 @@ class CircuitStepTest < Minitest::Spec
     assert_equal _library_ctx, library_ctx
 
     ctx, _flow_options, signal, _library_ctx = Trailblazer::Activity::Circuit::Processor.(
-      Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod,
+      Trailblazer::Activity::Circuit::Step::Step___Activity___InstanceMethod,
       self.ctx,
       {},
       {exec_context: self},
@@ -148,7 +147,7 @@ class CircuitStepTest < Minitest::Spec
     assert_equal CU.inspect(signal), %({:id=>1})
 
     ctx, flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
-      Trailblazer::Activity::Circuit::Step___::Step___Activity,
+      Trailblazer::Activity::Circuit::Step::Step___Activity,
       {params: "my params"},
       {stack: []},
       {exec_context: self},
@@ -161,7 +160,7 @@ class CircuitStepTest < Minitest::Spec
     assert_equal signal, "my params"
 
     ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
-      Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod___Binary,
+      Trailblazer::Activity::Circuit::Step::Step___Activity___InstanceMethod___Binary,
       {outcome: false, params: {id: 1}},
       {},
       {exec_context: self},
@@ -175,7 +174,7 @@ class CircuitStepTest < Minitest::Spec
     assert_equal CU.inspect(ctx), %({:outcome=>false, :params=>{:id=>1}, :my_binary_step_handler=>true})
 
     ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
-      Trailblazer::Activity::Circuit::Step___::Step___Activity___Binary,
+      Trailblazer::Activity::Circuit::Step::Step___Activity___Binary,
       {outcome: false, params: {id: 1}},
       {},
       {exec_context: self},
