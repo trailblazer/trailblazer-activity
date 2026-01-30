@@ -10,7 +10,6 @@ module Trailblazer
       class Processor #< Pipeline
         def self.call(pipeline, ctx, flow_options, circuit_options, signal = nil, lib_ctx)
           pipeline.to_a.each do |(_id, task)|
-            puts "@@@@@ #{task.inspect}"
             ctx, flow_options, signal, lib_ctx = task.(ctx, flow_options, circuit_options, signal, lib_ctx, **lib_ctx)
           end
 

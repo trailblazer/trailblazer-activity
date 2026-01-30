@@ -13,18 +13,14 @@ class Trailblazer::Activity
         # Since we're in a taskWrap-specific environment here, the ctx is a different one.
         wrap_ctx = {
           task: task,
-          application_ctx: ctx,
-          application_circuit_options: circuit_options,
         }
 
         # this pipeline is "wrapped around" the actual `task`.
         task_wrap_pipeline = merge_static_with_runtime(task, **circuit_options) || raise
 
-        wrap_ctx, flow_options = task_wrap_pipeline.(wrap_ctx, flow_options, circuit_options) # FIXME: return those flow_options!
+        ctx, flow_options, signal, wrap_ctx = Circuit::Processor.(task_wrap_pipeline, ctx, flow_options, circuit_options, wrap_ctx)
 
-        # Both {:return_signal} and {:return_ctx} are set in {#call_task}, the very tw step that
-        # executes the actual task which is wrapped.
-        return wrap_ctx[:return_ctx], flow_options, wrap_ctx[:return_signal]
+        return ctx, flow_options, signal
       end
 
       # Compute the task's wrap by applying alterations both static and from runtime.

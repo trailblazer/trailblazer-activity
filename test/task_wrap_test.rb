@@ -12,18 +12,16 @@ class TaskWrapTest < Minitest::Spec
     wrap_static = wrap_static.merge(options)
   end
 
-  def add_1(wrap_ctx, flow_options, circuit_options)
-    ctx = wrap_ctx[:application_ctx]
+  def add_1(ctx, flow_options, circuit_options, signal, lib_ctx, **)
     ctx[:seq] << 1
 
-    return wrap_ctx, flow_options
+    return ctx, flow_options, signal, lib_ctx
   end
 
-  def add_2(wrap_ctx, flow_options, circuit_options)
-    ctx, = wrap_ctx[:application_ctx]
+  def add_2(ctx, flow_options, circuit_options, signal, lib_ctx, **)
     ctx[:seq] << 2
 
-    return wrap_ctx, flow_options
+    return ctx, flow_options, signal, lib_ctx
   end
 
   it "exposes {#to_h} that includes {:wrap_static}" do
@@ -53,11 +51,12 @@ class TaskWrapTest < Minitest::Spec
 
     c_task = tasks["c"]
 
-    capture_ext = ->(wrap_ctx, flow_options, _) do
+    # capture_ext = ->(wrap_ctx, flow_options, _) do
+    capture_ext = ->(ctx, flow_options, _, signal, lib_ctx, **) do
       # after {call_task} we have certain new {wrap_ctx} variables.
-      wrap_ctx[:return_ctx] = wrap_ctx[:return_ctx].merge(message: "original return signal: #{wrap_ctx[:return_signal]}")
+      ctx = ctx.merge(message: "original return signal: #{signal}")
 
-      return wrap_ctx, flow_options
+      return ctx, flow_options, signal, lib_ctx
     end
 
     wrap_static = wrap_static(
@@ -83,10 +82,10 @@ class TaskWrapTest < Minitest::Spec
     # {b} got Right and Left outputs.
     b_task = tasks["b"]
 
-    return_left_ext = ->(wrap_ctx, flow_options, _) do
-      wrap_ctx[:return_signal] = Trailblazer::Activity::Left
+    return_left_ext = ->(ctx, flow_options, _, signal, lib_ctx, **) do
+      return_signal = Trailblazer::Activity::Left
 
-      return wrap_ctx, flow_options
+      return ctx, flow_options, return_signal, lib_ctx
     end
 
     wrap_static = wrap_static(
@@ -174,19 +173,22 @@ class TaskWrapTest < Minitest::Spec
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
   end
 
-  def change_start_task(wrap_ctx, flow_options, _circuit_options)
-    ctx             = wrap_ctx[:application_ctx]
-    circuit_options = wrap_ctx[:application_circuit_options]
+  def change_start_task(ctx, flow_options, circuit_options, signal, lib_ctx, **)
+    lib_ctx[:my_circuit_options] = circuit_options.merge(start_task: ctx[:start_at])
 
-    wrap_ctx[:application_circuit_options] = circuit_options.merge(start_task: ctx[:start_at])
+    return ctx, flow_options, signal, lib_ctx
+  end
 
-    return wrap_ctx, flow_options
+  # Use {:my_circuit_options} for invoking the actual task.
+  def my_call_task(ctx, flow_options, circuit_options, signal, lib_ctx, my_circuit_options:, **)
+    Trailblazer::Activity::TaskWrap.call_task(ctx, flow_options, my_circuit_options, signal, lib_ctx, **lib_ctx)
   end
 
   # Set start_task of {flat_activity} (which is nested in {nesting_activity}) to something else than configured in the
   # nested activity itself.
   # Instead of running {a -> {b -> c} -> success} it now goes {a -> {c} -> success}.
-  it "allows changing {circuit_options} via a taskWrap step, but only locally for the particular wrapped task" do
+  it "allows changing {circuit_options} with your own taskWrap steps, but only locally for the particular wrapped task" do
+    # DISCUSS: this used to be a built-in feature.
     flat_tasks = Fixtures.default_tasks
 
     flat_wrap_static = wrap_static(flat_tasks.values)
@@ -198,6 +200,7 @@ class TaskWrapTest < Minitest::Spec
     # Replace the taskWrap fo {flat_activity} with an extended one.
     ext = Trailblazer::Activity::TaskWrap.Extension(
       [method(:change_start_task), id: "my.change_start_task", prepend: nil],
+      [method(:my_call_task), id: "my.call_task", replace: "task_wrap.call_task"], # here, replace the standard {call_task} with your logic that can inject its own {circuit_options}.
     )
 
     wrap_static = wrap_static(
@@ -214,44 +217,6 @@ class TaskWrapTest < Minitest::Spec
 
     # We run activity.c, then only flat_activity.c as we're skipping the inner {b} step.
     assert_equal CU.inspect(ctx), %({:seq=>[:b, :c], :start_at=>#{flat_tasks.fetch("c").inspect}})
-    assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
-  end
-
-  def pollute_circuit_options(wrap_ctx, flow_options, circuit_options)
-    circuit_options.merge!( # DISCUSS: do this like an adult.
-      this_is_only_visible_in_this_very_step: true
-    )
-
-    wrap_ctx[:application_circuit_options].merge!(
-      this_is_only_visible_in_this_very_step: true
-    )
-
-    return wrap_ctx, flow_options
-  end
-
-  # DISCUSS: maybe we can set the {:runner} in a tw step and then check that only the "current" task is affected?
-  it "when changing {circuit_options}, it can only be seen in that very step. The following step sees the original {circuit_options}" do
-    # trace {circuit_options} in {c}.
-    step_c = ->(ctx, flow_options, circuit_options) { ctx[:circuit_options] = circuit_options.keys; [ctx, flow_options, Trailblazer::Activity::Right] }
-
-    tasks = Fixtures.default_tasks("c" => step_c)
-
-    # in {b}'s taskWrap, we tamper with {circuit_options}.
-    ext = Trailblazer::Activity::TaskWrap.Extension(
-      [method(:pollute_circuit_options), id: "my.pollute_circuit_options", prepend: nil],
-    )
-
-    wrap_static = wrap_static(
-      tasks.values,
-      tasks.fetch("b") => ext.(Trailblazer::Activity::TaskWrap::INITIAL_TASK_WRAP), # extended.
-    )
-
-    activity = Fixtures.flat_activity(tasks: tasks, config: {wrap_static: wrap_static})
-
-    ctx, _flow_options, signal = Trailblazer::Activity::TaskWrap.invoke(activity, {seq: []}, {}, key_for_circuit_options: true)
-
-    # We run activity.c, then only flat_activity.c as we're skipping the inner {b} step.
-    assert_equal CU.inspect(ctx), %({:seq=>[:b], :circuit_options=>[:key_for_circuit_options, :wrap_runtime, :activity, :runner]})
     assert_equal signal.inspect, %(#<Trailblazer::Activity::End semantic=:success>)
   end
 
