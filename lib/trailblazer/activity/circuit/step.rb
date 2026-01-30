@@ -103,29 +103,18 @@ module Trailblazer
       #
       # In TRB 2.1, this used to sit in the Trailblazer::Option gem, but never really made sense
       # as we're building
-#       def self.Step(user_filter_with_step_interface, option: nil, **options)
-# raise if option # FIXME: remove once this is sorted.
-
-#         options = options.merge(instance_method: true) if user_filter_with_step_interface.is_a?(Symbol)
-
-#         Step.build(user_filter_with_step_interface, **options)
-#       end
-
       def self.Step(filter_with_step_interface, **options)
         Step.build(filter_with_step_interface, **options)
       end
 
-
-
-      class Step < Struct.new(:activity, :user_filter)
+      class Step < Task
         def self.invoke_callable_with_step_interface(ctx, flow_options, circuit_options, callable, lib_ctx, **)
-
           result = callable.(ctx, **ctx.to_h) # This is how any Step should be called!
 
           return ctx, flow_options, result, lib_ctx
         end
 
-        class Binary < Struct.new(:step)
+        class Binary
           def self.compute_signal(ctx, flow_options, circuit_options, result, lib_ctx, **)
             # we're a step, {result} is always a "boolean".
             signal = Binary.binary_signal_for(result, Activity::Right, Activity::Left)
@@ -179,18 +168,6 @@ module Trailblazer
             end
 
           return step
-        end
-
-        def call(ctx, flow_options, circuit_options)
-          # ctx, _flow_options, signal =
-          Processor.(
-            activity,
-            ctx,
-            flow_options,
-            circuit_options,
-            user_filter,
-            {} # library_ctx
-          )
         end
       end
 
