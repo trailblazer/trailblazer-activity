@@ -79,6 +79,7 @@ class CircuitStepTest < Minitest::Spec
   class MyStep
     def self.call(ctx, params:, **)
       ctx[:captured_params] = CU.inspect(params)
+      # return: "my params"
     end
   end
 
@@ -105,6 +106,8 @@ class CircuitStepTest < Minitest::Spec
     end
   end
 
+
+# FIXME: super low-level test, 2brm?
   it "ads;lfjsddsjfaksjflasflkaflajflkajfaj" do
     # DISCUSS: we currently don't wrap a Task as it exposes a Task interface anyway.
 
@@ -116,9 +119,9 @@ class CircuitStepTest < Minitest::Spec
       self.ctx,
       {},
       {exec_context: self},
-      nil, # "signal"
+      :my_output_with_circuit_interface, # "signal"
       library_ctx = {
-        method_name: :my_output_with_circuit_interface
+        # method_name: :my_output_with_circuit_interface
       }
       )
 
@@ -135,35 +138,36 @@ class CircuitStepTest < Minitest::Spec
       self.ctx,
       {},
       {exec_context: self},
-      nil, # "signal"
+      :my_handler_with_step_interface, # "signal"
       library_ctx = {
-        method_name: :my_handler_with_step_interface,
+        # method_name: :my_handler_with_step_interface,
       }
       )
 
     assert_equal CU.strip(CU.inspect(ctx)), %({:params=>{:id=>1}, :action=>:update, :captured_params=>\"{:id=>1}\"})
     assert_equal CU.inspect(signal), %({:id=>1})
 
-    ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
+    ctx, flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
       Trailblazer::Activity::Circuit::Step___::Step___Activity,
-      {outcome: false, params: {id: 1}},
-      {},
+      {params: "my params"},
+      {stack: []},
       {exec_context: self},
       MyStep,
       {} # library_ctx
       )
 
-    assert_equal signal, CU.inspect({id: 1})
-    assert_equal CU.inspect(ctx), %({:outcome=>false, :params=>{:id=>1}, :captured_params=>"{:id=>1}"})
+    assert_equal CU.inspect(ctx), %({:params=>"my params", :captured_params=>"my params"})
+    assert_equal flow_options, {stack: []}
+    assert_equal signal, "my params"
 
     ctx, _flow_options, signal = Trailblazer::Activity::Circuit::Processor.(
       Trailblazer::Activity::Circuit::Step___::Step___Activity___InstanceMethod___Binary,
       {outcome: false, params: {id: 1}},
       {},
       {exec_context: self},
-      "value",
-      **library_ctx = {
-        method_name: :my_binary_step_handler,
+      :my_binary_step_handler,
+      library_ctx = {
+        # method_name: :my_binary_step_handler,
       }
       )
 
@@ -184,37 +188,48 @@ class CircuitStepTest < Minitest::Spec
   end
 
   it "Circuit::Step with step interface, no binary, returning a value, only" do
-    ctx = self.ctx
-
     circuit_step = Trailblazer::Activity::Circuit.Step(MyStep, binary: false)
 
     # Runtime
-    value = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
+    ctx, flow_options, signal = circuit_step.({params: "my params", a: 1}, flow_options={stack: []}, {exec_context: self})
     # TODO: assert value?
 
-    # translate binary etc
-    return_set = [ctx, flow_options, :Right]
+    assert_equal CU.inspect(ctx), %({:params=>\"my params\", :a=>1, :captured_params=>\"my params\"})
+    assert_equal flow_options, {stack: []}
+    assert_equal signal, "my params"
+  end
 
-    assert_equal return_set, [self.ctx.merge(captured_params: "{:id=>1}"), {stack: []}, :Right]
+  it "Circuit::Step with step interface :instance_method, no binary" do
+    circuit_step = Trailblazer::Activity::Circuit.Step(:my_handler_with_step_interface, binary: false)
+
+    # Runtime
+    ctx, flow_options, signal = circuit_step.({params: "my params", a: 1}, flow_options={stack: []}, {exec_context: self})
+
+    assert_equal CU.inspect(ctx), %({:params=>\"my params\", :a=>1, :captured_params=>\"my params\"})
+    assert_equal flow_options, {stack: []}
+    assert_equal signal, "my params"
   end
 
   it "Circuit::Step with step interface, binary translation" do
-    circuit_step = Trailblazer::Activity::Circuit.Step(MyStep)
+    circuit_step = Trailblazer::Activity::Circuit.Step(MyBinaryStepHandler, binary: true)
 
     # Runtime
-    return_set = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
+    ctx, flow_options, signal = circuit_step.({outcome: true}, {stack: []}, {exec_context: self})
 
-    assert_equal return_set, [self.ctx.merge(captured_params: "{:id=>1}"), {stack: []}, Trailblazer::Activity::Right]
+    assert_equal CU.inspect(ctx), %({:outcome=>true, :my_binary_step_handler=>true})
+    assert_equal flow_options, {stack: []}
+    assert_equal signal, Trailblazer::Activity::Right
   end
 
-
   it "Circuit::Step with step interface :instance_method, binary translation" do
-    circuit_step = Trailblazer::Activity::Circuit.Step(:my_handler_with_step_interface)
+    circuit_step = Trailblazer::Activity::Circuit.Step(:my_handler_with_step_interface, binary: true)
 
     # Runtime
-    return_set = circuit_step.(ctx, flow_options={stack: []}, {exec_context: self})
+    ctx, flow_options, signal = circuit_step.({params: "my params", a: 1}, flow_options={stack: []}, {exec_context: self})
 
-    assert_equal return_set, [self.ctx.merge(captured_params: "{:id=>1}"), {stack: []}, Trailblazer::Activity::Right]
+    assert_equal CU.inspect(ctx), %({:params=>\"my params\", :a=>1, :captured_params=>\"my params\"})
+    assert_equal flow_options, {stack: []}
+    assert_equal signal, Trailblazer::Activity::Right
   end
 
 =begin

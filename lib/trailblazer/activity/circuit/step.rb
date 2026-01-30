@@ -24,7 +24,7 @@ module Trailblazer
             # This is one "step" for the Task/Step adapter, specific to instance methods,
             # and it allows calling the returned callable as if it was a MyHandler.
             # RUNTIME, THIS IS EXECUTED BY THE TASK/STEP instance.
-            def self.compute_callable(ctx, flow_options, circuit_options, signal, lib_ctx, method_name:, **)
+            def self.compute_callable(ctx, flow_options, circuit_options, method_name, lib_ctx, **)
               exec_context  = circuit_options.fetch(:exec_context)
               # That was my first idea, but it doesn't play if devs would use dispatching based on {#method_missing}.
               # callable      = exec_context.method(method_name) # this is the actual change from Option thinking.
@@ -120,7 +120,7 @@ module Trailblazer
 
 
 
-      class Step___ < Struct.new(:user_filter, :binary?)
+      class Step___ < Struct.new(:activity, :user_filter)
         def self.invoke_callable_with_step_interface(ctx, flow_options, circuit_options, callable, lib_ctx, **)
 
           result = callable.(ctx, **ctx.to_h) # This is how any Step should be called!
@@ -179,24 +179,46 @@ module Trailblazer
         def self.build(filter_with_step_interface, binary: true)
           step =
             if filter_with_step_interface.is_a?(Symbol)
-              generic_instance_method_caller = Task::Generic::InstanceMethod.new(filter_with_step_interface)
-              Step___::InstanceMethod.new(generic_instance_method_caller)
+              # generic_instance_method_caller = Task::Generic::InstanceMethod.new(filter_with_step_interface)
+              # Step___::InstanceMethod.new(generic_instance_method_caller)
+              if binary
+                Step___.new(Step___Activity___InstanceMethod___Binary, filter_with_step_interface)
+              else
+                Step___.new(Step___Activity___InstanceMethod, filter_with_step_interface)
+              end
             else
-              Step___.new(filter_with_step_interface)
+              if binary
+                Step___.new(Step___Activity___Binary, filter_with_step_interface)
+              else
+                Step___.new(Step___Activity, filter_with_step_interface)
+              end
             end
-
-          if binary
-            step = Step___::Binary.new(step)
-          end
 
           return step
         end
 
-        # def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
-        # Generic #call that invokes callable with step interface.
         def call(ctx, flow_options, circuit_options)
-          _result = user_filter.(ctx, **ctx.to_h) # This is how any Step should be called!
+          # ctx, _flow_options, signal =
+          Processor.(
+            activity,
+            ctx,
+            flow_options,
+            circuit_options,
+            user_filter,
+            {} # library_ctx
+          )
         end
+
+
+
+
+
+
+        # # def self.invoke_callable_with_step_interface(callable, ctx, flow_options, circuit_options)
+        # # Generic #call that invokes callable with step interface.
+        # def call(ctx, flow_options, circuit_options)
+        #   _result = user_filter.(ctx, **ctx.to_h) # This is how any Step should be called!
+        # end
 
         class InstanceMethod < Struct.new(:generic_instance_method_caller)
           def call(ctx, flow_options, circuit_options) # FIXME: applies only to {:instance_method}
