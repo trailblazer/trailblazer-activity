@@ -68,8 +68,14 @@ class CircuitProcessorTest < Minitest::Spec
 
         return ctx, flow_options # FIXME: signal
       end
+    end
 
+    class Trace
+      def call(ctx, flow_options, circuit_options, task:, **)
+        flow_options[:stack] << task
 
+        return ctx, flow_options
+      end
     end
 
     my_user_filter = ->(ctx, params:, **) { params[:current_user] }
@@ -83,8 +89,9 @@ class CircuitProcessorTest < Minitest::Spec
     step = VariableOnAggregate.new(sequence, [:aggregate], my_user_filter, :current_user)
 
     # apply "scoping" steps, only needed for Input/Output?
-    input_exec_context = Input.new(public_variables: [:aggregate])
+    input_exec_context = Input.new(public_variables: [:aggregate]) # WE ACTUALLY NEED TO CREATE THIS once.
 
+    # per step.
     input_sequence = [
       [0, input_exec_context.method(:create_context)],
       [11, input_exec_context.method(:init_aggregate)],
@@ -92,19 +99,47 @@ class CircuitProcessorTest < Minitest::Spec
       [99, input_exec_context.method(:decompose_context)],
     ]
 
-    input_pipeline = Trailblazer::Activity.Pipeline(input_sequence.to_h)
+    input_pipeline = Trailblazer::Activity.Pipeline(input_sequence.to_h) # per #step.
+
+    input_pipeline.instance_eval do
+      def call(ctx, flow_options, circuit_options, **kws)
+        super(ctx, flow_options, circuit_options) # FIXME.
+      end
+    end
 
 
+    trace_before_step = Trace.new
 
-    pp input_pipeline.(
+    tw_sequence = {
+      0 => trace_before_step,
+      1 => input_pipeline,
+    }
+
+    task_wrap_pipeline = Trailblazer::Activity.Pipeline(tw_sequence)
+
+    class Pipeline___Runner___Cix
+      def self.call(task, ctx, flow_options, circuit_options)
+        puts "@@@@@ #{task.inspect}"
+        task.(ctx, flow_options, circuit_options, **ctx.to_h) # Cix interface.
+      end
+    end
+
+    # run taskWrap logic:
+    ctx, flow_options, signal = Trailblazer::Activity::Pipeline.(
+      task_wrap_pipeline,
       {
         application_ctx: {
-          params: {current_user: Object.new}
+          params: {current_user: my_user = Object.new}
         },
-        application_circuit_options: {exec_context: 'Operation'}
+        application_circuit_options: {exec_context: 'Operation'},
+        task: "<my task>"
       },
       {stack: []},
-      {} # exec_context is added in Step#call.
+      {}.merge(runner: Pipeline___Runner___Cix)
     )
+
+    assert_equal ctx.keys, [:application_ctx, :application_circuit_options, :task, :aggregate]
+    assert_equal ctx[:aggregate], {current_user: my_user}
+    assert_equal flow_options[:stack].inspect, %(["<my task>"])
   end
 end
