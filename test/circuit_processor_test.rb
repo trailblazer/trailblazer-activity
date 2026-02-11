@@ -83,13 +83,13 @@ class CircuitProcessorTest < Minitest::Spec
     step = VariableOnAggregate.new(sequence, [:aggregate], my_user_filter, :current_user)
 
     # apply "scoping" steps, only needed for Input/Output?
-    input_pipe = Input.new(public_variables: [:aggregate])
+    input_exec_context = Input.new(public_variables: [:aggregate])
 
     input_sequence = [
-      [0, input_pipe.method(:create_context)],
-      [11, input_pipe.method(:init_aggregate)],
+      [0, input_exec_context.method(:create_context)],
+      [11, input_exec_context.method(:init_aggregate)],
       [111, step],
-      [99, input_pipe.method(:decompose_context)],
+      [99, input_exec_context.method(:decompose_context)],
     ]
 
     input_pipeline = Trailblazer::Activity.Pipeline(input_sequence.to_h)
