@@ -110,9 +110,21 @@ class CircuitProcessorTest < Minitest::Spec
 
     trace_before_step = Trace.new
 
+    class CallTask
+      def self.call(ctx, flow_options, circuit_options, task:, application_ctx:, application_circuit_options:, **)
+        application_ctx, flow_options, signal = task.(application_ctx, flow_options, application_circuit_options)
+
+        ctx[:application_ctx], ctx[:signal] = application_ctx, signal
+
+        return ctx, flow_options
+      end
+    end
+
+
     tw_sequence = {
       0 => trace_before_step,
       1 => input_pipeline,
+      2 => CallTask,
     }
 
     task_wrap_pipeline = Trailblazer::Activity.Pipeline(tw_sequence)
@@ -124,22 +136,32 @@ class CircuitProcessorTest < Minitest::Spec
       end
     end
 
+    class MyTask
+      def self.call(ctx, flow_options, circuit_options)
+        ctx[:seq] = ctx[:seq] + ["MyTask #{ctx[:params]}"]
+
+        return ctx, flow_options, Trailblazer::Activity::Right
+      end
+    end
+
     # run taskWrap logic:
     ctx, flow_options, signal = Trailblazer::Activity::Pipeline.(
       task_wrap_pipeline,
       {
         application_ctx: {
-          params: {current_user: my_user = Object.new}
+          params: {current_user: my_user = Object.new},
+          seq: []
         },
         application_circuit_options: {exec_context: 'Operation'},
-        task: "<my task>"
+        task: MyTask
       },
       {stack: []},
       {}.merge(runner: Pipeline___Runner___Cix)
     )
 
-    assert_equal ctx.keys, [:application_ctx, :application_circuit_options, :task, :aggregate]
+    assert_equal ctx.keys, [:application_ctx, :application_circuit_options, :task, :aggregate, :signal]
     assert_equal ctx[:aggregate], {current_user: my_user}
-    assert_equal flow_options[:stack].inspect, %(["<my task>"])
+    assert_equal flow_options[:stack].inspect, %([#{MyTask}])
+    assert_equal CU.inspect(ctx[:application_ctx]), %({:params=>{:current_user=>#{my_user}}, :seq=>[\"MyTask {:current_user=>#{my_user}}\"]})
   end
 end
