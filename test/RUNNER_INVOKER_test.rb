@@ -52,7 +52,7 @@ it do
   end
 
   class ComputeBinarySignal
-    def self.compute_binary_signal(ctx, value:, **)
+    def self.call(ctx, value:, **)
       signal = value ? Trailblazer::Activity::Right : Trailblazer::Activity::Left
 
       ctx[:signal] = signal
@@ -64,17 +64,25 @@ it do
   class Model___Input
     def self.call(ctx, exec_context:, **)
       ctx = Trailblazer::Context(ctx)
-      ctx[:exec_context] = ComputeBinarySignal
-      ctx[:original_exec_context] = exec_context
+      # ctx[:exec_context] = ComputeBinarySignal
+      # ctx[:original_exec_context] = exec_context
 
       return ctx, nil
     end
   end
 
+  class Model___Output
+    def self.call(ctx, signal:, **)
+      ctx, _ = ctx.decompose
+      return ctx, signal
+    end
+  end
+
   model_pipe = [
-    [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {task: :model}],
     [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
-    [:compute_binary_signal, :compute_binary_signal, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT],
+    [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {task: :model}],
+    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
+    [:input, Model___Output, INVOKER___CIRCUIT_INTERFACE],
   ]
 
   # model_in_create_cfg = [
@@ -105,6 +113,7 @@ it do
   ctx, signal = Pipeline::Processor.(model_pipe, create_ctx)
 
   assert_equal ctx[:application_ctx], {:params=>{:id=>1}, :model=>"Object 1"}
+  assert_equal ctx.keys, [:exec_context, :application_ctx]
   assert_equal signal, Trailblazer::Activity::Right
 end
 
