@@ -9,11 +9,14 @@ it do
 
   class Pipeline < Struct.new(:sequence)
     class Processor
-      def self.call(sequence, ctx)
+      def self.call(sequence, ctx, **)
         signal = nil
 
-        sequence.each do |(_id, task, invoker)|
+        sequence.each do |_id, task, invoker, circuit_options_to_merge = {}|
           puts "@@@@@ #{task.inspect} --> #{invoker} -------> #{ctx.to_h}"
+
+          ctx = ctx.merge(circuit_options_to_merge)
+
           ctx, signal = invoker.(task, ctx, **ctx)
         end
 
@@ -78,42 +81,39 @@ it do
     end
   end
 
-  model_pipe = [
-    [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
-    [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {task: :model}],
-    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
-    [:input, Model___Output, INVOKER___CIRCUIT_INTERFACE],
-  ]
-
-  # model_in_create_cfg = [
-  #   model_pipe,
-  #   {exec_context: InstanceMethod___.new(:model)}
-  # ]
-
-
-  create_pipe = [
-    [
-      :model,
-
-    ]
-  ]
-
   class Create
     def model(ctx, params:, **)
       ctx[:model] = "Object #{params[:id]}"
     end
   end
 
+  model_pipe = [
+    [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
+
+    [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {task: :model}],
+    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
+
+    [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
+  ]
+
+  create_pipe = [
+    [
+      :model, model_pipe, Pipeline::Processor, {exec_context: Create.new.freeze}
+    ],
+
+  ]
+
   ctx = {params: {id: 1}}
   create_ctx = {
-    exec_context:     Create.new,
+    # exec_context:     Create.new,
     application_ctx:  ctx
   }
 
-  ctx, signal = Pipeline::Processor.(model_pipe, create_ctx)
+  # ctx, signal = Pipeline::Processor.(model_pipe, create_ctx)
+  ctx, signal = Pipeline::Processor.(create_pipe, create_ctx)
 
   assert_equal ctx[:application_ctx], {:params=>{:id=>1}, :model=>"Object 1"}
-  assert_equal ctx.keys, [:exec_context, :application_ctx]
+  assert_equal ctx.keys, [:application_ctx, :exec_context]
   assert_equal signal, Trailblazer::Activity::Right
 end
 
