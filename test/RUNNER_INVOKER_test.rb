@@ -4,6 +4,8 @@ require "test_helper"
 # 1. SOMETHINg like Pipe::Input, nested pipe, check out how to use a work ctx
 # 2. do we need pipelines?
 # 3. runtime tw
+# 4. show how task can be replaced at runtime, e.g. for Nested
+# 5. how to call with kwargs, e.g. in Rescue?
 
 class RunnerInvokerTest < Minitest::Spec
 it do
@@ -18,7 +20,7 @@ it do
         loop do
           id, task, invoker, circuit_options_to_merge = task_cfg
 
-          # puts "@@@@@ circuit [invoke] #{id.inspect}"
+          puts "@@@@@ circuit [invoke] #{id.inspect}"
           ctx = ctx.merge(circuit_options_to_merge)
 
           ctx, signal = invoker.( # TODO: redundant with {Pipeline::Processor.call}.
@@ -28,9 +30,9 @@ it do
           )
 
           # Stop execution of the circuit when we hit a terminus.
-          # puts "@@@@@ #{termini.collect { |o| o.object_id} } ??? #{signal.object_id} #{signal}"
+          # puts "@@@@@ #{termini.collect { |o| o} } ??? #{signal.object_id} #{signal}"
           if termini.include?(task)
-            # puts "done with #{task}"
+            # puts "done with circuit #{task}"
             return ctx, signal
           end
 
@@ -58,24 +60,6 @@ it do
       end
 
       class Failure < Success
-      end
-    end
-  end
-
-  class Pipeline < Struct.new(:sequence)
-    class Processor
-      def self.call(sequence, ctx, **)
-        signal = nil
-
-        sequence.each do |_id, task, invoker, circuit_options_to_merge = {}|
-          # puts "pipe @@@@@ #{_id.inspect} "
-
-          ctx = ctx.merge(circuit_options_to_merge)
-
-          ctx, signal = invoker.(task, ctx, **ctx)
-        end
-
-        return ctx, signal
       end
     end
   end
@@ -112,13 +96,38 @@ it do
     end
   end
 
+  # Helper for those who don't like or have a DSL :D
+  def pipeline_circuit(*task_cfgs)
+    task_cfgs = task_cfgs.collect do |id, task, invoker = INVOKER___CIRCUIT_INTERFACE, options = {}, signal: nil|
+      [
+        id, task, invoker, options, signal # FIXME: we don't need the signal at runtime.
+      ]
+    end
+
+    circuit = task_cfgs.collect.with_index do |task_cfg, i|
+      signal = task_cfg[-1]
+
+      [
+        task_cfg,
+        {signal => task_cfgs[i + 1]} # FIXME: don't link last task!
+      ]
+
+    end.to_h
+
+    Circuit.new(
+      map:        circuit,
+      start_task: task_cfgs[0],
+      termini:    [task_cfgs[-1][1]]
+    )
+  end
+
   class ComputeBinarySignal
     def self.call(ctx, value:, **)
       signal = value ? Trailblazer::Activity::Right : Trailblazer::Activity::Left
 
       ctx[:signal] = signal
 
-      return ctx, signal
+      return ctx, nil
     end
   end
 
@@ -133,7 +142,7 @@ it do
   class Model___Output
     def self.call(ctx, signal:, **)
       ctx, _ = ctx.decompose
-      return ctx, signal
+      return ctx, signal # FIXME: how do we return the computed "real" signal?
     end
   end
 
@@ -167,35 +176,38 @@ it do
     end
   end
 
-  model_pipe = [
-    [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
+  # model_pipe = [
+  #   [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
 
-    [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {task: :model}],
-    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
+  #   [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {task: :model}],
+  #   [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
 
-    [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
-  ]
+  #   [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
+  # ]
+  model_pipe = pipeline_circuit(
+    [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
+    [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
+    [:compute_binary_signal, ComputeBinarySignal],
+    [:output, Model___Output],                                                    # DISCUSS: can we somehow save these steps?
+  )
+  # pp model_pipe
 
-  run_checks_pipe = [
-    [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
-
+  run_checks_pipe = pipeline_circuit(
+    [:input, Model___Input],
     [:invoke_instance_method, :run_checks, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
-    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
+    [:compute_binary_signal, ComputeBinarySignal],
+    [:output, Model___Output],
+  )
 
-    [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
-  ]
-
-  title_length_ok_pipe = [
-    [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
-
+  title_length_ok_pipe = pipeline_circuit(
+    [:input, Model___Input],
     [:invoke_instance_method, :title_length_ok?, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
-    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
+    [:compute_binary_signal, ComputeBinarySignal],
+    [:output, Model___Output],
+  )
 
-    [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
-  ]
-
-  run_checks      = [:run_checks, run_checks_pipe, Pipeline::Processor, {}]
-  title_length_ok = [:title_length_ok?, title_length_ok_pipe, Pipeline::Processor, {}]
+  run_checks      = [:run_checks, run_checks_pipe, Circuit::Processor, {}]
+  title_length_ok = [:title_length_ok?, title_length_ok_pipe, Circuit::Processor, {}]
   validate_success_terminus = [:validate_success_terminus, FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
   validate_failure_terminus = [:validate_failure_terminus, FIXME_FAILURE = Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
 
@@ -207,19 +219,17 @@ it do
   }
   validate_circuit = Circuit.new(map: validate_circuit, termini: [FIXME_SUCCESS, FIXME_FAILURE], start_task: run_checks)
 
-  save_pipe = [
-    [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
-
-    [:invoke_callable, Save, INVOKER___STEP_INTERFACE, {}],
-    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
-
-    [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
-  ]
+  save_pipe = pipeline_circuit(
+    [:input, Model___Input],
+    [:invoke_callable, Save, INVOKER___STEP_INTERFACE],
+    [:compute_binary_signal, ComputeBinarySignal],
+    [:output, Model___Output],
+  )
 
   # create_pipe = [
-    model =    [:model,    model_pipe, Pipeline::Processor,      {exec_context: Create.new.freeze},] # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    model =    [:model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze},] # TODO: circuit_options should be set outside of Create, in the canonical invoke.
     validate = [:validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze},]
-    save =     [:save,     save_pipe, Pipeline::Processor,       {}] # check that we don't have circuit_options anymore here?
+    save =     [:save,     save_pipe, Circuit::Processor,       {}] # check that we don't have circuit_options anymore here?
   # ]
 
   create_success_terminus = [:create_success_terminus, CREATE_FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
@@ -255,7 +265,7 @@ it do
   assert_equal signal, CREATE_FIXME_SUCCESS
   assert_equal ctx.keys, [:application_ctx, :exec_context]
 
-
+raise
 
 
 
@@ -282,13 +292,15 @@ it do
   ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}})
   # raise ctx.inspect
 
-    require "benchmark/ips"
-    Benchmark.ips do |x|
-      x.report("circuit") { ctx, signal = Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}}) }
-      x.report("pipe")    { ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}}) }
+    ## Benchmark circuit vs pipe.
+    #
+    # require "benchmark/ips"
+    # Benchmark.ips do |x|
+    #   x.report("circuit") { ctx, signal = Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}}) }
+    #   x.report("pipe")    { ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}}) }
 
-      x.compare!
-    end
+    #   x.compare!
+    # end
 
 # Learning:
 ##
