@@ -3,8 +3,54 @@ require "test_helper"
 class RunnerInvokerTest < Minitest::Spec
 it do
   # We start with NO #call methods!
-  class Circuit < Struct.new(:map, :start_task, :termini)
+  class Circuit < Struct.new(:map, :start_task, :termini, keyword_init: true)
+    class Processor
+      def self.call(circuit, ctx, **)
+        map      = circuit.map
+        termini  = circuit.termini
+        task_cfg = circuit.start_task
 
+        loop do
+          id, task, invoker, circuit_options_to_merge = task_cfg
+
+          puts "@@@@@ circuit [invoke] #{id.inspect}"
+          ctx = ctx.merge(circuit_options_to_merge)
+
+          ctx, signal = invoker.( # TODO: redundant with {Pipeline::Processor.call}.
+            task,
+            ctx,
+            **ctx,
+          )
+
+          # Stop execution of the circuit when we hit a terminus.
+          return ctx, signal if termini.include?(task)
+
+          if next_task_cfg = next_for(map, task_cfg, signal)
+            task_cfg = next_task_cfg
+            puts "@@@@@ =========> #{next_task_cfg.inspect}"
+          else
+            raise
+            # raise_illegal_signal_error!(task, signal, @map[task], **circuit_options)
+          end
+        end
+      end
+
+      def self.next_for(map, last_task_cfg, signal)
+        outputs = map[last_task_cfg]
+        outputs[signal]
+      end
+    end
+
+    module Terminus
+      class Success < Struct.new(:semantic, keyword_init: true)
+        def call(ctx, **)
+          return ctx, self
+        end
+      end
+
+      class Failure < Success
+      end
+    end
   end
 
   class Pipeline < Struct.new(:sequence)
@@ -13,7 +59,7 @@ it do
         signal = nil
 
         sequence.each do |_id, task, invoker, circuit_options_to_merge = {}|
-          puts "@@@@@ #{task.inspect} --> #{invoker} -------> #{ctx.to_h}"
+          puts "pipe @@@@@ #{_id.inspect} "
 
           ctx = ctx.merge(circuit_options_to_merge)
 
@@ -87,6 +133,23 @@ it do
     end
   end
 
+  class Validate
+    def run_checks(ctx, params:, model:, **)
+      if params[:song]
+        return true
+      else
+        ctx[:errors] = [model, :song]
+        return false
+      end
+    end
+
+    def title_length_ok?(ctx, params:, **)
+      return false unless params[:song][:title]
+
+      return true
+    end
+  end
+
   model_pipe = [
     [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
 
@@ -96,10 +159,40 @@ it do
     [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
   ]
 
+  run_checks_pipe = [
+    [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
+
+    [:invoke_instance_method, :run_checks, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
+    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
+
+    [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
+  ]
+
+  title_length_ok_pipe = [
+    [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
+
+    [:invoke_instance_method, :title_length_ok?, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
+    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
+
+    [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
+  ]
+
+  run_checks      = [:run_checks, run_checks_pipe, Pipeline::Processor, {}]
+  title_length_ok = [:title_length_ok?, title_length_ok_pipe, Pipeline::Processor, {}]
+  success_terminus = [:success_terminus, FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
+  failure_terminus = [:failure_terminus, FIXME_FAILURE = Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
+
+  validate_circuit = {
+    run_checks => {Trailblazer::Activity::Right => title_length_ok, Trailblazer::Activity::Left => failure_terminus},
+    title_length_ok => {Trailblazer::Activity::Right => success_terminus, Trailblazer::Activity::Left => failure_terminus},
+    # FIXME_SUCCESS => {},
+    # FIXME_FAILURE => {},
+  }
+  validate_circuit = Circuit.new(map: validate_circuit, termini: [FIXME_SUCCESS, FIXME_FAILURE], start_task: run_checks)
+
   create_pipe = [
-    [
-      :model, model_pipe, Pipeline::Processor, {exec_context: Create.new.freeze}
-    ],
+    [:model,    model_pipe, Pipeline::Processor,      {exec_context: Create.new.freeze},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    [:validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze},]
 
   ]
 
@@ -110,11 +203,14 @@ it do
   }
 
   # ctx, signal = Pipeline::Processor.(model_pipe, create_ctx)
+
   ctx, signal = Pipeline::Processor.(create_pipe, create_ctx)
 
-  assert_equal ctx[:application_ctx], {:params=>{:id=>1}, :model=>"Object 1"}
+  assert_equal ctx[:application_ctx], {:params=>{:id=>1}, :model=>"Object 1", :errors=>["Object 1", :song]}
   assert_equal ctx.keys, [:application_ctx, :exec_context]
-  assert_equal signal, Trailblazer::Activity::Right
+  # assert_equal ctx[:application_ctx][:errors], [2]
+  # assert_equal signal, Trailblazer::Activity::Right
+  assert_equal signal, FIXME_FAILURE
 end
 
   class INVOKER___CIRCUIT_INTERFACE___INSTANCE_METHOD_ON_EXEC_CONTEXT # GREAT thing here, we can use it for businesss and for library tasks.
