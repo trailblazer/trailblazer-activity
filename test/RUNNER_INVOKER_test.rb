@@ -7,6 +7,7 @@ require "test_helper"
 # 4. show how task can be replaced at runtime, e.g. for Nested
 # 5. how to call with kwargs, e.g. in Rescue?
 # 6. "scopes" for tracing? E.g. "only trace business steps"
+# 7. try saving memory by providing often-used Pipes, e.g. for IO?
 
 class RunnerInvokerTest < Minitest::Spec
 it do
@@ -135,7 +136,7 @@ it do
 
   class Model___Input
     def self.call(ctx, **)
-      ctx = Trailblazer::Context(ctx)
+      ctx = Trailblazer.Context(ctx)
 
       return ctx, nil
     end
@@ -149,13 +150,20 @@ it do
   end
 
   class Create
-    def model(ctx, params:, **)
-      ctx[:model] = "Object #{params[:id]}"
+    def model(ctx, params:, **kws)
+      ctx[:spam] = false
+      ctx[:model] = "Object #{params[:id]} / #{kws.inspect}"
     end
 
     def my_model_input(ctx, params:, **)
       {
-        params: {id: params[:id].inspect}
+        params: {id: params[:slug]}
+      }
+    end
+
+    def my_model_output(ctx, model:, **)
+      {
+        model: model
       }
     end
   end
@@ -169,14 +177,36 @@ it do
 
     def add_value_to_aggregate(ctx, aggregate:, value:, **)
       ctx[:aggregate] = aggregate.merge(value)
+
+      return ctx, nil
+    end
+
+    def save_original_application_ctx(ctx, application_ctx:, **)
+      ctx[:original_application_ctx] = application_ctx # the "outer ctx".
+
+      return ctx, nil
     end
 
     def unscope___(ctx, application_ctx:, aggregate:, **)
       original, _ = ctx.decompose
 
-      ctx = original.merge(application_ctx: aggregate)
+      ctx = original.merge(application_ctx: Trailblazer::Context(aggregate)) # FIXME: separate step.
 
       return ctx, nil
+    end
+
+    # def create_input_ctx(ctx, aggregate:, **)
+
+    # end
+
+    def swap___(ctx, application_ctx:, original_application_ctx:, aggregate:, signal:, **)
+      new_application_ctx = original_application_ctx.merge(aggregate) # DISCUSS: how to write on outer ctx?
+
+      original, _ = ctx.decompose
+
+      ctx = original.merge(application_ctx: new_application_ctx)
+
+      return ctx, signal # FIXME: thiiiiiiiiiiiiiiiiiis neeeeds to be the last tw step.
     end
   end
   Io = IO___.new
@@ -198,30 +228,41 @@ it do
     end
   end
   more_model_input_pipe = pipeline_circuit(
-    # [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
     [:invoke_callable, MoreModelInput, INVOKER___STEP_INTERFACE],
-    # [:compute_binary_signal, ComputeBinarySignal],
     [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
-    # [:output, Model___Output],
+  )
+
+  my_model_output_pipe = pipeline_circuit(
+    [:invoke_instance_method, :my_model_output, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
   )
 
   model_input_pipe = pipeline_circuit(
-    [:scope, Model___Input], # scope
+    [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
+    [:scope, Model___Input], # scope, so we don't pollute anything.
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
-    [:my_model_input, my_model_input_pipe, Circuit::Processor],
-    [:more_model_input, more_model_input_pipe, Circuit::Processor],
+    [:my_model_input, my_model_input_pipe, Circuit::Processor],     # user filter.
+    [:more_model_input, more_model_input_pipe, Circuit::Processor], # user filter.
     [:unscope, :unscope___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}]
   )
 
-  ctx, signal = Circuit::Processor.(model_input_pipe, {
-    application_ctx: {params: {id: 999}},
-    exec_context: create_instance = Create.new,
-  })
+  model_output_pipe = pipeline_circuit(
+    [:scope, Model___Input], # scope so we don't pollute
+    [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
+    [:my_model_output, my_model_output_pipe, Circuit::Processor],     # user filter.
+    [:swap___, :swap___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
+  )
 
-  # ctx, signal = Circuit::Processor.(more_model_input_pipe, ctx)
+  # ctx, signal = Circuit::Processor.(model_input_pipe, {
+  #   application_ctx: {params: {slug: 999}, noise: true},
+  #   exec_context: create_instance = Create.new,
+  # })
 
-  assert_equal ctx.inspect, %({:application_ctx=>{:params=>{:id=>"999"}, :more=>"{:id=>999}"}, :exec_context=>#{create_instance}})
-  pp ctx
+  # application_ctx = ctx[:application_ctx].merge(model: Object)
+
+  # ctx, signal = Circuit::Processor.(model_output_pipe, ctx.merge(application_ctx: application_ctx))
+
+  # assert_equal ctx.inspect, %({:application_ctx=>{:params=>{:id=>"999"}, :more=>"{:id=>999}"}, :exec_context=>#{create_instance}, noise})
 
 
 
@@ -251,10 +292,12 @@ it do
   end
 
   model_pipe = pipeline_circuit(
-    [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
-    [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
+    # [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
+    [:input, model_input_pipe, Circuit::Processor],
+    [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
     [:compute_binary_signal, ComputeBinarySignal],
-    [:output, Model___Output],                                                    # DISCUSS: can we somehow save these steps?
+    # [:output, Model___Output],                                                    # DISCUSS: can we somehow save these steps?
+    [:output, model_output_pipe, Circuit::Processor],
   )
   # pp model_pipe
 
@@ -293,9 +336,9 @@ it do
   )
 
   # create_pipe = [
-    model =    [:model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze},] # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    validate = [:validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze},]
-    save =     [:save,     save_pipe, Circuit::Processor,       {}] # check that we don't have circuit_options anymore here?
+    model =    [:Model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze},] # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    validate = [:Validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze},]
+    save =     [:Save,     save_pipe, Circuit::Processor,       {}] # check that we don't have circuit_options anymore here?
   # ]
 
   create_success_terminus = [:create_success_terminus, CREATE_FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
@@ -317,6 +360,7 @@ it do
     application_ctx:  ctx
   }
 
+puts "ciiii"
   # validation error:
   ctx, signal = Circuit::Processor.(create_circuit, create_ctx)
 
