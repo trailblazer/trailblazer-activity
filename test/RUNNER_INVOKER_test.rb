@@ -6,6 +6,7 @@ require "test_helper"
 # 3. runtime tw
 # 4. show how task can be replaced at runtime, e.g. for Nested
 # 5. how to call with kwargs, e.g. in Rescue?
+# 6. "scopes" for tracing? E.g. "only trace business steps"
 
 class RunnerInvokerTest < Minitest::Spec
 it do
@@ -88,9 +89,10 @@ it do
   end
 
   class INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
-    def self.call(task, ctx, exec_context:, application_ctx:, **)
+    def self.call(task, ctx, exec_context:, application_ctx:, use_application_ctx___: true, **)
+      target_ctx = use_application_ctx___ ? application_ctx : ctx # FIXME: not entirely happy with this.
 
-      result = exec_context.send(task, application_ctx, **application_ctx.to_h)
+      result = exec_context.send(task, target_ctx, **target_ctx.to_h)
 
       return ctx.merge(value: result), nil # DISCUSS: value
     end
@@ -150,7 +152,35 @@ it do
     def model(ctx, params:, **)
       ctx[:model] = "Object #{params[:id]}"
     end
+
+    def my_model_input(ctx, params:, **)
+      {
+        params: {id: params[:id].inspect}
+      }
+    end
   end
+
+  class IO___
+    def add_value_to_aggregate(ctx, aggregate:, value:, **)
+      ctx[:aggregate] = aggregate.merge!(value)
+    end
+  end
+  Io = IO___.new
+
+  # In() => :my_model_input
+  my_model_input_pipe = pipeline_circuit(
+    # [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
+    [:invoke_instance_method, :my_model_input, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
+    # [:compute_binary_signal, ComputeBinarySignal],
+    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
+    # [:output, Model___Output],
+  )
+
+  # ctx, signal = Circuit::Processor.(my_model_input_pipe, {application_ctx: {params: {}}, exec_context: Create.new})
+
+
+
+
 
   class Validate
     def run_checks(ctx, params:, model:, **)
@@ -176,14 +206,6 @@ it do
     end
   end
 
-  # model_pipe = [
-  #   [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
-
-  #   [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {task: :model}],
-  #   [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
-
-  #   [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
-  # ]
   model_pipe = pipeline_circuit(
     [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
     [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
@@ -265,31 +287,28 @@ it do
   assert_equal signal, CREATE_FIXME_SUCCESS
   assert_equal ctx.keys, [:application_ctx, :exec_context]
 
-raise
+
+  # save_pipe = [
+  #   a = [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE, {}],
+
+  #   b= [:invoke_callable, Save, INVOKER___STEP_INTERFACE, {}],
+  #   c= [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE, {}],
+
+  #   d =[:output, Model___Output, INVOKER___CIRCUIT_INTERFACE, {}],
+  # ]
 
 
+  # save_circuit = {
+  #   a => {nil => b},
+  #   b => {nil => c},
+  #   c => {Trailblazer::Activity::Right => d},
+  #   # d => {Trailblazer::Activity::Right => create_success_terminus},
+  # }
 
-  save_pipe = [
-    a = [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE, {}],
+  # save_circuit = Circuit.new(map: save_circuit, termini: [Model___Output], start_task: a)
 
-    b= [:invoke_callable, Save, INVOKER___STEP_INTERFACE, {}],
-    c= [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE, {}],
-
-    d =[:output, Model___Output, INVOKER___CIRCUIT_INTERFACE, {}],
-  ]
-
-
-  save_circuit = {
-    a => {nil => b},
-    b => {nil => c},
-    c => {Trailblazer::Activity::Right => d},
-    # d => {Trailblazer::Activity::Right => create_success_terminus},
-  }
-
-  save_circuit = Circuit.new(map: save_circuit, termini: [Model___Output], start_task: a)
-
-  ctx, signal = Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}})
-  ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}})
+  # ctx, signal = Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}})
+  # ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}})
   # raise ctx.inspect
 
     ## Benchmark circuit vs pipe.
