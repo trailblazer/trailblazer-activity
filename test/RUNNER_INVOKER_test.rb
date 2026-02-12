@@ -161,8 +161,22 @@ it do
   end
 
   class IO___
+    def init_aggregate(ctx, **)
+      ctx[:aggregate] = {}
+
+      return ctx, nil
+    end
+
     def add_value_to_aggregate(ctx, aggregate:, value:, **)
-      ctx[:aggregate] = aggregate.merge!(value)
+      ctx[:aggregate] = aggregate.merge(value)
+    end
+
+    def unscope___(ctx, application_ctx:, aggregate:, **)
+      original, _ = ctx.decompose
+
+      ctx = original.merge(application_ctx: aggregate)
+
+      return ctx, nil
     end
   end
   Io = IO___.new
@@ -175,9 +189,39 @@ it do
     [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
     # [:output, Model___Output],
   )
+  # In() => MoreModelInput
+  class MoreModelInput
+    def self.call(ctx, params:, **)
+      {
+        more: params.inspect
+      }
+    end
+  end
+  more_model_input_pipe = pipeline_circuit(
+    # [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
+    [:invoke_callable, MoreModelInput, INVOKER___STEP_INTERFACE],
+    # [:compute_binary_signal, ComputeBinarySignal],
+    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
+    # [:output, Model___Output],
+  )
 
-  # ctx, signal = Circuit::Processor.(my_model_input_pipe, {application_ctx: {params: {}}, exec_context: Create.new})
+  model_input_pipe = pipeline_circuit(
+    [:scope, Model___Input], # scope
+    [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
+    [:my_model_input, my_model_input_pipe, Circuit::Processor],
+    [:more_model_input, more_model_input_pipe, Circuit::Processor],
+    [:unscope, :unscope___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}]
+  )
 
+  ctx, signal = Circuit::Processor.(model_input_pipe, {
+    application_ctx: {params: {id: 999}},
+    exec_context: create_instance = Create.new,
+  })
+
+  # ctx, signal = Circuit::Processor.(more_model_input_pipe, ctx)
+
+  assert_equal ctx.inspect, %({:application_ctx=>{:params=>{:id=>"999"}, :more=>"{:id=>999}"}, :exec_context=>#{create_instance}})
+  pp ctx
 
 
 
