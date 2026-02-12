@@ -23,7 +23,11 @@ it do
           )
 
           # Stop execution of the circuit when we hit a terminus.
-          return ctx, signal if termini.include?(task)
+          # puts "@@@@@ #{termini.collect { |o| o.object_id} } ??? #{signal.object_id} #{signal}"
+          if termini.include?(task)
+            puts "done with #{task}"
+            return ctx, signal
+          end
 
           if next_task_cfg = next_for(map, task_cfg, signal)
             task_cfg = next_task_cfg
@@ -84,10 +88,13 @@ it do
   end
 
   class INVOKER___STEP_INTERFACE
-    def self.call(ctx, flow_options, circuit_options, task:, **kwargs)
-      result = task.(ctx, **ctx.to_h)
+    def self.call(task, ctx, application_ctx:, **)
+      result = task.(application_ctx, **application_ctx.to_h)
+      pp application_ctx
 
-      raise "FIXME: binary"
+      return ctx.merge(value: result,
+        # application_ctx: application_ctx
+        ), nil # DISCUSS: value. FIXME: redundant to INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
     end
   end
 
@@ -148,6 +155,13 @@ it do
     end
   end
 
+  # step interface.
+  class Save
+    def self.call(ctx, model:, **)
+      ctx[:save] = model
+    end
+  end
+
   model_pipe = [
     [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
 
@@ -177,22 +191,44 @@ it do
 
   run_checks      = [:run_checks, run_checks_pipe, Pipeline::Processor, {}]
   title_length_ok = [:title_length_ok?, title_length_ok_pipe, Pipeline::Processor, {}]
-  success_terminus = [:success_terminus, FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
-  failure_terminus = [:failure_terminus, FIXME_FAILURE = Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
+  validate_success_terminus = [:validate_success_terminus, FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
+  validate_failure_terminus = [:validate_failure_terminus, FIXME_FAILURE = Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
 
   validate_circuit = {
-    run_checks => {Trailblazer::Activity::Right => title_length_ok, Trailblazer::Activity::Left => failure_terminus},
-    title_length_ok => {Trailblazer::Activity::Right => success_terminus, Trailblazer::Activity::Left => failure_terminus},
+    run_checks => {Trailblazer::Activity::Right => title_length_ok, Trailblazer::Activity::Left => validate_failure_terminus},
+    title_length_ok => {Trailblazer::Activity::Right => validate_success_terminus, Trailblazer::Activity::Left => validate_failure_terminus},
     # FIXME_SUCCESS => {},
     # FIXME_FAILURE => {},
   }
   validate_circuit = Circuit.new(map: validate_circuit, termini: [FIXME_SUCCESS, FIXME_FAILURE], start_task: run_checks)
 
-  create_pipe = [
-    [:model,    model_pipe, Pipeline::Processor,      {exec_context: Create.new.freeze},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    [:validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze},]
+  save_pipe = [
+    [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE],
 
+    [:invoke_callable, Save, INVOKER___STEP_INTERFACE, {}],
+    [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE],
+
+    [:output, Model___Output, INVOKER___CIRCUIT_INTERFACE],
   ]
+
+  # create_pipe = [
+    model =    [:model,    model_pipe, Pipeline::Processor,      {exec_context: Create.new.freeze},] # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    validate = [:validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze},]
+    save =     [:save,     save_pipe, Pipeline::Processor,       {}] # check that we don't have circuit_options anymore here?
+  # ]
+
+  create_success_terminus = [:create_success_terminus, CREATE_FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
+  create_failure_terminus = [:create_failure_terminus, CREATE_FIXME_FAILURE = Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
+
+
+
+  create_circuit = {
+    model => {Trailblazer::Activity::Right => validate, Trailblazer::Activity::Left => create_failure_terminus}, # DISCUSS: reuse termini?
+    validate => {FIXME_SUCCESS => save, FIXME_FAILURE => create_failure_terminus},
+    save => {Trailblazer::Activity::Right => create_success_terminus, Trailblazer::Activity::Left => create_failure_terminus},
+  }
+
+  create_circuit = Circuit.new(map: create_circuit, termini: [CREATE_FIXME_SUCCESS, CREATE_FIXME_FAILURE], start_task: model)
 
   ctx = {params: {id: 1}}
   create_ctx = {
@@ -200,19 +236,19 @@ it do
     application_ctx:  ctx
   }
 
-
-  ctx, signal = Pipeline::Processor.(create_pipe, create_ctx)
+  # validation error:
+  ctx, signal = Circuit::Processor.(create_circuit, create_ctx)
 
   assert_equal ctx[:application_ctx], {:params=>{:id=>1}, :model=>"Object 1", :errors=>["Object 1", :song]}
   assert_equal ctx.keys, [:application_ctx, :exec_context]
-  assert_equal signal, FIXME_FAILURE
+  assert_equal signal, CREATE_FIXME_FAILURE
 
-  ctx, signal = Pipeline::Processor.(create_pipe, {application_ctx: _ctx = {params: {song: {title: "Uwe"}}}})
+  # success:
+  ctx, signal = Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}}})
 
-  assert_equal signal, FIXME_SUCCESS
-  assert_equal ctx[:application_ctx], _ctx
+  assert_equal ctx[:application_ctx], {:params=>{:song=>{title: "Uwe"}, id: 1}, :model=>"Object 1", :save=>"Object 1"}
+  assert_equal signal, CREATE_FIXME_SUCCESS
   assert_equal ctx.keys, [:application_ctx, :exec_context]
-
 end
 
   class INVOKER___CIRCUIT_INTERFACE___INSTANCE_METHOD_ON_EXEC_CONTEXT # GREAT thing here, we can use it for businesss and for library tasks.
