@@ -1,5 +1,10 @@
 require "test_helper"
 
+# TODO:
+# 1. SOMETHINg like Pipe::Input, nested pipe, check out how to use a work ctx
+# 2. do we need pipelines?
+# 3. runtime tw
+
 class RunnerInvokerTest < Minitest::Spec
 it do
   # We start with NO #call methods!
@@ -13,7 +18,7 @@ it do
         loop do
           id, task, invoker, circuit_options_to_merge = task_cfg
 
-          puts "@@@@@ circuit [invoke] #{id.inspect}"
+          # puts "@@@@@ circuit [invoke] #{id.inspect}"
           ctx = ctx.merge(circuit_options_to_merge)
 
           ctx, signal = invoker.( # TODO: redundant with {Pipeline::Processor.call}.
@@ -25,15 +30,15 @@ it do
           # Stop execution of the circuit when we hit a terminus.
           # puts "@@@@@ #{termini.collect { |o| o.object_id} } ??? #{signal.object_id} #{signal}"
           if termini.include?(task)
-            puts "done with #{task}"
+            # puts "done with #{task}"
             return ctx, signal
           end
 
           if next_task_cfg = next_for(map, task_cfg, signal)
             task_cfg = next_task_cfg
-            puts "@@@@@ =========> #{next_task_cfg.inspect}"
+            # puts "@@@@@ =========> #{next_task_cfg.inspect}"
           else
-            raise
+            raise signal.inspect
             # raise_illegal_signal_error!(task, signal, @map[task], **circuit_options)
           end
         end
@@ -63,7 +68,7 @@ it do
         signal = nil
 
         sequence.each do |_id, task, invoker, circuit_options_to_merge = {}|
-          puts "pipe @@@@@ #{_id.inspect} "
+          # puts "pipe @@@@@ #{_id.inspect} "
 
           ctx = ctx.merge(circuit_options_to_merge)
 
@@ -90,7 +95,7 @@ it do
   class INVOKER___STEP_INTERFACE
     def self.call(task, ctx, application_ctx:, **)
       result = task.(application_ctx, **application_ctx.to_h)
-      pp application_ctx
+      # pp application_ctx
 
       return ctx.merge(value: result,
         # application_ctx: application_ctx
@@ -118,7 +123,7 @@ it do
   end
 
   class Model___Input
-    def self.call(ctx, exec_context:, **)
+    def self.call(ctx, **)
       ctx = Trailblazer::Context(ctx)
 
       return ctx, nil
@@ -249,6 +254,58 @@ it do
   assert_equal ctx[:application_ctx], {:params=>{:song=>{title: "Uwe"}, id: 1}, :model=>"Object 1", :save=>"Object 1"}
   assert_equal signal, CREATE_FIXME_SUCCESS
   assert_equal ctx.keys, [:application_ctx, :exec_context]
+
+
+
+
+
+  save_pipe = [
+    a = [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE, {}],
+
+    b= [:invoke_callable, Save, INVOKER___STEP_INTERFACE, {}],
+    c= [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE, {}],
+
+    d =[:output, Model___Output, INVOKER___CIRCUIT_INTERFACE, {}],
+  ]
+
+
+  save_circuit = {
+    a => {nil => b},
+    b => {nil => c},
+    c => {Trailblazer::Activity::Right => d},
+    # d => {Trailblazer::Activity::Right => create_success_terminus},
+  }
+
+  save_circuit = Circuit.new(map: save_circuit, termini: [Model___Output], start_task: a)
+
+  ctx, signal = Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}})
+  ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}})
+  # raise ctx.inspect
+
+    require "benchmark/ips"
+    Benchmark.ips do |x|
+      x.report("circuit") { ctx, signal = Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}}) }
+      x.report("pipe")    { ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}}) }
+
+      x.compare!
+    end
+
+# Learning:
+##
+# get rid of Pipeline. we can find a fast way to extend it at runtime.
+#
+# Warming up --------------------------------------
+#              circuit     6.285k i/100ms
+#                 pipe     7.877k i/100ms
+# Calculating -------------------------------------
+#              circuit     65.256k (± 2.8%) i/s -    326.820k in   5.012556s
+#                 pipe     78.046k (± 1.3%) i/s -    393.850k in   5.047203s
+
+# Comparison:
+#                 pipe:    78046.2 i/s
+#              circuit:    65255.8 i/s - 1.20x  (± 0.00) slower
+
+
 end
 
   class INVOKER___CIRCUIT_INTERFACE___INSTANCE_METHOD_ON_EXEC_CONTEXT # GREAT thing here, we can use it for businesss and for library tasks.
@@ -258,9 +315,6 @@ end
       exec_context.send(task, ctx, flow_options, circuit_options, **kwargs)
     end
   end
-
-
-
 end
 
 =begin
