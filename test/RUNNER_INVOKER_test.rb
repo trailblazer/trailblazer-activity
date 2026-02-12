@@ -113,8 +113,6 @@ it do
   class Model___Input
     def self.call(ctx, exec_context:, **)
       ctx = Trailblazer::Context(ctx)
-      # ctx[:exec_context] = ComputeBinarySignal
-      # ctx[:original_exec_context] = exec_context
 
       return ctx, nil
     end
@@ -202,15 +200,19 @@ it do
     application_ctx:  ctx
   }
 
-  # ctx, signal = Pipeline::Processor.(model_pipe, create_ctx)
 
   ctx, signal = Pipeline::Processor.(create_pipe, create_ctx)
 
   assert_equal ctx[:application_ctx], {:params=>{:id=>1}, :model=>"Object 1", :errors=>["Object 1", :song]}
   assert_equal ctx.keys, [:application_ctx, :exec_context]
-  # assert_equal ctx[:application_ctx][:errors], [2]
-  # assert_equal signal, Trailblazer::Activity::Right
   assert_equal signal, FIXME_FAILURE
+
+  ctx, signal = Pipeline::Processor.(create_pipe, {application_ctx: _ctx = {params: {song: {title: "Uwe"}}}})
+
+  assert_equal signal, FIXME_SUCCESS
+  assert_equal ctx[:application_ctx], _ctx
+  assert_equal ctx.keys, [:application_ctx, :exec_context]
+
 end
 
   class INVOKER___CIRCUIT_INTERFACE___INSTANCE_METHOD_ON_EXEC_CONTEXT # GREAT thing here, we can use it for businesss and for library tasks.
