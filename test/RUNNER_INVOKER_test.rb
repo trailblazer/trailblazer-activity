@@ -10,13 +10,38 @@ require "test_helper"
 # 7. try saving memory by providing often-used Pipes, e.g. for IO?
 # 8. how would we change the "circuit options" from a step? ===> change :start_task
 # 9. does invoker.call need kwargs?
+# 10. BUG: when all tasks are the same proc and the last is the terminus, only the first is run.
 
 class RunnerInvokerTest < Minitest::Spec
-it do
-  # We start with NO #call methods!
+  # Helper for those who don't like or have a DSL :D
+  def pipeline_circuit(*task_cfgs)
+    task_cfgs = task_cfgs.collect do |id, task, invoker = INVOKER___CIRCUIT_INTERFACE, options = {}, signal: nil|
+      [
+        id, task, invoker, options, signal # FIXME: we don't need the signal at runtime.
+      ]
+    end
+
+    circuit = task_cfgs.collect.with_index do |task_cfg, i|
+      signal = task_cfg[-1]
+
+      [
+        task_cfg,
+        {signal => task_cfgs[i + 1]} # FIXME: don't link last task!
+      ]
+
+    end.to_h
+
+    Circuit.new(
+      map:        circuit,
+      start_task: task_cfgs[0],
+      termini:    [task_cfgs[-1][1]]
+    )
+  end
+
+    # We start with NO #call methods!
   class Circuit < Struct.new(:map, :start_task, :termini, keyword_init: true)
     class Processor
-      def self.call(circuit, ctx, **)
+      def self.call(circuit, ctx, **tmp_ctx)
         map      = circuit.map
         termini  = circuit.termini
         task_cfg = circuit.start_task
@@ -24,13 +49,29 @@ it do
         loop do
           id, task, invoker, circuit_options_to_merge = task_cfg
 
-          puts "@@@@@ circuit [invoke] #{id.inspect}"
-          ctx = ctx.merge(circuit_options_to_merge)
+          puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
+          # ctx = ctx.merge(circuit_options_to_merge)
+
+          tmp = {
+            **ctx, # DISCUSS: do we need kwargs here?
+
+            **tmp_ctx, # FIXME: prototyping here.
+
+            **circuit_options_to_merge,
+          }
+
+          pp tmp
+
 
           ctx, signal = invoker.( # TODO: redundant with {Pipeline::Processor.call}.
             task,
             ctx,
             **ctx, # DISCUSS: do we need kwargs here?
+
+            **tmp_ctx, # FIXME: prototyping here.
+
+            **circuit_options_to_merge,
+
           )
 
           # Stop execution of the circuit when we hit a terminus.
@@ -101,31 +142,43 @@ it do
     end
   end
 
-  # Helper for those who don't like or have a DSL :D
-  def pipeline_circuit(*task_cfgs)
-    task_cfgs = task_cfgs.collect do |id, task, invoker = INVOKER___CIRCUIT_INTERFACE, options = {}, signal: nil|
-      [
-        id, task, invoker, options, signal # FIXME: we don't need the signal at runtime.
-      ]
+  it "circuit_options, depth-only" do
+    def capture_task(id:)
+      ->(ctx, exec_context:, **) { ctx[:captured] << [id, exec_context.inspect]; return ctx, nil }
     end
 
-    circuit = task_cfgs.collect.with_index do |task_cfg, i|
-      signal = task_cfg[-1]
-
-      [
-        task_cfg,
-        {signal => task_cfgs[i + 1]} # FIXME: don't link last task!
-      ]
-
-    end.to_h
-
-    Circuit.new(
-      map:        circuit,
-      start_task: task_cfgs[0],
-      termini:    [task_cfgs[-1][1]]
+    model_pipe = pipeline_circuit(
+      [:input, capture_task(id: 1)],
+      [:model, capture_task(id: 2)],
+      [:output, capture_task(id: 3)],
     )
+
+    validate_pipe = pipeline_circuit(
+      [:validate, capture_task(id: 4)],
+    )
+
+    create_pipe = pipeline_circuit(
+      [:Model, model_pipe, Circuit::Processor],
+      [:Validate, validate_pipe, Circuit::Processor],
+    )
+
+    # As we pass in exec_context: as a kwarg, it's passed to all siblings etc.
+    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, exec_context: Object)
+    assert_equal ctx[:captured], [[1, "Object"], [2, "Object"], [3, "Object"], [4, "Object"]]
+
+# FIXME: new test case.
+puts
+    create_pipe = pipeline_circuit(
+      [:Model, model_pipe, Circuit::Processor, {exec_context: "Model"}],
+      [:Validate, validate_pipe, Circuit::Processor],
+    )
+
+    ctx, signal = Circuit::Processor.(create_pipe, {captured: [], exec_context: Object})
+    assert_equal ctx[:captured], [[1, "Model"], [2, "Model"], [3, "Model"], [4, "Object"]]
+
   end
 
+it do
   class ComputeBinarySignal
     def self.call(ctx, value:, **)
       signal = value ? Trailblazer::Activity::Right : Trailblazer::Activity::Left
@@ -312,7 +365,7 @@ it do
   # pp model_pipe
 
   run_checks_pipe = pipeline_circuit(
-    [nil, ->(ctx, **) { puts "@@@@@ #{ctx.inspect}"; raise }
+    [nil, ->(ctx, **circuit_options) { puts "@@@@@ #{circuit_options.inspect}"; raise }],
     [:input, Model___Input],
     [:invoke_instance_method, :run_checks, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT], # FIXME: we're currenly assuming that exec_context is passed down.
     [:compute_binary_signal, ComputeBinarySignal],
@@ -321,7 +374,6 @@ it do
   )
 
   title_length_ok_pipe = pipeline_circuit(
-    ],
     [:input, Model___Input],
     [:invoke_instance_method, :title_length_ok?, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
     [:compute_binary_signal, ComputeBinarySignal],
