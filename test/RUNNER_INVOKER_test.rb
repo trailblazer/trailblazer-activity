@@ -8,6 +8,8 @@ require "test_helper"
 # 5. how to call with kwargs, e.g. in Rescue?
 # 6. "scopes" for tracing? E.g. "only trace business steps"
 # 7. try saving memory by providing often-used Pipes, e.g. for IO?
+# 8. how would we change the "circuit options" from a step? ===> change :start_task
+# 9. does invoker.call need kwargs?
 
 class RunnerInvokerTest < Minitest::Spec
 it do
@@ -28,7 +30,7 @@ it do
           ctx, signal = invoker.( # TODO: redundant with {Pipeline::Processor.call}.
             task,
             ctx,
-            **ctx,
+            **ctx, # DISCUSS: do we need kwargs here?
           )
 
           # Stop execution of the circuit when we hit a terminus.
@@ -143,9 +145,9 @@ it do
   end
 
   class Model___Output
-    def self.call(ctx, signal:, **)
+    def self.call(ctx, **)
       ctx, _ = ctx.decompose
-      return ctx, signal # FIXME: how do we return the computed "real" signal?
+      return ctx, nil
     end
   end
 
@@ -187,6 +189,7 @@ it do
       return ctx, nil
     end
 
+    # Reinstate the original working ctx with a new application_ctx
     def unscope___(ctx, application_ctx:, aggregate:, **)
       original, _ = ctx.decompose
 
@@ -199,17 +202,23 @@ it do
 
     # end
 
-    def swap___(ctx, application_ctx:, original_application_ctx:, aggregate:, signal:, **)
+    def swap___(ctx, application_ctx:, original_application_ctx:, aggregate:, **)
       new_application_ctx = original_application_ctx.merge(aggregate) # DISCUSS: how to write on outer ctx?
 
       original, _ = ctx.decompose
 
       ctx = original.merge(application_ctx: new_application_ctx)
 
-      return ctx, signal # FIXME: thiiiiiiiiiiiiiiiiiis neeeeds to be the last tw step.
+      return ctx, nil
     end
   end
   Io = IO___.new
+
+  module TaskWrap
+    def self.emit_signal_from_ctx(ctx, signal:, **) # DISCUSS: do we really want this?
+      return ctx, signal # FIXME: thiiiiiiiiiiiiiiiiiis neeeeds to be the last tw step.
+    end
+  end
 
   # In() => :my_model_input
   my_model_input_pipe = pipeline_circuit(
@@ -298,21 +307,26 @@ it do
     [:compute_binary_signal, ComputeBinarySignal],
     # [:output, Model___Output],                                                    # DISCUSS: can we somehow save these steps?
     [:output, model_output_pipe, Circuit::Processor],
+    [:emit_signal_from_ctx, :emit_signal_from_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
   )
   # pp model_pipe
 
   run_checks_pipe = pipeline_circuit(
+    [nil, ->(ctx, **) { puts "@@@@@ #{ctx.inspect}"; raise }
     [:input, Model___Input],
-    [:invoke_instance_method, :run_checks, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
+    [:invoke_instance_method, :run_checks, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT], # FIXME: we're currenly assuming that exec_context is passed down.
     [:compute_binary_signal, ComputeBinarySignal],
     [:output, Model___Output],
+    [:emit_signal_from_ctx, :emit_signal_from_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}], # FIXME: {exec_context} currently bleeds into {title_length_ok_pipe}.
   )
 
   title_length_ok_pipe = pipeline_circuit(
+    ],
     [:input, Model___Input],
     [:invoke_instance_method, :title_length_ok?, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
     [:compute_binary_signal, ComputeBinarySignal],
     [:output, Model___Output],
+    [:emit_signal_from_ctx, :emit_signal_from_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
   )
 
   run_checks      = [:run_checks, run_checks_pipe, Circuit::Processor, {}]
@@ -333,6 +347,7 @@ it do
     [:invoke_callable, Save, INVOKER___STEP_INTERFACE],
     [:compute_binary_signal, ComputeBinarySignal],
     [:output, Model___Output],
+    [:emit_signal_from_ctx, :emit_signal_from_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
   )
 
   # create_pipe = [
