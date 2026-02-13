@@ -52,17 +52,6 @@ class RunnerInvokerTest < Minitest::Spec
           puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
           # ctx = ctx.merge(circuit_options_to_merge)
 
-          tmp = {
-            **ctx, # DISCUSS: do we need kwargs here?
-
-            **tmp_ctx, # FIXME: prototyping here.
-
-            **circuit_options_to_merge,
-          }
-
-          pp tmp
-
-
           ctx, signal = invoker.( # TODO: redundant with {Pipeline::Processor.call}.
             task,
             ctx,
@@ -116,8 +105,8 @@ class RunnerInvokerTest < Minitest::Spec
   end
 
   class INVOKER___CIRCUIT_INTERFACE
-    def self.call(task, ctx, **)
-      task.(ctx, **ctx.to_h)
+    def self.call(task, ctx, **temp_ctx)
+      task.(ctx, **temp_ctx.to_h)
     end
   end
 
@@ -144,7 +133,7 @@ class RunnerInvokerTest < Minitest::Spec
 
   it "circuit_options, depth-only" do
     def capture_task(id:)
-      ->(ctx, exec_context:, **) { ctx[:captured] << [id, exec_context.inspect]; return ctx, nil }
+      ->(ctx, exec_context:, lib_exec_context: nil, **) { ctx[:captured] << [id, exec_context, lib_exec_context].compact; return ctx, nil }
     end
 
     model_pipe = pipeline_circuit(
@@ -153,8 +142,15 @@ class RunnerInvokerTest < Minitest::Spec
       [:output, capture_task(id: 3)],
     )
 
+    validate_input_pipe = pipeline_circuit(
+      [:input, capture_task(id: 4)],
+      [:exec_on__parent, capture_task(id: 5)], # exec on original ctx!
+
+    )
+
     validate_pipe = pipeline_circuit(
-      [:validate, capture_task(id: 4)],
+      [:Validate_input, validate_input_pipe, Circuit::Processor, {lib_exec_context: "Validate::Input"}],
+      [:validate, capture_task(id: 6)],
     )
 
     create_pipe = pipeline_circuit(
@@ -163,8 +159,8 @@ class RunnerInvokerTest < Minitest::Spec
     )
 
     # As we pass in exec_context: as a kwarg, it's passed to all siblings etc.
-    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, exec_context: Object)
-    assert_equal ctx[:captured], [[1, "Object"], [2, "Object"], [3, "Object"], [4, "Object"]]
+    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, exec_context: "Object")
+    assert_equal ctx[:captured], [[1, "Object"], [2, "Object"], [3, "Object"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
 
 # FIXME: new test case.
 puts
@@ -173,8 +169,8 @@ puts
       [:Validate, validate_pipe, Circuit::Processor],
     )
 
-    ctx, signal = Circuit::Processor.(create_pipe, {captured: [], exec_context: Object})
-    assert_equal ctx[:captured], [[1, "Model"], [2, "Model"], [3, "Model"], [4, "Object"]]
+    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, exec_context: "Object")
+    assert_equal ctx[:captured], [[1, "Model"], [2, "Model"], [3, "Model"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
 
   end
 
