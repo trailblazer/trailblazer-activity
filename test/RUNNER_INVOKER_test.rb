@@ -42,22 +42,24 @@ class RunnerInvokerTest < Minitest::Spec
     # We start with NO #call methods!
   class Circuit < Struct.new(:map, :start_task, :termini, keyword_init: true)
     class Processor
-      def self.call(circuit, ctx, **tmp_ctx)
+      def self.call(circuit, ctx, oUTER_TMP___, use_outer_tmp: false, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
         map      = circuit.map
         termini  = circuit.termini
         task_cfg = circuit.start_task
 
-        # circuit_ctx = {}
-
+        # DISCUSS: tmp == circuit_ctx
+        tmp = use_outer_tmp ? oUTER_TMP___ : {} # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
+puts "@@@@@ +++++++++ #{tmp.inspect}"
         loop do
           id, task, invoker, circuit_options_to_merge = task_cfg
 
           puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
           # ctx = ctx.merge(circuit_options_to_merge)
 
-          ctx, signal = invoker.( # TODO: redundant with {Pipeline::Processor.call}.
+          ctx, signal, tmp = invoker.(
             task,
             ctx,
+            tmp,
 
             **tmp_ctx, # FIXME: prototyping here.
             **circuit_options_to_merge,
@@ -67,7 +69,7 @@ class RunnerInvokerTest < Minitest::Spec
           # puts "@@@@@ #{termini.collect { |o| o} } ??? #{signal.object_id} #{signal}"
           if termini.include?(task)
             # puts "done with circuit #{task}"
-            return ctx, signal
+            return ctx, signal, (use_outer_tmp ? tmp : oUTER_TMP___) # FIXME: IS THAT WHAT WE WANT? what if we want to pass in a tmp context into a nested circuit, but don't want it back?
           end
 
           if next_task_cfg = next_for(map, task_cfg, signal)
@@ -99,47 +101,48 @@ class RunnerInvokerTest < Minitest::Spec
   end
 
   class INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT
-    def self.call(task, ctx, exec_context:, kwargs: {}, **)
-      exec_context.send(task, ctx, **ctx.to_h) # TODO: how to add kwargs for Rescue.
+    def self.call(task, ctx, tmp, exec_context:, kwargs: {}, **)
+      puts "@@@@@ !!!!!!!!!#{task.inspect}"
+      exec_context.send(task, ctx, tmp, **ctx.to_h) # TODO: how to add kwargs for Rescue.
     end
   end
 
   class INVOKER___CIRCUIT_INTERFACE
-    def self.call(task, ctx, **temp_ctx)
-      task.(ctx, **ctx, **temp_ctx) # DISCUSS/FIXME: we can also merge the kwargs once for all childs in Processor#call?
+    def self.call(task, ctx, tmp, **temp_ctx)
+      task.(ctx, tmp, **ctx, **temp_ctx) # DISCUSS/FIXME: we can also merge the kwargs once for all childs in Processor#call?
     end
   end
 
   class INVOKER___STEP_INTERFACE
     # def self.call(task, ctx, application_ctx:, **)
-    def self.call(task, ctx, **)
+    def self.call(task, ctx, tmp, **)
        application_ctx = ctx[:application_ctx]
 
       result = task.(application_ctx, **application_ctx.to_h)
       # pp application_ctx
 
-      return ctx.merge(value: result,
+      return ctx, nil, tmp.merge(value: result,
         # application_ctx: application_ctx
-        ), nil # DISCUSS: value. FIXME: redundant to INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
+        ) # DISCUSS: value. FIXME: redundant to INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
     end
   end
 
   class INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
     # def self.call(task, ctx, exec_context:, application_ctx:, use_application_ctx___: true, **)
-    def self.call(task, ctx, exec_context:, use_application_ctx___: true, **)
+    def self.call(task, ctx, tmp, exec_context:, use_application_ctx___: true, **)
        application_ctx = ctx[:application_ctx]
 
-      target_ctx = use_application_ctx___ ? application_ctx : ctx # FIXME: not entirely happy with this.
-puts "@@@@@ #{task.inspect}"
+      target_ctx = use_application_ctx___ ? application_ctx : ctx # FIXME: not happy with this AT ALL.
+puts " invok @@@@@ #{task.inspect}"
       result = exec_context.send(task, target_ctx, **target_ctx.to_h)
 
-      return ctx.merge(value: result), nil # DISCUSS: value
+      return ctx, nil, tmp.merge(value: result) # DISCUSS: value
     end
   end
 
   it "circuit_options, depth-only" do
     def capture_task(id:)
-      ->(ctx, exec_context:, lib_exec_context: nil, **) { ctx[:captured] << [id, exec_context, lib_exec_context].compact; return ctx, nil }
+      ->(ctx, tmp, exec_context:, lib_exec_context: nil, **) { ctx[:captured] << [id, exec_context, lib_exec_context].compact; return ctx, nil, tmp }
     end
 
     model_pipe = pipeline_circuit(
@@ -165,7 +168,7 @@ puts "@@@@@ #{task.inspect}"
     )
 
     # As we pass in exec_context: as a kwarg, it's passed to all siblings etc.
-    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, exec_context: "Object")
+    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, {}, exec_context: "Object")
     assert_equal ctx[:captured], [[1, "Object"], [2, "Object"], [3, "Object"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
 
 # FIXME: new test case.
@@ -175,7 +178,7 @@ puts
       [:Validate, validate_pipe, Circuit::Processor],
     )
 
-    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, exec_context: "Object")
+    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, {}, exec_context: "Object")
     assert_equal ctx[:captured], [[1, "Model"], [2, "Model"], [3, "Model"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
 
   end
@@ -192,10 +195,10 @@ it do
   end
 
   class Model___Input
-    def self.call(ctx, **)
+    def self.call(ctx, tmp, **)
       ctx = Trailblazer.Context(ctx)
 
-      return ctx, nil
+      return ctx, nil, tmp
     end
   end
 
@@ -227,32 +230,36 @@ it do
   end
 
   class IO___
-    def init_aggregate(ctx, **)
-      ctx[:aggregate] = {}
+    def init_aggregate(ctx, tmp, **)
+      tmp[:aggregate] = {}
 
-      return ctx, nil
+      return ctx, nil, tmp
     end
 
-    def add_value_to_aggregate(ctx, aggregate:, value:, **)
-      ctx[:aggregate] = aggregate.merge(value)
+    # def add_value_to_aggregate(ctx, aggregate:, value:, **)
+    def add_value_to_aggregate(ctx, tmp, **)
+      value = tmp.fetch(:value)
+      aggregate = tmp.fetch(:aggregate)
 
-      return ctx, nil
+      tmp[:aggregate] = aggregate.merge(value)
+
+      return ctx, nil, tmp
     end
 
-    def save_original_application_ctx(ctx, application_ctx:, **)
-      ctx[:original_application_ctx] = application_ctx # the "outer ctx".
+    def save_original_application_ctx(ctx, tmp, application_ctx:, **)
+      tmp[:original_application_ctx] = application_ctx # the "outer ctx".
 
-      return ctx, nil
+      return ctx, nil, tmp
     end
 
     # Reinstate the original working ctx with a new application_ctx
-    def unscope___(ctx, application_ctx:, aggregate:, **)
+    def unscope___(ctx, tmp, application_ctx:, aggregate:, **)
       original, _ = ctx.decompose
       puts "     unscope___ discarding keys #{_.keys.inspect}"
 
       ctx = original.merge(application_ctx: Trailblazer::Context(aggregate)) # FIXME: separate step.
 
-      return ctx, nil
+      return ctx, nil, tmp
     end
 
     # def create_input_ctx(ctx, aggregate:, **)
@@ -269,6 +276,15 @@ it do
       ctx = original.merge(application_ctx: new_application_ctx)
 
       return ctx, nil
+    end
+
+
+    def create_application_ctx(ctx, tmp, **)
+      aggregate = tmp.fetch(:aggregate)
+
+      ctx[:application_ctx] = Trailblazer::Context(aggregate) # DISCUSS: write to {ctx} or use merge?
+
+      return ctx, nil, tmp
     end
   end
   Io = IO___.new
@@ -294,7 +310,7 @@ it do
     # [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
     [:invoke_instance_method, :my_model_input, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
     # [:compute_binary_signal, ComputeBinarySignal],
-    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
     # [:output, Model___Output],
   )
   # In() => MoreModelInput
@@ -307,21 +323,23 @@ it do
   end
   more_model_input_pipe = pipeline_circuit(
     [:invoke_callable, MoreModelInput, INVOKER___STEP_INTERFACE],
-    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
   )
 
   my_model_output_pipe = pipeline_circuit(
     [:invoke_instance_method, :my_model_output, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
   )
+raise "the original_application_ctx must be available to output, but not to the next real step"
 
   model_input_pipe = pipeline_circuit(
     [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
-    [:scope, Model___Input], # scope, so we don't pollute anything.
+    # [:scope, Model___Input], # scope, so we don't pollute anything.
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
-    [:my_model_input, my_model_input_pipe, Circuit::Processor],     # user filter.
-    [:more_model_input, more_model_input_pipe, Circuit::Processor], # user filter.
-    [:unscope, :unscope___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}]
+    [:my_model_input, my_model_input_pipe, Circuit::Processor, {use_outer_tmp: true}],     # user filter.
+    [:more_model_input, more_model_input_pipe, Circuit::Processor, {use_outer_tmp: true}], # user filter.
+    # [:unscope, :unscope___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}]
+    [:create_application_ctx, :create_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
   )
 
   model_output_pipe = pipeline_circuit(
@@ -333,23 +351,27 @@ it do
   )
 
 # TEST I/O
-  ctx, signal = Circuit::Processor.(model_input_pipe,
+  ctx, signal, tmp = Circuit::Processor.(model_input_pipe,
     {
       application_ctx: {params: {slug: 999}, noise: true},
     },
+    {}, # tmp
     exec_context: create_instance = Create.new,
+    use_outer_tmp: true
   )
 
   # raise ctx.inspect
   assert_equal ctx[:application_ctx].class, Trailblazer::Context::Container # our In pipe's creation!
   assert_equal ctx[:application_ctx][:more], "{:slug=>999}" # the more_model_input was called.
-  assert_equal ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
-  assert_equal CU.inspect(ctx), %({:application_ctx=>#<Trailblazer::Context::Container wrapped_options={:params=>{:id=>999}, :more=>\"{:slug=>999}\"} mutable_options={}>, :original_application_ctx=>{:params=>{:slug=>999}, :noise=>true}})
+  assert_equal tmp[:original_application_ctx].class, Hash # the OG ctx is a Hash.
+  pp tmp
+  assert_equal tmp.keys, [:original_application_ctx]
+  assert_equal CU.inspect(ctx), %({:application_ctx=>#<Trailblazer::Context::Container wrapped_options={:params=>{:id=>999}, :more=>\"{:slug=>999}\"} mutable_options={}>})
 
   # this is what happens in the actual {:model} step.
   ctx[:application_ctx][:model] = Object
 
-  ctx, signal = Circuit::Processor.(model_output_pipe, ctx)
+  ctx, signal = Circuit::Processor.(model_output_pipe, ctx, tmp, use_outer_tmp: true)
 
   assert_equal ctx.inspect, %()
 
