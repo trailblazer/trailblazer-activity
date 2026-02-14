@@ -206,7 +206,7 @@ class RunnerInvokerTest < Minitest::Spec
 
   it "circuit_options, depth-only" do
     def capture_task(id:)
-      ->(ctx, tmp, exec_context:, lib_exec_context: nil, **) { ctx[:captured] << [id, exec_context, lib_exec_context].compact; return ctx, nil, tmp }
+      ->(ctx, exec_context:, lib_exec_context: nil, **) { ctx[:captured] << [id, exec_context, lib_exec_context].compact; return ctx, nil }
     end
 
     model_pipe = pipeline_circuit(
@@ -232,7 +232,7 @@ class RunnerInvokerTest < Minitest::Spec
     )
 
     # As we pass in exec_context: as a kwarg, it's passed to all siblings etc.
-    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, {}, exec_context: "Object")
+    ctx, signal = Circuit::Processor.(create_pipe, {captured: [], exec_context: "Object"})
     assert_equal ctx[:captured], [[1, "Object"], [2, "Object"], [3, "Object"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
 
 # FIXME: new test case.
@@ -242,7 +242,7 @@ puts
       [:Validate, validate_pipe, Circuit::Processor],
     )
 
-    ctx, signal = Circuit::Processor.(create_pipe, {captured: []}, {}, exec_context: "Object")
+    ctx, signal = Circuit::Processor.(create_pipe, {captured: [], exec_context: "Object"})
     assert_equal ctx[:captured], [[1, "Model"], [2, "Model"], [3, "Model"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
 
   end
