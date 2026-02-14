@@ -270,11 +270,44 @@ it do
       }
     end
 
+    # In() => MoreModelInput
+    class MoreModelInput
+      def self.call(ctx, slug:, **)
+        {
+          more: slug
+        }
+      end
+    end
+
     # Out() => [:model]
     def my_model_output(ctx, model:, **)
       {
         model: model
       }
+    end
+  end
+
+  class Validate
+    def run_checks(ctx, params:, model:, **)
+      if params[:song]
+        return true
+      else
+        ctx[:errors] = [model, :song]
+        return false
+      end
+    end
+
+    def title_length_ok?(ctx, params:, **)
+      return false unless params[:song][:title]
+
+      return true
+    end
+  end
+
+  # step interface.
+  class Save
+    def self.call(ctx, model:, **)
+      ctx[:save] = model
     end
   end
 
@@ -324,16 +357,9 @@ it do
     [:invoke_instance_method, :my_model_input, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
     [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
   )
-  # In() => MoreModelInput
-  class MoreModelInput
-    def self.call(ctx, slug:, **)
-      {
-        more: slug
-      }
-    end
-  end
+
   more_model_input_pipe = pipeline_circuit(
-    [:invoke_callable, MoreModelInput, INVOKER___STEP_INTERFACE],
+    [:invoke_callable, Create::MoreModelInput, INVOKER___STEP_INTERFACE],
     [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
   )
 
@@ -402,30 +428,6 @@ it do
 
 # raise "should we merge ctx and temp_ctx in Processor, or do that in the invoker?
 #{ } how to handle signal?"
-
-  class Validate
-    def run_checks(ctx, params:, model:, **)
-      if params[:song]
-        return true
-      else
-        ctx[:errors] = [model, :song]
-        return false
-      end
-    end
-
-    def title_length_ok?(ctx, params:, **)
-      return false unless params[:song][:title]
-
-      return true
-    end
-  end
-
-  # step interface.
-  class Save
-    def self.call(ctx, model:, **)
-      ctx[:save] = model
-    end
-  end
 
   model_pipe = pipeline_circuit(
     [:input, model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
