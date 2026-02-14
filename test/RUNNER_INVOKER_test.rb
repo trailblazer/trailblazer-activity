@@ -66,11 +66,6 @@ class RunnerInvokerTest < Minitest::Spec
             Context.new(shadowed, mutable.merge(variables))
           end
 
-          def ___merge!(variable, value)
-            self[variable] = value
-            self
-          end
-
           def decompose
             return shadowed, mutable
           end
@@ -188,10 +183,9 @@ class RunnerInvokerTest < Minitest::Spec
       result = task.(application_ctx, **application_ctx.to_h)
       # pp application_ctx
 
-      return ctx.___merge!(:value, result,
-        # application_ctx: application_ctx
-        ), nil # DISCUSS: value. FIXME: redundant to INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
+      ctx[:value] = result
 
+      return ctx, nil # DISCUSS: value. FIXME: redundant to INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
     end
   end
 
@@ -263,34 +257,20 @@ it do
     end
   end
 
-  class Model___Input
-    def self.call(ctx, ** ) # TODO: remove me! use Processor scoping
-      ctx = Trailblazer.Context(ctx)
-
-      return ctx, nil
-    end
-  end
-
-  class Model___Output
-    def self.call(ctx, **)
-      ctx, _ = ctx.decompose
-      puts "     unscope___ discarding keys #{_.keys.inspect} [Model___Output]"
-      return ctx, nil
-    end
-  end
-
   class Create
     def model(ctx, params:, **kws)
       ctx[:spam] = false
       ctx[:model] = "Object #{params[:id]} / #{kws.inspect}"
     end
 
-    def my_model_input(ctx, params:, **)
+    # Add params[:slug],
+    def my_model_input(ctx, params:, slug:, **)
       {
-        params: {id: params[:slug]}
+        params: params.merge(slug: slug)
       }
     end
 
+    # Out() => [:model]
     def my_model_output(ctx, model:, **)
       {
         model: model
@@ -318,20 +298,6 @@ it do
       return ctx, nil
     end
 
-    # Reinstate the original working ctx with a new application_ctx
-    def unscope___(ctx, tmp, application_ctx:, aggregate:, **)
-      original, _ = ctx.decompose
-      puts "     unscope___ discarding keys #{_.keys.inspect}"
-
-      ctx = original.merge(application_ctx: Trailblazer::Context(aggregate)) # FIXME: separate step.
-
-      return ctx, nil, tmp
-    end
-
-    # def create_input_ctx(ctx, aggregate:, **)
-
-    # end
-
     def swap___(ctx, application_ctx:, original_application_ctx:, aggregate:, **)
       # new_application_ctx = original_application_ctx.merge(aggregate) # DISCUSS: how to write on outer ctx?
       aggregate.each do |k, v|
@@ -339,11 +305,6 @@ it do
 
       end
 
-
-      # before_output, _ = ctx.decompose # FIXME: couldn't we get the original_application_ctx from here?
-      # raise before_output.inspect
-
-      # ctx = original.merge(application_ctx: new_application_ctx)
       ctx[:application_ctx] = original_application_ctx
 
       return ctx, nil
@@ -358,35 +319,16 @@ it do
   end
   Io = IO___.new
 
-  module TaskWrap
-    def self.emit_signal_from_ctx(ctx, signal:, **) # DISCUSS: do we really want this?
-      puts "@@@@@ ||||#{signal.inspect}"
-      return ctx, signal # FIXME: thiiiiiiiiiiiiiiiiiis neeeeds to be the last tw step.
-    end
-
-    def self.FIXME_emit_signal_from_ctx___AND_UNSCOPE(ctx, signal:, **) # DISCUSS: do we really want this?
-      puts "<<<<<<<<< signaL: #{signal.inspect}"
-      ctx, _ = ctx.decompose
-      puts "     FIXME_emit_signal_from_ctx___AND_UNSCOPE discarding keys #{_.keys.inspect}"
-      puts "                                              new ctx: #{ctx}"
-
-      return ctx, signal # FIXME: thiiiiiiiiiiiiiiiiiis neeeeds to be the last tw step.
-    end
-  end
-
   # In() => :my_model_input
   my_model_input_pipe = pipeline_circuit(
-    # [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
     [:invoke_instance_method, :my_model_input, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
-    # [:compute_binary_signal, ComputeBinarySignal],
     [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
-    # [:output, Model___Output],
   )
   # In() => MoreModelInput
   class MoreModelInput
-    def self.call(ctx, params:, **)
+    def self.call(ctx, slug:, **)
       {
-        more: params.inspect
+        more: slug
       }
     end
   end
@@ -403,16 +345,13 @@ it do
 
   model_input_pipe = pipeline_circuit(
     [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
-    # [:scope, Model___Input], # scope, so we don't pollute anything.
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
     [:my_model_input, my_model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:aggregate]}],     # user filter.
     [:more_model_input, more_model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:aggregate]}], # user filter.
-    # [:unscope, :unscope___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}]
     [:create_application_ctx, :create_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
   )
 
   model_output_pipe = pipeline_circuit(
-    # [:scope, Model___Input], # scope so we don't pollute
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
     [:my_model_output, my_model_output_pipe, Circuit::Processor],     # user filter.
     [:swap___, :swap___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
@@ -424,7 +363,7 @@ it do
 #    x.report("cix") {
   ctx, signal = Circuit::Processor.(model_input_pipe,
     {
-      application_ctx: {params: {slug: 999}, noise: true},
+      application_ctx: {params: {song: {}}, noise: true, slug: "0x666"},
     },
     # {}, # tmp
     exec_context: create_instance = Create.new,
@@ -441,10 +380,10 @@ it do
 
   # raise ctx.inspect
   assert_equal ctx[:application_ctx].class, Trailblazer::Context::Container # our In pipe's creation!
-  assert_equal ctx[:application_ctx][:more], "{:slug=>999}" # the more_model_input was called.
+  assert_equal ctx[:application_ctx][:more], "0x666" # the more_model_input was called.
   assert_equal ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
   assert_equal ctx.keys, [:application_ctx, :original_application_ctx]
-  assert_equal CU.inspect(ctx), %({:application_ctx=>#<Trailblazer::Context::Container wrapped_options={:params=>{:id=>999}, :more=>\"{:slug=>999}\"} mutable_options={}>, :original_application_ctx=>{:params=>{:slug=>999}, :noise=>true}})
+  assert_equal CU.inspect(ctx), %({:application_ctx=>#<Trailblazer::Context::Container wrapped_options={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"} mutable_options={}>, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>\"0x666\"}})
 
   # this is what happens in the actual {:model} step.
   ctx[:application_ctx][:model] = Object
@@ -454,7 +393,8 @@ it do
     emit_to_outer_ctx: [:application_ctx],
   )
 
-  assert_equal ctx.inspect, %({:application_ctx=>{:params=>{:slug=>999}, :noise=>true, :model=>Object}, :original_application_ctx=>{:params=>{:slug=>999}, :noise=>true, :model=>Object}})
+# FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
+  assert_equal ctx.inspect, %({:application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object}, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object}})
 
 
 
@@ -488,34 +428,21 @@ it do
   end
 
   model_pipe = pipeline_circuit(
-    # [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
     [:input, model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
 
-    # [:scope, Model___Input], # we don't want {:signal} later!
     [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
     [:compute_binary_signal, ComputeBinarySignal],
-    # [:output, Model___Output],                                                    # DISCUSS: can we somehow save these steps?
     [:output, model_output_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx].freeze}],
-    # [:asdf, ->(ctx, signal:, **) { pp ctx;  raise "why is there a signal?" }],
-    # [:emit_signal_from_ctx, :FIXME_emit_signal_from_ctx___AND_UNSCOPE, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
-    # [:unscope, Model___Output],
   )
-  # pp model_pipe
 
   run_checks_pipe = pipeline_circuit(
-    # [:input, Model___Input],
     [:invoke_instance_method, :run_checks, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT], # FIXME: we're currenly assuming that exec_context is passed down.
     [:compute_binary_signal, ComputeBinarySignal],
-    # [:output, Model___Output],
-    # [:emit_signal_from_ctx, :FIXME_emit_signal_from_ctx___AND_UNSCOPE, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}], # FIXME: {exec_context} currently bleeds into {title_length_ok_pipe}.
   )
 
   title_length_ok_pipe = pipeline_circuit(
-    [:input, Model___Input],
     [:invoke_instance_method, :title_length_ok?, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
     [:compute_binary_signal, ComputeBinarySignal],
-    # [:output, Model___Output],
-    [:emit_signal_from_ctx, :FIXME_emit_signal_from_ctx___AND_UNSCOPE, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
   )
 
   run_checks      = [:run_checks, run_checks_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}]
@@ -532,18 +459,13 @@ it do
   validate_circuit = Circuit.new(map: validate_circuit, termini: [FIXME_SUCCESS, FIXME_FAILURE], start_task: run_checks)
 
   save_pipe = pipeline_circuit(
-    # [:input, Model___Input],
     [:invoke_callable, Save, INVOKER___STEP_INTERFACE],
     [:compute_binary_signal, ComputeBinarySignal],
-    # [:output, Model___Output],
-    # [:emit_signal_from_ctx, :emit_signal_from_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
   )
 
-  # create_pipe = [
     model =    [:Model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true},] # TODO: circuit_options should be set outside of Create, in the canonical invoke.
     validate = [:Validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx]},] # TODO: always emit :application_ctx?
     save =     [:Save,     save_pipe, Circuit::Processor,       {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}] # check that we don't have circuit_options anymore here?
-  # ]
 
   create_success_terminus = [:create_success_terminus, CREATE_FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
   create_failure_terminus = [:create_failure_terminus, CREATE_FIXME_FAILURE = Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
@@ -558,7 +480,7 @@ it do
 
   create_circuit = Circuit.new(map: create_circuit, termini: [CREATE_FIXME_SUCCESS, CREATE_FIXME_FAILURE], start_task: model)
 
-  ctx = {params: {id: 1}}
+  ctx = {params: {song: nil}, slug: "0x666"}
   create_ctx = {
     # exec_context:     Create.new,
     application_ctx:  ctx
@@ -568,16 +490,16 @@ puts "ciiii"
   # validation error:
   ctx, signal = Circuit::Processor.(create_circuit, create_ctx)
 
-  assert_equal ctx[:application_ctx], {:params=>{:id=>1}, :model=>"Object 1", :errors=>["Object 1", :song]}
-  assert_equal ctx.keys, [:application_ctx, :exec_context]
+  assert_equal ctx[:application_ctx], {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
+  assert_equal ctx.keys, [:application_ctx]
   assert_equal signal, CREATE_FIXME_FAILURE
 
   # success:
-  ctx, signal = Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}}})
+  ctx, signal = Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}})
 
-  assert_equal ctx[:application_ctx], {:params=>{:song=>{title: "Uwe"}, id: 1}, :model=>"Object 1", :save=>"Object 1"}
+  assert_equal ctx[:application_ctx], {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal signal, CREATE_FIXME_SUCCESS
-  assert_equal ctx.keys, [:application_ctx, :exec_context]
+  assert_equal ctx.keys, [:application_ctx]
 
 
   # save_pipe = [
@@ -628,16 +550,7 @@ puts "ciiii"
 #                 pipe:    78046.2 i/s
 #              circuit:    65255.8 i/s - 1.20x  (± 0.00) slower
 
-
-
-  it "signal transport" do
-    my_compute_signal = ->(ctx, **) { return ctx, "MySignal" }
-
-    pipe = pipeline_circuit(
-      [:compute_signal, my_compute_signal, INVOKER___CIRCUIT_INTERFACE],
-    )
   end
-end
 
   class INVOKER___CIRCUIT_INTERFACE___INSTANCE_METHOD_ON_EXEC_CONTEXT # GREAT thing here, we can use it for businesss and for library tasks.
     def self.call(ctx, flow_options, circuit_options, task:, **kwargs)
