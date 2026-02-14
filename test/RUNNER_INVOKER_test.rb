@@ -42,13 +42,61 @@ class RunnerInvokerTest < Minitest::Spec
     # We start with NO #call methods!
   class Circuit < Struct.new(:map, :start_task, :termini, keyword_init: true)
     class Processor
-      def self.call(circuit, ctx, oUTER_TMP___, use_outer_tmp: false, emit_to_outer_tmp: nil, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
+      module Trailblazer
+        class Context < Struct.new(:shadowed, :mutable)
+          # def initialize(*)
+          #   super
+
+          #   @to_h = shadowed.to_h.merge(mutable.to_h)
+          # end
+          def []=(key, value)
+            mutable[key] = value
+
+            # @to_h[key] = value
+          end
+
+          def [](key)
+            # raise
+            mutable[key] || shadowed[key] # FIXME.
+          end
+
+          def merge(variables)
+            # raise
+            # puts variables.keys
+            Context.new(shadowed, mutable.merge(variables))
+          end
+
+          def ___merge!(variable, value)
+            self[variable] = value
+            self
+          end
+
+          def decompose
+            return shadowed, mutable
+          end
+
+          def to_h
+            # return @to_h
+            shadowed.to_h.merge(mutable)
+          end
+
+          def to_hash # implicit conversion to Hash.
+            to_h
+          end
+        end
+        def self.Context(shadowed)
+          Context.new(shadowed, {})
+        end
+      end
+
+      def self.call(circuit, ctx, scope: false, emit_to_outer_ctx: nil, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
         map      = circuit.map
         termini  = circuit.termini
         task_cfg = circuit.start_task
 
         # DISCUSS: tmp == circuit_ctx
-        tmp = use_outer_tmp ? oUTER_TMP___.dup : {} # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
+        ctx = Trailblazer.Context(ctx) if scope # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
+        # FIXME: should this be done on the outside?
         loop do
           id, task, invoker, circuit_options_to_merge = task_cfg
 
@@ -58,7 +106,7 @@ class RunnerInvokerTest < Minitest::Spec
           ctx, signal, tmp = invoker.(
             task,
             ctx,
-            tmp,
+
 
             **tmp_ctx, # FIXME: prototyping here.
             **circuit_options_to_merge,
@@ -68,7 +116,19 @@ class RunnerInvokerTest < Minitest::Spec
           # puts "@@@@@ #{termini.collect { |o| o} } ??? #{signal.object_id} #{signal}"
           if termini.include?(task)
             # puts "done with circuit #{task}"
-            return ctx, signal, (emit_to_outer_tmp ? oUTER_TMP___.merge(tmp.slice(*emit_to_outer_tmp)) : oUTER_TMP___) # FIXME: IS THAT WHAT WE WANT? what if we want to pass in a tmp context into a nested circuit, but don't want it back?
+            if emit_to_outer_ctx
+              outer_ctx, mutable = ctx.decompose
+
+              # ctx = outer_ctx.merge(mutable.slice(*emit_to_outer_ctx))
+              # outer_ctx[emit_to_outer_ctx] = mutable[emit_to_outer_ctx]
+              emit_to_outer_ctx.each do |key|
+                ctx[key] = mutable[key]
+              end
+
+              # ctx = outer_ctx.merge(emit_to_outer_ctx => mutable[emit_to_outer_ctx])
+              ctx = outer_ctx
+            end
+            return ctx, signal # FIXME: IS THAT WHAT WE WANT? what if we want to pass in a tmp context into a nested circuit, but don't want it back?
           end
 
           if next_task_cfg = next_for(map, task_cfg, signal)
@@ -100,42 +160,43 @@ class RunnerInvokerTest < Minitest::Spec
   end
 
   class INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT
-    def self.call(task, ctx, tmp, exec_context:, kwargs: {}, **)
+    def self.call(task, ctx, exec_context:, kwargs: {}, **)
       # puts "@@@@@ !!!!!!!!!#{task.inspect}"
-      exec_context.send(task, ctx, tmp, **ctx.to_h) # TODO: how to add kwargs for Rescue.
+      exec_context.send(task, ctx, **ctx.to_h) # TODO: how to add kwargs for Rescue.
     end
   end
 
   class INVOKER___CIRCUIT_INTERFACE
-    def self.call(task, ctx, tmp, **temp_ctx)
-      task.(ctx, tmp, **ctx, **temp_ctx) # DISCUSS/FIXME: we can also merge the kwargs once for all childs in Processor#call?
+    def self.call(task, ctx, **temp_ctx)
+      task.(ctx, **ctx, **temp_ctx) # DISCUSS/FIXME: we can also merge the kwargs once for all childs in Processor#call?
     end
   end
 
   class INVOKER___STEP_INTERFACE
     # def self.call(task, ctx, application_ctx:, **)
-    def self.call(task, ctx, tmp, **)
+    def self.call(task, ctx, **)
        application_ctx = ctx[:application_ctx]
 
       result = task.(application_ctx, **application_ctx.to_h)
       # pp application_ctx
 
-      return ctx, nil, tmp.merge(value: result,
+      return ctx.___merge!(:value, result,
         # application_ctx: application_ctx
-        ) # DISCUSS: value. FIXME: redundant to INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
+        ), nil # DISCUSS: value. FIXME: redundant to INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
+
     end
   end
 
   class INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
     # def self.call(task, ctx, exec_context:, application_ctx:, use_application_ctx___: true, **)
-    def self.call(task, ctx, tmp, exec_context:, use_application_ctx___: true, **)
+    def self.call(task, ctx, exec_context:, use_application_ctx___: true, **)
        application_ctx = ctx[:application_ctx]
 
       target_ctx = use_application_ctx___ ? application_ctx : ctx # FIXME: not happy with this AT ALL.
 # puts " invok @@@@@ #{task.inspect}"
       result = exec_context.send(task, target_ctx, **target_ctx.to_h)
 
-      return ctx, nil, tmp.merge(value: result) # DISCUSS: value
+      return ctx.___merge!(:value, result), nil # DISCUSS: value
     end
   end
 
@@ -229,26 +290,23 @@ it do
   end
 
   class IO___
-    def init_aggregate(ctx, tmp, **)
-      tmp[:aggregate] = {}
+    def init_aggregate(ctx, **)
+      ctx[:aggregate] = {}
 
-      return ctx, nil, tmp
+      return ctx, nil
     end
 
     # def add_value_to_aggregate(ctx, aggregate:, value:, **)
-    def add_value_to_aggregate(ctx, tmp, **)
-      value = tmp.fetch(:value)
-      aggregate = tmp.fetch(:aggregate)
+    def add_value_to_aggregate(ctx, value:, aggregate:, **)
+      ctx[:aggregate] = aggregate.merge(value)
 
-      tmp[:aggregate] = aggregate.merge(value)
-
-      return ctx, nil, tmp
+      return ctx, nil
     end
 
-    def save_original_application_ctx(ctx, tmp, application_ctx:, **)
-      tmp[:original_application_ctx] = application_ctx # the "outer ctx".
+    def save_original_application_ctx(ctx, application_ctx:, **)
+      ctx[:original_application_ctx] = application_ctx # the "outer ctx".
 
-      return ctx, nil, tmp
+      return ctx, nil
     end
 
     # Reinstate the original working ctx with a new application_ctx
@@ -278,12 +336,10 @@ it do
     end
 
 
-    def create_application_ctx(ctx, tmp, **)
-      aggregate = tmp.fetch(:aggregate)
-
+    def create_application_ctx(ctx, aggregate:, **)
       ctx[:application_ctx] = Trailblazer::Context(aggregate) # DISCUSS: write to {ctx} or use merge?
 
-      return ctx, nil, tmp
+      return ctx, nil
     end
   end
   Io = IO___.new
@@ -335,8 +391,8 @@ it do
     [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
     # [:scope, Model___Input], # scope, so we don't pollute anything.
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
-    [:my_model_input, my_model_input_pipe, Circuit::Processor, {use_outer_tmp: true, emit_to_outer_tmp: [:aggregate]}],     # user filter.
-    [:more_model_input, more_model_input_pipe, Circuit::Processor, {use_outer_tmp: true, emit_to_outer_tmp: [:aggregate]}], # user filter.
+    [:my_model_input, my_model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:aggregate]}],     # user filter.
+    [:more_model_input, more_model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:aggregate]}], # user filter.
     # [:unscope, :unscope___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}]
     [:create_application_ctx, :create_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
   )
@@ -351,26 +407,31 @@ it do
 
 # TEST I/O
 require "benchmark/ips"
-Benchmark.ips do |x|
-  x.report("cix") {
-  ctx, signal, tmp = Circuit::Processor.(model_input_pipe,
+ Benchmark.ips do |x|
+   x.report("cix") {
+  ctx, signal = Circuit::Processor.(model_input_pipe,
     {
       application_ctx: {params: {slug: 999}, noise: true},
     },
-    {}, # tmp
+    # {}, # tmp
     exec_context: create_instance = Create.new,
-    use_outer_tmp: true,
-    emit_to_outer_tmp: [:original_application_ctx]
+    scope: true,
+    emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze
   )
-}
-  x.compare! # 43.6 -45.2k
-end
+ }
+   x.compare! # 43.6 -45.2k
+ end
+
+   # Context():
+   #   1.) 25.4k
+   #   2.) 36.7k (simple Context)
+
   # raise ctx.inspect
   assert_equal ctx[:application_ctx].class, Trailblazer::Context::Container # our In pipe's creation!
   assert_equal ctx[:application_ctx][:more], "{:slug=>999}" # the more_model_input was called.
-  assert_equal tmp[:original_application_ctx].class, Hash # the OG ctx is a Hash.
-  assert_equal tmp.keys, [:original_application_ctx]
-  assert_equal CU.inspect(ctx), %({:application_ctx=>#<Trailblazer::Context::Container wrapped_options={:params=>{:id=>999}, :more=>\"{:slug=>999}\"} mutable_options={}>})
+  assert_equal ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
+  assert_equal ctx.keys, [:application_ctx, :original_application_ctx]
+  assert_equal CU.inspect(ctx), %({:application_ctx=>#<Trailblazer::Context::Container wrapped_options={:params=>{:id=>999}, :more=>\"{:slug=>999}\"} mutable_options={}>, :original_application_ctx=>{:params=>{:slug=>999}, :noise=>true}})
 
   # this is what happens in the actual {:model} step.
   ctx[:application_ctx][:model] = Object
