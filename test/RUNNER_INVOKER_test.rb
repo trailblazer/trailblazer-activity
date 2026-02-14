@@ -89,7 +89,7 @@ class RunnerInvokerTest < Minitest::Spec
         end
       end
 
-      def self.call(circuit, ctx, scope: false, emit_to_outer_ctx: nil, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
+      def self.call(circuit, ctx, scope: false, emit_to_outer_ctx: nil, emit_signal: false, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
         map      = circuit.map
         termini  = circuit.termini
         task_cfg = circuit.start_task
@@ -100,7 +100,7 @@ class RunnerInvokerTest < Minitest::Spec
         loop do
           id, task, invoker, circuit_options_to_merge = task_cfg
 
-          # puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
+          puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
           # ctx = ctx.merge(circuit_options_to_merge)
 
           ctx, signal, tmp = invoker.(
@@ -121,13 +121,21 @@ class RunnerInvokerTest < Minitest::Spec
 
               # ctx = outer_ctx.merge(mutable.slice(*emit_to_outer_ctx))
               # outer_ctx[emit_to_outer_ctx] = mutable[emit_to_outer_ctx]
+              puts "@@@@@ ++++ #{id} #{emit_to_outer_ctx.inspect} #{mutable}"
               emit_to_outer_ctx.each do |key|
-                ctx[key] = mutable[key]
+                # outer_ctx[key] = mutable[key]
+                outer_ctx[key] = ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
               end
 
               # ctx = outer_ctx.merge(emit_to_outer_ctx => mutable[emit_to_outer_ctx])
               ctx = outer_ctx
+
+              if emit_signal
+                signal = mutable[:signal] # FIXME: is it always here in mutable?
+              end
             end
+
+
             return ctx, signal # FIXME: IS THAT WHAT WE WANT? what if we want to pass in a tmp context into a nested circuit, but don't want it back?
           end
 
@@ -196,7 +204,8 @@ class RunnerInvokerTest < Minitest::Spec
 # puts " invok @@@@@ #{task.inspect}"
       result = exec_context.send(task, target_ctx, **target_ctx.to_h)
 
-      return ctx.___merge!(:value, result), nil # DISCUSS: value
+      ctx[:value] = result
+      return ctx, nil # DISCUSS: value
     end
   end
 
@@ -255,10 +264,10 @@ it do
   end
 
   class Model___Input
-    def self.call(ctx, tmp, **)
+    def self.call(ctx, ** ) # TODO: remove me! use Processor scoping
       ctx = Trailblazer.Context(ctx)
 
-      return ctx, nil, tmp
+      return ctx, nil
     end
   end
 
@@ -324,13 +333,18 @@ it do
     # end
 
     def swap___(ctx, application_ctx:, original_application_ctx:, aggregate:, **)
-      new_application_ctx = original_application_ctx.merge(aggregate) # DISCUSS: how to write on outer ctx?
+      # new_application_ctx = original_application_ctx.merge(aggregate) # DISCUSS: how to write on outer ctx?
+      aggregate.each do |k, v|
+        original_application_ctx[k] = v # FIXME: should we use Context#merge here? do we want a new ctx?
+
+      end
 
 
-      before_output, _ = ctx.decompose # FIXME: couldn't we get the original_application_ctx from here?
-      raise before_output.inspect
+      # before_output, _ = ctx.decompose # FIXME: couldn't we get the original_application_ctx from here?
+      # raise before_output.inspect
 
-      ctx = original.merge(application_ctx: new_application_ctx)
+      # ctx = original.merge(application_ctx: new_application_ctx)
+      ctx[:application_ctx] = original_application_ctx
 
       return ctx, nil
     end
@@ -398,17 +412,16 @@ it do
   )
 
   model_output_pipe = pipeline_circuit(
-    [:nil, ->(ctx, **) { raise ctx.inspect }],
-    [:scope, Model___Input], # scope so we don't pollute
+    # [:scope, Model___Input], # scope so we don't pollute
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
     [:my_model_output, my_model_output_pipe, Circuit::Processor],     # user filter.
     [:swap___, :swap___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
   )
 
 # TEST I/O
-require "benchmark/ips"
- Benchmark.ips do |x|
-   x.report("cix") {
+# require "benchmark/ips"
+#  Benchmark.ips do |x|
+#    x.report("cix") {
   ctx, signal = Circuit::Processor.(model_input_pipe,
     {
       application_ctx: {params: {slug: 999}, noise: true},
@@ -418,9 +431,9 @@ require "benchmark/ips"
     scope: true,
     emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze
   )
- }
-   x.compare! # 43.6 -45.2k
- end
+ # }
+ #   x.compare! # 43.6 -45.2k
+ # end
 
    # Context():
    #   1.) 25.4k
@@ -436,9 +449,12 @@ require "benchmark/ips"
   # this is what happens in the actual {:model} step.
   ctx[:application_ctx][:model] = Object
 
-  ctx, signal = Circuit::Processor.(model_output_pipe, ctx, tmp, use_outer_tmp: true)
+  ctx, signal = Circuit::Processor.(model_output_pipe, ctx,
+    scope: true,
+    emit_to_outer_ctx: [:application_ctx],
+  )
 
-  assert_equal ctx.inspect, %()
+  assert_equal ctx.inspect, %({:application_ctx=>{:params=>{:slug=>999}, :noise=>true, :model=>Object}, :original_application_ctx=>{:params=>{:slug=>999}, :noise=>true, :model=>Object}})
 
 
 
@@ -473,25 +489,25 @@ require "benchmark/ips"
 
   model_pipe = pipeline_circuit(
     # [:input, Model___Input],                                                      # DISCUSS: can we somehow save these steps?
-    [:input, model_input_pipe, Circuit::Processor], # change {:application_ctx}.
+    [:input, model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
 
-    [:scope, Model___Input], # we don't want {:signal} later!
+    # [:scope, Model___Input], # we don't want {:signal} later!
     [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
     [:compute_binary_signal, ComputeBinarySignal],
     # [:output, Model___Output],                                                    # DISCUSS: can we somehow save these steps?
-    [:output, model_output_pipe, Circuit::Processor],
+    [:output, model_output_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx].freeze}],
     # [:asdf, ->(ctx, signal:, **) { pp ctx;  raise "why is there a signal?" }],
-    [:emit_signal_from_ctx, :FIXME_emit_signal_from_ctx___AND_UNSCOPE, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
+    # [:emit_signal_from_ctx, :FIXME_emit_signal_from_ctx___AND_UNSCOPE, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
     # [:unscope, Model___Output],
   )
   # pp model_pipe
 
   run_checks_pipe = pipeline_circuit(
-    [:input, Model___Input],
+    # [:input, Model___Input],
     [:invoke_instance_method, :run_checks, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT], # FIXME: we're currenly assuming that exec_context is passed down.
     [:compute_binary_signal, ComputeBinarySignal],
     # [:output, Model___Output],
-    [:emit_signal_from_ctx, :FIXME_emit_signal_from_ctx___AND_UNSCOPE, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}], # FIXME: {exec_context} currently bleeds into {title_length_ok_pipe}.
+    # [:emit_signal_from_ctx, :FIXME_emit_signal_from_ctx___AND_UNSCOPE, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}], # FIXME: {exec_context} currently bleeds into {title_length_ok_pipe}.
   )
 
   title_length_ok_pipe = pipeline_circuit(
@@ -502,8 +518,8 @@ require "benchmark/ips"
     [:emit_signal_from_ctx, :FIXME_emit_signal_from_ctx___AND_UNSCOPE, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
   )
 
-  run_checks      = [:run_checks, run_checks_pipe, Circuit::Processor, {}]
-  title_length_ok = [:title_length_ok?, title_length_ok_pipe, Circuit::Processor, {}]
+  run_checks      = [:run_checks, run_checks_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}]
+  title_length_ok = [:title_length_ok?, title_length_ok_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}]
   validate_success_terminus = [:validate_success_terminus, FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
   validate_failure_terminus = [:validate_failure_terminus, FIXME_FAILURE = Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
 
@@ -516,17 +532,17 @@ require "benchmark/ips"
   validate_circuit = Circuit.new(map: validate_circuit, termini: [FIXME_SUCCESS, FIXME_FAILURE], start_task: run_checks)
 
   save_pipe = pipeline_circuit(
-    [:input, Model___Input],
+    # [:input, Model___Input],
     [:invoke_callable, Save, INVOKER___STEP_INTERFACE],
     [:compute_binary_signal, ComputeBinarySignal],
-    [:output, Model___Output],
-    [:emit_signal_from_ctx, :emit_signal_from_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
+    # [:output, Model___Output],
+    # [:emit_signal_from_ctx, :emit_signal_from_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: TaskWrap}],
   )
 
   # create_pipe = [
-    model =    [:Model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze},] # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    validate = [:Validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze},]
-    save =     [:Save,     save_pipe, Circuit::Processor,       {}] # check that we don't have circuit_options anymore here?
+    model =    [:Model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true},] # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    validate = [:Validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx]},] # TODO: always emit :application_ctx?
+    save =     [:Save,     save_pipe, Circuit::Processor,       {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}] # check that we don't have circuit_options anymore here?
   # ]
 
   create_success_terminus = [:create_success_terminus, CREATE_FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
@@ -613,6 +629,14 @@ puts "ciiii"
 #              circuit:    65255.8 i/s - 1.20x  (± 0.00) slower
 
 
+
+  it "signal transport" do
+    my_compute_signal = ->(ctx, **) { return ctx, "MySignal" }
+
+    pipe = pipeline_circuit(
+      [:compute_signal, my_compute_signal, INVOKER___CIRCUIT_INTERFACE],
+    )
+  end
 end
 
   class INVOKER___CIRCUIT_INTERFACE___INSTANCE_METHOD_ON_EXEC_CONTEXT # GREAT thing here, we can use it for businesss and for library tasks.
