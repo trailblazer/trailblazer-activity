@@ -12,6 +12,7 @@ require "test_helper"
 # 9. does invoker.call need kwargs?
 # 10. BUG: when all tasks are the same proc and the last is the terminus, only the first is run. ===> use ids, we got them, anyway.
 # 11. should circuit_options be a positional arg?
+# 12. don't repeat Io.new as context, use automatic passing
 
 class RunnerInvokerTest < Minitest::Spec
   # Helper for those who don't like or have a DSL :D
@@ -95,7 +96,7 @@ class RunnerInvokerTest < Minitest::Spec
         loop do
           id, task, invoker, circuit_options_to_merge = task_cfg
 
-          puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
+          # puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
           # ctx = ctx.merge(circuit_options_to_merge)
 
           ctx, signal, tmp = invoker.(
@@ -116,7 +117,7 @@ class RunnerInvokerTest < Minitest::Spec
 
               # ctx = outer_ctx.merge(mutable.slice(*emit_to_outer_ctx))
               # outer_ctx[emit_to_outer_ctx] = mutable[emit_to_outer_ctx]
-              puts "@@@@@ ++++ #{id} #{emit_to_outer_ctx.inspect} #{mutable}"
+              # puts "@@@@@ ++++ #{id} #{emit_to_outer_ctx.inspect} #{mutable}"
               emit_to_outer_ctx.each do |key|
                 # outer_ctx[key] = mutable[key]
                 outer_ctx[key] = ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
@@ -383,47 +384,6 @@ it do
     [:swap___, :swap___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
   )
 
-# TEST I/O
-# require "benchmark/ips"
-#  Benchmark.ips do |x|
-#    x.report("cix") {
-  ctx, signal = Circuit::Processor.(model_input_pipe,
-    {
-      application_ctx: {params: {song: {}}, noise: true, slug: "0x666"},
-    },
-    # {}, # tmp
-    exec_context: create_instance = Create.new,
-    scope: true,
-    emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze
-  )
- # }
- #   x.compare! # 43.6 -45.2k
- # end
-
-   # Context():
-   #   1.) 25.4k
-   #   2.) 36.7k (simple Context)
-
-  # raise ctx.inspect
-  assert_equal ctx[:application_ctx].class, Trailblazer::Context::Container # our In pipe's creation!
-  assert_equal ctx[:application_ctx][:more], "0x666" # the more_model_input was called.
-  assert_equal ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
-  assert_equal ctx.keys, [:application_ctx, :original_application_ctx]
-  assert_equal CU.inspect(ctx), %({:application_ctx=>#<Trailblazer::Context::Container wrapped_options={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"} mutable_options={}>, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>\"0x666\"}})
-
-  # this is what happens in the actual {:model} step.
-  ctx[:application_ctx][:model] = Object
-
-  ctx, signal = Circuit::Processor.(model_output_pipe, ctx,
-    scope: true,
-    emit_to_outer_ctx: [:application_ctx],
-  )
-
-# FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
-  assert_equal ctx.inspect, %({:application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object}, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object}})
-
-
-
 
 
 # raise "should we merge ctx and temp_ctx in Processor, or do that in the invoker?
@@ -482,6 +442,61 @@ it do
 
   create_circuit = Circuit.new(map: create_circuit, termini: [CREATE_FIXME_SUCCESS, CREATE_FIXME_FAILURE], start_task: model)
 
+
+
+# TEST I/O
+require "benchmark/ips"
+#  Benchmark.ips do |x|
+#    x.report("cix") {
+  ctx, signal = Circuit::Processor.(model_input_pipe,
+    {
+      application_ctx: {params: {song: {}}, noise: true, slug: "0x666"},
+    },
+    # {}, # tmp
+    exec_context: create_instance = Create.new,
+    scope: true,
+    emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze
+  )
+ # }
+ #   x.compare! # 43.6 -45.2k
+ # end
+
+   # Context():
+   #   1.) 25.4k
+   #   2.) 36.7k (simple Context)
+
+  # raise ctx.inspect
+  assert_equal ctx[:application_ctx].class, Trailblazer::Context::Container # our In pipe's creation!
+  assert_equal ctx[:application_ctx][:more], "0x666" # the more_model_input was called.
+  assert_equal ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
+  assert_equal ctx.keys, [:application_ctx, :original_application_ctx]
+  assert_equal CU.inspect(ctx), %({:application_ctx=>#<Trailblazer::Context::Container wrapped_options={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"} mutable_options={}>, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>\"0x666\"}})
+
+  # this is what happens in the actual {:model} step.
+  ctx[:application_ctx][:model] = Object
+
+  ctx, signal = Circuit::Processor.(model_output_pipe, ctx,
+    scope: true,
+    emit_to_outer_ctx: [:application_ctx],
+  )
+
+# FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
+  assert_equal ctx.inspect, %({:application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object}, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object}})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   ctx = {params: {song: nil}, slug: "0x666"}
   create_ctx = {
     # exec_context:     Create.new,
@@ -503,6 +518,20 @@ puts "ciiii"
   assert_equal signal, CREATE_FIXME_SUCCESS
   assert_equal ctx.keys, [:application_ctx]
 
+  def call_me(create_circuit)
+    ctx, signal = Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}})
+
+  end
+
+  Benchmark.ips do |x|
+    x.report("cix") {
+      ctx, signal = call_me(create_circuit)
+    }
+    x.compare!
+  end
+
+  # 1.
+  #   5.648k vs 19.834k how is that so slow?
 
   # save_pipe = [
   #   a = [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE, {}],
