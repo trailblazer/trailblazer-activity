@@ -12,7 +12,8 @@ require "test_helper"
 # 9. does invoker.call need kwargs?
 # 10. BUG: when all tasks are the same proc and the last is the terminus, only the first is run. ===> use ids, we got them, anyway.
 # 11. should circuit_options be a positional arg?
-# 12. don't repeat Io.new as context, use automatic passing
+# 12. don't repeat Io.new as context, use automatic passing [done]
+# 13. termini IDs in map when using nesting
 
 class RunnerInvokerTest < Minitest::Spec
   # Helper for those who don't like or have a DSL :D
@@ -23,25 +24,30 @@ class RunnerInvokerTest < Minitest::Spec
       ]
     end
 
-    circuit = task_cfgs.collect.with_index do |task_cfg, i|
-      signal = task_cfg[-1]
+    map = task_cfgs.collect.with_index do |(id, _, _, _, signal), i|
+      next_task = task_cfgs[i + 1]
 
       [
-        task_cfg,
-        {signal => task_cfgs[i + 1]} # FIXME: don't link last task!
+        id,
+        {signal => next_task ? next_task[0] : nil} # FIXME: don't link last task at all!
       ]
 
     end.to_h
 
+    config = task_cfgs.collect do |(id, *args)|
+      [id, [id, *args]]
+    end.to_h
+
     Circuit.new(
-      map:        circuit,
-      start_task: task_cfgs[0],
-      termini:    [task_cfgs[-1][1]]
+      map:        map,
+      start_task: config.keys[0],
+      termini:    [config.keys[-1]],
+      config:     config,
     )
   end
 
     # We start with NO #call methods!
-  class Circuit < Struct.new(:map, :start_task, :termini, keyword_init: true)
+  class Circuit < Struct.new(:map, :start_task, :termini, :config, keyword_init: true)
     class Processor
       module Trailblazer
         class Context < Struct.new(:shadowed, :mutable)
@@ -88,7 +94,10 @@ class RunnerInvokerTest < Minitest::Spec
       def self.call(circuit, ctx, scope: false, emit_to_outer_ctx: nil, emit_signal: false, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
         map      = circuit.map
         termini  = circuit.termini
-        task_cfg = circuit.start_task
+        start_task_id = circuit.start_task
+        config   = circuit.config
+
+        task_cfg = config[start_task_id]
 
         # DISCUSS: tmp == circuit_ctx
         ctx = Trailblazer.Context(ctx) if scope # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
@@ -96,6 +105,9 @@ class RunnerInvokerTest < Minitest::Spec
         loop do
           id, task, invoker, circuit_options_to_merge = task_cfg
 
+          #
+          #
+          #
           # puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
           # ctx = ctx.merge(circuit_options_to_merge)
 
@@ -109,8 +121,8 @@ class RunnerInvokerTest < Minitest::Spec
           )
 
           # Stop execution of the circuit when we hit a terminus.
-          # puts "@@@@@ #{termini.collect { |o| o} } ??? #{signal.object_id} #{signal}"
-          if termini.include?(task)
+          # puts "@@@@@ #{termini.collect { |o| o} } ??? #{id.inspect}"
+          if termini.include?(id)
             # puts "done with circuit #{task}"
             if emit_to_outer_ctx
               outer_ctx, mutable = ctx.decompose
@@ -135,8 +147,8 @@ class RunnerInvokerTest < Minitest::Spec
             return ctx, signal # FIXME: IS THAT WHAT WE WANT? what if we want to pass in a tmp context into a nested circuit, but don't want it back?
           end
 
-          if next_task_cfg = next_for(map, task_cfg, signal)
-            task_cfg = next_task_cfg
+          if next_task_id = next_for(map, id, signal)
+            task_cfg = config[next_task_id]
             # puts "@@@@@ =========> #{next_task_cfg.inspect}"
           else
             raise signal.inspect
@@ -145,8 +157,8 @@ class RunnerInvokerTest < Minitest::Spec
         end
       end
 
-      def self.next_for(map, last_task_cfg, signal)
-        outputs = map[last_task_cfg]
+      def self.next_for(map, last_task_id, signal)
+        outputs = map[last_task_id]
         outputs[signal]
       end
     end
@@ -356,12 +368,12 @@ it do
   # In() => :my_model_input
   my_model_input_pipe = pipeline_circuit(
     [:invoke_instance_method, :my_model_input, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {use_application_ctx___: false}],
   )
 
   more_model_input_pipe = pipeline_circuit(
     [:invoke_callable, Create::MoreModelInput, INVOKER___STEP_INTERFACE],
-    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {use_application_ctx___: false}],
   )
 
   my_model_output_pipe = pipeline_circuit(
@@ -370,18 +382,20 @@ it do
   )
 # raise "the original_application_ctx must be available to output, but not to the next real step"
 
+  # !!! requires: {exec_context: Io}
   model_input_pipe = pipeline_circuit(
-    [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
-    [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
+    [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
+    [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
     [:my_model_input, my_model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:aggregate]}],     # user filter.
     [:more_model_input, more_model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:aggregate]}], # user filter.
-    [:create_application_ctx, :create_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
+    [:create_application_ctx, :create_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
   )
 
+  # !!! requires: {exec_context: Io}
   model_output_pipe = pipeline_circuit(
-    [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
+    [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
     [:my_model_output, my_model_output_pipe, Circuit::Processor],     # user filter.
-    [:swap___, :swap___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io}],
+    [:swap___, :swap___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
   )
 
 
@@ -390,11 +404,11 @@ it do
 #{ } how to handle signal?"
 
   model_pipe = pipeline_circuit(
-    [:input, model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
+    [:input, model_input_pipe, Circuit::Processor, {exec_context: Io, scope: true, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
 
     [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
     [:compute_binary_signal, ComputeBinarySignal],
-    [:output, model_output_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx].freeze}],
+    [:output, model_output_pipe, Circuit::Processor, {exec_context: Io, scope: true, emit_to_outer_ctx: [:application_ctx].freeze}],
   )
 
   run_checks_pipe = pipeline_circuit(
@@ -407,40 +421,44 @@ it do
     [:compute_binary_signal, ComputeBinarySignal],
   )
 
-  run_checks      = [:run_checks, run_checks_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}]
-  title_length_ok = [:title_length_ok?, title_length_ok_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}]
-  validate_success_terminus = [:validate_success_terminus, FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
-  validate_failure_terminus = [:validate_failure_terminus, FIXME_FAILURE = Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
+  validate_config = {
+    run_checks: [:run_checks, run_checks_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
+    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
+    validate_success_terminus: [:validate_success_terminus, Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
+    validate_failure_terminus: [:validate_failure_terminus, Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}],
+  }
 
   validate_circuit = {
-    run_checks => {Trailblazer::Activity::Right => title_length_ok, Trailblazer::Activity::Left => validate_failure_terminus},
-    title_length_ok => {Trailblazer::Activity::Right => validate_success_terminus, Trailblazer::Activity::Left => validate_failure_terminus},
+    :run_checks => {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :validate_failure_terminus},
+    :title_length_ok? => {Trailblazer::Activity::Right => :validate_success_terminus, Trailblazer::Activity::Left => :validate_failure_terminus},
     # FIXME_SUCCESS => {},
     # FIXME_FAILURE => {},
   }
-  validate_circuit = Circuit.new(map: validate_circuit, termini: [FIXME_SUCCESS, FIXME_FAILURE], start_task: run_checks)
+  validate_circuit = Circuit.new(map: validate_circuit, termini: [:validate_success_terminus, :validate_failure_terminus], start_task: :run_checks, config: validate_config)
 
   save_pipe = pipeline_circuit(
     [:invoke_callable, Save, INVOKER___STEP_INTERFACE],
     [:compute_binary_signal, ComputeBinarySignal],
   )
 
-    model =    [:Model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true},] # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    validate = [:Validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx]},] # TODO: always emit :application_ctx?
-    save =     [:Save,     save_pipe, Circuit::Processor,       {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}] # check that we don't have circuit_options anymore here?
+  create_config = {
+    Model:    [:Model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    Validate: [:Validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx]},], # TODO: always emit :application_ctx?
+    Save:     [:Save,     save_pipe, Circuit::Processor,       {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}], # check that we don't have circuit_options anymore here?
+    create_success_terminus: [:create_success_terminus, Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
+    create_failure_terminus: [:create_failure_terminus, Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
+  }
 
-  create_success_terminus = [:create_success_terminus, CREATE_FIXME_SUCCESS = Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}]
-  create_failure_terminus = [:create_failure_terminus, CREATE_FIXME_FAILURE = Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
 
 
 
   create_circuit = {
-    model => {Trailblazer::Activity::Right => validate, Trailblazer::Activity::Left => create_failure_terminus}, # DISCUSS: reuse termini?
-    validate => {FIXME_SUCCESS => save, FIXME_FAILURE => create_failure_terminus},
-    save => {Trailblazer::Activity::Right => create_success_terminus, Trailblazer::Activity::Left => create_failure_terminus},
+    :Model => {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :create_failure_terminus}, # DISCUSS: reuse termini?
+    :Validate => {validate_config[:validate_success_terminus][1] => :Save, validate_config[:validate_failure_terminus][1] => :create_failure_terminus},
+    :Save => {Trailblazer::Activity::Right => :create_success_terminus, Trailblazer::Activity::Left => :create_failure_terminus},
   }
 
-  create_circuit = Circuit.new(map: create_circuit, termini: [CREATE_FIXME_SUCCESS, CREATE_FIXME_FAILURE], start_task: model)
+  create_circuit = Circuit.new(map: create_circuit, termini: [:create_success_terminus, :create_failure_terminus], start_task: :Model, config: create_config)
 
 
 
@@ -453,7 +471,8 @@ require "benchmark/ips"
       application_ctx: {params: {song: {}}, noise: true, slug: "0x666"},
     },
     # {}, # tmp
-    exec_context: create_instance = Create.new,
+    # exec_context: create_instance = Create.new,
+    exec_context:  Io,
     scope: true,
     emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze
   )
@@ -478,6 +497,7 @@ require "benchmark/ips"
   ctx, signal = Circuit::Processor.(model_output_pipe, ctx,
     scope: true,
     emit_to_outer_ctx: [:application_ctx],
+    exec_context: Io,
   )
 
 # FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
@@ -509,13 +529,13 @@ puts "ciiii"
 
   assert_equal ctx[:application_ctx], {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal ctx.keys, [:application_ctx]
-  assert_equal signal, CREATE_FIXME_FAILURE
+  assert_equal signal, create_config[:create_failure_terminus][1]
 
   # success:
   ctx, signal = Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}})
 
   assert_equal ctx[:application_ctx], {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
-  assert_equal signal, CREATE_FIXME_SUCCESS
+  assert_equal signal, create_config[:create_success_terminus][1]
   assert_equal ctx.keys, [:application_ctx]
 
   def call_me(create_circuit)
@@ -532,6 +552,8 @@ puts "ciiii"
 
   # 1.
   #   5.648k vs 19.834k how is that so slow?
+  # 2. circuit map now is based on ID symbols and not [id, task, invoker, ...] which was obviously very slow to compute the key every time
+  #   21.847k that is a lot faster!
 
   # save_pipe = [
   #   a = [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE, {}],
