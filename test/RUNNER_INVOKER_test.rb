@@ -1,5 +1,43 @@
 require "test_helper"
 
+  module Trailblazer
+    class Context < Struct.new(:shadowed, :mutable)
+      def []=(key, value)
+        mutable[key] = value
+
+        # @to_h[key] = value
+      end
+
+      def [](key)
+        # raise
+        mutable[key] || shadowed[key] # FIXME.
+      end
+
+      def merge(variables)
+        # raise
+        # puts variables.keys
+        Context.new(shadowed, mutable.merge(variables))
+      end
+
+      def decompose
+        return shadowed, mutable
+      end
+
+      def to_h
+        # return @to_h
+        shadowed.to_h.merge(mutable)
+      end
+
+      def to_hash # implicit conversion to Hash.
+        to_h
+      end
+    end
+
+    def self.Context(shadowed)
+      Context.new(shadowed, {})
+    end
+  end
+
 # TODO:
 # 1. SOMETHINg like Pipe::Input, nested pipe, check out how to use a work ctx
 # 2. do we need pipelines?
@@ -38,7 +76,7 @@ class RunnerInvokerTest < Minitest::Spec
       [id, [id, *args]]
     end.to_h
 
-    Circuit.new(
+    Trailblazer::Activity::Circuit.new(
       map:        map,
       start_task: config.keys[0],
       termini:    [config.keys[-1]],
@@ -46,129 +84,7 @@ class RunnerInvokerTest < Minitest::Spec
     )
   end
 
-    # We start with NO #call methods!
-  class Circuit < Struct.new(:map, :start_task, :termini, :config, keyword_init: true)
-    class Processor
-      module Trailblazer
-        class Context < Struct.new(:shadowed, :mutable)
-          # def initialize(*)
-          #   super
 
-          #   @to_h = shadowed.to_h.merge(mutable.to_h)
-          # end
-          def []=(key, value)
-            mutable[key] = value
-
-            # @to_h[key] = value
-          end
-
-          def [](key)
-            # raise
-            mutable[key] || shadowed[key] # FIXME.
-          end
-
-          def merge(variables)
-            # raise
-            # puts variables.keys
-            Context.new(shadowed, mutable.merge(variables))
-          end
-
-          def decompose
-            return shadowed, mutable
-          end
-
-          def to_h
-            # return @to_h
-            shadowed.to_h.merge(mutable)
-          end
-
-          def to_hash # implicit conversion to Hash.
-            to_h
-          end
-        end
-        def self.Context(shadowed)
-          Context.new(shadowed, {})
-        end
-      end
-
-      def self.call(circuit, ctx, emit_to_outer_ctx: nil, emit_signal: false, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
-        map, start_task_id, termini, config = circuit.to_a # TODO: do that on the outside?
-
-
-        # DISCUSS: tmp == circuit_ctx
-        ctx = Trailblazer.Context(ctx) if emit_to_outer_ctx # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
-        # FIXME: should this be done on the outside?
-        loop do
-          task_cfg = config[start_task_id]
-          id, task, invoker, circuit_options_to_merge = task_cfg
-
-          #
-          #
-          #
-          # puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
-          # ctx = ctx.merge(circuit_options_to_merge)
-
-          ctx, signal, tmp = invoker.(
-            task,
-            ctx,
-
-
-            **tmp_ctx, # FIXME: prototyping here.
-            **circuit_options_to_merge,
-          )
-
-          # Stop execution of the circuit when we hit a terminus.
-          # puts "@@@@@ #{termini.collect { |o| o} } ??? #{id.inspect}"
-          if termini.include?(id)
-            # puts "done with circuit #{task}"
-            if emit_to_outer_ctx
-              outer_ctx, mutable = ctx.decompose
-
-              # puts "@@@@@ ++++ #{id} #{emit_to_outer_ctx.inspect} #{mutable}"
-              emit_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
-                # DISCUSS: is merge! and slice faster?
-                # outer_ctx[key] = mutable[key]
-                outer_ctx[key] = ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
-              end
-
-              ctx = outer_ctx
-
-              if emit_signal
-                signal = mutable[:signal] # FIXME: is it always here in mutable?
-              end
-            end
-
-
-            return ctx, signal # FIXME: IS THAT WHAT WE WANT? what if we want to pass in a tmp context into a nested circuit, but don't want it back?
-          end
-
-          if next_task_id = next_for(map, id, signal)
-            task_cfg = config[next_task_id]
-            # puts "@@@@@ =========> #{next_task_cfg.inspect}"
-          else
-            raise signal.inspect
-            # raise_illegal_signal_error!(task, signal, @map[task], **circuit_options)
-          end
-        end
-      end
-
-      def self.next_for(map, last_task_id, signal)
-        outputs = map[last_task_id]
-        outputs[signal]
-      end
-    end
-
-    module Terminus
-      class Success < Struct.new(:semantic, keyword_init: true)
-        def call(ctx, **)
-          return ctx, self
-        end
-      end
-
-      class Failure < Success
-      end
-    end
-  end
 
   class INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT
     def self.call(task, ctx, exec_context:, kwargs: {}, **)
@@ -229,27 +145,27 @@ class RunnerInvokerTest < Minitest::Spec
     )
 
     validate_pipe = pipeline_circuit(
-      [:Validate_input, validate_input_pipe, Circuit::Processor, {lib_exec_context: "Validate::Input"}],
+      [:Validate_input, validate_input_pipe, Trailblazer::Activity::Circuit::Processor, {lib_exec_context: "Validate::Input"}],
       [:validate, capture_task(id: 6)],
     )
 
     create_pipe = pipeline_circuit(
-      [:Model, model_pipe, Circuit::Processor],
-      [:Validate, validate_pipe, Circuit::Processor],
+      [:Model, model_pipe, Trailblazer::Activity::Circuit::Processor],
+      [:Validate, validate_pipe, Trailblazer::Activity::Circuit::Processor],
     )
 
     # As we pass in exec_context: as a kwarg, it's passed to all siblings etc.
-    ctx, signal = Circuit::Processor.(create_pipe, {captured: [], exec_context: "Object"})
+    ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_pipe, {captured: [], exec_context: "Object"})
     assert_equal ctx[:captured], [[1, "Object"], [2, "Object"], [3, "Object"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
 
 # FIXME: new test case.
 puts
     create_pipe = pipeline_circuit(
-      [:Model, model_pipe, Circuit::Processor, {exec_context: "Model"}],
-      [:Validate, validate_pipe, Circuit::Processor],
+      [:Model, model_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: "Model"}],
+      [:Validate, validate_pipe, Trailblazer::Activity::Circuit::Processor],
     )
 
-    ctx, signal = Circuit::Processor.(create_pipe, {captured: [], exec_context: "Object"})
+    ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_pipe, {captured: [], exec_context: "Object"})
     assert_equal ctx[:captured], [[1, "Model"], [2, "Model"], [3, "Model"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
 
   end
@@ -381,15 +297,15 @@ it do
   model_input_pipe = pipeline_circuit(
     [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
-    [:my_model_input, my_model_input_pipe, Circuit::Processor, {emit_to_outer_ctx: [:aggregate]}],     # user filter.
-    [:more_model_input, more_model_input_pipe, Circuit::Processor, {emit_to_outer_ctx: [:aggregate]}], # user filter.
+    [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor, {emit_to_outer_ctx: [:aggregate]}],     # user filter.
+    [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor, {emit_to_outer_ctx: [:aggregate]}], # user filter.
     [:create_application_ctx, :create_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
   )
 
   # !!! requires: {exec_context: Io}
   model_output_pipe = pipeline_circuit(
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
-    [:my_model_output, my_model_output_pipe, Circuit::Processor],     # user filter.
+    [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor],     # user filter.
     [:swap___, :swap___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
   )
 
@@ -399,11 +315,11 @@ it do
 #{ } how to handle signal?"
 
   model_pipe = pipeline_circuit(
-    [:input, model_input_pipe, Circuit::Processor, {exec_context: Io, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
+    [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Io, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
 
     [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
     [:compute_binary_signal, ComputeBinarySignal],
-    [:output, model_output_pipe, Circuit::Processor, {exec_context: Io, emit_to_outer_ctx: [:application_ctx].freeze}],
+    [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Io, emit_to_outer_ctx: [:application_ctx].freeze}],
   )
 
   run_checks_pipe = pipeline_circuit(
@@ -417,10 +333,10 @@ it do
   )
 
   validate_config = {
-    run_checks: [:run_checks, run_checks_pipe, Circuit::Processor, {emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
-    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Circuit::Processor, {emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
-    validate_success_terminus: [:validate_success_terminus, Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
-    validate_failure_terminus: [:validate_failure_terminus, Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}],
+    run_checks: [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor, {emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
+    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor, {emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
+    validate_success_terminus: [:validate_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
+    validate_failure_terminus: [:validate_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}],
   }
 
   validate_circuit = {
@@ -429,7 +345,7 @@ it do
     # FIXME_SUCCESS => {},
     # FIXME_FAILURE => {},
   }
-  validate_circuit = Circuit.new(map: validate_circuit, termini: [:validate_success_terminus, :validate_failure_terminus], start_task: :run_checks, config: validate_config)
+  validate_circuit = Trailblazer::Activity::Circuit.new(map: validate_circuit, termini: [:validate_success_terminus, :validate_failure_terminus], start_task: :run_checks, config: validate_config)
 
   save_pipe = pipeline_circuit(
     [:invoke_callable, Save, INVOKER___STEP_INTERFACE],
@@ -437,11 +353,11 @@ it do
   )
 
   create_config = {
-    Model:    [:Model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze, emit_to_outer_ctx: [:application_ctx], emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    Validate: [:Validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze, emit_to_outer_ctx: [:application_ctx]},], # TODO: always emit :application_ctx?
-    Save:     [:Save,     save_pipe, Circuit::Processor,       {emit_to_outer_ctx: [:application_ctx], emit_signal: true}], # check that we don't have circuit_options anymore here?
-    create_success_terminus: [:create_success_terminus, Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
-    create_failure_terminus: [:create_failure_terminus, Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
+    Model:    [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor,      {exec_context: Create.new.freeze, emit_to_outer_ctx: [:application_ctx], emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    Validate: [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor, {exec_context: Validate.new.freeze, emit_to_outer_ctx: [:application_ctx]},], # TODO: always emit :application_ctx?
+    Save:     [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor,       {emit_to_outer_ctx: [:application_ctx], emit_signal: true}], # check that we don't have circuit_options anymore here?
+    create_success_terminus: [:create_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
+    create_failure_terminus: [:create_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
   }
 
 
@@ -453,7 +369,7 @@ it do
     :Save => {Trailblazer::Activity::Right => :create_success_terminus, Trailblazer::Activity::Left => :create_failure_terminus},
   }
 
-  create_circuit = Circuit.new(map: create_circuit, termini: [:create_success_terminus, :create_failure_terminus], start_task: :Model, config: create_config)
+  create_circuit = Trailblazer::Activity::Circuit.new(map: create_circuit, termini: [:create_success_terminus, :create_failure_terminus], start_task: :Model, config: create_config)
 
 
 
@@ -461,7 +377,7 @@ it do
 require "benchmark/ips"
 #  Benchmark.ips do |x|
 #    x.report("cix") {
-  ctx, signal = Circuit::Processor.(model_input_pipe,
+  ctx, signal = Trailblazer::Activity::Circuit::Processor.(model_input_pipe,
     {
       application_ctx: {params: {song: {}}, noise: true, slug: "0x666"},
     },
@@ -480,16 +396,16 @@ require "benchmark/ips"
    #   2.) 36.7k (simple Context)
 
   # raise ctx.inspect
-  assert_equal ctx[:application_ctx].class, Trailblazer::Context::Container # our In pipe's creation!
+  assert_equal ctx[:application_ctx].class, Trailblazer::Context # our In pipe's creation!
   assert_equal ctx[:application_ctx][:more], "0x666" # the more_model_input was called.
   assert_equal ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
   assert_equal ctx.keys, [:application_ctx, :original_application_ctx]
-  assert_equal CU.inspect(ctx), %({:application_ctx=>#<Trailblazer::Context::Container wrapped_options={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"} mutable_options={}>, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>\"0x666\"}})
+  assert_equal CU.inspect(ctx), %({:application_ctx=>#<struct Trailblazer::Context shadowed={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"}, mutable={}>, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>\"0x666\"}})
 
   # this is what happens in the actual {:model} step.
   ctx[:application_ctx][:model] = Object
 
-  ctx, signal = Circuit::Processor.(model_output_pipe, ctx,
+  ctx, signal = Trailblazer::Activity::Circuit::Processor.(model_output_pipe, ctx,
     scope: true,
     emit_to_outer_ctx: [:application_ctx],
     exec_context: Io,
@@ -520,21 +436,21 @@ require "benchmark/ips"
 
 puts "ciiii"
   # validation error:
-  ctx, signal = Circuit::Processor.(create_circuit, create_ctx)
+  ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, create_ctx)
 
   assert_equal ctx[:application_ctx], {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal ctx.keys, [:application_ctx]
   assert_equal signal, create_config[:create_failure_terminus][1]
 
   # success:
-  ctx, signal = Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}})
+  ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}})
 
   assert_equal ctx[:application_ctx], {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal signal, create_config[:create_success_terminus][1]
   assert_equal ctx.keys, [:application_ctx]
 
   def call_me(create_circuit)
-    ctx, signal = Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}})
+    ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}})
 
   end
 
@@ -569,7 +485,7 @@ puts "ciiii"
 
   # save_circuit = Circuit.new(map: save_circuit, termini: [Model___Output], start_task: a)
 
-  # ctx, signal = Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}})
+  # ctx, signal = Trailblazer::Activity::Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}})
   # ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}})
   # raise ctx.inspect
 
@@ -577,7 +493,7 @@ puts "ciiii"
     #
     # require "benchmark/ips"
     # Benchmark.ips do |x|
-    #   x.report("circuit") { ctx, signal = Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}}) }
+    #   x.report("circuit") { ctx, signal = Trailblazer::Activity::Circuit::Processor.(save_circuit, {application_ctx: {params: {}, model: Object}}) }
     #   x.report("pipe")    { ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}}) }
 
     #   x.compare!
