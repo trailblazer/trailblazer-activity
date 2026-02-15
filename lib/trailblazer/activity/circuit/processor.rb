@@ -17,7 +17,7 @@
             #
             #
             #
-            # puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
+            puts "@@@@@ circuit [invoke] #{id.inspect} #{circuit_options_to_merge}"
             # ctx = ctx.merge(circuit_options_to_merge)
 
             ctx, signal, tmp = invoker.(

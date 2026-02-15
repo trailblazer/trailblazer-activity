@@ -56,7 +56,7 @@ require "test_helper"
 class RunnerInvokerTest < Minitest::Spec
   # Helper for those who don't like or have a DSL :D
   def pipeline_circuit(*task_cfgs)
-    task_cfgs = task_cfgs.collect do |id, task, invoker = INVOKER___CIRCUIT_INTERFACE, options = {}, signal: nil|
+    task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, options = {}, signal: nil|
       [
         id, task, invoker, options, signal # FIXME: we don't need the signal at runtime.
       ]
@@ -93,11 +93,7 @@ class RunnerInvokerTest < Minitest::Spec
     end
   end
 
-  class INVOKER___CIRCUIT_INTERFACE
-    def self.call(task, ctx, **temp_ctx)
-      task.(ctx, **ctx, **temp_ctx) # DISCUSS/FIXME: we can also merge the kwargs once for all childs in Processor#call?
-    end
-  end
+
 
   class INVOKER___STEP_INTERFACE
     # def self.call(task, ctx, application_ctx:, **)
@@ -335,8 +331,8 @@ it do
   validate_config = {
     run_checks: [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:application_ctx], emit_signal: true}],
     title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:application_ctx], emit_signal: true}],
-    validate_success_terminus: [:validate_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
-    validate_failure_terminus: [:validate_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}],
+    validate_success_terminus: [:validate_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
+    validate_failure_terminus: [:validate_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
   }
 
   validate_circuit = {
@@ -356,8 +352,8 @@ it do
     Model:    [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze, copy_to_outer_ctx: [:application_ctx], emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
     Validate: [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze, copy_to_outer_ctx: [:application_ctx]},], # TODO: always emit :application_ctx?
     Save:     [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {copy_to_outer_ctx: [:application_ctx], emit_signal: true}], # check that we don't have circuit_options anymore here?
-    create_success_terminus: [:create_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
-    create_failure_terminus: [:create_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
+    create_success_terminus: [:create_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
+    create_failure_terminus: [:create_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}]
   }
 
 
@@ -467,12 +463,12 @@ puts "ciiii"
   #   21.847k that is a lot faster!
 
   # save_pipe = [
-  #   a = [:input, Model___Input, INVOKER___CIRCUIT_INTERFACE, {}],
+  #   a = [:input, Model___Input, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
 
   #   b= [:invoke_callable, Save, INVOKER___STEP_INTERFACE, {}],
-  #   c= [:compute_binary_signal, ComputeBinarySignal, INVOKER___CIRCUIT_INTERFACE, {}],
+  #   c= [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
 
-  #   d =[:output, Model___Output, INVOKER___CIRCUIT_INTERFACE, {}],
+  #   d =[:output, Model___Output, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
   # ]
 
 
