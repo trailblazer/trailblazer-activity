@@ -90,34 +90,6 @@ class RunnerInvokerTest < Minitest::Spec
 
 
 
-  class INVOKER___STEP_INTERFACE
-    # def self.call(task, ctx, application_ctx:, **)
-    def self.call(task, ctx, **)
-       application_ctx = ctx[:application_ctx]
-
-      result = task.(application_ctx, **application_ctx.to_h)
-      # pp application_ctx
-
-      ctx[:value] = result
-
-      return ctx, nil # DISCUSS: value. FIXME: redundant to INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
-    end
-  end
-
-  class INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
-    # def self.call(task, ctx, exec_context:, application_ctx:, use_application_ctx___: true, **)
-    def self.call(task, ctx, exec_context:, use_application_ctx___: true, **)
-       application_ctx = ctx[:application_ctx]
-
-      target_ctx = use_application_ctx___ ? application_ctx : ctx # FIXME: not happy with this AT ALL.
-# puts " invok @@@@@ #{task.inspect}"
-      result = exec_context.send(task, target_ctx, **target_ctx.to_h)
-
-      ctx[:value] = result
-      return ctx, nil # DISCUSS: value
-    end
-  end
-
   it "circuit_options, depth-only" do
     def capture_task(id:)
       ->(ctx, exec_context:, lib_exec_context: nil, **) { ctx[:captured] << [id, exec_context, lib_exec_context].compact; return ctx, nil }
@@ -269,18 +241,18 @@ it do
 
   # In() => :my_model_input
   my_model_input_pipe = pipeline_circuit(
-    [:invoke_instance_method, :my_model_input, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {use_application_ctx___: false}],
+    [:invoke_instance_method, :my_model_input, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
   )
 
   more_model_input_pipe = pipeline_circuit(
-    [:invoke_callable, Create::MoreModelInput, INVOKER___STEP_INTERFACE],
-    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {use_application_ctx___: false}],
+    [:invoke_callable, Create::MoreModelInput, Trailblazer::Activity::Task::Invoker::StepInterface],
+    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
   )
 
   my_model_output_pipe = pipeline_circuit(
-    [:invoke_instance_method, :my_model_output, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Io, use_application_ctx___: false}],
+    [:invoke_instance_method, :my_model_output, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Io, }],
   )
 # raise "the original_application_ctx must be available to output, but not to the next real step"
 
@@ -308,18 +280,18 @@ it do
   model_pipe = pipeline_circuit(
     [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
 
-    [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
+    [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
     [:compute_binary_signal, ComputeBinarySignal],
     [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:application_ctx].freeze}],
   )
 
   run_checks_pipe = pipeline_circuit(
-    [:invoke_instance_method, :run_checks, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT], # FIXME: we're currenly assuming that exec_context is passed down.
+    [:invoke_instance_method, :run_checks, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
     [:compute_binary_signal, ComputeBinarySignal],
   )
 
   title_length_ok_pipe = pipeline_circuit(
-    [:invoke_instance_method, :title_length_ok?, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT],
+    [:invoke_instance_method, :title_length_ok?, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod],
     [:compute_binary_signal, ComputeBinarySignal],
   )
 
@@ -339,7 +311,7 @@ it do
   validate_circuit = Trailblazer::Activity::Circuit.new(map: validate_circuit, termini: [:validate_success_terminus, :validate_failure_terminus], start_task: :run_checks, config: validate_config)
 
   save_pipe = pipeline_circuit(
-    [:invoke_callable, Save, INVOKER___STEP_INTERFACE],
+    [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface],
     [:compute_binary_signal, ComputeBinarySignal],
   )
 
@@ -375,7 +347,6 @@ require "benchmark/ips"
     # {}, # tmp
     # exec_context: create_instance = Create.new,
     exec_context:  Io,
-    scope: true,
     copy_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze
   )
  # }
@@ -397,7 +368,6 @@ require "benchmark/ips"
   ctx[:application_ctx][:model] = Object
 
   ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_output_pipe, ctx,
-    scope: true,
     copy_to_outer_ctx: [:application_ctx],
     exec_context: Io,
   )
@@ -460,7 +430,7 @@ puts "ciiii"
   # save_pipe = [
   #   a = [:input, Model___Input, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
 
-  #   b= [:invoke_callable, Save, INVOKER___STEP_INTERFACE, {}],
+  #   b= [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface, {}],
   #   c= [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
 
   #   d =[:output, Model___Output, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
@@ -506,15 +476,6 @@ puts "ciiii"
 #              circuit:    65255.8 i/s - 1.20x  (± 0.00) slower
 
   end
-
-  class INVOKER___CIRCUIT_INTERFACE___INSTANCE_METHOD_ON_EXEC_CONTEXT # GREAT thing here, we can use it for businesss and for library tasks.
-    def self.call(ctx, flow_options, circuit_options, task:, **kwargs)
-      exec_context = circuit_options.fetch(:exec_context) # PROBLEM HERE, business exec_context or lib exec_context?
-
-      exec_context.send(task, ctx, flow_options, circuit_options, **kwargs)
-    end
-  end
-end
 
 =begin
 flow_options: :stack, :context_options
