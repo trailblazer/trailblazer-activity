@@ -10,9 +10,6 @@
           map, start_task_id, termini, config = circuit.to_a # TODO: do that on the outside?
 
 
-          # DISCUSS: tmp == circuit_ctx
-          # ctx = Trailblazer.Context(ctx) if emit_to_outer_ctx # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
-          # FIXME: should this be done on the outside?
             task_cfg = config[start_task_id]
           loop do
             id, task, invoker, circuit_options_to_merge = task_cfg
@@ -55,15 +52,17 @@
         end
 
         class Scoped < Processor
-          def self.call(circuit, ctx, emit_to_outer_ctx:, emit_signal: false, **circuit_options)
+          # By using kwargs, we allow to change {:copy_to_outer_ctx} at runtime, for a bit
+          # of performance tradeoff.
+          def self.call(circuit, ctx, copy_to_outer_ctx:, emit_signal: false, **circuit_options)
             ctx = Trailblazer.Context(ctx)
 
             ctx, signal = super(circuit, ctx, **circuit_options)
 
             outer_ctx, mutable = ctx.decompose
 
-            # puts "@@@@@ ++++ #{id} #{emit_to_outer_ctx.inspect} #{mutable}"
-            emit_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
+            # puts "@@@@@ ++++ #{id} #{copy_to_outer_ctx.inspect} #{mutable}"
+            copy_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
               # DISCUSS: is merge! and slice faster?
               # outer_ctx[key] = mutable[key]
               outer_ctx[key] = ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.

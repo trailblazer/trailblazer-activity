@@ -297,8 +297,8 @@ it do
   model_input_pipe = pipeline_circuit(
     [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
-    [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_to_outer_ctx: [:aggregate]}],     # user filter.
-    [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_to_outer_ctx: [:aggregate]}], # user filter.
+    [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
+    [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}], # user filter.
     [:create_application_ctx, :create_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
   )
 
@@ -315,11 +315,11 @@ it do
 #{ } how to handle signal?"
 
   model_pipe = pipeline_circuit(
-    [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
+    [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
 
     [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
     [:compute_binary_signal, ComputeBinarySignal],
-    [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, emit_to_outer_ctx: [:application_ctx].freeze}],
+    [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:application_ctx].freeze}],
   )
 
   run_checks_pipe = pipeline_circuit(
@@ -333,8 +333,8 @@ it do
   )
 
   validate_config = {
-    run_checks: [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
-    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
+    run_checks: [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:application_ctx], emit_signal: true}],
+    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:application_ctx], emit_signal: true}],
     validate_success_terminus: [:validate_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
     validate_failure_terminus: [:validate_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}],
   }
@@ -353,9 +353,9 @@ it do
   )
 
   create_config = {
-    Model:    [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze, emit_to_outer_ctx: [:application_ctx], emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    Validate: [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze, emit_to_outer_ctx: [:application_ctx]},], # TODO: always emit :application_ctx?
-    Save:     [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {emit_to_outer_ctx: [:application_ctx], emit_signal: true}], # check that we don't have circuit_options anymore here?
+    Model:    [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze, copy_to_outer_ctx: [:application_ctx], emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    Validate: [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze, copy_to_outer_ctx: [:application_ctx]},], # TODO: always emit :application_ctx?
+    Save:     [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {copy_to_outer_ctx: [:application_ctx], emit_signal: true}], # check that we don't have circuit_options anymore here?
     create_success_terminus: [:create_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
     create_failure_terminus: [:create_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
   }
@@ -385,7 +385,7 @@ require "benchmark/ips"
     # exec_context: create_instance = Create.new,
     exec_context:  Io,
     scope: true,
-    emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze
+    copy_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze
   )
  # }
  #   x.compare! # 43.6 -45.2k
@@ -407,7 +407,7 @@ require "benchmark/ips"
 
   ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_output_pipe, ctx,
     scope: true,
-    emit_to_outer_ctx: [:application_ctx],
+    copy_to_outer_ctx: [:application_ctx],
     exec_context: Io,
   )
 
