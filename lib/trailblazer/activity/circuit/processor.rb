@@ -5,12 +5,13 @@
       # A circuit is basically a hash of tasks pointing to their following tasks,
       # keyed by a signal.
       class Processor
+        # TODO: this can still be optimized for runtime speed.
         def self.call(circuit, ctx, emit_to_outer_ctx: nil, emit_signal: false, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
           map, start_task_id, termini, config = circuit.to_a # TODO: do that on the outside?
 
 
           # DISCUSS: tmp == circuit_ctx
-          ctx = Trailblazer.Context(ctx) if emit_to_outer_ctx # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
+          # ctx = Trailblazer.Context(ctx) if emit_to_outer_ctx # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
           # FIXME: should this be done on the outside?
             task_cfg = config[start_task_id]
           loop do
@@ -36,20 +37,7 @@
             if termini.include?(id)
               # puts "done with circuit #{task}"
               if emit_to_outer_ctx
-                outer_ctx, mutable = ctx.decompose
 
-                # puts "@@@@@ ++++ #{id} #{emit_to_outer_ctx.inspect} #{mutable}"
-                emit_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
-                  # DISCUSS: is merge! and slice faster?
-                  # outer_ctx[key] = mutable[key]
-                  outer_ctx[key] = ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
-                end
-
-                ctx = outer_ctx
-
-                if emit_signal
-                  signal = mutable[:signal] # FIXME: is it always here in mutable?
-                end
               end
 
 
@@ -69,6 +57,31 @@
         def self.next_for(map, last_task_id, signal)
           outputs = map[last_task_id]
           outputs[signal]
+        end
+
+        class Scoped < Processor
+          def self.call(circuit, ctx, emit_to_outer_ctx: , emit_signal: false, **circuit_options)
+            ctx = Trailblazer.Context(ctx)
+
+            ctx, signal = super(circuit, ctx, **circuit_options)
+
+            outer_ctx, mutable = ctx.decompose
+
+            # puts "@@@@@ ++++ #{id} #{emit_to_outer_ctx.inspect} #{mutable}"
+            emit_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
+              # DISCUSS: is merge! and slice faster?
+              # outer_ctx[key] = mutable[key]
+              outer_ctx[key] = ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
+            end
+
+            ctx = outer_ctx
+
+            if emit_signal
+              signal = mutable[:signal] # FIXME: is it always here in mutable?
+            end
+
+            return ctx, signal
+          end
         end
       end
     end # Circuit

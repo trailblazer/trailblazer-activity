@@ -5,3 +5,6 @@ gemspec
 gem "benchmark-ips"
 # gem "trailblazer-core-utils",  path: "../trailblazer-core-utils"
 gem "trailblazer-core-utils",  github: "trailblazer/trailblazer-core-utils"
+
+
+gem "memory_profiler"
