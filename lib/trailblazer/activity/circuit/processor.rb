@@ -7,7 +7,7 @@
       class Processor
         # TODO: this can still be optimized for runtime speed.
         def self.call(circuit, ctx, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
-          map, start_task_id, termini, config = circuit.to_a # TODO: do that on the outside?
+          map, start_task_id, termini, config = circuit.to_a
 
 
             task_cfg = config[start_task_id]
