@@ -6,7 +6,7 @@
       # keyed by a signal.
       class Processor
         # TODO: this can still be optimized for runtime speed.
-        def self.call(circuit, ctx, emit_to_outer_ctx: nil, emit_signal: false, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
+        def self.call(circuit, ctx, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
           map, start_task_id, termini, config = circuit.to_a # TODO: do that on the outside?
 
 
@@ -36,11 +36,6 @@
             # puts "@@@@@ #{termini.collect { |o| o} } ??? #{id.inspect}"
             if termini.include?(id)
               # puts "done with circuit #{task}"
-              if emit_to_outer_ctx
-
-              end
-
-
               return ctx, signal # FIXME: IS THAT WHAT WE WANT? what if we want to pass in a tmp context into a nested circuit, but don't want it back?
             end
 
@@ -60,7 +55,7 @@
         end
 
         class Scoped < Processor
-          def self.call(circuit, ctx, emit_to_outer_ctx: , emit_signal: false, **circuit_options)
+          def self.call(circuit, ctx, emit_to_outer_ctx:, emit_signal: false, **circuit_options)
             ctx = Trailblazer.Context(ctx)
 
             ctx, signal = super(circuit, ctx, **circuit_options)
