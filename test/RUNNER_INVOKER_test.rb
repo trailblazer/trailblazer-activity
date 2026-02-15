@@ -86,12 +86,7 @@ class RunnerInvokerTest < Minitest::Spec
 
 
 
-  class INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT
-    def self.call(task, ctx, exec_context:, kwargs: {}, **)
-      # puts "@@@@@ !!!!!!!!!#{task.inspect}"
-      exec_context.send(task, ctx, **ctx.to_h) # TODO: how to add kwargs for Rescue.
-    end
-  end
+
 
 
 
@@ -275,34 +270,34 @@ it do
   # In() => :my_model_input
   my_model_input_pipe = pipeline_circuit(
     [:invoke_instance_method, :my_model_input, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {use_application_ctx___: false}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {use_application_ctx___: false}],
   )
 
   more_model_input_pipe = pipeline_circuit(
     [:invoke_callable, Create::MoreModelInput, INVOKER___STEP_INTERFACE],
-    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {use_application_ctx___: false}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {use_application_ctx___: false}],
   )
 
   my_model_output_pipe = pipeline_circuit(
     [:invoke_instance_method, :my_model_output, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Io, use_application_ctx___: false}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Io, use_application_ctx___: false}],
   )
 # raise "the original_application_ctx must be available to output, but not to the next real step"
 
   # !!! requires: {exec_context: Io}
   model_input_pipe = pipeline_circuit(
-    [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
-    [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
+    [:save_original_application_ctx, :save_original_application_ctx, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+    [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
     [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
     [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}], # user filter.
-    [:create_application_ctx, :create_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
+    [:create_application_ctx, :create_application_ctx, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
   )
 
   # !!! requires: {exec_context: Io}
   model_output_pipe = pipeline_circuit(
-    [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
+    [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
     [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor],     # user filter.
-    [:swap___, :swap___, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
+    [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
   )
 
 
