@@ -91,18 +91,15 @@ class RunnerInvokerTest < Minitest::Spec
         end
       end
 
-      def self.call(circuit, ctx, scope: false, emit_to_outer_ctx: nil, emit_signal: false, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
-        map      = circuit.map
-        termini  = circuit.termini
-        start_task_id = circuit.start_task
-        config   = circuit.config
+      def self.call(circuit, ctx, emit_to_outer_ctx: nil, emit_signal: false, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
+        map, start_task_id, termini, config = circuit.to_a # TODO: do that on the outside?
 
-        task_cfg = config[start_task_id]
 
         # DISCUSS: tmp == circuit_ctx
-        ctx = Trailblazer.Context(ctx) if scope # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
+        ctx = Trailblazer.Context(ctx) if emit_to_outer_ctx # discarded after this circuit is finished. (see oUTER_TMP___) # FIXME: share on demand?
         # FIXME: should this be done on the outside?
         loop do
+          task_cfg = config[start_task_id]
           id, task, invoker, circuit_options_to_merge = task_cfg
 
           #
@@ -127,15 +124,13 @@ class RunnerInvokerTest < Minitest::Spec
             if emit_to_outer_ctx
               outer_ctx, mutable = ctx.decompose
 
-              # ctx = outer_ctx.merge(mutable.slice(*emit_to_outer_ctx))
-              # outer_ctx[emit_to_outer_ctx] = mutable[emit_to_outer_ctx]
               # puts "@@@@@ ++++ #{id} #{emit_to_outer_ctx.inspect} #{mutable}"
-              emit_to_outer_ctx.each do |key|
+              emit_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
+                # DISCUSS: is merge! and slice faster?
                 # outer_ctx[key] = mutable[key]
                 outer_ctx[key] = ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
               end
 
-              # ctx = outer_ctx.merge(emit_to_outer_ctx => mutable[emit_to_outer_ctx])
               ctx = outer_ctx
 
               if emit_signal
@@ -386,8 +381,8 @@ it do
   model_input_pipe = pipeline_circuit(
     [:save_original_application_ctx, :save_original_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
     [:init_aggregate, :init_aggregate, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
-    [:my_model_input, my_model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:aggregate]}],     # user filter.
-    [:more_model_input, more_model_input_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:aggregate]}], # user filter.
+    [:my_model_input, my_model_input_pipe, Circuit::Processor, {emit_to_outer_ctx: [:aggregate]}],     # user filter.
+    [:more_model_input, more_model_input_pipe, Circuit::Processor, {emit_to_outer_ctx: [:aggregate]}], # user filter.
     [:create_application_ctx, :create_application_ctx, INVOKER___CIRCUIT_INTERFACE_ON_EXEC_CONTEXT, {}],
   )
 
@@ -404,11 +399,11 @@ it do
 #{ } how to handle signal?"
 
   model_pipe = pipeline_circuit(
-    [:input, model_input_pipe, Circuit::Processor, {exec_context: Io, scope: true, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
+    [:input, model_input_pipe, Circuit::Processor, {exec_context: Io, emit_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
 
     [:invoke_instance_method, :model, INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT, {exec_context: Create.new}],
     [:compute_binary_signal, ComputeBinarySignal],
-    [:output, model_output_pipe, Circuit::Processor, {exec_context: Io, scope: true, emit_to_outer_ctx: [:application_ctx].freeze}],
+    [:output, model_output_pipe, Circuit::Processor, {exec_context: Io, emit_to_outer_ctx: [:application_ctx].freeze}],
   )
 
   run_checks_pipe = pipeline_circuit(
@@ -422,8 +417,8 @@ it do
   )
 
   validate_config = {
-    run_checks: [:run_checks, run_checks_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
-    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Circuit::Processor, {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
+    run_checks: [:run_checks, run_checks_pipe, Circuit::Processor, {emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
+    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Circuit::Processor, {emit_to_outer_ctx: [:application_ctx], emit_signal: true}],
     validate_success_terminus: [:validate_success_terminus, Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
     validate_failure_terminus: [:validate_failure_terminus, Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}],
   }
@@ -442,9 +437,9 @@ it do
   )
 
   create_config = {
-    Model:    [:Model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    Validate: [:Validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze, scope: true, emit_to_outer_ctx: [:application_ctx]},], # TODO: always emit :application_ctx?
-    Save:     [:Save,     save_pipe, Circuit::Processor,       {scope: true, emit_to_outer_ctx: [:application_ctx], emit_signal: true}], # check that we don't have circuit_options anymore here?
+    Model:    [:Model,    model_pipe, Circuit::Processor,      {exec_context: Create.new.freeze, emit_to_outer_ctx: [:application_ctx], emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    Validate: [:Validate, validate_circuit, Circuit::Processor, {exec_context: Validate.new.freeze, emit_to_outer_ctx: [:application_ctx]},], # TODO: always emit :application_ctx?
+    Save:     [:Save,     save_pipe, Circuit::Processor,       {emit_to_outer_ctx: [:application_ctx], emit_signal: true}], # check that we don't have circuit_options anymore here?
     create_success_terminus: [:create_success_terminus, Circuit::Terminus::Success.new(semantic: :success), INVOKER___CIRCUIT_INTERFACE, {}],
     create_failure_terminus: [:create_failure_terminus, Circuit::Terminus::Failure.new(semantic: :failure), INVOKER___CIRCUIT_INTERFACE, {}]
   }
