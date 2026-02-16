@@ -1,5 +1,7 @@
 require "test_helper"
 
+# Test that we can build something like the Each() macro,
+# where we dynamically iterate over a dataset, as if it was a circuit 1 --> 2 --> 3].
 class Circuit_dynamicResolving_for_Each_Test < Minitest::Spec
   def my_task_a(ctx, value:, index:, **)
     ctx[:seq] << [index, value]
@@ -24,7 +26,7 @@ class Circuit_dynamicResolving_for_Each_Test < Minitest::Spec
       return ctx, "done"
     end
 
-    def self.finished(ctx, **)
+    def self.finished(ctx, **) # TODO: this isn't really necessary.
       return ctx, nil
     end
   end
@@ -41,14 +43,10 @@ class Circuit_dynamicResolving_for_Each_Test < Minitest::Spec
         init: {nil => :fetch_value_from_dataset},
         fetch_value_from_dataset: {nil => :a, "done" => :finished},
         a: {nil => :fetch_value_from_dataset},
-        # increase_index: {nil => :fetch_value_from_dataset, "done" => :finished},
         finished: {}
       }
 
     circuit = Trailblazer::Activity::Circuit.new(
-      # map:        map,
-      # start_task_id: :a,
-      # termini:    [:e],
       config:     config,
       map: map,
       start_task_id: :init,
