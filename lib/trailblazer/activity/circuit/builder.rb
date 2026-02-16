@@ -5,9 +5,11 @@ module Trailblazer
       module Builder
         # Pipeline is just another circiut, where each step has only one output.
         def self.Pipeline(*task_cfgs)
-          task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, options = {}, signal: nil|
+          task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, circuit_options = {}, options = {}|
+            signal = options[:signal] # defaults to {nil}.
+
             [
-              id, task, invoker, options, signal
+              id, task, invoker, circuit_options, signal
             ]
           end
 
