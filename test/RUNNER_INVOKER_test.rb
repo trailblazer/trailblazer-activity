@@ -40,7 +40,7 @@ require "test_helper"
 
 # TODO:
 # 1. SOMETHINg like Pipe::Input, nested pipe, check out how to use a work ctx
-# 2. do we need pipelines?
+# [2. done] do we need pipelines?
 # 3. runtime tw
 # 4. show how task can be replaced at runtime, e.g. for Nested
 # 5. how to call with kwargs, e.g. in Rescue?
@@ -48,9 +48,9 @@ require "test_helper"
 # 7. try saving memory by providing often-used Pipes, e.g. for IO?
 # 8. how would we change the "circuit options" from a step? ===> change :start_task
 # 9. does invoker.call need kwargs?
-# 10. BUG: when all tasks are the same proc and the last is the terminus, only the first is run. ===> use ids, we got them, anyway.
+# [10. done] BUG: when all tasks are the same proc and the last is the terminus, only the first is run. ===> use ids, we got them, anyway.
 # 11. should circuit_options be a positional arg?
-# 12. don't repeat Io.new as context, use automatic passing [done]
+# [12. done] don't repeat Io.new as context, use automatic passing [done]
 # 13. termini IDs in map when using nesting
 
 class RunnerInvokerTest < Minitest::Spec
@@ -58,7 +58,7 @@ class RunnerInvokerTest < Minitest::Spec
   def pipeline_circuit(*task_cfgs)
     task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, options = {}, signal: nil|
       [
-        id, task, invoker, options, signal # FIXME: we don't need the signal at runtime.
+        id, task, invoker, options, signal
       ]
     end
 
@@ -72,8 +72,8 @@ class RunnerInvokerTest < Minitest::Spec
 
     end.to_h
 
-    config = task_cfgs.collect do |(id, *args)|
-      [id, [id, *args]]
+    config = task_cfgs.collect do |(id, task, invoker, options)|
+      [id, [id, task, invoker, options]]
     end.to_h
 
     Trailblazer::Activity::Circuit.new(

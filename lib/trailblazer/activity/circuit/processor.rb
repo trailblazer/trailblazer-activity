@@ -16,7 +16,7 @@
               **tmp_ctx.merge(circuit_options_to_merge),
             )
 
-            # puts "   @@@@@ #{id.inspect} ==> #{signal}"
+            # puts "   @@@@@ #{id.inspect} ==> #{signal.inspect}"
             unless (id, task, invoker, circuit_options_to_merge = circuit.resolve(id, signal))
               return ctx, signal
               # raise_illegal_signal_error!(task, signal, @map[task], **circuit_options)
