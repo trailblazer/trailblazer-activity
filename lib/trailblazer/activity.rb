@@ -31,6 +31,7 @@ require "trailblazer/activity/circuit"
 require "trailblazer/activity/circuit/processor"
 require "trailblazer/activity/terminus"
 require "trailblazer/activity/task/invoker"
+require "trailblazer/activity/circuit/builder"
 
 # require "trailblazer/activity/deprecate"
 require "trailblazer/activity/structures"
