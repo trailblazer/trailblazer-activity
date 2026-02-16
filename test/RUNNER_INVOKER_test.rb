@@ -78,7 +78,7 @@ class RunnerInvokerTest < Minitest::Spec
 
     Trailblazer::Activity::Circuit.new(
       map:        map,
-      start_task: config.keys[0],
+      start_task_id: config.keys[0],
       termini:    [config.keys[-1]],
       config:     config,
     )
@@ -305,10 +305,12 @@ it do
   validate_circuit = {
     :run_checks => {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :validate_failure_terminus},
     :title_length_ok? => {Trailblazer::Activity::Right => :validate_success_terminus, Trailblazer::Activity::Left => :validate_failure_terminus},
+    # :validate_failure_terminus => {},
+    # :validate_success_terminus => {},
     # FIXME_SUCCESS => {},
     # FIXME_FAILURE => {},
   }
-  validate_circuit = Trailblazer::Activity::Circuit.new(map: validate_circuit, termini: [:validate_success_terminus, :validate_failure_terminus], start_task: :run_checks, config: validate_config)
+  validate_circuit = Trailblazer::Activity::Circuit.new(map: validate_circuit, termini: [:validate_success_terminus, :validate_failure_terminus], start_task_id: :run_checks, config: validate_config)
 
   save_pipe = pipeline_circuit(
     [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface],
@@ -330,9 +332,11 @@ it do
     :Model => {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :create_failure_terminus}, # DISCUSS: reuse termini?
     :Validate => {validate_config[:validate_success_terminus][1] => :Save, validate_config[:validate_failure_terminus][1] => :create_failure_terminus},
     :Save => {Trailblazer::Activity::Right => :create_success_terminus, Trailblazer::Activity::Left => :create_failure_terminus},
+    # :create_failure_terminus => {},
+    # :create_success_terminus => {},
   }
 
-  create_circuit = Trailblazer::Activity::Circuit.new(map: create_circuit, termini: [:create_success_terminus, :create_failure_terminus], start_task: :Model, config: create_config)
+  create_circuit = Trailblazer::Activity::Circuit.new(map: create_circuit, termini: [:create_success_terminus, :create_failure_terminus], start_task_id: :Model, config: create_config)
 
 
 
@@ -444,7 +448,7 @@ end
   #   # d => {Trailblazer::Activity::Right => create_success_terminus},
   # }
 
-  # save_circuit = Circuit.new(map: save_circuit, termini: [Model___Output], start_task: a)
+  # save_circuit = Circuit.new(map: save_circuit, termini: [Model___Output], start_task_id: a)
 
   # ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(save_circuit, {application_ctx: {params: {}, model: Object}})
   # ctx, signal = Pipeline::Processor.(save_pipe, {application_ctx: {params: {}, model: Object}})
