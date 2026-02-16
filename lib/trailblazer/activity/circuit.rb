@@ -5,18 +5,23 @@ module Trailblazer
       # Find the next step for {current_task_id => signal}.
       # This is called in {Circuit::Processor.call}.
       def resolve(current_task_id, signal)
-        signal_map = map[current_task_id]# or return false # assumption: ID must always be a symbol.
-        next_task_id = signal_map[signal]
+        return if termini.include?(current_task_id)
+
+        signal_map = map[current_task_id] # assumption: ID must always be a symbol.
+# puts "@@@@@ #{current_task_id.inspect}, #{signal_map}"
+        # return if signal_map == :terminus
+
+        next_task_id = signal_map[signal] or raise signal.inspect # this will be nil for a terminus.
 
         config[next_task_id]
       end
 
-      def start_for
-        return termini, *config[start_task_id]
-      end
+      # def start_for
+      #   return termini, *config[start_task_id]
+      # end
 
       def to_a_FIXME
-        return termini, config[start_task_id]
+        config[start_task_id]
       end
     end
   end
