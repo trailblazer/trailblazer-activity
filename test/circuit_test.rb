@@ -34,7 +34,7 @@ class Circuit_FasterResolving_Test < Minitest::Spec
     end
 
     def resolve(last_task_id, signal)
-      config[map[last_task_id]]
+      map[last_task_id]
     end
   end
 
@@ -47,7 +47,7 @@ class Circuit_FasterResolving_Test < Minitest::Spec
       e: [:e, :my_task_e, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
     }
 
-    map = {a: :b, b: :c, c: :d, d: :e}
+    map = {a: config[:b], b: config[:c], c: config[:d], d: config[:e]}
 
     my_pipeline_circuit = MyPipelineCircuit.new(map, config)
 
@@ -60,8 +60,9 @@ class Circuit_FasterResolving_Test < Minitest::Spec
 
     assert_equal CU.inspect(ctx), %({:seq=>[:a, :b, :c, :d, :e]})
 
-
-
+    # This code creates a normal Circuit, then we benchmark those.
+    # Current status: =========> the above is  1.1x faster.
+=begin
     map = {
       a: {nil => :b},
       b: {nil => :c},
@@ -112,6 +113,6 @@ class Circuit_FasterResolving_Test < Minitest::Spec
    #  Comparison:
    # circuit with pipe:   319267.1 i/s
    #           Circuit:   297489.3 i/s - 1.07x  (± 0.00) slower
-
+=end
   end
 end
