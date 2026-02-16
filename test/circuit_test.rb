@@ -1,134 +1,117 @@
 require "test_helper"
 
-class CircuitTest < Minitest::Spec
-  Steps = T.def_tasks(:a, :b, :c, :stop) # See trailblazer-core-utils, this just generates circuit-interface steps.
+# Here, we play with a "pipeline circuit" concept where there's no signal needed.
+class Circuit_FasterResolving_Test < Minitest::Spec
+  def my_task_a(ctx, **)
+    ctx[:seq] << :a
 
-  let(:a) { Steps.method(:a) }
-  let(:b) { Steps.method(:b) }
-  let(:c) { Steps.method(:c) }
-  let(:stop) { Steps.method(:stop) }
+    return ctx, nil
+  end
+  def my_task_b(ctx, **)
+    ctx[:seq] << :b
 
-  let(:right) { Trailblazer::Activity::Right }
-  let(:left) { Trailblazer::Activity::Left }
-  let(:map) do
-    {
-      a => {right => b, left => stop},
-      b => {right => c},
-      c => {right => stop, left => stop},
-      stop => {}
+    return ctx, nil
+  end
+  def my_task_c(ctx, **)
+    ctx[:seq] << :c
+
+    return ctx, nil
+  end
+  def my_task_d(ctx, **)
+    ctx[:seq] << :d
+
+    return ctx, nil
+  end
+  def my_task_e(ctx, **)
+    ctx[:seq] << :e
+
+    return ctx, nil
+  end
+
+  class MyPipelineCircuit < Struct.new(:map, :config)
+    def to_a_FIXME
+      config[:a]
+    end
+
+    def resolve(last_task_id, signal)
+      config[map[last_task_id]]
+    end
+  end
+
+  it "prototype: pipeline resolver, with a static structure of the flow [abcde]" do
+    config = {
+      a: [:a, :my_task_a, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+      b: [:b, :my_task_b, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+      c: [:c, :my_task_c, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+      d: [:d, :my_task_d, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+      e: [:e, :my_task_e, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
     }
-  end
 
-  let(:circuit) do
-    Trailblazer::Activity::Circuit.new(map, [stop], start_task: a)
-  end
+    map = {a: :b, b: :c, c: :d, d: :e}
 
-  describe "Circuit#call" do
-    it "with defaults" do
-      ctx = {seq: []}
-      flow_options = {stack: []}
+    my_pipeline_circuit = MyPipelineCircuit.new(map, config)
 
-      ctx, flow_options, signal = circuit.call(ctx, flow_options, {})
+    ctx, signal = Trailblazer::Activity::Circuit::Processor.(
+      my_pipeline_circuit,
+      {seq: []},
 
-      assert_equal signal, Trailblazer::Activity::Right
-      assert_equal CU.inspect(ctx), %({:seq=>[:a, :b, :c, :stop]})
-      assert_equal CU.inspect(flow_options), %({:stack=>[]})
-    end
+      exec_context: self # applies to all the pipeline's steps
+    )
 
-    it "according to a task's returned signal it picks the correct next task" do
-      ctx = {
-        seq: [],
-        a: left,
-      }
-      flow_options = {stack: []}
+    assert_equal CU.inspect(ctx), %({:seq=>[:a, :b, :c, :d, :e]})
 
-      ctx, flow_options, signal = circuit.call(ctx, flow_options, {})
 
-      assert_equal signal, Trailblazer::Activity::Right
-      assert_equal CU.inspect(ctx), %({:seq=>[:a, :stop], :a=>Trailblazer::Activity::Left})
-      assert_equal CU.inspect(flow_options), %({:stack=>[]})
-    end
 
-    it "with {:start_task} starts from specified task" do
-      ctx = {seq: []}
-      flow_options = {stack: []}
-
-      ctx, flow_options, signal = circuit.call(ctx, flow_options, {start_task: b})
-
-      assert_equal signal, Trailblazer::Activity::Right
-      assert_equal CU.inspect(ctx), %({:seq=>[:b, :c, :stop]})
-      assert_equal CU.inspect(flow_options), %({:stack=>[]})
-    end
-
-    MyRunner = ->(task, ctx, flow_options, circuit_options) do
-      MyTrace.(task, ctx, flow_options, circuit_options)
-
-      task.(ctx, flow_options, circuit_options)
-    end
-
-    MyTrace = ->(task, ctx, flow_options, _) { flow_options[:stack] << task }
-
-    it "with {:runner}, we can change how each task is invoked" do
-      ctx = {seq: []}
-      flow_options = {stack: []}
-
-      ctx, flow_options, signal = circuit.call(ctx, flow_options, {runner: MyRunner})
-
-      assert_equal signal, Trailblazer::Activity::Right
-      assert_equal CU.inspect(ctx), %({:seq=>[:a, :b, :c, :stop]})
-      assert_equal CU.inspect(flow_options), %({:stack=>[#{a}, #{b}, #{c}, #{stop}]})
-    end
-
-    it "a task can be another circuit, which is invoked with the circuit interface" do
-      map = {
-        a => {right => circuit},
-        circuit => {right => stop},
-        stop => {}
-      }
-
-      outer_circuit = Trailblazer::Activity::Circuit.new(map, [stop], start_task: a)
-
-      ctx = {seq: []}
-      flow_options = {stack: []}
-
-      ctx, flow_options, signal = outer_circuit.call(ctx, flow_options, {})
-
-      assert_equal signal, Trailblazer::Activity::Right
-      assert_equal CU.inspect(ctx), %({:seq=>[:a, :a, :b, :c, :stop, :stop]})
-      assert_equal CU.inspect(flow_options), %({:stack=>[]})
-    end
-
-    it "every {Runner.call} receives identical {circuit_options} and returned {circuit_options} are discarded" do
-      my_runner = ->(task, ctx, flow_options, circuit_options) do
-        ctx[:recorded] << [task, circuit_options.inspect]
-
-        return ctx, flow_options, Trailblazer::Activity::Right,
-          {ignore: "me!"} # returned {circuit_options} are discarded in Circuit's loop.
-      end
-
-      ctx = {recorded: []}
-      flow_options = {stack: []}
-
-      ctx, flow_options, signal, circuit_options = circuit.call(ctx, flow_options, original_circuit_options = {a: 9, runner: my_runner}.freeze)
-
-      assert_equal signal, Trailblazer::Activity::Right
-      assert_equal ctx[:recorded],
-        [
-          [a, original_circuit_options.inspect],
-          [b, original_circuit_options.inspect],
-          [c, original_circuit_options.inspect],
-          [stop, original_circuit_options.inspect],
-        ]
-      assert_equal CU.inspect(flow_options), %({:stack=>[]})
-      assert_nil circuit_options
-    end
-  end
-
-  it "Circuit#to_h" do
-    assert_equal circuit.to_h, {
-      map: map,
-      termini: [stop],
-      start_task: a
+    map = {
+      a: {nil => :b},
+      b: {nil => :c},
+      c: {nil => :d},
+      d: {nil => :e},
     }
+
+    circuit = Trailblazer::Activity::Circuit.new(
+      map:        map,
+      start_task_id: :a,
+      termini:    [:e],
+      config:     config,
+    )
+
+    ctx, signal = Trailblazer::Activity::Circuit::Processor.(
+      circuit,
+      {seq: []},
+
+      exec_context: self # applies to all the pipeline's steps
+    )
+
+    assert_equal CU.inspect(ctx), %({:seq=>[:a, :b, :c, :d, :e]})
+
+    require "benchmark/ips"
+
+    Benchmark.ips do |x|
+      x.report("circuit with pipe") {
+        ctx, signal = Trailblazer::Activity::Circuit::Processor.(
+          my_pipeline_circuit,
+          {seq: []},
+
+          exec_context: self # applies to all the pipeline's steps
+        )
+      }
+
+      x.report( "Circuit") {
+        ctx, signal = Trailblazer::Activity::Circuit::Processor.(
+          circuit,
+          {seq: []},
+
+          exec_context: self # applies to all the pipeline's steps
+        )
+      }
+
+      x.compare!
+    end
+
+   #  Comparison:
+   # circuit with pipe:   319267.1 i/s
+   #           Circuit:   297489.3 i/s - 1.07x  (± 0.00) slower
+
   end
 end
