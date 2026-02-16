@@ -6,11 +6,11 @@
       # keyed by a signal.
       class Processor
         # TODO: this can still be optimized for runtime speed.
-        def self.call(circuit, ctx, **tmp_ctx)
-          map, next_task_id, termini, config = circuit.to_a
+        def self.call(circuit, ctx, **tmp_ctx) # TODO: allow {:start_task}.
+          termini, (id, task, invoker, circuit_options_to_merge) = circuit.to_a_FIXME
 
           loop do
-            id, task, invoker, circuit_options_to_merge = config[next_task_id]
+            # id, task, invoker, circuit_options_to_merge = config[next_task_id]
 
             #
             #
@@ -31,7 +31,9 @@
               return ctx, signal # FIXME: IS THAT WHAT WE WANT? what if we want to pass in a tmp context into a nested circuit, but don't want it back?
             end
 
-            unless next_task_id = next_for(map, id, signal)
+            # unless next_task_id = next_for(map, id, signal)
+            # unless next_task_id = circuit.resolve(id, signal)
+            unless (id, task, invoker, circuit_options_to_merge = circuit.resolve(id, signal))
               # task_cfg = config[next_task_id]
               # puts "@@@@@ =========> #{next_task_id.inspect}"
               raise signal.inspect
@@ -40,10 +42,10 @@
           end
         end
 
-        def self.next_for(map, last_task_id, signal)
-          outputs = map[last_task_id]
-          outputs[signal]
-        end
+        # def self.next_for(map, last_task_id, signal)
+        #   outputs = map[last_task_id]
+        #   outputs[signal]
+        # end
 
         # Processor that automatically scopes the ctx for this circuit run.
         # Can return a signal via the {:signal} variable that can be set by
