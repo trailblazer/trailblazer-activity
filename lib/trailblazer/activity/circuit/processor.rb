@@ -10,9 +10,7 @@
           map, next_task_id, termini, config = circuit.to_a
 
           loop do
-            task_cfg = config[next_task_id]
-
-            id, task, invoker, circuit_options_to_merge = task_cfg
+            id, task, invoker, circuit_options_to_merge = config[next_task_id]
 
             #
             #
