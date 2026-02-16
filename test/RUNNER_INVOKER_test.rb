@@ -421,7 +421,7 @@ puts "ciiii"
     }
     x.compare!
   end
-
+end
   # 1.
   #   5.648k vs 19.834k how is that so slow?
   # 2. circuit map now is based on ID symbols and not [id, task, invoker, ...] which was obviously very slow to compute the key every time

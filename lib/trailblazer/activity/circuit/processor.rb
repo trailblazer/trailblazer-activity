@@ -6,9 +6,8 @@
       # keyed by a signal.
       class Processor
         # TODO: this can still be optimized for runtime speed.
-        def self.call(circuit, ctx, **tmp_ctx) # DISCUSS: should we extract or pass-on {:use_outer_tmp}?
+        def self.call(circuit, ctx, **tmp_ctx)
           map, start_task_id, termini, config = circuit.to_a
-
 
             task_cfg = config[start_task_id]
           loop do
@@ -23,10 +22,7 @@
             ctx, signal, tmp = invoker.(
               task,
               ctx,
-
-
-              **tmp_ctx, # FIXME: prototyping here.
-              **circuit_options_to_merge,
+              **tmp_ctx.merge(circuit_options_to_merge),
             )
 
             # Stop execution of the circuit when we hit a terminus.
@@ -51,6 +47,9 @@
           outputs[signal]
         end
 
+        # Processor that automatically scopes the ctx for this circuit run.
+        # Can return a signal via the {:signal} variable that can be set by
+        # any step.
         class Scoped < Processor
           # By using kwargs, we allow to change {:copy_to_outer_ctx} at runtime, for a bit
           # of performance tradeoff.
