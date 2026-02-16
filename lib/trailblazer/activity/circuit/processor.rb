@@ -7,10 +7,11 @@
       class Processor
         # TODO: this can still be optimized for runtime speed.
         def self.call(circuit, ctx, **tmp_ctx)
-          map, start_task_id, termini, config = circuit.to_a
+          map, next_task_id, termini, config = circuit.to_a
 
-            task_cfg = config[start_task_id]
           loop do
+            task_cfg = config[next_task_id]
+
             id, task, invoker, circuit_options_to_merge = task_cfg
 
             #
@@ -32,10 +33,9 @@
               return ctx, signal # FIXME: IS THAT WHAT WE WANT? what if we want to pass in a tmp context into a nested circuit, but don't want it back?
             end
 
-            if next_task_id = next_for(map, id, signal)
-              task_cfg = config[next_task_id]
+            unless next_task_id = next_for(map, id, signal)
+              # task_cfg = config[next_task_id]
               # puts "@@@@@ =========> #{next_task_id.inspect}"
-            else
               raise signal.inspect
               # raise_illegal_signal_error!(task, signal, @map[task], **circuit_options)
             end
