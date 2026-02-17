@@ -275,49 +275,39 @@ it do
     [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
   )
 
-  validate_config = {
-    run_checks: [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true}],
-    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true}],
-    validate_success_terminus: [:validate_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
-    validate_failure_terminus: [:validate_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
-  }
+  validate_circuit, validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
+    [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true},
+      {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :failure}
+    ],
+    [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true},
+      {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
+    ],
+    [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
+    [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
 
-  validate_circuit = {
-    :run_checks => {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :validate_failure_terminus},
-    :title_length_ok? => {Trailblazer::Activity::Right => :validate_success_terminus, Trailblazer::Activity::Left => :validate_failure_terminus},
-    # :validate_failure_terminus => {},
-    # :validate_success_terminus => {},
-    # FIXME_SUCCESS => {},
-    # FIXME_FAILURE => {},
-  }
-  validate_circuit = Trailblazer::Activity::Circuit.new(map: validate_circuit, termini: [:validate_success_terminus, :validate_failure_terminus], start_task_id: :run_checks, config: validate_config)
+    termini: [:success, :failure]
+  )
 
   save_pipe = pipeline_circuit(
     [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface],
     [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
   )
 
-  create_config = {
-    Model:    [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze, emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    Validate: [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze},], # TODO: always emit :application_ctx?
-    Save:     [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {emit_signal: true}], # check that we don't have circuit_options anymore here?
-    create_success_terminus: [:create_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
-    create_failure_terminus: [:create_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}]
-  }
+  create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
+    [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze, emit_signal: true},
+      {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :failure}
+    ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze},
+      {validate_termini[:success] => :Save, validate_termini[:failure] => :failure}
+    ],
+    [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {emit_signal: true},
+      {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
+    ], # check that we don't have circuit_options anymore here?
+    [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
+    [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
 
-
-
-
-  create_circuit = {
-    :Model => {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :create_failure_terminus}, # DISCUSS: reuse termini?
-    :Validate => {validate_config[:validate_success_terminus][1] => :Save, validate_config[:validate_failure_terminus][1] => :create_failure_terminus},
-    :Save => {Trailblazer::Activity::Right => :create_success_terminus, Trailblazer::Activity::Left => :create_failure_terminus},
-    # :create_failure_terminus => {},
-    # :create_success_terminus => {},
-  }
-
-  create_circuit = Trailblazer::Activity::Circuit.new(map: create_circuit, termini: [:create_success_terminus, :create_failure_terminus], start_task_id: :Model, config: create_config)
-
+    termini: [:success, :failure]
+  )
 
 
 # TEST I/O
@@ -387,14 +377,14 @@ puts "ciiii"
 
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, []
-  assert_equal signal, create_config[:create_failure_terminus][1]
+  assert_equal signal, create_termini[:failure]
 
   # success:
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {})
 
   assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal lib_ctx.keys, []
-  assert_equal signal, create_config[:create_success_terminus][1]
+  assert_equal signal, create_termini[:success]
 
   def call_me(create_circuit)
     ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {})

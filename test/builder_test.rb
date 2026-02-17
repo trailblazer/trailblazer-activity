@@ -55,10 +55,11 @@ end
 class CircuitBuilderTest < Minitest::Spec
   it "what" do
     # my_steps = T.def_steps(:b, :c)
-    my_tasks = T.def_tasks(:c)
+    my_tasks = T.def_tasks(:c, :d)
 
     c_circuit, termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-      [:c, my_tasks.method(:c), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}, Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure],
+      [:c, my_tasks.method(:c), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}, Trailblazer::Activity::Right => :d, Trailblazer::Activity::Left => :failure],
+      [:d, my_tasks.method(:d), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}, Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure],
       [:failure, failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
       [:success, success = Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
 
@@ -69,13 +70,19 @@ class CircuitBuilderTest < Minitest::Spec
 
     ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(c_circuit, {seq: []}, {}, {})
 
-    assert_equal CU.inspect(ctx), %({:seq=>[:c]})
+    assert_equal CU.inspect(ctx), %({:seq=>[:c, :d]})
     assert_equal CU.inspect(lib_ctx), %({})
     assert_equal signal, termini[:success]
 
     ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(c_circuit, {seq: [], c: Trailblazer::Activity::Left}, {}, {})
 
     assert_equal CU.inspect(ctx), %({:seq=>[:c], :c=>Trailblazer::Activity::Left})
+    assert_equal CU.inspect(lib_ctx), %({})
+    assert_equal signal, termini[:failure]
+
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(c_circuit, {seq: [], d: Trailblazer::Activity::Left}, {}, {})
+
+    assert_equal CU.inspect(ctx), %({:seq=>[:c, :d], :d=>Trailblazer::Activity::Left})
     assert_equal CU.inspect(lib_ctx), %({})
     assert_equal signal, termini[:failure]
   end
