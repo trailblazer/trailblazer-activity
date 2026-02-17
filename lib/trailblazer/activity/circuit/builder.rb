@@ -50,18 +50,21 @@ module Trailblazer
             [id, [id, task, invoker, options]]
           end.to_h
 
-
+          outputs = termini.collect do |semantic|
+            [semantic, config[semantic][1]]
+          end.to_h
 
           map = task_cfgs.collect do |id, task, invoker, circuit_options, connections|
             [id, connections]
           end.to_h
 
-          Activity::Circuit.new(
-            map:            map,
-            start_task_id:  config.keys[0],
-            termini:        termini,
-            config:         config,
-          )
+          return Activity::Circuit.new(
+              map:            map,
+              start_task_id:  config.keys[0],
+              termini:        termini,
+              config:         config,
+            ),
+            outputs
         end
       end # Builder
     end
