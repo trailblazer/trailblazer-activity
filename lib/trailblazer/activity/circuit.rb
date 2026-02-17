@@ -11,7 +11,7 @@ module Trailblazer
 # puts "@@@@@ #{current_task_id.inspect}, #{signal_map}"
         # return if signal_map == :terminus
 
-        next_task_id = signal_map[signal] or raise signal.inspect # this will be nil for a terminus.
+        next_task_id = signal_map[signal] or raise "#{current_task_id}===>#{signal} @ #{signal_map}".inspect # this will be nil for a terminus.
 
         config[next_task_id] # TODO: can we save this lookup and optimize the map directly?
       end
