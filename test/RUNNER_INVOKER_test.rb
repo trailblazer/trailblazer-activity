@@ -209,7 +209,7 @@ it do
 
 
     def create_application_ctx(ctx, lib_ctx, aggregate:, **)
-      new_ctx = Trailblazer::Context(aggregate) # DISCUSS: write to {ctx} or use merge?
+      new_ctx = Trailblazer::Context(aggregate)
 
       return new_ctx, lib_ctx, nil
     end
@@ -325,8 +325,10 @@ require "benchmark/ips"
     {params: {song: {}}, noise: true, slug: "0x666"},
     {},
     # exec_context: create_instance = Create.new,
-    exec_context:  Io,
-    copy_to_outer_ctx: [:original_application_ctx].freeze
+    {
+      exec_context:  Io,
+      copy_to_outer_ctx: [:original_application_ctx].freeze
+    }
   )
  # }
  #   x.compare! # 43.6 -45.2k
@@ -349,8 +351,8 @@ require "benchmark/ips"
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_output_pipe,
     ctx,
     lib_ctx,
-    copy_to_outer_ctx: [],
-    exec_context: Io,
+    {copy_to_outer_ctx: [],
+        exec_context: Io,}
   )
 
 # FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
@@ -378,21 +380,21 @@ require "benchmark/ips"
 
 puts "ciiii"
   # validation error:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {})
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, {})
 
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, [:application_ctx] # FIXME: WHY IS THIS HERE?
   assert_equal signal, create_config[:create_failure_terminus][1]
 
   # success:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {})
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {})
 
   assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal lib_ctx.keys, [:application_ctx]
   assert_equal signal, create_config[:create_success_terminus][1]
 
   def call_me(create_circuit)
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {})
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {})
   end
 
   Benchmark.ips do |x|

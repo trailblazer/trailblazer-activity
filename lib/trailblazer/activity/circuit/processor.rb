@@ -6,7 +6,7 @@
       # keyed by a signal.
       class Processor
         # TODO: this can still be optimized for runtime speed.
-        def self.call(circuit, ctx, lib_ctx, **circuit_options) # TODO: allow {:start_task}.
+        def self.call(circuit, ctx, lib_ctx, circuit_options) # FIXME: allow {:start_task}.
           id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME
 
           loop do
@@ -15,7 +15,7 @@
               task,
               ctx,
               lib_ctx,
-              **circuit_options.merge(circuit_options_to_merge),
+              circuit_options.merge(circuit_options_to_merge),
             )
 
             # puts "   @@@@@ #{id.inspect} ==> #{signal.inspect}"
@@ -32,10 +32,14 @@
         class Scoped < Processor
           # By using kwargs, we allow to change {:copy_to_outer_ctx} at runtime, for a bit
           # of performance tradeoff.
-          def self.call(circuit, ctx, lib_ctx, copy_to_outer_ctx:, emit_signal: false, **circuit_options)
+          def self.call(circuit, ctx, lib_ctx, circuit_options)
+            call_with_scoping(circuit, ctx, lib_ctx, **circuit_options)
+          end
+
+          def self.call_with_scoping(circuit, ctx, lib_ctx, copy_to_outer_ctx:, emit_signal: false, **circuit_options)
             lib_ctx = Trailblazer.Context(lib_ctx)
 
-            ctx, lib_ctx, signal = super(circuit, ctx, lib_ctx, **circuit_options)
+            ctx, lib_ctx, signal = Processor.(circuit, ctx, lib_ctx, circuit_options)
 
             outer_ctx, mutable = lib_ctx.decompose
 
