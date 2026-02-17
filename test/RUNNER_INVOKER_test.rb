@@ -147,18 +147,18 @@ puts
         [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:original_application_ctx].freeze}], # change {:application_ctx}.
 
         [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
-        [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+        [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
         [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io}],
       )
 
       run_checks_pipe = pipeline_circuit(
         [:invoke_instance_method, :run_checks, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
-        [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+        [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
       )
 
       title_length_ok_pipe = pipeline_circuit(
         [:invoke_instance_method, :title_length_ok?, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod],
-        [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+        [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
       )
 
       validate_circuit, validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
@@ -176,7 +176,7 @@ puts
 
       save_pipe = pipeline_circuit(
         [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface],
-        [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+        [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
       )
 
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
@@ -199,17 +199,22 @@ puts
     end
   end
 
-it do
-  class ComputeBinarySignal
-    # Lib interface.
-    def self.call(ctx, lib_ctx, value:, **)
-      signal = value ? Trailblazer::Activity::Right : Trailblazer::Activity::Left
+  it "wrap_runtime prototyping" do
+    create_circuit, create_termini = Fixtures.fixtures
 
-      lib_ctx[:signal] = signal
+    ctx = {params: {song: nil}, slug: "0x666"}
 
-      return ctx, lib_ctx, nil
-    end
+    # validation error:
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, {})
+
+    assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
+    assert_equal lib_ctx.keys, []
+    assert_equal signal, create_termini[:failure]
+
   end
+
+it do
+
 
   class Create
     # Step interface.
@@ -414,7 +419,7 @@ end
   #   a = [:input, Model___Input, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
 
   #   b= [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface, {}],
-  #   c= [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
+  #   c= [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
 
   #   d =[:output, Model___Output, Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
   # ]
