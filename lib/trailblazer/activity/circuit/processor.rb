@@ -5,7 +5,7 @@
       # A circuit is basically a hash of tasks pointing to their following tasks,
       # keyed by a signal.
       class Processor
-        # TODO: this can still be optimized for runtime speed.
+        # TODO: this can still be optimized for runtime speed, even though I spent days on it already.
         def self.call(circuit, ctx, lib_ctx, circuit_options) # FIXME: allow {:start_task}.
           id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME
 
