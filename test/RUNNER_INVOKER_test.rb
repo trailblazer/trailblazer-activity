@@ -103,16 +103,18 @@ puts
 
 it do
   class ComputeBinarySignal
-    def self.call(ctx, value:, **)
+    # Lib interface.
+    def self.call(ctx, lib_ctx, value:, **)
       signal = value ? Trailblazer::Activity::Right : Trailblazer::Activity::Left
 
-      ctx[:signal] = signal
+      lib_ctx[:signal] = signal
 
-      return ctx, nil
+      return ctx, lib_ctx, nil
     end
   end
 
   class Create
+    # Step interface.
     def model(ctx, params:, **kws)
       ctx[:spam] = false
       ctx[:model] = "Object #{params[:id]} / #{kws.inspect}"
@@ -127,6 +129,7 @@ it do
 
     # In() => MoreModelInput
     class MoreModelInput
+      # Step interface.
       def self.call(ctx, slug:, **)
         {
           more: slug
@@ -135,6 +138,7 @@ it do
     end
 
     # Out() => [:model]
+    # Step interface.
     def my_model_output(ctx, model:, **)
       {
         model: model
@@ -143,6 +147,7 @@ it do
   end
 
   class Validate
+    # Step interface.
     def run_checks(ctx, params:, model:, **)
       if params[:song]
         return true
@@ -152,6 +157,7 @@ it do
       end
     end
 
+    # Step interface.
     def title_length_ok?(ctx, params:, **)
       return false unless params[:song][:title]
 
@@ -159,50 +165,53 @@ it do
     end
   end
 
-  # step interface.
   class Save
+    # Step interface.
     def self.call(ctx, model:, **)
       ctx[:save] = model
     end
   end
 
   class IO___
-    def init_aggregate(ctx, **)
-      ctx[:aggregate] = {}
+    # Lib interface.
+    def init_aggregate(ctx, lib_ctx, **)
+      lib_ctx[:aggregate] = {}
 
-      return ctx, nil
+      return ctx, lib_ctx, nil
     end
 
-    # def add_value_to_aggregate(ctx, aggregate:, value:, **)
-    def add_value_to_aggregate(ctx, value:, aggregate:, **)
-      ctx[:aggregate] = aggregate.merge(value)
+    # Lib interface.
+    def add_value_to_aggregate(ctx, lib_ctx, value:, aggregate:, **)
+      lib_ctx[:aggregate] = aggregate.merge(value)
 
-      return ctx, nil
+      return ctx, lib_ctx, nil
     end
 
-    def save_original_application_ctx(ctx, application_ctx:, **)
-      ctx[:original_application_ctx] = application_ctx # the "outer ctx".
+    # Lib interface.
+    def save_original_application_ctx(ctx, lib_ctx, **)
+      lib_ctx[:original_application_ctx] = ctx # the "outer ctx".
 
-      return ctx, nil
+      return ctx, lib_ctx, nil
     end
 
-    def swap___(ctx, application_ctx:, original_application_ctx:, aggregate:, **)
+    # Lib interface.
+    def swap___(ctx, lib_ctx, original_application_ctx:, aggregate:, **)
       # new_application_ctx = original_application_ctx.merge(aggregate) # DISCUSS: how to write on outer ctx?
       aggregate.each do |k, v|
         original_application_ctx[k] = v # FIXME: should we use Context#merge here? do we want a new ctx?
 
       end
 
-      ctx[:application_ctx] = original_application_ctx
+      new_ctx = original_application_ctx
 
-      return ctx, nil
+      return new_ctx, lib_ctx, nil
     end
 
 
-    def create_application_ctx(ctx, aggregate:, **)
-      ctx[:application_ctx] = Trailblazer::Context(aggregate) # DISCUSS: write to {ctx} or use merge?
+    def create_application_ctx(ctx, lib_ctx, aggregate:, **)
+      new_ctx = Trailblazer::Context(aggregate) # DISCUSS: write to {ctx} or use merge?
 
-      return ctx, nil
+      return new_ctx, lib_ctx, nil
     end
   end
   Io = IO___.new
@@ -210,34 +219,34 @@ it do
   # In() => :my_model_input
   my_model_input_pipe = pipeline_circuit(
     [:invoke_instance_method, :my_model_input, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
   )
 
   more_model_input_pipe = pipeline_circuit(
     [:invoke_callable, Create::MoreModelInput, Trailblazer::Activity::Task::Invoker::StepInterface],
-    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
   )
 
   my_model_output_pipe = pipeline_circuit(
     [:invoke_instance_method, :my_model_output, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Io, }],
+    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: Io, }],
   )
 # raise "the original_application_ctx must be available to output, but not to the next real step"
 
   # !!! requires: {exec_context: Io}
   model_input_pipe = pipeline_circuit(
-    [:save_original_application_ctx, :save_original_application_ctx, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
-    [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+    [:save_original_application_ctx, :save_original_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+    [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
     [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
     [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}], # user filter.
-    [:create_application_ctx, :create_application_ctx, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+    [:create_application_ctx, :create_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
   )
 
   # !!! requires: {exec_context: Io}
   model_output_pipe = pipeline_circuit(
-    [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+    [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
     [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor],     # user filter.
-    [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {}],
+    [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
   )
 
 
@@ -249,18 +258,18 @@ it do
     [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
 
     [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
-    [:compute_binary_signal, ComputeBinarySignal],
+    [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
     [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:application_ctx].freeze}],
   )
 
   run_checks_pipe = pipeline_circuit(
     [:invoke_instance_method, :run_checks, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
-    [:compute_binary_signal, ComputeBinarySignal],
+    [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
   )
 
   title_length_ok_pipe = pipeline_circuit(
     [:invoke_instance_method, :title_length_ok?, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod],
-    [:compute_binary_signal, ComputeBinarySignal],
+    [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
   )
 
   validate_config = {
@@ -282,7 +291,7 @@ it do
 
   save_pipe = pipeline_circuit(
     [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface],
-    [:compute_binary_signal, ComputeBinarySignal],
+    [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
   )
 
   create_config = {
@@ -312,14 +321,12 @@ it do
 require "benchmark/ips"
 #  Benchmark.ips do |x|
 #    x.report("cix") {
-  ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_input_pipe,
-    {
-      application_ctx: {params: {song: {}}, noise: true, slug: "0x666"},
-    },
-    # {}, # tmp
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_input_pipe,
+    {params: {song: {}}, noise: true, slug: "0x666"},
+    {},
     # exec_context: create_instance = Create.new,
     exec_context:  Io,
-    copy_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze
+    copy_to_outer_ctx: [:original_application_ctx].freeze
   )
  # }
  #   x.compare! # 43.6 -45.2k
@@ -330,22 +337,24 @@ require "benchmark/ips"
    #   2.) 36.7k (simple Context)
 
   # raise ctx.inspect
-  assert_equal ctx[:application_ctx].class, Trailblazer::Context # our In pipe's creation!
-  assert_equal ctx[:application_ctx][:more], "0x666" # the more_model_input was called.
-  assert_equal ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
-  assert_equal ctx.keys, [:application_ctx, :original_application_ctx]
-  assert_equal CU.inspect(ctx), %({:application_ctx=>#<struct Trailblazer::Context shadowed={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"}, mutable={}>, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>\"0x666\"}})
+  assert_equal ctx.class, Trailblazer::Context # our In pipe's creation!
+  assert_equal ctx[:more], "0x666" # the more_model_input was called.
+  assert_equal lib_ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
+  assert_equal lib_ctx.keys, [:original_application_ctx]
+  assert_equal CU.inspect(ctx), %(#<struct Trailblazer::Context shadowed={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"}, mutable={}>)
 
   # this is what happens in the actual {:model} step.
-  ctx[:application_ctx][:model] = Object
+  ctx[:model] = Object
 
-  ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_output_pipe, ctx,
-    copy_to_outer_ctx: [:application_ctx],
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_output_pipe,
+    ctx,
+    lib_ctx,
+    copy_to_outer_ctx: [],
     exec_context: Io,
   )
 
 # FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
-  assert_equal ctx.inspect, %({:application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object}, :original_application_ctx=>{:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object}})
+  assert_equal ctx.inspect, %({:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object})
 
 
 
@@ -362,29 +371,28 @@ require "benchmark/ips"
 
 
   ctx = {params: {song: nil}, slug: "0x666"}
-  create_ctx = {
-    # exec_context:     Create.new,
-    application_ctx:  ctx
-  }
+  # create_ctx = {
+  #   # exec_context:     Create.new,
+  #   application_ctx:  ctx
+  # }
 
 puts "ciiii"
   # validation error:
-  ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, create_ctx)
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {})
 
-  assert_equal ctx[:application_ctx], {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
-  assert_equal ctx.keys, [:application_ctx]
+  assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
+  assert_equal lib_ctx.keys, [:application_ctx] # FIXME: WHY IS THIS HERE?
   assert_equal signal, create_config[:create_failure_terminus][1]
 
   # success:
-  ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}})
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {})
 
-  assert_equal ctx[:application_ctx], {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
+  assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
+  assert_equal lib_ctx.keys, [:application_ctx]
   assert_equal signal, create_config[:create_success_terminus][1]
-  assert_equal ctx.keys, [:application_ctx]
 
   def call_me(create_circuit)
-    ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, {application_ctx: _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}})
-
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {})
   end
 
   Benchmark.ips do |x|

@@ -4,8 +4,8 @@ module Trailblazer
     # returning itself as the signal.
     module Terminus
       class Success < Struct.new(:semantic, keyword_init: true)
-        def call(ctx, **)
-          return ctx, self
+        def call(ctx, lib_ctx, **)
+          return ctx, lib_ctx, self
         end
       end
 

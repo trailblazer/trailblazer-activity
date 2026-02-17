@@ -6,19 +6,21 @@
       # keyed by a signal.
       class Processor
         # TODO: this can still be optimized for runtime speed.
-        def self.call(circuit, ctx, **tmp_ctx) # TODO: allow {:start_task}.
+        def self.call(circuit, ctx, lib_ctx, **circuit_options) # TODO: allow {:start_task}.
           id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME
 
           loop do
-            ctx, signal, tmp = invoker.(
+            # puts ">>>Processor #{id.inspect}"
+            ctx, lib_ctx, signal = invoker.(
               task,
               ctx,
-              **tmp_ctx.merge(circuit_options_to_merge),
+              lib_ctx,
+              **circuit_options.merge(circuit_options_to_merge),
             )
 
             # puts "   @@@@@ #{id.inspect} ==> #{signal.inspect}"
             unless (id, task, invoker, circuit_options_to_merge = circuit.resolve(id, signal))
-              return ctx, signal
+              return ctx, lib_ctx, signal
               # raise_illegal_signal_error!(task, signal, @map[task], **circuit_options)
             end
           end
@@ -30,27 +32,27 @@
         class Scoped < Processor
           # By using kwargs, we allow to change {:copy_to_outer_ctx} at runtime, for a bit
           # of performance tradeoff.
-          def self.call(circuit, ctx, copy_to_outer_ctx:, emit_signal: false, **circuit_options)
-            ctx = Trailblazer.Context(ctx)
+          def self.call(circuit, ctx, lib_ctx, copy_to_outer_ctx:, emit_signal: false, **circuit_options)
+            lib_ctx = Trailblazer.Context(lib_ctx)
 
-            ctx, signal = super(circuit, ctx, **circuit_options)
+            ctx, lib_ctx, signal = super(circuit, ctx, lib_ctx, **circuit_options)
 
-            outer_ctx, mutable = ctx.decompose
+            outer_ctx, mutable = lib_ctx.decompose
 
             # puts "@@@@@ ++++ #{id} #{copy_to_outer_ctx.inspect} #{mutable}"
             copy_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
               # DISCUSS: is merge! and slice faster?
               # outer_ctx[key] = mutable[key]
-              outer_ctx[key] = ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
+              outer_ctx[key] = lib_ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
             end
 
-            ctx = outer_ctx
+            lib_ctx = outer_ctx
 
             if emit_signal
               signal = mutable[:signal] # FIXME: is it always here in mutable?
             end
 
-            return ctx, signal
+            return ctx, lib_ctx, signal
           end
         end
       end
