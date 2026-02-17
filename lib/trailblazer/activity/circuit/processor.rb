@@ -36,21 +36,27 @@
             call_with_scoping(circuit, ctx, lib_ctx, **circuit_options)
           end
 
-          def self.call_with_scoping(circuit, ctx, lib_ctx, copy_to_outer_ctx:, emit_signal: false, **circuit_options)
+          # Scope the incoming {lib_ctx} and write configured variables back to the original {lib_ctx}.
+          def self.call_with_scoping(circuit, ctx, lib_ctx, copy_to_outer_ctx: [], emit_signal: false, **circuit_options)
             lib_ctx = Trailblazer.Context(lib_ctx)
 
             ctx, lib_ctx, signal = Processor.(circuit, ctx, lib_ctx, circuit_options)
 
+          # FIXME: use logic from variable-mapping here.
             outer_ctx, mutable = lib_ctx.decompose
 
-            # puts "@@@@@ ++++ #{id} #{copy_to_outer_ctx.inspect} #{mutable}"
             copy_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
-              # DISCUSS: is merge! and slice faster?
-              # outer_ctx[key] = mutable[key]
-              outer_ctx[key] = lib_ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
+              # DISCUSS: is merge! and slice faster? no it's not.
+              outer_ctx[key] = mutable[key] # if the task didn't write anything, we need to ask to big scoped ctx.
             end
 
-            lib_ctx = outer_ctx
+              lib_ctx = outer_ctx
+            # puts "@@@@@ ++++ #{id} #{copy_to_outer_ctx.inspect} #{mutable}"
+
+            # public_variables = mutable.slice(*copy_to_outer_ctx) # it only makes sense to publish variables if they're "new".
+            # lib_ctx = outer_ctx.merge(public_variables)
+
+
 
             if emit_signal
               signal = mutable[:signal] # FIXME: is it always here in mutable?

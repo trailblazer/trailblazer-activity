@@ -255,11 +255,11 @@ it do
 #{ } how to handle signal?"
 
   model_pipe = pipeline_circuit(
-    [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:application_ctx, :original_application_ctx].freeze}], # change {:application_ctx}.
+    [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:original_application_ctx].freeze}], # change {:application_ctx}.
 
     [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
     [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-    [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:application_ctx].freeze}],
+    [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io}],
   )
 
   run_checks_pipe = pipeline_circuit(
@@ -273,8 +273,8 @@ it do
   )
 
   validate_config = {
-    run_checks: [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:application_ctx], emit_signal: true}],
-    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:application_ctx], emit_signal: true}],
+    run_checks: [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true}],
+    title_length_ok?: [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true}],
     validate_success_terminus: [:validate_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
     validate_failure_terminus: [:validate_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
   }
@@ -295,9 +295,9 @@ it do
   )
 
   create_config = {
-    Model:    [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze, copy_to_outer_ctx: [:application_ctx], emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    Validate: [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze, copy_to_outer_ctx: [:application_ctx]},], # TODO: always emit :application_ctx?
-    Save:     [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {copy_to_outer_ctx: [:application_ctx], emit_signal: true}], # check that we don't have circuit_options anymore here?
+    Model:    [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze, emit_signal: true},], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+    Validate: [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze},], # TODO: always emit :application_ctx?
+    Save:     [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {emit_signal: true}], # check that we don't have circuit_options anymore here?
     create_success_terminus: [:create_success_terminus, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}],
     create_failure_terminus: [:create_failure_terminus, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}]
   }
@@ -383,14 +383,14 @@ puts "ciiii"
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, {})
 
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
-  assert_equal lib_ctx.keys, [:application_ctx] # FIXME: WHY IS THIS HERE?
+  assert_equal lib_ctx.keys, []
   assert_equal signal, create_config[:create_failure_terminus][1]
 
   # success:
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {})
 
   assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
-  assert_equal lib_ctx.keys, [:application_ctx]
+  assert_equal lib_ctx.keys, []
   assert_equal signal, create_config[:create_success_terminus][1]
 
   def call_me(create_circuit)
