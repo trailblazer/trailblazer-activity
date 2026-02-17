@@ -1,5 +1,5 @@
 require "pp"
-require "trailblazer-activity"
+require "trailblazer/activity"
 require "minitest/autorun"
 
 Minitest::Spec.class_eval do
