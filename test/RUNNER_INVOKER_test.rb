@@ -25,7 +25,7 @@ require "test_helper"
 
       def to_h
         # return @to_h
-        shadowed.to_h.merge(mutable)
+        shadowed.to_h.merge(mutable) # DISCUSS: shadowed.to_h we only should do once, at instantiation!
       end
 
       def to_hash # implicit conversion to Hash.
@@ -37,6 +37,51 @@ require "test_helper"
       Context.new(shadowed, {})
     end
   end
+
+
+  class IO___
+    # Lib interface.
+    def init_aggregate(ctx, lib_ctx, **)
+      lib_ctx[:aggregate] = {}
+
+      return ctx, lib_ctx, nil
+    end
+
+    # Lib interface.
+    def add_value_to_aggregate(ctx, lib_ctx, value:, aggregate:, **)
+      lib_ctx[:aggregate] = aggregate.merge(value)
+
+      return ctx, lib_ctx, nil
+    end
+
+    # Lib interface.
+    def save_original_application_ctx(ctx, lib_ctx, **)
+      lib_ctx[:original_application_ctx] = ctx # the "outer ctx".
+
+      return ctx, lib_ctx, nil
+    end
+
+    # Lib interface.
+    def swap___(ctx, lib_ctx, original_application_ctx:, aggregate:, **)
+      # new_application_ctx = original_application_ctx.merge(aggregate) # DISCUSS: how to write on outer ctx?
+      aggregate.each do |k, v|
+        original_application_ctx[k] = v # FIXME: should we use Context#merge here? do we want a new ctx?
+
+      end
+
+      new_ctx = original_application_ctx
+
+      return new_ctx, lib_ctx, nil
+    end
+
+
+    def create_application_ctx(ctx, lib_ctx, aggregate:, **)
+      new_ctx = Trailblazer::Context(aggregate)
+
+      return new_ctx, lib_ctx, nil
+    end
+  end
+
 
 # TODO:
 # 1. SOMETHINg like Pipe::Input, nested pipe, check out how to use a work ctx
@@ -50,7 +95,7 @@ require "test_helper"
 # 9. does invoker.call need kwargs?
 # [10. done] BUG: when all tasks are the same proc and the last is the terminus, only the first is run. ===> use ids, we got them, anyway.
 # 11. should circuit_options be a positional arg?
-# [12. done] don't repeat Io.new as context, use automatic passing [done]
+# [12. done] don't repeat io.new as context, use automatic passing [done]
 # 13. termini IDs in map when using nesting
 
 class RunnerInvokerTest < Minitest::Spec
@@ -103,11 +148,71 @@ puts
   end
 
   module Fixtures
+    class Create
+      # Step interface.
+      def model(ctx, params:, **kws)
+        ctx[:spam] = false
+        ctx[:model] = "Object #{params[:id]} / #{kws.inspect}"
+      end
+
+      # Add params[:slug],
+      def my_model_input(ctx, params:, slug:, **)
+        {
+          params: params.merge(slug: slug)
+        }
+      end
+
+      # In() => MoreModelInput
+      class MoreModelInput
+        # Step interface.
+        def self.call(ctx, slug:, **)
+          {
+            more: slug
+          }
+        end
+      end
+
+      # Out() => [:model]
+      # Step interface.
+      def my_model_output(ctx, model:, **)
+        {
+          model: model
+        }
+      end
+    end
+
+    class Validate
+      # Step interface.
+      def run_checks(ctx, params:, model:, **)
+        if params[:song]
+          return true
+        else
+          ctx[:errors] = [model, :song]
+          return false
+        end
+      end
+
+      # Step interface.
+      def title_length_ok?(ctx, params:, **)
+        return false unless params[:song][:title]
+
+        return true
+      end
+    end
+
+    class Save
+      # Step interface.
+      def self.call(ctx, model:, **)
+        ctx[:save] = model
+      end
+    end
+
     def self.pipeline_circuit(*args)
       Trailblazer::Activity::Circuit::Builder.Pipeline(*args)
     end
 
     def self.fixtures
+      io = IO___.new
 
       # In() => :my_model_input
       my_model_input_pipe = pipeline_circuit(
@@ -122,10 +227,10 @@ puts
 
       my_model_output_pipe = pipeline_circuit(
         [:invoke_instance_method, :my_model_output, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
-        [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: Io, }],
+        [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: io, }],
       )
 
-      # !!! requires: {exec_context: Io}
+      # !!! requires: {exec_context: io}
       model_input_pipe = pipeline_circuit(
         [:save_original_application_ctx, :save_original_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
         [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
@@ -134,7 +239,7 @@ puts
         [:create_application_ctx, :create_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
       )
 
-      # !!! requires: {exec_context: Io}
+      # !!! requires: {exec_context: io}
       model_output_pipe = pipeline_circuit(
         [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
         [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor],     # user filter.
@@ -144,11 +249,11 @@ puts
     #{ } how to handle signal?"
 
       model_pipe = pipeline_circuit(
-        [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:original_application_ctx].freeze}], # change {:application_ctx}.
+        [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, copy_to_outer_ctx: [:original_application_ctx].freeze}], # change {:application_ctx}.
 
         [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
         [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-        [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io}],
+        [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io}],
       )
 
       run_checks_pipe = pipeline_circuit(
@@ -213,116 +318,11 @@ puts
 
   end
 
-it do
-
-
-  class Create
-    # Step interface.
-    def model(ctx, params:, **kws)
-      ctx[:spam] = false
-      ctx[:model] = "Object #{params[:id]} / #{kws.inspect}"
-    end
-
-    # Add params[:slug],
-    def my_model_input(ctx, params:, slug:, **)
-      {
-        params: params.merge(slug: slug)
-      }
-    end
-
-    # In() => MoreModelInput
-    class MoreModelInput
-      # Step interface.
-      def self.call(ctx, slug:, **)
-        {
-          more: slug
-        }
-      end
-    end
-
-    # Out() => [:model]
-    # Step interface.
-    def my_model_output(ctx, model:, **)
-      {
-        model: model
-      }
-    end
-  end
-
-  class Validate
-    # Step interface.
-    def run_checks(ctx, params:, model:, **)
-      if params[:song]
-        return true
-      else
-        ctx[:errors] = [model, :song]
-        return false
-      end
-    end
-
-    # Step interface.
-    def title_length_ok?(ctx, params:, **)
-      return false unless params[:song][:title]
-
-      return true
-    end
-  end
-
-  class Save
-    # Step interface.
-    def self.call(ctx, model:, **)
-      ctx[:save] = model
-    end
-  end
-
-  class IO___
-    # Lib interface.
-    def init_aggregate(ctx, lib_ctx, **)
-      lib_ctx[:aggregate] = {}
-
-      return ctx, lib_ctx, nil
-    end
-
-    # Lib interface.
-    def add_value_to_aggregate(ctx, lib_ctx, value:, aggregate:, **)
-      lib_ctx[:aggregate] = aggregate.merge(value)
-
-      return ctx, lib_ctx, nil
-    end
-
-    # Lib interface.
-    def save_original_application_ctx(ctx, lib_ctx, **)
-      lib_ctx[:original_application_ctx] = ctx # the "outer ctx".
-
-      return ctx, lib_ctx, nil
-    end
-
-    # Lib interface.
-    def swap___(ctx, lib_ctx, original_application_ctx:, aggregate:, **)
-      # new_application_ctx = original_application_ctx.merge(aggregate) # DISCUSS: how to write on outer ctx?
-      aggregate.each do |k, v|
-        original_application_ctx[k] = v # FIXME: should we use Context#merge here? do we want a new ctx?
-
-      end
-
-      new_ctx = original_application_ctx
-
-      return new_ctx, lib_ctx, nil
-    end
-
-
-    def create_application_ctx(ctx, lib_ctx, aggregate:, **)
-      new_ctx = Trailblazer::Context(aggregate)
-
-      return new_ctx, lib_ctx, nil
-    end
-  end
-  Io = IO___.new
-
-
-  create_circuit, create_termini, model_input_pipe, model_output_pipe = Fixtures.fixtures()
-
 require "benchmark/ips"
+  it do
+    create_circuit, create_termini, model_input_pipe, model_output_pipe = Fixtures.fixtures()
+
+
 # TEST I/O
 
 #  Benchmark.ips do |x|
@@ -332,7 +332,7 @@ require "benchmark/ips"
     {},
     # exec_context: create_instance = Create.new,
     {
-      exec_context:  Io,
+      exec_context:  IO___.new,
       copy_to_outer_ctx: [:original_application_ctx].freeze
     }
   )
@@ -358,7 +358,7 @@ require "benchmark/ips"
     ctx,
     lib_ctx,
     {copy_to_outer_ctx: [],
-        exec_context: Io,}
+        exec_context: IO___.new,}
   )
 
 # FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
