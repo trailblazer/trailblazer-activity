@@ -25,9 +25,10 @@
           end
 
           class InstanceMethod # DISCUSS: should we remove this? users can use a callable if they really need the circuit interface.
-            def self.call(task, ctx, exec_context:, **)
-              raise "remove me"
-              exec_context.send(task, ctx, **ctx.to_h) # TODO: how to add kwargs for Rescue.
+            def self.call(task, ctx, lib_ctx, circuit_options) # DISCUSS: hm, do we need this?
+              exec_context = circuit_options.fetch(:exec_context)
+              # raise "remove me"
+              exec_context.send(task, ctx, lib_ctx, circuit_options, **ctx.to_h) # TODO: how to add kwargs for Rescue.
               # FIXME: we're NOT passing circuit_options to instance method?
             end
           end
