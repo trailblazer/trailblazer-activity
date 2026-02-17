@@ -26,7 +26,7 @@ module Trailblazer
             [id, [id, task, invoker, options]]
           end.to_h
 
-          Trailblazer::Activity::Circuit.new(
+          Activity::Circuit.new(
             map:            map,
             start_task_id:  config.keys[0],
             termini:        [config.keys[-1]],
@@ -34,7 +34,36 @@ module Trailblazer
           )
         end
 
-      end
+        def self.Circuit(*task_cfgs, termini:)
+
+        # TODO: use code from above.
+          task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, circuit_options = {}, options = {}|
+            # outputs = options[:outputs] || {Activity::Right => } # defaults to {nil}.
+
+            [
+              id, task, invoker, circuit_options, options
+            ]
+          end
+
+        # FIXME: use code from above.
+          config = task_cfgs.collect do |(id, task, invoker, options)|
+            [id, [id, task, invoker, options]]
+          end.to_h
+
+
+
+          map = task_cfgs.collect do |id, task, invoker, circuit_options, connections|
+            [id, connections]
+          end.to_h
+
+          Activity::Circuit.new(
+            map:            map,
+            start_task_id:  config.keys[0],
+            termini:        termini,
+            config:         config,
+          )
+        end
+      end # Builder
     end
   end
 end
