@@ -75,7 +75,6 @@ class RunnerInvokerTest < Minitest::Spec
     validate_input_pipe = pipeline_circuit(
       [:input, capture_task(id: 4)],
       [:exec_on__parent, capture_task(id: 5)], # exec on original ctx!
-
     )
 
     validate_pipe = pipeline_circuit(
@@ -101,7 +100,103 @@ puts
 
     ctx, _ = Trailblazer::Activity::Circuit::Processor.(create_pipe, {captured: []}, {}, {exec_context: "Object"})
     assert_equal ctx[:captured], [[1, "Model"], [2, "Model"], [3, "Model"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
+  end
 
+  module Fixtures
+    def self.pipeline_circuit(*args)
+      Trailblazer::Activity::Circuit::Builder.Pipeline(*args)
+    end
+
+    def self.fixtures
+
+      # In() => :my_model_input
+      my_model_input_pipe = pipeline_circuit(
+        [:invoke_instance_method, :my_model_input, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
+        [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+      )
+
+      more_model_input_pipe = pipeline_circuit(
+        [:invoke_callable, Create::MoreModelInput, Trailblazer::Activity::Task::Invoker::StepInterface],
+        [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+      )
+
+      my_model_output_pipe = pipeline_circuit(
+        [:invoke_instance_method, :my_model_output, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
+        [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: Io, }],
+      )
+
+      # !!! requires: {exec_context: Io}
+      model_input_pipe = pipeline_circuit(
+        [:save_original_application_ctx, :save_original_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+        [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+        [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
+        [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}], # user filter.
+        [:create_application_ctx, :create_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+      )
+
+      # !!! requires: {exec_context: Io}
+      model_output_pipe = pipeline_circuit(
+        [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+        [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor],     # user filter.
+        [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+      )
+
+    #{ } how to handle signal?"
+
+      model_pipe = pipeline_circuit(
+        [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:original_application_ctx].freeze}], # change {:application_ctx}.
+
+        [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
+        [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+        [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io}],
+      )
+
+      run_checks_pipe = pipeline_circuit(
+        [:invoke_instance_method, :run_checks, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
+        [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+      )
+
+      title_length_ok_pipe = pipeline_circuit(
+        [:invoke_instance_method, :title_length_ok?, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod],
+        [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+      )
+
+      validate_circuit, validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
+        [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true},
+          {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :failure}
+        ],
+        [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true},
+          {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
+        ],
+        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
+        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
+
+        termini: [:success, :failure]
+      )
+
+      save_pipe = pipeline_circuit(
+        [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface],
+        [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+      )
+
+      create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
+        [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze, emit_signal: true},
+          {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :failure}
+        ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
+        [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze},
+          {validate_termini[:success] => :Save, validate_termini[:failure] => :failure}
+        ],
+        [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {emit_signal: true},
+          {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
+        ], # check that we don't have circuit_options anymore here?
+        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
+        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
+
+        termini: [:success, :failure]
+      )
+
+      return create_circuit, create_termini, model_input_pipe, model_output_pipe
+    end
   end
 
 it do
@@ -219,99 +314,12 @@ it do
   end
   Io = IO___.new
 
-  # In() => :my_model_input
-  my_model_input_pipe = pipeline_circuit(
-    [:invoke_instance_method, :my_model_input, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
-  )
 
-  more_model_input_pipe = pipeline_circuit(
-    [:invoke_callable, Create::MoreModelInput, Trailblazer::Activity::Task::Invoker::StepInterface],
-    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
-  )
+  create_circuit, create_termini, model_input_pipe, model_output_pipe = Fixtures.fixtures()
 
-  my_model_output_pipe = pipeline_circuit(
-    [:invoke_instance_method, :my_model_output, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
-    [:add_value_to_aggregate, :add_value_to_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: Io, }],
-  )
-# raise "the original_application_ctx must be available to output, but not to the next real step"
-
-  # !!! requires: {exec_context: Io}
-  model_input_pipe = pipeline_circuit(
-    [:save_original_application_ctx, :save_original_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
-    [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
-    [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
-    [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}], # user filter.
-    [:create_application_ctx, :create_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
-  )
-
-  # !!! requires: {exec_context: Io}
-  model_output_pipe = pipeline_circuit(
-    [:init_aggregate, :init_aggregate, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
-    [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor],     # user filter.
-    [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
-  )
-
-
-
-# raise "should we merge ctx and temp_ctx in Processor, or do that in the invoker?
-#{ } how to handle signal?"
-
-  model_pipe = pipeline_circuit(
-    [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io, copy_to_outer_ctx: [:original_application_ctx].freeze}], # change {:application_ctx}.
-
-    [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
-    [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-    [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Io}],
-  )
-
-  run_checks_pipe = pipeline_circuit(
-    [:invoke_instance_method, :run_checks, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
-    [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-  )
-
-  title_length_ok_pipe = pipeline_circuit(
-    [:invoke_instance_method, :title_length_ok?, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod],
-    [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-  )
-
-  validate_circuit, validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-    [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true},
-      {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :failure}
-    ],
-    [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {emit_signal: true},
-      {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
-    ],
-    [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
-    [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
-
-    termini: [:success, :failure]
-  )
-
-  save_pipe = pipeline_circuit(
-    [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface],
-    [:compute_binary_signal, ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-  )
-
-  create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-    [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze, emit_signal: true},
-      {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :failure}
-    ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-    [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze},
-      {validate_termini[:success] => :Save, validate_termini[:failure] => :failure}
-    ],
-    [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {emit_signal: true},
-      {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
-    ], # check that we don't have circuit_options anymore here?
-    [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
-    [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
-
-    termini: [:success, :failure]
-  )
-
-
-# TEST I/O
 require "benchmark/ips"
+# TEST I/O
+
 #  Benchmark.ips do |x|
 #    x.report("cix") {
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_input_pipe,
