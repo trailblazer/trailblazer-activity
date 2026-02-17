@@ -54,41 +54,9 @@ require "test_helper"
 # 13. termini IDs in map when using nesting
 
 class RunnerInvokerTest < Minitest::Spec
-  # Helper for those who don't like or have a DSL :D
-  def pipeline_circuit(*task_cfgs)
-    task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, options = {}, signal: nil|
-      [
-        id, task, invoker, options, signal
-      ]
-    end
-
-    map = task_cfgs.collect.with_index do |(id, _, _, _, signal), i|
-      next_task = task_cfgs[i + 1]
-
-      [
-        id,
-        {signal => next_task ? next_task[0] : nil} # FIXME: don't link last task at all!
-      ]
-
-    end.to_h
-
-    config = task_cfgs.collect do |(id, task, invoker, options)|
-      [id, [id, task, invoker, options]]
-    end.to_h
-
-    Trailblazer::Activity::Circuit.new(
-      map:        map,
-      start_task_id: config.keys[0],
-      termini:    [config.keys[-1]],
-      config:     config,
-    )
+  def pipeline_circuit(*args)
+    Trailblazer::Activity::Circuit::Builder.Pipeline(*args)
   end
-
-
-
-
-
-
 
   it "circuit_options, depth-only" do
     def capture_task(id:)
