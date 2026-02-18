@@ -15,7 +15,7 @@ require "test_helper"
 
       def merge(variables)
         # raise
-        # puts variables.keys
+        # puts variables.inspect
         Context.new(shadowed, mutable.merge(variables))
       end
 
@@ -133,7 +133,7 @@ class RunnerInvokerTest < Minitest::Spec
     )
 
     # As we pass in exec_context: as a kwarg, it's passed to all siblings etc.
-    ctx, _ = Trailblazer::Activity::Circuit::Processor.(create_pipe, {captured: []}, {}, {exec_context: "Object"})
+    ctx, _ = Trailblazer::Activity::Circuit::Processor.(create_pipe, {captured: []}, {}, {exec_context: "Object"}, nil)
     assert_equal ctx[:captured], [[1, "Object"], [2, "Object"], [3, "Object"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
 
 # FIXME: new test case.
@@ -143,7 +143,7 @@ puts
       [:Validate, validate_pipe, Trailblazer::Activity::Circuit::Processor],
     )
 
-    ctx, _ = Trailblazer::Activity::Circuit::Processor.(create_pipe, {captured: []}, {}, {exec_context: "Object"})
+    ctx, _ = Trailblazer::Activity::Circuit::Processor.(create_pipe, {captured: []}, {}, {exec_context: "Object"}, nil)
     assert_equal ctx[:captured], [[1, "Model"], [2, "Model"], [3, "Model"], [4, "Object", "Validate::Input"], [5, "Object", "Validate::Input"], [6, "Object"]]
   end
 
@@ -307,15 +307,276 @@ puts
   it "wrap_runtime prototyping" do
     create_circuit, create_termini = Fixtures.fixtures
 
-    ctx = {params: {song: nil}, slug: "0x666"}
+    ctx = {params: {song: nil}, slug: 666}
+
+    Trailblazer::Activity::Circuit::Processor
+
+    class Trace
+      def self.capture_before(ctx, lib_ctx, circuit_options, **)
+        stack = lib_ctx[:stack] or raise
+        task = circuit_options[:task] or raise
+
+        stack << [:before, task, ctx.inspect]
+
+        return ctx, lib_ctx, nil
+      end
+    end
+# require "trailblazer/developer"
+    class MyTWP < Struct.new(:processor)
+      def self.call(circuit, ctx, lib_ctx, circuit_options)
+        puts "MyTWP"
+        wrap_runtime = circuit_options.fetch(:wrap_runtime)
+
+        config = circuit.config
+
+        # create a new circuit that has a nested tW pipe for each original task.
+        new_circuit_config = config.collect do |id, original_config|
+          # if task.is_a?(Trailblazer::Activity::Circuit)
+          # #   raise task.inspect
+          #   # invoker = MyTWP
+          # end
+
+          # task = original_config[1]
+
+          # TODO: using Pipeline is probably not fast at runtime.
+          tw_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
+            [:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Trace, task: id}],
+            original_config, # FIXME: how to handle signal here?
+
+            [:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Trace, task: id}],
+          )
+
+          # [:"tw for #{id}", [:"tw for #{id}", tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {:emit_signal => true}]] # FIXME: emit only works if there is a :signal.
+          [id, [id, tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {:emit_signal => false}]] # FIXME: emit only works if there is a :signal.
+        end.to_h
+
+  # pp new_circuit_config
+  #         raise
+
+        new_circuit = Trailblazer::Activity::Circuit.new(
+          **circuit.to_h,
+          config: new_circuit_config,
+          # start_task_id: :"tw for Model",
+          # termini: [:"tw for Save"]
+        )
+        # pp new_circuit#.collect { |id, task| [id, task] }
+
+
+
+        ap circuit.map
+        # raise
+
+
+        # FIXME: how do we know the original Processor?
+puts "@@@@@> #{circuit_options.inspect}"
+        Trailblazer::Activity::Circuit::Processor::Scoped.(new_circuit, ctx, lib_ctx, circuit_options)
+      end
+
+      def run_with_task_wrap
+
+      end
+    end
+
+    # original_config = create_circuit.config[:Model]
+
+    # id = :Model
+    # model_tw_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
+    #   [:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Trace, task: id}],
+    #   original_config, # FIXME: how to handle signal here?
+    # )
+
+    # pp Trailblazer::Activity::Circuit::Processor::Scoped.(model_tw_pipe, {slug: "0x1", params: {song: {}}}, {stack: []}, {})
+
+
+
+
+
+
+    # my_task_wrap_runtime_processor = MyTWP.(Trailblazer::Activity::Circuit::Processor::Scoped)
 
     # validation error:
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, {})
+    ctx, lib_ctx, signal = MyTWP.(create_circuit, ctx, {stack: []}, {
+        wrap_runtime: Hash.new(),
+        # emit_signal: true,
+      },
+    )
 
-    assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
-    assert_equal lib_ctx.keys, []
+    assert_equal ctx, {:params=>{:song=>nil}, slug: 666, :model=>"Object  / {:more=>666}", :errors=>["Object  / {:more=>666}", :song]}
+    assert_equal lib_ctx.keys, [:stack]
     assert_equal signal, create_termini[:failure]
 
+    # assert_equal ap(lib_ctx[:stack].ai, ruby19_syntax: true), %()
+    assert_equal lib_ctx[:stack], [
+      [:before, :Model, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:before, :Validate, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
+      [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"]
+    ]
+
+  end
+
+  class MyLibraryPipeline < Trailblazer::Activity::Circuit
+    # TODO: improve logic so we don't have to provide config here, only ID?
+    def resolve(task, _signal)
+      # raise task.inspect
+      id = map[task]
+      config[id]
+    end
+  end
+  def lib_pipeline(*cfgs, **circuit_options)
+    cfgs = cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, circuit_options_to_merge = circuit_options|
+      [id, task, invoker, circuit_options_to_merge]
+    end
+
+    flow_map = cfgs.collect.with_index do |(id, _), index| # FIXME: reuse Pipeline logic.
+      [id, cfgs[index + 1] ? cfgs[index + 1][0] : nil]
+    end.to_h
+
+    # ap flow_map
+    # raise
+
+    config = cfgs.collect { |id, *args| [id, [id, *args]] }.to_h
+
+    # raise config.inspect
+
+    MyLibraryPipeline.new(config: config, map: flow_map, termini: config.keys.last, start_task_id: config.keys.first)
+  end
+
+  it "Signal Pipeline / signal scoping" do
+    my_tw = Class.new do
+      def self.a(ctx, lib_ctx, signal, **)
+        lib_ctx[:seq] << :a
+
+        return ctx, lib_ctx, signal
+      end
+
+      def self.b(ctx, lib_ctx, signal, **)
+        lib_ctx[:seq] << :b
+
+        return ctx, lib_ctx, signal
+      end
+
+      def self.c(ctx, lib_ctx, signal, **)
+        lib_ctx[:seq] << :c
+
+        return ctx, lib_ctx, signal
+      end
+
+      def self.d(ctx, lib_ctx, signal, **)
+        lib_ctx[:seq] << :d
+
+        return ctx, lib_ctx, signal
+      end
+
+      def self.my_signal_step(ctx, lib_ctx, circuit_options)
+        return ctx, lib_ctx.merge(seq: lib_ctx[:seq] + [:my_signal_step]), Trailblazer::Activity::Right # returning Right here "breaks" the "next task resolving" in an unconfigured world.
+      end
+
+      def self.my_left_signal_step(ctx, lib_ctx, circuit_options)
+        seq = lib_ctx[:seq] + [:my_left_signal_step]
+
+        return ctx, lib_ctx.merge(seq: seq), Trailblazer::Activity::Left # FIXME: merge doesn't work!
+      end
+    end
+
+    invoke_instance_method_lib_circuit = lib_pipeline(
+      [:d, :d, ],
+      [:my_left_signal_step, :my_left_signal_step, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod],
+      exec_context: my_tw
+    )
+
+  # Out => [:seq], Out() => <signal>
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(invoke_instance_method_lib_circuit, {}, {seq: []}, {copy_to_outer_ctx: [:seq]}, nil)
+
+    assert_equal CU.inspect(ctx), %({})
+    assert_equal CU.inspect(lib_ctx), %({:seq=>[:d, :my_left_signal_step]})
+    assert_equal signal, Trailblazer::Activity::Left # signal from {my_left_signal_step}.
+
+  # Out => [:seq], discard inner <signal>
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(invoke_instance_method_lib_circuit, {}, {seq: []}, {copy_to_outer_ctx: [:seq], passthrough_outer_signal: true}, Object)
+
+    assert_equal CU.inspect(ctx), %({})
+    assert_equal CU.inspect(lib_ctx), %({:seq=>[:d, :my_left_signal_step]})
+    assert_equal signal, Object # signal from {my_left_signal_step} got discarded.
+
+
+
+  # Nesting
+    task_wrap_for_model_pipe = lib_pipeline(
+      [:a, :a, ],
+      [:b, :b],
+      [:call_model, invoke_instance_method_lib_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:seq]}], # we want this signal!
+      [:c, :c],
+    )
+
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(task_wrap_for_model_pipe, {}, {seq: []}, {copy_to_outer_ctx: [:seq], exec_context: my_tw}, nil)
+
+    assert_equal CU.inspect(ctx), %({})
+    assert_equal CU.inspect(lib_ctx), %({:seq=>[:a, :b, :d, :my_left_signal_step, :c]})
+    assert_equal signal, Trailblazer::Activity::Left
+
+  # Nesting with two signal producers on the same branch/level.
+  # the second wins with Right.
+    task_wrap_for_model_pipe = lib_pipeline(
+      [:a, :a, ],
+      [:b, :b],
+      [:call_model, invoke_instance_method_lib_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:seq]}], # we want this signal!
+      [:c, :c],
+      [:output, :my_signal_step, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod], # this signal wins, because it's not configured!
+      [:d, :d],
+    )
+
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(task_wrap_for_model_pipe, {}, {seq: []}, {copy_to_outer_ctx: [:seq], exec_context: my_tw}, nil)
+
+    assert_equal CU.inspect(ctx), %({})
+    assert_equal CU.inspect(lib_ctx), %({:seq=>[:a, :b, :d, :my_left_signal_step, :c, :my_signal_step, :d]})
+    assert_equal signal, Trailblazer::Activity::Right
+
+
+  # Nesting with two signal producers on the same branch/level.
+  # the second's Right signal gets discarded.
+    output_pipe = lib_pipeline(
+      [:emit_right, :my_signal_step, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod],
+    )
+
+    task_wrap_for_model_pipe = lib_pipeline(
+      [:a, :a, ],
+      [:b, :b],
+      [:call_model, invoke_instance_method_lib_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:seq]}], # we want this signal!
+      [:c, :c],
+      [:output, output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:seq], passthrough_outer_signal: true}],
+      [:d, :d],
+    )
+
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(task_wrap_for_model_pipe, {}, {seq: []}, {copy_to_outer_ctx: [:seq], exec_context: my_tw}, nil)
+
+    assert_equal CU.inspect(ctx), %({})
+    assert_equal CU.inspect(lib_ctx), %({:seq=>[:a, :b, :d, :my_left_signal_step, :c, :my_signal_step, :d]})
+    assert_equal signal, Trailblazer::Activity::Left
+
+
+    raise
+
+
+    signal_pipe = lib_pipeline(
+      [:a, :a, ],
+      [:b, :b],
+
+
+
+      [:my_signal_step, :my_signal_step, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod],
+      [:c, :c],
+      exec_context: my_tw
+    )
+
+
+
+    library_pipeline = MyLibraryPipeline.new(**signal_pipe.to_h)
+
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(library_pipeline, {}, {seq: []}, {}, nil)
+
+    assert_equal CU.inspect(ctx), %({})
+    assert_equal CU.inspect(lib_ctx), %({:seq=>[:a, :b]})
+    assert_equal signal, Trailblazer::Activity::Right
   end
 
 require "benchmark/ips"
@@ -333,8 +594,10 @@ require "benchmark/ips"
     # exec_context: create_instance = Create.new,
     {
       exec_context:  IO___.new,
-      copy_to_outer_ctx: [:original_application_ctx].freeze
-    }
+      copy_to_outer_ctx: [:original_application_ctx].freeze,
+
+    },
+    nil
   )
  # }
  #   x.compare! # 43.6 -45.2k
@@ -358,7 +621,8 @@ require "benchmark/ips"
     ctx,
     lib_ctx,
     {copy_to_outer_ctx: [],
-        exec_context: IO___.new,}
+        exec_context: IO___.new,},
+    nil
   )
 
 # FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
@@ -386,21 +650,21 @@ require "benchmark/ips"
 
 puts "ciiii"
   # validation error:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, {})
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, {}, nil)
 
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, []
   assert_equal signal, create_termini[:failure]
 
   # success:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {})
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {}, nil)
 
   assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal lib_ctx.keys, []
   assert_equal signal, create_termini[:success]
 
   def call_me(create_circuit)
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {})
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {}, nil)
   end
 
   Benchmark.ips do |x|

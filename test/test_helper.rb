@@ -1,6 +1,16 @@
-require "pp"
+# require "pp"
 require "trailblazer/activity"
 require "minitest/autorun"
+
+require "amazing_print"
+AmazingPrint.defaults = {
+  :indent => -2,
+  :color => {
+    :hash  => :red,
+    :class => :gray,
+    :array => :blue,
+  }
+}
 
 Minitest::Spec.class_eval do
   def assert_equal(asserted, expected, *args)

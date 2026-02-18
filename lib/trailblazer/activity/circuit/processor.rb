@@ -6,16 +6,18 @@
       # keyed by a signal.
       class Processor
         # TODO: this can still be optimized for runtime speed, even though I spent days on it already.
-        def self.call(circuit, ctx, lib_ctx, circuit_options) # FIXME: allow {:start_task}.
+        def self.call(circuit, ctx, lib_ctx, circuit_options, signal) # FIXME: allow {:start_task}.
+          # puts "@@@@@??? #{circuit.inspect}"
           id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME
 
           loop do
-            # puts ">>>Processor #{id.inspect}"
+            puts ">>>Processor #{id.inspect}"
             ctx, lib_ctx, signal = invoker.(
               task,
               ctx,
               lib_ctx,
               circuit_options.merge(circuit_options_to_merge),
+              signal,
             )
 
             # puts "   @@@@@ #{id.inspect} ==> #{signal.inspect}"
@@ -32,16 +34,17 @@
         class Scoped < Processor
           # By using kwargs, we allow to change {:copy_to_outer_ctx} at runtime, for a bit
           # of performance tradeoff.
-          def self.call(circuit, ctx, lib_ctx, circuit_options)
-            call_with_scoping(circuit, ctx, lib_ctx, **circuit_options)
+          def self.call(circuit, ctx, lib_ctx, circuit_options, signal)
+            call_with_scoping(circuit, ctx, lib_ctx, signal, **circuit_options)
           end
 
           # Scope the incoming {lib_ctx} and write configured variables back to the original {lib_ctx}.
-          def self.call_with_scoping(circuit, ctx, lib_ctx, copy_to_outer_ctx: [], emit_signal: false, **circuit_options)
+          def self.call_with_scoping(circuit, ctx, lib_ctx, outer_signal, copy_to_outer_ctx: [], emit_signal: false, passthrough_outer_signal: false, **circuit_options)
             lib_ctx = Trailblazer.Context(lib_ctx)
 
-            ctx, lib_ctx, signal = Processor.(circuit, ctx, lib_ctx, circuit_options)
-
+            ctx, lib_ctx, signal = Processor.(circuit, ctx, lib_ctx, circuit_options, outer_signal)
+# puts ">>>"
+# ap lib_ctx
           # FIXME: use logic from variable-mapping here.
             outer_ctx, mutable = lib_ctx.decompose
 
@@ -59,7 +62,14 @@
 
 
             if emit_signal
+              # puts "@@@@@ emit_signal ! #{signal.inspect} from #{circuit.map}"
               signal = mutable[:signal] # FIXME: is it always here in mutable?
+              # signal = mutable.fetch(:signal) # FIXME: is it always here in mutable?
+            end
+
+            # discard the returned signal from this circuit.
+            if passthrough_outer_signal
+              signal = outer_signal
             end
 
             return ctx, lib_ctx, signal
