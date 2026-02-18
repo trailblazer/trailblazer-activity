@@ -313,13 +313,22 @@ puts
     Trailblazer::Activity::Circuit::Processor
 
     class Trace
-      def self.capture_before(ctx, lib_ctx, circuit_options, **)
-        stack = lib_ctx[:stack] or raise
+      def self.capture_before(ctx, lib_ctx, circuit_options, signal, stack:, **) # FIXME: we need circuit_options for the {:task}.
+        # stack = lib_ctx[:stack] or raise
         task = circuit_options[:task] or raise
 
         stack << [:before, task, ctx.inspect]
 
-        return ctx, lib_ctx, nil
+        return ctx, lib_ctx, signal
+      end
+
+      def self.capture_after(ctx, lib_ctx, circuit_options, signal, stack:, **) # FIXME: we need circuit_options for the {:task}.
+        # stack = lib_ctx[:stack] or raise
+        task = circuit_options[:task] or raise
+
+        stack << [:after, task, ctx.inspect]
+
+        return ctx, lib_ctx, signal
       end
     end
 # require "trailblazer/developer"
@@ -340,15 +349,15 @@ puts
           # task = original_config[1]
 
           # TODO: using Pipeline is probably not fast at runtime.
-          tw_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
-            [:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Trace, task: id}],
+          tw_pipe = RunnerInvokerTest.lib_pipeline(
+            [:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions],
             original_config, # FIXME: how to handle signal here?
 
-            [:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Trace, task: id}],
+            [:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions],
           )
 
           # [:"tw for #{id}", [:"tw for #{id}", tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {:emit_signal => true}]] # FIXME: emit only works if there is a :signal.
-          [id, [id, tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {:emit_signal => false}]] # FIXME: emit only works if there is a :signal.
+          [id, [id, tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Trace, task: id}]] # FIXME: emit only works if there is a :signal.
         end.to_h
 
   # pp new_circuit_config
@@ -370,7 +379,7 @@ puts
 
         # FIXME: how do we know the original Processor?
 puts "@@@@@> #{circuit_options.inspect}"
-        Trailblazer::Activity::Circuit::Processor::Scoped.(new_circuit, ctx, lib_ctx, circuit_options)
+        Trailblazer::Activity::Circuit::Processor::Scoped.(new_circuit, ctx, lib_ctx, circuit_options, nil)
       end
 
       def run_with_task_wrap

@@ -28,6 +28,16 @@
             end
           end
 
+          class InstanceMethod____withSignal_FIXME_and_Circuitoptions
+            # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
+            def self.call(task, ctx, lib_ctx, circuit_options, signal)
+              exec_context = circuit_options.fetch(:exec_context)
+
+              # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
+              exec_context.send(task, ctx, lib_ctx, circuit_options, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
+            end
+          end
+
 
           class A____withSignal_FIXME
             # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
