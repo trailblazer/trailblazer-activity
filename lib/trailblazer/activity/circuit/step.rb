@@ -8,9 +8,7 @@ module Trailblazer
           def self.call(ctx, lib_ctx, value:, **)
             signal = value ? Trailblazer::Activity::Right : Trailblazer::Activity::Left
 
-            lib_ctx[:signal] = signal
-
-            return ctx, lib_ctx, nil
+            return ctx, lib_ctx, signal
           end
         end
       end

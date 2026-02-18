@@ -27,6 +27,16 @@
               exec_context.send(task, ctx, lib_ctx, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
             end
           end
+
+
+          class A____withSignal_FIXME
+            # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
+            def self.call(task, ctx, lib_ctx, circuit_options, signal)
+
+              # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
+              task.(ctx, lib_ctx, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
+            end
+          end
         end
 
         class CircuitInterface

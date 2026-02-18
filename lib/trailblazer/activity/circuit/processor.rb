@@ -11,7 +11,7 @@
           id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME
 
           loop do
-            puts ">>>Processor #{id.inspect}"
+            # puts ">>>Processor #{id.inspect}"
             ctx, lib_ctx, signal = invoker.(
               task,
               ctx,
@@ -39,7 +39,7 @@
           end
 
           # Scope the incoming {lib_ctx} and write configured variables back to the original {lib_ctx}.
-          def self.call_with_scoping(circuit, ctx, lib_ctx, outer_signal, copy_to_outer_ctx: [], emit_signal: false, passthrough_outer_signal: false, **circuit_options)
+          def self.call_with_scoping(circuit, ctx, lib_ctx, outer_signal, copy_to_outer_ctx: [], passthrough_outer_signal: false, **circuit_options)
             lib_ctx = Trailblazer.Context(lib_ctx)
 
             ctx, lib_ctx, signal = Processor.(circuit, ctx, lib_ctx, circuit_options, outer_signal)
@@ -61,11 +61,6 @@
 
 
 
-            if emit_signal
-              # puts "@@@@@ emit_signal ! #{signal.inspect} from #{circuit.map}"
-              signal = mutable[:signal] # FIXME: is it always here in mutable?
-              # signal = mutable.fetch(:signal) # FIXME: is it always here in mutable?
-            end
 
             # discard the returned signal from this circuit.
             if passthrough_outer_signal
