@@ -249,11 +249,11 @@ puts
     #{ } how to handle signal?"
 
       model_pipe = RunnerInvokerTest.lib_pipeline(
-        [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, copy_to_outer_ctx: [:original_application_ctx], passthrough_outer_signal: true}], # change {:application_ctx}.
+        [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true}], # change {:application_ctx}.
 
         [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
         [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-        [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, passthrough_outer_signal: true}],
+        [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, return_outer_signal: true}],
       # [:bla, ->(ctx, lib_ctx, signal, **) { raise signal.inspect }, Trailblazer::Activity::Task::Invoker::LibInterface::A____withSignal_FIXME],
       )
 
@@ -497,7 +497,7 @@ puts "@@@@@> #{circuit_options.inspect}"
     assert_equal signal, Trailblazer::Activity::Left # signal from {my_left_signal_step}.
 
   # Out => [:seq], discard inner <signal>
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(invoke_instance_method_lib_circuit, {}, {seq: []}, {copy_to_outer_ctx: [:seq], passthrough_outer_signal: true}, Object)
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(invoke_instance_method_lib_circuit, {}, {seq: []}, {copy_to_outer_ctx: [:seq], return_outer_signal: true}, Object)
 
     assert_equal CU.inspect(ctx), %({})
     assert_equal CU.inspect(lib_ctx), %({:seq=>[:d, :my_left_signal_step]})
@@ -548,7 +548,7 @@ puts "@@@@@> #{circuit_options.inspect}"
       [:b, :b],
       [:call_model, invoke_instance_method_lib_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:seq]}], # we want this signal!
       [:c, :c],
-      [:output, output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:seq], passthrough_outer_signal: true}],
+      [:output, output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:seq], return_outer_signal: true}],
       [:d, :d],
     )
 

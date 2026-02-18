@@ -39,7 +39,7 @@
           end
 
           # Scope the incoming {lib_ctx} and write configured variables back to the original {lib_ctx}.
-          def self.call_with_scoping(circuit, ctx, lib_ctx, outer_signal, copy_to_outer_ctx: [], passthrough_outer_signal: false, **circuit_options)
+          def self.call_with_scoping(circuit, ctx, lib_ctx, outer_signal, copy_to_outer_ctx: [], return_outer_signal: false, **circuit_options)
             lib_ctx = Trailblazer.Context(lib_ctx)
 
             ctx, lib_ctx, signal = Processor.(circuit, ctx, lib_ctx, circuit_options, outer_signal)
@@ -63,7 +63,7 @@
 
 
             # discard the returned signal from this circuit.
-            if passthrough_outer_signal
+            if return_outer_signal
               signal = outer_signal
             end
 
