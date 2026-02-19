@@ -1,11 +1,11 @@
 require "test_helper"
 
 class PipelineBuilderTest < Minitest::Spec
-  include T.def_steps(:a)
 
   it "provides defaulting" do
     my_steps = T.def_steps(:b, :c)
     my_tasks = T.def_tasks(:d)
+    exec_context_for_a = T.def_steps(:a)
 
     c_circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
       [:c, my_steps.method(:c), Trailblazer::Activity::Task::Invoker::StepInterface]
@@ -13,8 +13,9 @@ class PipelineBuilderTest < Minitest::Spec
 
     circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
 
+
       # instance method with step interface.
-      [:a, :a, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: self}],
+      [:a, :a, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: exec_context_for_a}],
 
       # callable with step interface, we don't get defaulting here.
       [:b, my_steps.method(:b), Trailblazer::Activity::Task::Invoker::StepInterface],
@@ -26,11 +27,11 @@ class PipelineBuilderTest < Minitest::Spec
       [:d, my_tasks.method(:d)],
     )
 
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(circuit, {seq: []}, {}, {})
 
-    assert_equal CU.inspect(ctx), %({:seq=>[:a, :b, :c, :d]})
+    _, lib_ctx = assert_run circuit, terminus: Trailblazer::Activity::Right, # last signal is from {:d}.
+      seq: [:a, :b, :c, :d]
+
     assert_equal CU.inspect(lib_ctx), %({:value=>true})
-    assert_equal signal, Trailblazer::Activity::Right
   end
 
   it "allows configuring a signal different to {nil}" do
@@ -68,22 +69,14 @@ class CircuitBuilderTest < Minitest::Spec
 
     assert_equal termini, {success: success, failure: failure}
 
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(c_circuit, {seq: []}, {}, {})
+    ctx, lib_ctx = assert_run c_circuit, terminus: termini[:success], seq: [:c, :d]
+    assert_equal lib_ctx, {}
 
-    assert_equal CU.inspect(ctx), %({:seq=>[:c, :d]})
-    assert_equal CU.inspect(lib_ctx), %({})
-    assert_equal signal, termini[:success]
+    ctx, lib_ctx = assert_run c_circuit, terminus: termini[:failure], seq: [:c], c: Trailblazer::Activity::Left
+    assert_equal lib_ctx, {}
 
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(c_circuit, {seq: [], c: Trailblazer::Activity::Left}, {}, {})
 
-    assert_equal CU.inspect(ctx), %({:seq=>[:c], :c=>Trailblazer::Activity::Left})
-    assert_equal CU.inspect(lib_ctx), %({})
-    assert_equal signal, termini[:failure]
-
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(c_circuit, {seq: [], d: Trailblazer::Activity::Left}, {}, {})
-
-    assert_equal CU.inspect(ctx), %({:seq=>[:c, :d], :d=>Trailblazer::Activity::Left})
-    assert_equal CU.inspect(lib_ctx), %({})
-    assert_equal signal, termini[:failure]
+    ctx, lib_ctx = assert_run c_circuit, terminus: termini[:failure], seq: [:c, :d], d: Trailblazer::Activity::Left
+    assert_equal lib_ctx, {}
   end
 end

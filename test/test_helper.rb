@@ -31,7 +31,23 @@ Minitest::Spec.class_eval do
   end
 end
 
+# TODO: move me to core-utils. test me.
+module AssertRun
+  def assert_run(circuit, processor: Trailblazer::Activity::Circuit::Processor, exec_context: nil, terminus: nil, seq:, **ctx)
+    circuit_options = exec_context ? {exec_context: exec_context} : {}
+
+    ctx, lib_ctx, signal = processor.(circuit, ctx.merge(seq: []), {}, circuit_options, nil)
+
+    assert_equal signal, terminus
+    assert_equal ctx[:seq], seq # FIXME: test all ctx variables.
+
+    return ctx, lib_ctx, signal
+  end
+end
+
 Minitest::Spec.class_eval do
   require "trailblazer/core"
   CU = Trailblazer::Core::Utils
+
+  include AssertRun
 end
