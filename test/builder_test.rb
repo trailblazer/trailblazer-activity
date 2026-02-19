@@ -1,18 +1,23 @@
 require "test_helper"
 
 class PipelineBuilderTest < Minitest::Spec
-  it "provides defaulting" do
-    my_steps = T.def_steps(:b, :c)
-    my_tasks = T.def_tasks(:d)
-    exec_context_for_a = T.def_steps(:a)
-
-    exec_context_for_d = Class.new do
+  let(:exec_context_for_d) do
+    Class.new do
       def self.d(ctx, lib_ctx, circuit_options, signal)
         ctx[:seq] << :d
 
         return ctx, lib_ctx, Trailblazer::Activity::Right
       end
     end
+  end
+
+  let(:exec_context_for_a) do
+    T.def_steps(:a)
+  end
+
+  it "provides defaulting" do
+    my_steps = T.def_steps(:b, :c)
+    my_tasks = T.def_tasks(:d)
 
     c_circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
       [:c, my_steps.method(:c), Trailblazer::Activity::Task::Invoker::StepInterface]
@@ -38,6 +43,20 @@ class PipelineBuilderTest < Minitest::Spec
       exec_context: exec_context_for_d
 
     assert_equal CU.inspect(lib_ctx), %({:value=>true})
+  end
+
+  it "accepts kwargs as circuit_options defaults" do
+    circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
+
+      # we can manually override the {circuit_options}:
+      [:a, :a, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: exec_context_for_a}],
+
+      # or use the pipe-wide default, see two lines below.
+      [:d, :d],
+      exec_context: exec_context_for_d
+    )
+
+    assert_run circuit, seq: [:a, :d], terminus: Trailblazer::Activity::Right # signal from {:a}.
   end
 end
 

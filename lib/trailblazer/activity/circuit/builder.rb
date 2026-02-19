@@ -4,11 +4,14 @@ module Trailblazer
       # Helpers for those who don't like or have a DSL :D
       module Builder
         # Pipeline is just another circiut, where each step has only one output.
-        def self.Pipeline(*task_cfgs)
+        def self.Pipeline(*task_cfgs, **default_circuit_options)
           # task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, circuit_options = {}|
           task_cfgs = task_cfgs.collect do |id, task, invoker = Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, circuit_options = {}|
             [
-              id, task, invoker, circuit_options
+              id,
+              task,
+              invoker,
+              default_circuit_options.merge(circuit_options)
             ]
           end
 
