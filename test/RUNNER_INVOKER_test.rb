@@ -301,12 +301,12 @@ puts
         termini: [:success, :failure]
       )
 
-      return create_circuit, create_termini, model_input_pipe, model_output_pipe
+      return create_circuit, create_termini, model_input_pipe, model_output_pipe, validate_termini
     end
   end
 
   it "wrap_runtime prototyping" do
-    create_circuit, create_termini = Fixtures.fixtures
+    create_circuit, create_termini, _, _, validate_termini = Fixtures.fixtures
 
     ctx = {params: {song: nil}, slug: 666}
 
@@ -314,72 +314,68 @@ puts
 
     class Trace
       def self.capture_before(ctx, lib_ctx, circuit_options, signal, stack:, **) # FIXME: we need circuit_options for the {:task}.
-        # stack = lib_ctx[:stack] or raise
         task = circuit_options[:task] or raise
 
-        stack << [:before, task, ctx.inspect]
+        stack << [:before, task, ctx.to_h.inspect]
 
         return ctx, lib_ctx, signal
       end
 
       def self.capture_after(ctx, lib_ctx, circuit_options, signal, stack:, **) # FIXME: we need circuit_options for the {:task}.
-        # stack = lib_ctx[:stack] or raise
         task = circuit_options[:task] or raise
 
-        stack << [:after, task, ctx.inspect]
+        stack << [:after, task, ctx.to_h.inspect, signal]
 
         return ctx, lib_ctx, signal
       end
     end
 # require "trailblazer/developer"
-    class MyTWP < Struct.new(:processor)
-      def self.call(circuit, ctx, lib_ctx, circuit_options)
-        puts "MyTWP"
+
+    # Since a Processor is only called for Circuit instances, we can simply
+    # extend the circuit at runtime.
+    class WrapRuntime < Struct.new(:original_invoker)
+
+      def call(circuit, ctx, lib_ctx, circuit_options, signal)
         wrap_runtime = circuit_options.fetch(:wrap_runtime)
 
         config = circuit.config
 
         # create a new circuit that has a nested tW pipe for each original task.
-        new_circuit_config = config.collect do |id, original_config|
-          # if task.is_a?(Trailblazer::Activity::Circuit)
-          # #   raise task.inspect
-          #   # invoker = MyTWP
-          # end
+        new_circuit_config = config.collect do |id, (_, task, invoker, circuit_options)|
+          if task.is_a?(Trailblazer::Activity::Circuit)
+            # raise invoker.inspect
+            invoker = WrapRuntime.new(invoker)
+          end
 
-          # task = original_config[1]
+          task_cfg = [id, task, invoker, circuit_options]
 
           # TODO: using Pipeline is probably not fast at runtime.
           tw_pipe = RunnerInvokerTest.lib_pipeline(
-            [:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions],
-            original_config, # FIXME: how to handle signal here?
-
-            [:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions],
+            [:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}],
+            task_cfg,
+            [:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}],
           )
 
-          # [:"tw for #{id}", [:"tw for #{id}", tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {:emit_signal => true}]] # FIXME: emit only works if there is a :signal.
-          [id, [id, tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Trace, task: id}]] # FIXME: emit only works if there is a :signal.
+          [id, [id, tw_pipe, Trailblazer::Activity::Circuit::Processor, {task: id}]] # Note that we're NOT using a scoped Processor here, we don't need it for any wrap_runtime
         end.to_h
 
   # pp new_circuit_config
   #         raise
 
-        new_circuit = Trailblazer::Activity::Circuit.new(
+        circuit_class = circuit.class
+
+        new_circuit = circuit_class.new(
           **circuit.to_h,
           config: new_circuit_config,
-          # start_task_id: :"tw for Model",
-          # termini: [:"tw for Save"]
         )
-        # pp new_circuit#.collect { |id, task| [id, task] }
 
-
-
-        ap circuit.map
+        # ap circuit.map
         # raise
 
 
         # FIXME: how do we know the original Processor?
 puts "@@@@@> #{circuit_options.inspect}"
-        Trailblazer::Activity::Circuit::Processor::Scoped.(new_circuit, ctx, lib_ctx, circuit_options, nil)
+        original_invoker.(new_circuit, ctx, lib_ctx, circuit_options, signal)
       end
 
       def run_with_task_wrap
@@ -402,13 +398,14 @@ puts "@@@@@> #{circuit_options.inspect}"
 
 
 
-    # my_task_wrap_runtime_processor = MyTWP.(Trailblazer::Activity::Circuit::Processor::Scoped)
+    # my_task_wrap_runtime_processor = WrapRuntime.(Trailblazer::Activity::Circuit::Processor::Scoped)
 
     # validation error:
-    ctx, lib_ctx, signal = MyTWP.(create_circuit, ctx, {stack: []}, {
+    ctx, lib_ctx, signal = WrapRuntime.new(Trailblazer::Activity::Circuit::Processor::Scoped).(create_circuit, ctx, {stack: []}, {
         wrap_runtime: Hash.new(),
         # emit_signal: true,
       },
+      nil
     )
 
     assert_equal ctx, {:params=>{:song=>nil}, slug: 666, :model=>"Object  / {:more=>666}", :errors=>["Object  / {:more=>666}", :song]}
@@ -416,11 +413,60 @@ puts "@@@@@> #{circuit_options.inspect}"
     assert_equal signal, create_termini[:failure]
 
     # assert_equal ap(lib_ctx[:stack].ai, ruby19_syntax: true), %()
+
+    # ap lib_ctx[:stack]
+
     assert_equal lib_ctx[:stack], [
       [:before, :Model, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:before, :input, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:before, :save_original_application_ctx, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:after, :save_original_application_ctx, "{:params=>{:song=>nil}, :slug=>666}", nil],
+      [:before, :init_aggregate, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:after, :init_aggregate, "{:params=>{:song=>nil}, :slug=>666}", nil],
+      [:before, :my_model_input, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:before, :invoke_instance_method, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:after, :invoke_instance_method, "{:params=>{:song=>nil}, :slug=>666}", nil],
+      [:before, :add_value_to_aggregate, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:after, :add_value_to_aggregate, "{:params=>{:song=>nil}, :slug=>666}", nil],
+      [:after, :my_model_input, "{:params=>{:song=>nil}, :slug=>666}", nil],
+      [:before, :more_model_input, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:before, :invoke_callable, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:after, :invoke_callable, "{:params=>{:song=>nil}, :slug=>666}", nil],
+      [:before, :add_value_to_aggregate, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:after, :add_value_to_aggregate, "{:params=>{:song=>nil}, :slug=>666}", nil],
+      [:after, :more_model_input, "{:params=>{:song=>nil}, :slug=>666}", nil],
+      [:before, :create_application_ctx, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:after, :create_application_ctx, "{:params=>{:song=>nil, :slug=>666}, :more=>666}", nil],
+      [:after, :input, "{:params=>{:song=>nil, :slug=>666}, :more=>666}", nil],
+      [:before, :invoke_instance_method, "{:params=>{:song=>nil, :slug=>666}, :more=>666}"],
+      [:after, :invoke_instance_method, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", nil],
+      [:before, :compute_binary_signal, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
+      [:after, :compute_binary_signal, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
+      [:before, :output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
+      [:before, :init_aggregate, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
+      [:after, :init_aggregate, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
+      [:before, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
+      [:before, :invoke_instance_method, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
+      [:after, :invoke_instance_method, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", nil],
+      [:before, :add_value_to_aggregate, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
+      [:after, :add_value_to_aggregate, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", nil],
+      [:after, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", nil],
+      [:before, :swap___, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
+      [:after, :swap___, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", nil],
+      [:after, :output, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
+      [:after, :Model, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
       [:before, :Validate, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
-      [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"]
-    ]
+      [:before, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
+      [:before, :invoke_instance_method, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
+      [:after, :invoke_instance_method, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", nil],
+      [:before, :compute_binary_signal, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
+      [:after, :compute_binary_signal, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", Trailblazer::Activity::Left],
+      [:after, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", Trailblazer::Activity::Left],
+      [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
+      [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
+      [:after, :Validate, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
+      [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
+      [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", create_termini[:failure]]]
 
   end
 
