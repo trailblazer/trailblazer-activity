@@ -26,7 +26,7 @@ module Trailblazer
       def to_a_FIXME
         config[start_task_id]
       end
-    end
+    end # Circuit
   end
 end
 # TODO: map should be named flow_map
