@@ -1,5 +1,34 @@
 require "test_helper"
 
+class LibPipelineTest < Minitest::Spec
+  class MyLibraryPipeline < Trailblazer::Activity::Circuit
+    # TODO: improve logic so we don't have to provide config here, only ID?
+    def resolve(task, _signal)
+      # raise task.inspect
+      id = map[task]
+      config[id]
+    end
+  end
+  def self.lib_pipeline(*cfgs, **circuit_options)
+    cfgs = cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, circuit_options_to_merge = circuit_options|
+      [id, task, invoker, circuit_options_to_merge]
+    end
+
+    flow_map = cfgs.collect.with_index do |(id, _), index| # FIXME: reuse Pipeline logic.
+      [id, cfgs[index + 1] ? cfgs[index + 1][0] : nil]
+    end.to_h
+
+    # ap flow_map
+    # raise
+
+    config = cfgs.collect { |id, *args| [id, [id, *args]] }.to_h
+
+    # raise config.inspect
+
+    MyLibraryPipeline.new(config: config, map: flow_map, termini: config.keys.last, start_task_id: config.keys.first)
+  end
+end
+
 # Test that we can build something like the Each() macro,
 # where we dynamically iterate over a dataset, as if it was a circuit 1 --> 2 --> 3].
 class Circuit_dynamicResolving_for_Each_Test < Minitest::Spec
@@ -59,7 +88,8 @@ class Circuit_dynamicResolving_for_Each_Test < Minitest::Spec
       circuit,
       {seq: [], dataset: [1,2,3]},
       {},
-      {exec_context: self} # applies to all the pipeline's steps
+      {exec_context: self}, # applies to all the pipeline's steps
+      nil
     )
 
     assert_equal ctx[:seq], [[0, 1], [1, 2], [2, 3]]
@@ -100,7 +130,8 @@ class Circuit_FasterResolving_Test < Minitest::Spec
       my_pipeline_circuit,
       {seq: []},
       {},
-      {exec_context: my_exec_context} # applies to all the pipeline's steps
+      {exec_context: my_exec_context}, # applies to all the pipeline's steps
+      nil
     )
 
     assert_equal CU.inspect(ctx), %({:seq=>[:a, :b, :c, :d, :e]})
