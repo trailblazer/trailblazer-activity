@@ -99,10 +99,6 @@ require "test_helper"
 # 13. termini IDs in map when using nesting
 
 class RunnerInvokerTest < Minitest::Spec
-  def pipeline_circuit(*args)
-    Trailblazer::Activity::Circuit::Builder.Pipeline(*args)
-  end
-
   it "circuit_options, depth-only" do
     def capture_task(id:)
       ->(ctx, lib_ctx, circuit_options, **) do
@@ -111,23 +107,23 @@ class RunnerInvokerTest < Minitest::Spec
       end
     end
 
-    model_pipe = pipeline_circuit(
-      [:input, capture_task(id: 1)],
-      [:model, capture_task(id: 2)],
-      [:output, capture_task(id: 3)],
+    model_pipe = lib_pipeline(
+      [:input, capture_task(id: 1), Trailblazer::Activity::Task::Invoker::CircuitInterface],
+      [:model, capture_task(id: 2), Trailblazer::Activity::Task::Invoker::CircuitInterface],
+      [:output, capture_task(id: 3), Trailblazer::Activity::Task::Invoker::CircuitInterface],
     )
 
-    validate_input_pipe = pipeline_circuit(
-      [:input, capture_task(id: 4)],
-      [:exec_on__parent, capture_task(id: 5)], # exec on original ctx!
+    validate_input_pipe = lib_pipeline(
+      [:input, capture_task(id: 4), Trailblazer::Activity::Task::Invoker::CircuitInterface],
+      [:exec_on__parent, capture_task(id: 5), Trailblazer::Activity::Task::Invoker::CircuitInterface], # exec on original ctx!
     )
 
-    validate_pipe = pipeline_circuit(
+    validate_pipe = lib_pipeline(
       [:Validate_input, validate_input_pipe, Trailblazer::Activity::Circuit::Processor, {lib_exec_context: "Validate::Input"}],
-      [:validate, capture_task(id: 6)],
+      [:validate, capture_task(id: 6), Trailblazer::Activity::Task::Invoker::CircuitInterface],
     )
 
-    create_pipe = pipeline_circuit(
+    create_pipe = lib_pipeline(
       [:Model, model_pipe, Trailblazer::Activity::Circuit::Processor],
       [:Validate, validate_pipe, Trailblazer::Activity::Circuit::Processor],
     )
@@ -138,7 +134,7 @@ class RunnerInvokerTest < Minitest::Spec
 
 # FIXME: new test case.
 puts
-    create_pipe = pipeline_circuit(
+    create_pipe = lib_pipeline(
       [:Model, model_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: "Model"}],
       [:Validate, validate_pipe, Trailblazer::Activity::Circuit::Processor],
     )
@@ -215,23 +211,23 @@ puts
       io = IO___.new
 
       # In() => :my_model_input
-      my_model_input_pipe = RunnerInvokerTest.lib_pipeline(
+      my_model_input_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:invoke_instance_method, :my_model_input, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
         [:add_value_to_aggregate, :add_value_to_aggregate],
       )
 
-      more_model_input_pipe = RunnerInvokerTest.lib_pipeline(
+      more_model_input_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:invoke_callable, Create::MoreModelInput, Trailblazer::Activity::Task::Invoker::StepInterface],
         [:add_value_to_aggregate, :add_value_to_aggregate],
       )
 
-      my_model_output_pipe = RunnerInvokerTest.lib_pipeline(
+      my_model_output_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:invoke_instance_method, :my_model_output, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
         [:add_value_to_aggregate, :add_value_to_aggregate],
       )
 
       # !!! requires: {exec_context: io}
-      model_input_pipe = RunnerInvokerTest.lib_pipeline(
+      model_input_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:save_original_application_ctx, :save_original_application_ctx],
         [:init_aggregate, :init_aggregate],
         [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
@@ -240,7 +236,7 @@ puts
       )
 
       # !!! requires: {exec_context: io}
-      model_output_pipe = RunnerInvokerTest.lib_pipeline(
+      model_output_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:init_aggregate, :init_aggregate],
         [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor],     # user filter.
         [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
@@ -248,7 +244,7 @@ puts
 
     #{ } how to handle signal?"
 
-      model_pipe = RunnerInvokerTest.lib_pipeline(
+      model_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true}], # change {:application_ctx}.
 
         [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
@@ -310,8 +306,6 @@ puts
 
     ctx = {params: {song: nil}, slug: 666}
 
-    Trailblazer::Activity::Circuit::Processor
-
     class Trace
       def self.capture_before(ctx, lib_ctx, circuit_options, signal, stack:, **) # FIXME: we need circuit_options for the {:task}.
         task = circuit_options[:task] or raise
@@ -329,12 +323,10 @@ puts
         return ctx, lib_ctx, signal
       end
     end
-# require "trailblazer/developer"
 
     # Since a Processor is only called for Circuit instances, we can simply
     # extend the circuit at runtime.
     class WrapRuntime < Struct.new(:original_invoker)
-
       def call(circuit, ctx, lib_ctx, circuit_options, signal)
         wrap_runtime = circuit_options.fetch(:wrap_runtime)
 
@@ -343,19 +335,19 @@ puts
         # create a new circuit that has a nested tW pipe for each original task.
         new_circuit_config = config.collect do |id, (_, task, invoker, circuit_options)|
           if task.is_a?(Trailblazer::Activity::Circuit)
-            # raise invoker.inspect
-            invoker = WrapRuntime.new(invoker)
+            invoker = WrapRuntime.new(invoker) # apply recursion.
           end
 
           task_cfg = [id, task, invoker, circuit_options]
 
           # TODO: using Pipeline is probably not fast at runtime.
-          tw_pipe = RunnerInvokerTest.lib_pipeline(
+          # TODO: apply ADDS insertion instructions here
+          tw_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
             [:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}],
             task_cfg,
             [:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}],
           )
-
+# TODO: where and when should we set {:task} on circuit_options?
           [id, [id, tw_pipe, Trailblazer::Activity::Circuit::Processor, {task: id}]] # Note that we're NOT using a scoped Processor here, we don't need it for any wrap_runtime
         end.to_h
 
@@ -369,17 +361,7 @@ puts
           config: new_circuit_config,
         )
 
-        # ap circuit.map
-        # raise
-
-
-        # FIXME: how do we know the original Processor?
-puts "@@@@@> #{circuit_options.inspect}"
         original_invoker.(new_circuit, ctx, lib_ctx, circuit_options, signal)
-      end
-
-      def run_with_task_wrap
-
       end
     end
 
@@ -470,35 +452,8 @@ puts "@@@@@> #{circuit_options.inspect}"
 
   end
 
-  class MyLibraryPipeline < Trailblazer::Activity::Circuit
-    # TODO: improve logic so we don't have to provide config here, only ID?
-    def resolve(task, _signal)
-      # raise task.inspect
-      id = map[task]
-      config[id]
-    end
-  end
-  def self.lib_pipeline(*cfgs, **circuit_options)
-    cfgs = cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, circuit_options_to_merge = circuit_options|
-      [id, task, invoker, circuit_options_to_merge]
-    end
-
-    flow_map = cfgs.collect.with_index do |(id, _), index| # FIXME: reuse Pipeline logic.
-      [id, cfgs[index + 1] ? cfgs[index + 1][0] : nil]
-    end.to_h
-
-    # ap flow_map
-    # raise
-
-    config = cfgs.collect { |id, *args| [id, [id, *args]] }.to_h
-
-    # raise config.inspect
-
-    MyLibraryPipeline.new(config: config, map: flow_map, termini: config.keys.last, start_task_id: config.keys.first)
-  end
-
   def lib_pipeline(*args, **kws)
-    self.class.lib_pipeline(*args, **kws)
+    Trailblazer::Activity::Circuit::Builder.Pipeline(*args, **kws)
   end
 
   it "Signal Pipeline / signal scoping" do
