@@ -1,21 +1,27 @@
 require "test_helper"
 
-class LibPipelineTest < Minitest::Spec
-  class MyLibraryPipeline < Trailblazer::Activity::Circuit
-    # TODO: improve logic so we don't have to provide config here, only ID?
-    def resolve(task, _signal)
-      # raise task.inspect
-      id = map[task]
-      config[id]
-    end
+# Currently doesn't maintain a {config} property.
+class MyLibraryPipeline < Trailblazer::Activity::Circuit
+  def resolve(task, _signal)
+    # raise task.inspect
+    # A Pipeline doesn't differentiate between different signals.
+    map[task]
   end
+
+  def to_a_FIXME
+    config[start_task_id] # TODO: do at instantiation.
+  end
+
   def self.lib_pipeline(*cfgs, **circuit_options)
     cfgs = cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, circuit_options_to_merge = circuit_options|
       [id, task, invoker, circuit_options_to_merge]
     end
 
     flow_map = cfgs.collect.with_index do |(id, _), index| # FIXME: reuse Pipeline logic.
-      [id, cfgs[index + 1] ? cfgs[index + 1][0] : nil]
+      [
+        id,
+        cfgs[index + 1]
+      ]
     end.to_h
 
     # ap flow_map
@@ -25,7 +31,151 @@ class LibPipelineTest < Minitest::Spec
 
     # raise config.inspect
 
-    MyLibraryPipeline.new(config: config, map: flow_map, termini: config.keys.last, start_task_id: config.keys.first)
+    ids = flow_map.keys
+
+    MyLibraryPipeline.new(
+      config: config,
+      map: flow_map, termini: ids.last, start_task_id: ids.first)
+  end
+end
+
+class LibPipelineTest < Minitest::Spec
+  it "ADDS on Circuit prototyping" do
+    flow_map = {
+      :a => {"Right" => :b, "Left" => :failure},
+      :b => {"Right" => :c, "Left" => :failure},
+      :c => {"Right" => :success, "Left" => :failure},
+      :success => {},
+      :failure => {},
+    }
+
+    # insert_before X:
+    #   1. find first pointing to X, point to new
+    #   2. point new to X
+    def insert_before_via_ary(flow_map, inserted, before, signal_to_repoint)
+      flow_ary = flow_map.to_a.collect do |id, connections|
+
+        target = connections[signal_to_repoint]
+
+        if target == before
+          connections = connections.merge(signal_to_repoint => inserted)
+        end
+
+        [id, connections]
+      end
+
+      flow_ary = flow_ary + [[inserted, {signal_to_repoint => before}]]
+
+      flow_ary.to_h
+    end
+
+    def insert_before_via_hash(flow_map, inserted, before, signal_to_repoint)
+      # flow_map =  flow_map.dup
+      to_merge = {}
+
+      flow_map.each do |id, connections|
+
+        target = connections[signal_to_repoint]
+
+        if target == before
+          to_merge.merge!(id => connections.merge(signal_to_repoint => inserted))
+          break
+        end
+      end
+
+      flow_map.merge(**to_merge, inserted => {signal_to_repoint => before})
+    end
+
+    pp insert_before_via_ary(flow_map, :d, :b, "Right")
+    pp insert_before_via_hash(flow_map, :d, :b, "Right")
+
+    require "benchmark/ips"
+
+    Benchmark.ips do |x|
+      x.report("ary") {
+        insert_before_via_ary(flow_map, :d, :b, "Right")
+      }
+      x.report("hash") {
+        insert_before_via_hash(flow_map, :d, :b, "Right")
+      }
+
+      x.compare!
+      # Comparison:
+      #           hash:   799349.5 i/s
+      #            ary:   521144.7 i/s - 1.53x  (± 0.00) slower
+
+    end
+  end
+
+
+  it "benchmark LibPipeline vs Circuit" do
+    my_exec_context = Class.new do
+      def a(ctx, lib_ctx, signal)
+        ctx[:seq] << :a
+        return ctx, lib_ctx, signal
+      end
+
+      def b(ctx, lib_ctx, signal, **)
+        ctx[:seq] << :b
+        return ctx, lib_ctx, signal
+      end
+
+      def c(ctx, lib_ctx, signal, **)
+        ctx[:seq] << :c
+        return ctx, lib_ctx, signal
+      end
+    end.new
+
+    options = [Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {}]
+
+    lib_pipe = MyLibraryPipeline.lib_pipeline(
+      [:a, :a, *options],
+      [:b, :b, *options],
+      [:c, :c, *options],
+      [:d, :a, *options],
+      [:e, :b, *options],
+      [:f, :c, *options],
+    )
+
+    circuit_pipeline = Trailblazer::Activity::Circuit::Builder.Pipeline(
+      [:a, :a, *options],
+      [:b, :b, *options],
+      [:c, :c, *options],
+      [:d, :a, *options],
+      [:e, :b, *options],
+      [:f, :c, *options],
+    )
+    ap circuit_pipeline
+
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(lib_pipe, {seq: []}, {}, {exec_context: my_exec_context}, nil)
+    assert_equal ctx[:seq], [:a, :b, :c, :a, :b, :c]
+
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(circuit_pipeline, {seq: []}, {}, {exec_context: my_exec_context}, nil)
+    assert_equal ctx[:seq], [:a, :b, :c, :a, :b, :c]
+
+    require "benchmark/ips"
+
+    Benchmark.ips do |x|
+      x.report("lib_pipe") {
+        ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(lib_pipe, {seq: []}, {}, {exec_context: my_exec_context}, nil)
+      }
+
+      x.report("circuit pipeline") {
+        ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(circuit_pipeline, {seq: []}, {}, {exec_context: my_exec_context}, nil)
+      }
+
+      x.compare!
+    end
+  end
+
+  it "what" do
+    pipe = MyLibraryPipeline.lib_pipeline(
+      [:a, :a],
+      [:b, :b],
+      [:c, :c],
+    )
+
+    assert_equal pipe.resolve(:a, nil), []
   end
 end
 
