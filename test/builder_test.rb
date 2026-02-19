@@ -6,6 +6,14 @@ class PipelineBuilderTest < Minitest::Spec
     my_tasks = T.def_tasks(:d)
     exec_context_for_a = T.def_steps(:a)
 
+    exec_context_for_d = Class.new do
+      def self.d(ctx, lib_ctx, circuit_options, signal)
+        ctx[:seq] << :d
+
+        return ctx, lib_ctx, Trailblazer::Activity::Right
+      end
+    end
+
     c_circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
       [:c, my_steps.method(:c), Trailblazer::Activity::Task::Invoker::StepInterface]
     )
@@ -20,13 +28,14 @@ class PipelineBuilderTest < Minitest::Spec
       # defaulting for circuit_options for the nested pipe.
       [:c, c_circuit, Trailblazer::Activity::Circuit::Processor],
 
-      # task interface with defaulting.
-      [:d, my_tasks.method(:d)],
+      # task interface with defaulting, lib task with signal # FIXME.
+      [:d, :d],
     )
 
 
     _, lib_ctx = assert_run circuit, terminus: Trailblazer::Activity::Right, # last signal is from {:d}.
-      seq: [:a, :b, :c, :d]
+      seq: [:a, :b, :c, :d],
+      exec_context: exec_context_for_d
 
     assert_equal CU.inspect(lib_ctx), %({:value=>true})
   end
