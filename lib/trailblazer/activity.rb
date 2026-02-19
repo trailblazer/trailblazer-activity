@@ -28,6 +28,7 @@ module Trailblazer
 end
 
 require "trailblazer/activity/circuit"
+require "trailblazer/activity/circuit/pipeline"
 require "trailblazer/activity/circuit/processor"
 require "trailblazer/activity/terminus"
 require "trailblazer/activity/task/invoker"

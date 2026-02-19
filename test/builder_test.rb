@@ -1,7 +1,6 @@
 require "test_helper"
 
 class PipelineBuilderTest < Minitest::Spec
-
   it "provides defaulting" do
     my_steps = T.def_steps(:b, :c)
     my_tasks = T.def_tasks(:d)
@@ -12,8 +11,6 @@ class PipelineBuilderTest < Minitest::Spec
     )
 
     circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
-
-
       # instance method with step interface.
       [:a, :a, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: exec_context_for_a}],
 
@@ -33,24 +30,6 @@ class PipelineBuilderTest < Minitest::Spec
 
     assert_equal CU.inspect(lib_ctx), %({:value=>true})
   end
-
-  it "allows configuring a signal different to {nil}" do
-    my_tasks = T.def_tasks(:a, :b)
-
-    circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
-      [:a, my_tasks.method(:a), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}, signal: Trailblazer::Activity::Left], # configure the returned signal.
-      [:b, my_tasks.method(:b), Trailblazer::Activity::Task::Invoker::CircuitInterface],
-    )
-
-    # {:a} step returns Trailblazer::Activity::Left.
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(circuit, {seq: [], a: Trailblazer::Activity::Left}, {}, {})
-
-    assert_equal CU.inspect(ctx), %({:seq=>[:a, :b], :a=>Trailblazer::Activity::Left})
-    assert_equal CU.inspect(lib_ctx), %({})
-    assert_equal signal, Trailblazer::Activity::Right # from {:b}
-  end
-
-  # TODO: :signal
 end
 
 class CircuitBuilderTest < Minitest::Spec
