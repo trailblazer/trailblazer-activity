@@ -12,29 +12,10 @@ class CircuitAddsTest < Minitest::Spec
     )
   end
 
-  it "Pipepline context: accepts {:before} and {:after}" do
-
-
-    # :before, :after
-    extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
-      model_tw_pipe,
-      [[:c, :c, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :after, :b],
-      [[:d, :d, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :before, :e],
-    )
-
-    assert_run extended_tw_pipe, seq: [:a, :b, :c, :d, :e], terminus: Trailblazer::Activity::Right
-
-    # :before, nil, changing the start_task.
-    extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
-      model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :before],
-    )
-
-    assert_run extended_tw_pipe, seq: [:z, :a, :b, :e], terminus: Trailblazer::Activity::Right
-
-      # [[:C, :c, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], before: :a],
+  after do
     # No mutation on original circuit.
-    assert_run model_tw_pipe, seq: [:a, :b, :e], terminus: Trailblazer::Activity::Right # def_tasks return Right.
+    assert_run model_tw_pipe, seq: [:a, :b, :c], terminus: Trailblazer::Activity::Right # def_tasks return Right.
+    # TODO: maybe we should test internal properties here, to make sure config isn't altered etc.
   end
 
   it "{before, nil, before, nil} adds to the beginning, the last becomes the first" do
@@ -83,6 +64,15 @@ class CircuitAddsTest < Minitest::Spec
     )
 
     assert_run extended_tw_pipe, seq: [:a, :b, :c, :z, :y], terminus: Trailblazer::Activity::Right
+  end
+
+  it ":delete" do
+    extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
+      model_tw_pipe,
+      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :delete, :a],
+    )
+
+    assert_run extended_tw_pipe, seq: [:b, :c], terminus: Trailblazer::Activity::Right
   end
 
   it "can extend Circuit, too" do
