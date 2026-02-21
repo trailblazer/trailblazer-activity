@@ -18,6 +18,25 @@ class CircuitAddsTest < Minitest::Spec
     # TODO: maybe we should test internal properties here, to make sure config isn't altered etc.
   end
 
+  # FIXME: private test
+  it "prepare_insertion" do
+    flow_map, _, _, config = model_tw_pipe.to_a
+
+    _, target_id, target_index = Trailblazer::Activity::Circuit::Adds.prepare_insertion([:z, :z], flow_map, config, nil, index_for_nil: 0)# before: nil
+    assert_equal [target_id, target_index], [:a, 0]
+    _, target_id, target_index = Trailblazer::Activity::Circuit::Adds.prepare_insertion([:z, :z], flow_map, config, :a, index_for_nil: 0)# before: :a
+    assert_equal [target_id, target_index], [:a, 0]
+    _, target_id, target_index = Trailblazer::Activity::Circuit::Adds.prepare_insertion([:z, :z], flow_map, config, :b, index_for_nil: 0)# before: :b
+    assert_equal [target_id, target_index], [:b, 1]
+
+    _, target_id, target_index = Trailblazer::Activity::Circuit::Adds.prepare_insertion([:z, :z], flow_map, config, nil, index_for_nil: -1, offset: 1)# after: nil
+    assert_equal [target_id, target_index], [:c, -1]
+    _, target_id, target_index = Trailblazer::Activity::Circuit::Adds.prepare_insertion([:z, :z], flow_map, config, :c, index_for_nil: -1, offset: 1)# after: :c
+    assert_equal [target_id, target_index], [:c, 3]
+    _, target_id, target_index = Trailblazer::Activity::Circuit::Adds.prepare_insertion([:z, :z], flow_map, config, :a, index_for_nil: -1, offset: 1)# after: :a
+    assert_equal [target_id, target_index], [:a, 1]
+  end
+
   it "{before, nil, before, nil} adds to the beginning, the last becomes the first" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,

@@ -29,28 +29,15 @@ module Trailblazer
         # TODO: generic Insert logic.
 
         def self.before(flow_map, config, args_for_inserted, target_id, signal_to_repoint = nil)
-          inserted_id = args_for_inserted[0]
-          config = config.merge(inserted_id => args_for_inserted) # DISCUSS: we kind of have to do that here.
-          flow_ary_keys = flow_map.keys
+          config, target_id, target_index, inserted_id, flow_ary_keys = prepare_insertion(args_for_inserted, flow_map, config, target_id, index_for_nil: 0)
 
-          if target_id.nil? # new start task coming.
-            target_index = 0
-            target_id = flow_ary_keys[target_index]
-          else
-            to_merge = {}
+          if target_index > 0
+            predecessor_id = flow_ary_keys[target_index - 1] # since flow_map is guaranteed to be ordered by {signal_to_repoint}, we know that {index-1} is pointing to target.
+            predecessor_connections = flow_map[predecessor_id]
 
             # First, re-point the predecessor of target to the newly inserted.
-            flow_map.each_with_index do |(id, connections), index|
-              target = connections[signal_to_repoint]
-
-              if target == target_id
-                target_index = index + 1
-                to_merge = {id => connections.merge(signal_to_repoint => inserted_id)}
-                break
-              end
-            end
-
-            flow_map = flow_map.merge(**to_merge)
+            to_merge = {predecessor_id => predecessor_connections.merge(signal_to_repoint => inserted_id)}
+            flow_map = flow_map.merge(to_merge)
           end
 
           # Since we have to ensure the correct order in flow_map, we switch
@@ -63,27 +50,34 @@ module Trailblazer
         # raise "how does Processor compute start, how if we reached terminus? by ID or simply because there's nil?"
 
         def self.after(flow_map, config, args_for_inserted, target_id, signal_to_repoint = nil)
+          config, target_id, target_index, inserted_id, flow_ary_keys = prepare_insertion(args_for_inserted, flow_map, config, target_id, index_for_nil: -1, offset: 1)
+
+          target_connections = flow_map[target_id]
+
+          # TIL #merge reuses the old position of the key!
+          flow_map = flow_map.merge(
+            target_id => target_connections.merge(signal_to_repoint => inserted_id),
+          )
+
+          flow_map = insert_at(flow_map, target_index, [inserted_id, {signal_to_repoint => target_connections[signal_to_repoint]}])
+
+          return flow_map, config
+        end
+
+        def self.prepare_insertion(args_for_inserted, flow_map, config, target_id, index_for_nil:, offset: 0)
           inserted_id = args_for_inserted[0]
           config = config.merge(inserted_id => args_for_inserted) # DISCUSS: we kind of have to do that here.
           flow_ary_keys = flow_map.keys
 
-          if target_id.nil?
-            target_index = -1
+
+          if target_id.nil? # new start task coming.
+            target_index = index_for_nil
             target_id = flow_ary_keys[target_index]
           else
-            target_index = flow_ary_keys.index(target_id) + 1
+            target_index = flow_ary_keys.index(target_id) + offset
           end
 
-          old_connections = flow_map[target_id]
-
-          # TIL #merge reuses the old position of the key!
-          flow_map = flow_map.merge(
-            target_id => old_connections.merge(signal_to_repoint => inserted_id),
-          )
-
-          flow_map = insert_at(flow_map, target_index, [inserted_id, {signal_to_repoint => old_connections[signal_to_repoint]}])
-
-          return flow_map, config
+          return config, target_id, target_index, inserted_id, flow_ary_keys
         end
 
         # @private
