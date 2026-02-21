@@ -111,7 +111,39 @@ class CircuitAddsTest < Minitest::Spec
 
     assert_run extended_tw_pipe, seq: [:a, :b], terminus: Trailblazer::Activity::Right
   end
-# TODO: test that flow_map still has correct order!!!!
+
+  it ":replace first" do
+    extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
+      model_tw_pipe,
+      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :replace, :a],
+    )
+
+    assert_run extended_tw_pipe, seq: [:z, :b, :c], terminus: Trailblazer::Activity::Right
+
+    assert_equal extended_tw_pipe.to_a[0].keys, [:z, :b, :c] # TODO: do that everywhere!
+  end
+
+  it ":replace middle" do
+    extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
+      model_tw_pipe,
+      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :replace, :b],
+    )
+
+    assert_run extended_tw_pipe, seq: [:a, :z, :c], terminus: Trailblazer::Activity::Right
+
+    assert_equal extended_tw_pipe.to_a[0].keys, [:a, :z, :c] # TODO: do that everywhere!
+  end
+
+  it ":replace last" do
+    extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
+      model_tw_pipe,
+      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :replace, :c],
+    )
+
+    assert_run extended_tw_pipe, seq: [:a, :b, :z], terminus: Trailblazer::Activity::Right
+
+    assert_equal extended_tw_pipe.to_a[0].keys, [:a, :b, :z] # TODO: do that everywhere!
+  end
 
   it "can extend Circuit, too" do
     skip
