@@ -85,7 +85,7 @@ class CircuitAddsTest < Minitest::Spec
     assert_run extended_tw_pipe, seq: [:a, :b, :c, :z, :y], terminus: Trailblazer::Activity::Right
   end
 
-  it ":delete" do
+  it ":delete, first node" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
       [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :delete, :a],
@@ -93,6 +93,25 @@ class CircuitAddsTest < Minitest::Spec
 
     assert_run extended_tw_pipe, seq: [:b, :c], terminus: Trailblazer::Activity::Right
   end
+
+  it ":delete middle" do
+    extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
+      model_tw_pipe,
+      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :delete, :b],
+    )
+
+    assert_run extended_tw_pipe, seq: [:a, :c], terminus: Trailblazer::Activity::Right
+  end
+
+  it ":delete, last" do
+    extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
+      model_tw_pipe,
+      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :delete, :c],
+    )
+
+    assert_run extended_tw_pipe, seq: [:a, :b], terminus: Trailblazer::Activity::Right
+  end
+# TODO: test that flow_map still has correct order!!!!
 
   it "can extend Circuit, too" do
     skip
