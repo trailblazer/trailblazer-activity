@@ -14,11 +14,9 @@ module Trailblazer
           flow_map = blaaaaaa_FIXME[:map]
           config = blaaaaaa_FIXME[:config]
 
-          start_id, last_id = circuit[:start_task_id], circuit[:termini].last
-
           # Passing around start_id and last_id is for internal "caching" and part of this algorithm, not of the Circuit building.
           instructions.each do |task_args, insertion_method, target_id|
-            flow_map, config, start_id, last_id = send(insertion_method, flow_map, config, task_args, target_id, start_id, last_id)
+            flow_map, config = send(insertion_method, flow_map, config, task_args, target_id)
             # new_tasks << [id, [id, *args]] # FIXME: * is slow. # FIXME: deleted tasks will still hang out in config. is that a problem?
           end
 
@@ -30,14 +28,14 @@ module Trailblazer
 
         # TODO: generic Insert logic.
 
-        def self.before(flow_map, config, args_for_inserted, target_id, start_id, last_id, signal_to_repoint = nil)
+        def self.before(flow_map, config, args_for_inserted, target_id, signal_to_repoint = nil)
           inserted_id = args_for_inserted[0]
           config = config.merge(inserted_id => args_for_inserted) # DISCUSS: we kind of have to do that here.
+          flow_ary_keys = flow_map.keys
 
-            target_index = 0
           if target_id.nil? # new start task coming.
-            target_id = start_id
-            start_id = inserted_id
+            target_index = 0
+            target_id = flow_ary_keys[target_index]
           else
             to_merge = {}
 
@@ -59,18 +57,21 @@ module Trailblazer
           # to array representation here for correct insertion position.
           flow_map = insert_at(flow_map, target_index, [inserted_id, {signal_to_repoint => target_id}])
 
-          return flow_map, config, start_id, last_id
+          return flow_map, config
         end
 
         # raise "how does Processor compute start, how if we reached terminus? by ID or simply because there's nil?"
 
-        def self.after(flow_map, config, args_for_inserted, target_id, start_id, last_id, signal_to_repoint = nil)
+        def self.after(flow_map, config, args_for_inserted, target_id, signal_to_repoint = nil)
           inserted_id = args_for_inserted[0]
           config = config.merge(inserted_id => args_for_inserted) # DISCUSS: we kind of have to do that here.
+          flow_ary_keys = flow_map.keys
 
           if target_id.nil?
-            target_id = last_id
-            last_id = inserted_id
+            target_index = -1
+            target_id = flow_ary_keys[target_index]
+          else
+            target_index = flow_ary_keys.index(target_id) + 1
           end
 
           old_connections = flow_map[target_id]
@@ -80,11 +81,9 @@ module Trailblazer
             target_id => old_connections.merge(signal_to_repoint => inserted_id),
           )
 
-          target_index = flow_map.keys.index(target_id) + 1
-
           flow_map = insert_at(flow_map, target_index, [inserted_id, {signal_to_repoint => old_connections[signal_to_repoint]}])
 
-          return flow_map, config, start_id, last_id
+          return flow_map, config
         end
 
         # @private
