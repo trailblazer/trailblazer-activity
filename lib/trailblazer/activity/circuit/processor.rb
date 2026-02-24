@@ -8,18 +8,18 @@
         # TODO: this can still be optimized for runtime speed, even though I spent days on it already.
         def self.call(circuit, ctx, lib_ctx, circuit_options, signal) # FIXME: allow {:start_task}.
           # puts "@@@@@??? #{circuit.inspect}"
-          id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME
+          id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
 
           loop do
             # puts ">>>Processor #{id.inspect} #{circuit_options_to_merge}"
-            # ctx, lib_ctx, signal = invoker.(
-            #   task,
-            #   ctx,
-            #   lib_ctx,
-            #   circuit_options.merge(circuit_options_to_merge),
-            #   signal,
-            # )
             ctx, lib_ctx, signal = invoke_task(invoker, task, ctx, lib_ctx, circuit_options.merge(circuit_options_to_merge), signal)
+              # invoker.(
+              #     task,
+              #     ctx,
+              #     lib_ctx,
+              #     circuit_options.merge(circuit_options_to_merge),
+              #     signal,
+              #   )
 
             # puts "   @@@@@ #{id.inspect} ==> #{signal.inspect}"
             unless (id, task, invoker, circuit_options_to_merge = circuit.resolve(id, signal))
@@ -29,32 +29,36 @@
           end
         end
 
-        def self.invoke_task(invoker, task, ctx, lib_ctx, merged_circuit_options, signal)
-          # ctx, lib_ctx, signal = invoker.(
-          invoker.(
+        # module InvokeTask_________FIXME
+          def self.invoke_task(invoker, task, ctx, lib_ctx, circuit_options, signal)
+             ctx, lib_ctx, signal = invoker.(
               task,
               ctx,
               lib_ctx,
-              merged_circuit_options,
+              circuit_options,
               signal,
             )
-        end
+          end
 
-        # Processor that automatically scopes the ctx for this circuit run.
+        # end
+        # extend InvokeTask_________FIXME
+
+        # Processor that automatically scopes the lib_ctx for this circuit run.
         # Can return a signal via the {:signal} variable that can be set by
         # any step.
         class Scoped < Processor
           # By using kwargs, we allow to change {:copy_to_outer_ctx} at runtime, for a bit
           # of performance tradeoff.
-          def self.call(circuit, ctx, lib_ctx, circuit_options, signal)
-            call_with_scoping(circuit, ctx, lib_ctx, signal, **circuit_options)
+          def self.call(circuit, ctx, lib_ctx, circuit_options, outer_signal)
+            lib_ctx = Trailblazer.Context(lib_ctx) # FIXME: this has to be here so we can use super, fuck it.
+
+            ctx, lib_ctx, signal = super(circuit, ctx, lib_ctx, circuit_options, outer_signal) # DISCUSS: should we use {super} here?
+
+            call_with_unscoping(circuit, ctx, lib_ctx, signal, outer_signal, **circuit_options)
           end
 
           # Scope the incoming {lib_ctx} and write configured variables back to the original {lib_ctx}.
-          def self.call_with_scoping(circuit, ctx, lib_ctx, outer_signal, copy_to_outer_ctx: [], return_outer_signal: false, **circuit_options)
-            lib_ctx = Trailblazer.Context(lib_ctx)
-
-            ctx, lib_ctx, signal = Processor.(circuit, ctx, lib_ctx, circuit_options, outer_signal)
+          def self.call_with_unscoping(circuit, ctx, lib_ctx, signal, outer_signal, copy_to_outer_ctx: [], return_outer_signal: false, **circuit_options)
 # puts ">>>"
 # ap lib_ctx
           # FIXME: use logic from variable-mapping here.
