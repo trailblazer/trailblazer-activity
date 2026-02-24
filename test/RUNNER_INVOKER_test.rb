@@ -270,10 +270,18 @@ puts
         [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {},
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ],
-        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
-        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
+        # FIXME: taskwrap for termini sucks.
+        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface],
+        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface],
 
         termini: [:success, :failure]
+      )
+
+      # pp validate_termini
+      # raise this.inspect
+
+      tw_validate = pipeline_circuit(
+        [:tw_validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze}],
       )
 
       save_pipe = pipeline_circuit(
@@ -284,15 +292,17 @@ puts
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
         [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze},
           {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :failure}
+          # {Trailblazer::Activity::Right => :tw_validate, Trailblazer::Activity::Left => :failure}
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-        [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze},
+        # [:tw_validate, tw_validate, Trailblazer::Activity::Circuit::Processor::Scoped, {},
+        [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new},
           {validate_termini[:success] => :Save, validate_termini[:failure] => :failure}
         ],
         [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {},
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ], # check that we don't have circuit_options anymore here?
-        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
-        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
+        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface],
+        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface],
 
         termini: [:success, :failure]
       )
@@ -320,48 +330,61 @@ puts
 
         stack << [:after, task, ctx.to_h.inspect, signal]
 
+        # puts "@@@@@ CA, #{task} #{signal.inspect}"
+
         return ctx, lib_ctx, signal
       end
     end
 
     # Since a Processor is only called for Circuit instances, we can simply
     # extend the circuit at runtime.
-    class WrapRuntime < Struct.new(:original_invoker)
-      def call(circuit, ctx, lib_ctx, circuit_options, signal)
-        wrap_runtime = circuit_options.fetch(:wrap_runtime)
+    # class WrapRuntime < Struct.new(:original_invoker)
+    class WrapRuntime #< Trailblazer::Activity::Circuit::Processor
 
-        config = circuit.config
+      module InvokeTask
+        def invoke_task(task_args, ctx, lib_ctx, circuit_options, signal)
+          wrap_runtime = circuit_options.fetch(:wrap_runtime)
 
-        # create a new circuit that has a nested tW pipe for each original task.
-        new_circuit_config = config.collect do |id, (_, task, invoker, circuit_options)|
-          if task.is_a?(Trailblazer::Activity::Circuit)
-            invoker = WrapRuntime.new(invoker) # apply recursion.
+          id, task, invoker, circuit_options_to_merge = task_args
+
+          # first call is with Model circuit
+          if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
+            # puts "i will wrap #{id.inspect}"
+
+            invoker = Class.new(invoker) do
+              extend WrapRuntime::InvokeTask
+            end
+
+            tw_extension = wrap_runtime[id] # FIXME: this should be looked up by path, not ID.
+
+            id, extended_task, invoker, circuit_options = tw_extension.(id, task, invoker, circuit_options) # DISCUSS: pass runtime options here, too?
+
+            pp extended_task.map.keys
+            puts "@@@@@ lib_ctx #{lib_ctx.inspect}"
+
+            # super(invoker, extended_task, ctx, lib_ctx, circuit_options, signal)
+          # raise task.inspect
+            # circuit_options = circuit_options.merge(task: extended_task)
+
+            task_args = [id, extended_task, invoker, circuit_options_to_merge.merge(task: id)]
+
           end
 
-          task_cfg = [id, task, invoker, circuit_options]
 
-          # TODO: using Pipeline is probably not fast at runtime.
-          # TODO: apply ADDS insertion instructions here
-          tw_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
-            [:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}],
-            task_cfg,
-            [:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}],
-          )
-# TODO: where and when should we set {:task} on circuit_options?
-          [id, [id, tw_pipe, Trailblazer::Activity::Circuit::Processor, {task: id}]] # Note that we're NOT using a scoped Processor here, we don't need it for any wrap_runtime
-        end.to_h
 
-  # pp new_circuit_config
-  #         raise
+          super(task_args, ctx, lib_ctx, circuit_options, signal)
+        end
+      end
 
-        circuit_class = circuit.class
+      # Extension for a particular node in Processor#call.
+      class Extension < Struct.new(:adds_instructions) # "taskWrap" extension.
+        def call(id, task_circuit, invoker, circuit_options)
+          # puts "~~~ @@@@@ #{id.inspect} #{task_circuit}"
+          # NOTE: here, we create an extended circuit for the "task".
+          task_circuit = Trailblazer::Activity::Circuit::Adds.(task_circuit, *adds_instructions)
 
-        new_circuit = circuit_class.new(
-          **circuit.to_h,
-          config: new_circuit_config,
-        )
-
-        original_invoker.(new_circuit, ctx, lib_ctx, circuit_options, signal)
+          return id, task_circuit, invoker, circuit_options
+        end
       end
     end
 
@@ -382,9 +405,25 @@ puts
 
     # my_task_wrap_runtime_processor = WrapRuntime.(Trailblazer::Activity::Circuit::Processor::Scoped)
 
+
+    # DISCUSS: how to merge multiple runtime extensions? canonical invoke!
+    my_tw_extension = WrapRuntime::Extension.new(
+      [
+        [[:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}], :before],
+        [[:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}], :after],
+      ]
+    )
+
     # validation error:
-    ctx, lib_ctx, signal = WrapRuntime.new(Trailblazer::Activity::Circuit::Processor::Scoped).(create_circuit, ctx, {stack: []}, {
-        wrap_runtime: Hash.new(),
+    # ctx, lib_ctx, signal = WrapRuntime.new(Trailblazer::Activity::Circuit::Processor::Scoped).(create_circuit, ctx, {stack: []}, {
+    processor_with_wrap_runtime = Class.new(Trailblazer::Activity::Circuit::Processor::Scoped) do
+      extend WrapRuntime::InvokeTask # FIXME: super slow!
+    end
+
+    # processor_with_wrap_runtime.invoke_task
+
+    ctx, lib_ctx, signal = processor_with_wrap_runtime.(create_circuit, ctx, {stack: []}, {
+        wrap_runtime: Hash.new(my_tw_extension),
         # emit_signal: true,
       },
       nil

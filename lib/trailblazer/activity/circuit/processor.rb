@@ -8,11 +8,13 @@
         # TODO: this can still be optimized for runtime speed, even though I spent days on it already.
         def self.call(circuit, ctx, lib_ctx, circuit_options, signal) # FIXME: allow {:start_task}.
           # puts "@@@@@??? #{circuit.inspect}"
-          id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
+          # id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
+          task_args = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
 
           loop do
+          id = task_args.first
             # puts ">>>Processor #{id.inspect} #{circuit_options_to_merge}"
-            ctx, lib_ctx, signal = invoke_task(invoker, task, ctx, lib_ctx, circuit_options.merge(circuit_options_to_merge), signal)
+            ctx, lib_ctx, signal = invoke_task(task_args, ctx, lib_ctx, circuit_options, signal)
               # invoker.(
               #     task,
               #     ctx,
@@ -22,7 +24,7 @@
               #   )
 
             # puts "   @@@@@ #{id.inspect} ==> #{signal.inspect}"
-            unless (id, task, invoker, circuit_options_to_merge = circuit.resolve(id, signal))
+            unless (task_args = circuit.resolve(id, signal))
               return ctx, lib_ctx, signal
               # raise_illegal_signal_error!(task, signal, @map[task], **circuit_options)
             end
@@ -30,12 +32,14 @@
         end
 
         # module InvokeTask_________FIXME
-          def self.invoke_task(invoker, task, ctx, lib_ctx, circuit_options, signal)
+          def self.invoke_task(task_args, ctx, lib_ctx, circuit_options, signal)
+            id, task, invoker, circuit_options_to_merge = task_args
+
              ctx, lib_ctx, signal = invoker.(
               task,
               ctx,
               lib_ctx,
-              circuit_options,
+              circuit_options.merge(circuit_options_to_merge),
               signal,
             )
           end
