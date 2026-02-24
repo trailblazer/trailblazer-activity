@@ -2,6 +2,22 @@ module Trailblazer
   class Activity
     # A circuit is run using {Circuit::Processor}.
     class Circuit < Struct.new(:map, :start_task_id, :termini, :config, keyword_init: true)
+      # DISCUSS: do we need a config after all? or can we infer such thing from the flow_map?
+      def self.build(flow_map:, config:)
+        # Init logic, done when compiling Activitys and
+        # when extending ciruits via :wrap_runtime.
+        ids           = flow_map.keys
+        start_task_id = ids[0]
+        termini       = [ids[-1]] # FIXME: test that!
+
+        new(
+          map:            flow_map,
+          config:         config,
+          start_task_id:  start_task_id,
+          termini:        termini,
+        )
+      end
+
       # Find the next step for {current_task_id => signal}.
       # This is called in {Circuit::Processor.call}.
       def resolve(current_task_id, signal)

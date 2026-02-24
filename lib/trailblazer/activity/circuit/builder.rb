@@ -29,11 +29,9 @@ module Trailblazer
             [id, [id, task, invoker, options]]
           end.to_h
 
-          Activity::Circuit::Pipeline.new(
-            map:            map,
-            start_task_id:  config.keys[0],
-            termini:        [config.keys[-1]],
-            config:         config,
+          Activity::Circuit::Pipeline.build(
+            flow_map: map,
+            config:   config,
           )
         end
 
