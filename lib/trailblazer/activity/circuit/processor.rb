@@ -11,14 +11,15 @@
           id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME
 
           loop do
-            # puts ">>>Processor #{id.inspect}"
-            ctx, lib_ctx, signal = invoker.(
-              task,
-              ctx,
-              lib_ctx,
-              circuit_options.merge(circuit_options_to_merge),
-              signal,
-            )
+            # puts ">>>Processor #{id.inspect} #{circuit_options_to_merge}"
+            # ctx, lib_ctx, signal = invoker.(
+            #   task,
+            #   ctx,
+            #   lib_ctx,
+            #   circuit_options.merge(circuit_options_to_merge),
+            #   signal,
+            # )
+            ctx, lib_ctx, signal = invoke_task(invoker, task, ctx, lib_ctx, circuit_options.merge(circuit_options_to_merge), signal)
 
             # puts "   @@@@@ #{id.inspect} ==> #{signal.inspect}"
             unless (id, task, invoker, circuit_options_to_merge = circuit.resolve(id, signal))
@@ -26,6 +27,17 @@
               # raise_illegal_signal_error!(task, signal, @map[task], **circuit_options)
             end
           end
+        end
+
+        def self.invoke_task(invoker, task, ctx, lib_ctx, merged_circuit_options, signal)
+          # ctx, lib_ctx, signal = invoker.(
+          invoker.(
+              task,
+              ctx,
+              lib_ctx,
+              merged_circuit_options,
+              signal,
+            )
         end
 
         # Processor that automatically scopes the ctx for this circuit run.
