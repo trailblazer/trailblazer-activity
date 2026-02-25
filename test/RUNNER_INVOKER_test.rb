@@ -291,11 +291,11 @@ puts
 
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
         [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze},
-          {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :failure}
-          # {Trailblazer::Activity::Right => :tw_validate, Trailblazer::Activity::Left => :failure}
+          # {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :failure}
+          {Trailblazer::Activity::Right => :tw_validate, Trailblazer::Activity::Left => :failure}
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-        # [:tw_validate, tw_validate, Trailblazer::Activity::Circuit::Processor::Scoped, {},
-        [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new},
+        [:tw_validate, tw_validate, Trailblazer::Activity::Circuit::Processor::Scoped, {},
+        # [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new},
           {validate_termini[:success] => :Save, validate_termini[:failure] => :failure}
         ],
         [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {},
@@ -341,11 +341,21 @@ puts
     # class WrapRuntime < Struct.new(:original_invoker)
     class WrapRuntime #< Trailblazer::Activity::Circuit::Processor
 
+      # DISCUSS: should we use @invoker.() in Processor to make it better injectable?
       module InvokeTask
-        def invoke_task(task_args, ctx, lib_ctx, circuit_options, signal)
+        def invoke_task(node, ctx, lib_ctx, circuit_options, signal)
           wrap_runtime = circuit_options.fetch(:wrap_runtime)
 
-          id, task, invoker, circuit_options_to_merge = task_args
+          id, task, invoker, circuit_options_to_merge = node
+
+          if task.instance_of?(Trailblazer::Activity::Circuit)
+            # raise task.inspect
+            invoker = Class.new(invoker) do
+              extend WrapRuntime::InvokeTask
+            end
+
+            node = [id, task, invoker, circuit_options_to_merge]
+          end
 
           # first call is with Model circuit
           if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
@@ -360,19 +370,19 @@ puts
             id, extended_task, invoker, circuit_options = tw_extension.(id, task, invoker, circuit_options) # DISCUSS: pass runtime options here, too?
 
             pp extended_task.map.keys
-            puts "@@@@@ lib_ctx #{lib_ctx.inspect}"
+            # puts "@@@@@ lib_ctx #{lib_ctx.inspect}"
 
             # super(invoker, extended_task, ctx, lib_ctx, circuit_options, signal)
           # raise task.inspect
             # circuit_options = circuit_options.merge(task: extended_task)
 
-            task_args = [id, extended_task, invoker, circuit_options_to_merge.merge(task: id)]
+            node = [id, extended_task, invoker, circuit_options_to_merge.merge(task: id)]
 
           end
 
 
 
-          super(task_args, ctx, lib_ctx, circuit_options, signal)
+          super(node, ctx, lib_ctx, circuit_options, signal)
         end
       end
 
@@ -435,7 +445,7 @@ puts
 
     # assert_equal ap(lib_ctx[:stack].ai, ruby19_syntax: true), %()
 
-    # ap lib_ctx[:stack]
+    pp lib_ctx[:stack]
 
     assert_equal lib_ctx[:stack], [
       [:before, :Model, "{:params=>{:song=>nil}, :slug=>666}"],
