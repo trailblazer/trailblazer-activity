@@ -9,43 +9,37 @@
         def self.call(circuit, ctx, lib_ctx, circuit_options, signal) # FIXME: allow {:start_task}.
           # puts "@@@@@??? #{circuit.inspect}"
           # id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
-          task_args = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
+          node = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
 
           loop do
-          id = task_args.first
+          # id = node.first # TODO: it always should be [id, node]
             # puts ">>>Processor #{id.inspect} #{circuit_options_to_merge}"
-            ctx, lib_ctx, signal = invoke_task(task_args, ctx, lib_ctx, circuit_options, signal)
-              # invoker.(
-              #     task,
-              #     ctx,
-              #     lib_ctx,
-              #     circuit_options.merge(circuit_options_to_merge),
-              #     signal,
-              #   )
+            ctx, lib_ctx, signal = invoke_task(node, ctx, lib_ctx, circuit_options, signal)
 
             # puts "   @@@@@ #{id.inspect} ==> #{signal.inspect}"
-            unless (task_args = circuit.resolve(id, signal))
-              return ctx, lib_ctx, signal
+            node = circuit.resolve(node, signal)
+
+            return ctx, lib_ctx, signal unless node
+            # unless ()
+
               # raise_illegal_signal_error!(task, signal, @map[task], **circuit_options)
-            end
+            # end
           end
         end
 
-        # module InvokeTask_________FIXME
-          def self.invoke_task(task_args, ctx, lib_ctx, circuit_options, signal)
-            id, task, invoker, circuit_options_to_merge = task_args
+        # DISCUSS: do we want to merge circuit_options here? Definitely more flexible?
+        def self.invoke_task(node, ctx, lib_ctx, circuit_options, signal) # DISCUSS: should we directly decompose node for {invoke_task}?
+          id, task, invoker, circuit_options_to_merge = node
+          # puts id.inspect
 
-             ctx, lib_ctx, signal = invoker.(
-              task,
-              ctx,
-              lib_ctx,
-              circuit_options.merge(circuit_options_to_merge),
-              signal,
-            )
-          end
-
-        # end
-        # extend InvokeTask_________FIXME
+           ctx, lib_ctx, signal = invoker.(
+            task,
+            ctx,
+            lib_ctx,
+            circuit_options.merge(circuit_options_to_merge),
+            signal,
+          )
+        end
 
         # Processor that automatically scopes the lib_ctx for this circuit run.
         # Can return a signal via the {:signal} variable that can be set by

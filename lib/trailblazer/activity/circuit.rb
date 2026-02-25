@@ -18,19 +18,21 @@ module Trailblazer
         )
       end
 
-      # Find the next step for {current_task_id => signal}.
+      # Find the next step for {current_node_id => signal}.
       # This is called in {Circuit::Processor.call}.
-      def resolve(current_task_id, signal)
-        return if termini.include?(current_task_id) # this is faster than any other trick I tried, with {terminus => nil} etc.
+      def resolve(current_node, signal)
+        current_node_id = current_node[0]
+
+        return if termini.include?(current_node_id) # this is faster than any other trick I tried, with {terminus => nil} etc.
 
         # This lookup will always succeed unless something is entirely wrong.
-        signal_map = map[current_task_id] # assumption: ID must always be a symbol.
-# puts "circuit ~~~~~~ current_task_id #{current_task_id.inspect}, Signal<#{signal.inspect}> #{signal_map}"
+        signal_map = map[current_node_id] # assumption: ID must always be a symbol.
+# puts "circuit ~~~~~~ current_node_id #{current_node_id.inspect}, Signal<#{signal.inspect}> #{signal_map}"
         # return if signal_map == :terminus
 
-        next_task_id = signal_map[signal] or raise "#{current_task_id}===>#{signal.inspect} @ #{signal_map}".inspect # this will be nil for a terminus.
+        next_task_id = signal_map[signal] or raise "#{current_node_id}===>#{signal.inspect} @ #{signal_map}".inspect # this will be nil for a terminus.
 
-        config[next_task_id] # TODO: can we save this lookup and optimize the map directly?
+        return config[next_task_id] # TODO: can we save this lookup and optimize the map directly?
       end
 
 
@@ -40,7 +42,7 @@ module Trailblazer
       # end
 
       def to_a_FIXME
-        config[start_task_id]
+        config[start_task_id] # FIXME: is map.first faster?
       end
     end # Circuit
   end
