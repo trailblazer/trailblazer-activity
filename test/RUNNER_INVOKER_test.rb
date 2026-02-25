@@ -263,7 +263,14 @@ puts
         [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
       )
 
-      validate_circuit, validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
+      success_pipe = pipeline_circuit([:success, success = Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface])
+      failure_pipe = pipeline_circuit([:failure, failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface])
+
+      validate_termini = {
+        success: success, failure: failure
+      }
+
+      validate_circuit, ___validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
         [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {},
           {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :failure}
         ],
@@ -271,14 +278,17 @@ puts
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ],
         # FIXME: taskwrap for termini sucks.
-        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface],
-        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface],
+        [:success, success_pipe, Trailblazer::Activity::Circuit::Processor],
+        [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor],
+        # [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface],
 
         termini: [:success, :failure]
       )
 
-      # pp validate_termini
-      # raise this.inspect
+      # pp validate_circuit
+      # raise
+       # pp validate_termini
+       # raise
 
       tw_validate = pipeline_circuit(
         [:tw_validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze}],
@@ -348,6 +358,9 @@ puts
 
           id, task, invoker, circuit_options_to_merge = node
 
+          # Currently, don't add tw nodes inside a circuit (it would work!), rather
+          # do that on the pipe around it, if there is any. That being said, it's kinda funny
+          # how the tW now is something we "agree" upon, not hardwired as in 2.1
           if task.instance_of?(Trailblazer::Activity::Circuit)
             # raise task.inspect
             invoker = Class.new(invoker) do
