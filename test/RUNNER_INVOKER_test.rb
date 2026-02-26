@@ -326,7 +326,7 @@ puts
 
     ctx = {params: {song: nil}, slug: 666}
 
-    class Trace
+    class MyTrace
       def self.capture_before(ctx, lib_ctx, circuit_options, signal, stack:, **) # FIXME: we need circuit_options for the {:task}.
         task = circuit_options[:task] or raise
 
@@ -357,7 +357,6 @@ puts
           wrap_runtime = circuit_options.fetch(:wrap_runtime)
 
           id, task, invoker, circuit_options_to_merge = node
-
           # Currently, don't add tw nodes inside a circuit (it would work!), rather
           # do that on the pipe around it, if there is any. That being said, it's kinda funny
           # how the tW now is something we "agree" upon, not hardwired as in 2.1
@@ -372,6 +371,7 @@ puts
 
           # TODO: this part should be configurable, not blindly extending {Pipeline}s.
           if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
+puts "@@@@@ #{id.inspect}"
             # puts "i will wrap #{id.inspect}"
             node = extend_task_wrap_pipeline(wrap_runtime, id, node)
           end
@@ -406,22 +406,32 @@ puts
     # DISCUSS: how to merge multiple runtime extensions? canonical invoke!
     my_tw_extension = WrapRuntime::Extension.new(
       [
-        [[:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}], :before],
-        [[:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: Trace}], :after],
+        [[:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: MyTrace}], :before],
+        [[:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: MyTrace}], :after],
       ]
     )
 
-    # validation error:
-    # ctx, lib_ctx, signal = WrapRuntime.new(Trailblazer::Activity::Circuit::Processor::Scoped).(create_circuit, ctx, {stack: []}, {
-    processor_with_wrap_runtime = Class.new(Trailblazer::Activity::Circuit::Processor::Scoped) do
+    tw_create_pipe = Fixtures.pipeline_circuit(
+      [:"tw.call_task", create_circuit, Trailblazer::Activity::Circuit::Processor, {}]
+    )
+
+    canonical_pipe = Fixtures.pipeline_circuit( # DISCUSS: we could directly use {Processor.invoke_task} here?
+      [:Create, tw_create_pipe, Trailblazer::Activity::Circuit::Processor, {}]
+    )
+
+    # in wtf?, we have to replacce the outer Processor as we WANT the {:wrap_runtime} feature.
+    # this is cool since it's normally not applied, which is hopefully faster.
+    my_wrap_runtime_processor = Class.new(Trailblazer::Activity::Circuit::Processor) do
       extend WrapRuntime::InvokeTask # FIXME: super slow!
     end
 
-    # processor_with_wrap_runtime.invoke_task
-
-    ctx, lib_ctx, signal = processor_with_wrap_runtime.(create_circuit, ctx, {stack: []}, {
-        wrap_runtime: Hash.new(my_tw_extension),
-        # emit_signal: true,
+    # validation error:
+    ctx, lib_ctx, signal = my_wrap_runtime_processor.(
+      canonical_pipe,
+      ctx,
+      {stack: []},
+      {
+        wrap_runtime: Hash.new(my_tw_extension)
       },
       nil
     )
@@ -430,11 +440,10 @@ puts
     assert_equal lib_ctx.keys, [:stack]
     assert_equal signal, create_termini[:failure]
 
-    # assert_equal ap(lib_ctx[:stack].ai, ruby19_syntax: true), %()
-
     pp lib_ctx[:stack]
 
     assert_equal lib_ctx[:stack], [
+      [:before, :Create, "{:params=>{:song=>nil}, :slug=>666}"],
       [:before, :Model, "{:params=>{:song=>nil}, :slug=>666}"],
       [:before, :input, "{:params=>{:song=>nil}, :slug=>666}"],
       [:before, :my_model_input, "{:params=>{:song=>nil}, :slug=>666}"],
@@ -452,7 +461,8 @@ puts
         [:after, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", Trailblazer::Activity::Left],
         [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
         [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
-        [:after, :tw_validate, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]]
+        [:after, :tw_validate, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
+        [:after, :Create, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", create_termini[:failure]]
     ]
 
   end
