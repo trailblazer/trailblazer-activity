@@ -245,7 +245,7 @@ puts
 
       model_instance_method_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:model)
 
-      model_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
+      model_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
         [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true}], # change {:application_ctx}.
         [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Create.new}],
         [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, return_outer_signal: true}],
@@ -282,25 +282,21 @@ puts
        # pp validate_termini
        # raise
 
-      tw_validate = pipeline_circuit(
-        [:tw_validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze}],
+      validate_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
+        [:"task_wrap.call_task", validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze}],
       )
 
-      save_pipe = pipeline_circuit(
-        [:invoke_callable, Save, Trailblazer::Activity::Task::Invoker::StepInterface],
-        [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-      )
+
+      save_call_task_pipe = Trailblazer::Activity::Circuit::Builder::Step.Callable(Save)
 
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-        [:Model,    model_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze},
-          # {Trailblazer::Activity::Right => :Validate, Trailblazer::Activity::Left => :failure}
-          {Trailblazer::Activity::Right => :tw_validate, Trailblazer::Activity::Left => :failure}
+        [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze},
+          {Trailblazer::Activity::Right => :"validate.task_wrap", Trailblazer::Activity::Left => :failure}
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-        [:tw_validate, tw_validate, Trailblazer::Activity::Circuit::Processor::Scoped, {},
-        # [:Validate, validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new},
+        [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {},
           {validate_termini[:success] => :Save, validate_termini[:failure] => :failure}
         ],
-        [:Save,     save_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {},
+        [:Save,     save_call_task_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {},
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ], # check that we don't have circuit_options anymore here?
         [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface],
@@ -436,7 +432,7 @@ puts "@@@@@ #{id.inspect}"
 
     assert_equal lib_ctx[:stack], [
       [:before, :Create, "{:params=>{:song=>nil}, :slug=>666}"],
-      [:before, :Model, "{:params=>{:song=>nil}, :slug=>666}"],
+      [:before, :"model.task_wrap", "{:params=>{:song=>nil}, :slug=>666}"],
       [:before, :input, "{:params=>{:song=>nil}, :slug=>666}"],
       [:before, :my_model_input, "{:params=>{:song=>nil}, :slug=>666}"],
       [:after, :my_model_input, "{:params=>{:song=>nil}, :slug=>666}", nil],
@@ -450,13 +446,13 @@ puts "@@@@@ #{id.inspect}"
        [:before, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
        [:after, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", nil],
        [:after, :output, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", nil],
-       [:after, :Model, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
-       [:before, :tw_validate, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
+       [:after, :"model.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
+       [:before, :"validate.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
         [:before, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
         [:after, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", Trailblazer::Activity::Left],
         [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
         [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
-        [:after, :tw_validate, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
+        [:after, :"validate.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
         [:after, :Create, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", create_termini[:failure]]
     ]
 

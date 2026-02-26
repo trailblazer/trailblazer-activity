@@ -84,6 +84,13 @@ module Trailblazer
               [:compute_binary_signal, Circuit::Step::ComputeBinarySignal, Task::Invoker::LibInterface],
             )
           end
+
+          def self.Callable(callable)
+            Builder.Pipeline(
+              [:invoke_callable, callable, Trailblazer::Activity::Task::Invoker::StepInterface],
+              [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+            )
+          end
         end
       end # Builder
     end
