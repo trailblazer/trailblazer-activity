@@ -361,7 +361,7 @@ puts
           # Currently, don't add tw nodes inside a circuit (it would work!), rather
           # do that on the pipe around it, if there is any. That being said, it's kinda funny
           # how the tW now is something we "agree" upon, not hardwired as in 2.1
-          if task.instance_of?(Trailblazer::Activity::Circuit)
+          if task.is_a?(Trailblazer::Activity::Circuit) # Circuit + Pipeline
             # raise task.inspect
             invoker = Class.new(invoker) do
               extend WrapRuntime::InvokeTask
@@ -370,32 +370,24 @@ puts
             node = [id, task, invoker, circuit_options_to_merge]
           end
 
-          # first call is with Model circuit
+          # TODO: this part should be configurable, not blindly extending {Pipeline}s.
           if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
             # puts "i will wrap #{id.inspect}"
-
-            invoker = Class.new(invoker) do
-              extend WrapRuntime::InvokeTask
-            end
-
-            tw_extension = wrap_runtime[id] # FIXME: this should be looked up by path, not ID.
-
-            id, extended_task, invoker, circuit_options = tw_extension.(id, task, invoker, circuit_options) # DISCUSS: pass runtime options here, too?
-
-            pp extended_task.map.keys
-            # puts "@@@@@ lib_ctx #{lib_ctx.inspect}"
-
-            # super(invoker, extended_task, ctx, lib_ctx, circuit_options, signal)
-          # raise task.inspect
-            # circuit_options = circuit_options.merge(task: extended_task)
-
-            node = [id, extended_task, invoker, circuit_options_to_merge.merge(task: id)]
-
+            node = extend_task_wrap_pipeline(wrap_runtime, id, node)
           end
 
-
-
           super(node, ctx, lib_ctx, circuit_options, signal)
+        end
+
+        def extend_task_wrap_pipeline(wrap_runtime, id, node)
+          tw_extension = wrap_runtime[id] # FIXME: this should be looked up by path, not ID.
+
+          id, extended_task, invoker, circuit_options_to_merge = tw_extension.(*node.to_a) # DISCUSS: pass runtime options here, too?
+
+          circuit_options = circuit_options_to_merge.merge(task: id)
+          pp extended_task.map.keys
+
+          _node = [id, extended_task, invoker, circuit_options]
         end
       end
 
@@ -410,24 +402,6 @@ puts
         end
       end
     end
-
-    # original_config = create_circuit.config[:Model]
-
-    # id = :Model
-    # model_tw_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
-    #   [:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::CircuitInterface::InstanceMethod, {exec_context: Trace, task: id}],
-    #   original_config, # FIXME: how to handle signal here?
-    # )
-
-    # pp Trailblazer::Activity::Circuit::Processor::Scoped.(model_tw_pipe, {slug: "0x1", params: {song: {}}}, {stack: []}, {})
-
-
-
-
-
-
-    # my_task_wrap_runtime_processor = WrapRuntime.(Trailblazer::Activity::Circuit::Processor::Scoped)
-
 
     # DISCUSS: how to merge multiple runtime extensions? canonical invoke!
     my_tw_extension = WrapRuntime::Extension.new(
