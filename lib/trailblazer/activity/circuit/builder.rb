@@ -36,7 +36,6 @@ module Trailblazer
         end
 
         def self.Circuit(*task_cfgs, termini:)
-
         # TODO: use code from above.
           task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, circuit_options = {}, options = {}|
             # outputs = options[:outputs] || {Activity::Right => } # defaults to {nil}.
@@ -66,6 +65,25 @@ module Trailblazer
               config:         config,
             ),
             outputs
+        end
+
+        # TODO: location, should that be Activity?
+        # A taskWrap is just a Pipeline with a mandatory element {call_task}.
+        # @private
+        def self.TaskWrap(*nodes_options)
+          raise "no call_task provided!" unless nodes_options.find { |(id, _)| id == :"task_wrap.call_task" }
+
+          Pipeline(*nodes_options)
+        end
+
+        # DISCUSS: should that sit in Activity? it's higher level than Circuit.
+        module Step
+          def self.InstanceMethod(method_name)
+            Builder.Pipeline(
+              [:invoke_instance_method, method_name, Task::Invoker::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
+              [:compute_binary_signal, Circuit::Step::ComputeBinarySignal, Task::Invoker::LibInterface],
+            )
+          end
         end
       end # Builder
     end

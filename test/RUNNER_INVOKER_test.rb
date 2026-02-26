@@ -242,26 +242,18 @@ puts
         [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
       )
 
-    #{ } how to handle signal?"
+
+      model_instance_method_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:model)
 
       model_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true}], # change {:application_ctx}.
-
-        [:invoke_instance_method, :model, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
-        [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+        [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Create.new}],
         [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, return_outer_signal: true}],
       # [:bla, ->(ctx, lib_ctx, signal, **) { raise signal.inspect }, Trailblazer::Activity::Task::Invoker::LibInterface::A____withSignal_FIXME],
       )
 
-      run_checks_pipe = pipeline_circuit(
-        [:invoke_instance_method, :run_checks, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
-        [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-      )
-
-      title_length_ok_pipe = pipeline_circuit(
-        [:invoke_instance_method, :title_length_ok?, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod],
-        [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
-      )
+      run_checks_pipe      = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:run_checks)
+      title_length_ok_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:title_length_ok?)
 
       success_pipe = pipeline_circuit([:success, success = Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface])
       failure_pipe = pipeline_circuit([:failure, failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface])
@@ -451,6 +443,9 @@ puts "@@@@@ #{id.inspect}"
       [:before, :more_model_input, "{:params=>{:song=>nil}, :slug=>666}"],
       [:after, :more_model_input, "{:params=>{:song=>nil}, :slug=>666}", nil],
       [:after, :input, "{:params=>{:song=>nil, :slug=>666}, :more=>666}", nil],
+      [:before, :"task_wrap.call_task", "{:params=>{:song=>nil, :slug=>666}, :more=>666}"],
+      [:after, :"task_wrap.call_task", "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
+
        [:before, :output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
        [:before, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
        [:after, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", nil],
