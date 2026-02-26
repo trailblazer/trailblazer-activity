@@ -289,14 +289,18 @@ puts
 
       save_call_task_pipe = Trailblazer::Activity::Circuit::Builder::Step.Callable(Save)
 
+      save_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
+        [:"task_wrap.call_task", save_call_task_pipe, Trailblazer::Activity::Circuit::Processor::Scoped],
+      )
+
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-        [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,      {exec_context: Create.new.freeze},
+        [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Create.new.freeze},
           {Trailblazer::Activity::Right => :"validate.task_wrap", Trailblazer::Activity::Left => :failure}
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
         [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {},
-          {validate_termini[:success] => :Save, validate_termini[:failure] => :failure}
+          {validate_termini[:success] => :"save.task_wrap", validate_termini[:failure] => :failure}
         ],
-        [:Save,     save_call_task_pipe, Trailblazer::Activity::Circuit::Processor::Scoped,       {},
+        [:"save.task_wrap", save_tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {},
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ], # check that we don't have circuit_options anymore here?
         [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface],
