@@ -1,54 +1,5 @@
 require "test_helper"
 
-      class MyProcessForNode
-      def call(node, ctx, lib_ctx, signal)
-        id, task, me, interface_invoker, merge_to_lib_ctx = node
-
-        lib_ctx = lib_ctx.merge(merge_to_lib_ctx) # DISCUSS: what merge strategy?
-
-        interface_invoker.(task, ctx, lib_ctx, signal)
-      end
-    end
-
- class Process_Scope < Struct.new(:wrapped_noder, :copy_to_outer_ctx, :return_outer_signal)
-      def call(node, ctx, outer_lib_ctx, signal)
-        lib_ctx = Trailblazer::Context.new(outer_lib_ctx, {}) # TODO: allow setting options.
-
-        ctx, lib_ctx, signal = wrapped_noder.(node, ctx, lib_ctx, signal) # super
-
-        lib_ctx, signal = unscope(lib_ctx, outer_lib_ctx, signal)
-
-        return ctx, lib_ctx, signal
-      end
-
-      # @private
-      def unscope(lib_ctx, outer_ctx, signal)
-        # outer_ctx, mutable = lib_ctx.decompose
-        _FIXME_outer_ctx, mutable = lib_ctx.decompose
-
-            copy_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
-              # DISCUSS: is merge! and slice faster? no it's not.
-              outer_ctx[key] = mutable[key] # if the task didn't write anything, we need to ask to big scoped ctx.
-            end
-
-              lib_ctx = outer_ctx
-            # puts "@@@@@ ++++ #{id} #{copy_to_outer_ctx.inspect} #{mutable}"
-
-            # public_variables = mutable.slice(*copy_to_outer_ctx) # it only makes sense to publish variables if they're "new".
-            # lib_ctx = outer_ctx.merge(public_variables)
-            # puts "finished processing Scoped.call"
-            # puts "   #{lib_ctx.to_h}"
-
-
-
-            # discard the returned signal from this circuit.
-            if return_outer_signal
-              signal = outer_signal
-            end
-
-        return lib_ctx, signal
-      end
-    end
 
 class Processor_Scoped_Test < Minitest::Spec
   it "what" do
@@ -98,30 +49,40 @@ class InvokerTest < Minitest::Spec
     return ctx, lib_ctx, signal
   end
 
-  it "what" do
+  it "un-scoped node processor" do
+    process_node_called_from_process_task = _A::Circuit::Node::Processor.new # scope lib_ctx, call interface.
 
+    node = [:my_input, :my_input, process_node_called_from_process_task, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {}] # it doesn't make sense to use an un-scoped node processor while passing lib_ctx options?
 
-    process_node_called_from_process_task = MyProcessForNode.new # scope lib_ctx, call interface.
-
-    node = [:my_input, :my_input, process_node_called_from_process_task, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}]
-
-    result = _A::Circuit::Processor.process_node(node, {}, {exec_context: "outer"}, nil)
+    result = _A::Circuit::Processor.process_node(node, {}, {exec_context: self}, nil)
 
     assert_equal result,
       [
         {},
         {
-          exec_context: my_exec_context, # without scoping, we bleed the "new" exec_context into the next step.
-          value: :my_exec_context,
+          exec_context: self, # without scoping, we bleed the "new" exec_context into the next step.
+          value: :self,
           bogus: true,
         },
         nil
       ]
+  end
+
+  it "what" do
+
+
+
 
   # scoping
-    process_node_called_from_process_task = Process_Scope.new(MyProcessForNode.new, [:value]) # scope lib_ctx, call interface.
+    # process_node_called_from_process_task = _A::Circuit::Node::Processor::Scope.new([:value]) # scope lib_ctx, call interface.
 
-    node = [:my_input, :my_input, process_node_called_from_process_task, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}]
+    node = [:my_input, :my_input,
+      _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, # how to run the actual task with the correct interface
+      {exec_context: my_exec_context}, # how to change lib_ctx, starting from Node::Processor::Scoped
+      # this used to sit in Circuit::Processor::Scoping
+      _A::Circuit::Node::Processor::Scoped, # how to invoke the logic for this node?
+      {copy_to_outer_ctx: [:value]} # FIXME: can we extend this at runtime? e.g. tracing needs :stack # options for
+    ]
 
     result = _A::Circuit::Processor.process_node(node, {}, {exec_context: "outer"}, nil)
 
@@ -129,7 +90,7 @@ class InvokerTest < Minitest::Spec
       [
         {},
         {
-          exec_context: "outer", #
+          exec_context: "outer", # original value.
           value: :my_exec_context # context change!
           # and a clean {lib_ctx}.
         },

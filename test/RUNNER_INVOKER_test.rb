@@ -1,42 +1,5 @@
 require "test_helper"
 
-  module Trailblazer
-    class Context < Struct.new(:shadowed, :mutable)
-      def []=(key, value)
-        mutable[key] = value
-
-        # @to_h[key] = value
-      end
-
-      def [](key)
-        # raise
-        mutable[key] || shadowed[key] # FIXME.
-      end
-
-      def merge(variables)
-        # raise
-        # puts variables.inspect
-        Context.new(shadowed, mutable.merge(variables))
-      end
-
-      def decompose
-        return shadowed, mutable
-      end
-
-      def to_h
-        # return @to_h
-        shadowed.to_h.merge(mutable) # DISCUSS: shadowed.to_h we only should do once, at instantiation!
-      end
-
-      def to_hash # implicit conversion to Hash.
-        to_h
-      end
-    end
-
-    def self.Context(shadowed)
-      Context.new(shadowed, {})
-    end
-  end
 
 
   class IO___
@@ -212,7 +175,14 @@ puts
 
       # In() => :my_model_input
       my_model_input_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
-        [:invoke_instance_method, :my_model_input, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
+        [
+          :invoke_instance_method,
+          :my_model_input,
+          Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod,
+          {exec_context: Create.new},
+          Trailblazer::Activity::Circuit::Node::Processor::Scoped,
+          {copy_to_outer_ctx: [:value]}
+        ],
         [:add_value_to_aggregate, :add_value_to_aggregate],
       )
 
@@ -222,7 +192,7 @@ puts
       )
 
       my_model_output_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
-        [:invoke_instance_method, :my_model_output, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}],
+        [:invoke_instance_method, :my_model_output, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: Create.new}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:value]}],
         [:add_value_to_aggregate, :add_value_to_aggregate],
       )
 
@@ -230,27 +200,32 @@ puts
       model_input_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:save_original_application_ctx, :save_original_application_ctx],
         [:init_aggregate, :init_aggregate],
-        [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
-        [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}], # user filter.
-        [:create_application_ctx, :create_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+        [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
+        [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}], # user filter.
+
+        [:create_application_ctx, :create_application_ctx, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod],
       )
 
       # !!! requires: {exec_context: io}
       model_output_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:init_aggregate, :init_aggregate],
         [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor],     # user filter.
-        [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
+        [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod],
       )
 
 
       model_instance_method_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:model)
 
       model_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
-        [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true}], # change {:application_ctx}.
-        [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Create.new}],
-        [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: io, return_outer_signal: true}],
+# [:bla, ->(ctx, lib_ctx, signal) { puts "@@@@@ #{lib_ctx.to_h.inspect}"; return ctx, lib_ctx, signal }, Trailblazer::Activity::Task::Invoker::CircuitInterface],
+        [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true}], # change {:application_ctx}.
+        [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Create.new}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
+        [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {return_outer_signal: true}],
       # [:bla, ->(ctx, lib_ctx, signal, **) { raise signal.inspect }, Trailblazer::Activity::Task::Invoker::LibInterface::A____withSignal_FIXME],
       )
+
+      # ctx = {params: {song: nil}, slug: "0x666"}
+
 
       run_checks_pipe      = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:run_checks)
       title_length_ok_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:title_length_ok?)
@@ -263,15 +238,15 @@ puts
       }
 
       validate_circuit, ___validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-        [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {},
+        [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
           {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :failure}
         ],
-        [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {},
+        [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ],
         # FIXME: taskwrap for termini sucks.
-        [:success, success_pipe, Trailblazer::Activity::Circuit::Processor],
-        [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor],
+        [:success, success_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor],
+        [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor],
         # [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface],
 
         termini: [:success, :failure]
@@ -283,28 +258,35 @@ puts
        # raise
 
       validate_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
-        [:"task_wrap.call_task", validate_circuit, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Validate.new.freeze}],
+        [:"task_wrap.call_task", validate_circuit, Trailblazer::Activity::Circuit::Processor, {exec_context: Validate.new.freeze}],
       )
+      # result = Trailblazer::Activity::Circuit::Processor.(
+      #   validate_tw_pipe,
+      #   ctx.merge(model: Object),
+      #   {exec_context: io},
+      #   nil,
+      # )
+      # raise result.inspect
 
 
       save_call_task_pipe = Trailblazer::Activity::Circuit::Builder::Step.Callable(Save)
 
       save_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
-        [:"task_wrap.call_task", save_call_task_pipe, Trailblazer::Activity::Circuit::Processor::Scoped],
+        [:"task_wrap.call_task", save_call_task_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
       )
 
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-        [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {exec_context: Create.new.freeze},
+        [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Create.new.freeze}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
           {Trailblazer::Activity::Right => :"validate.task_wrap", Trailblazer::Activity::Left => :failure}
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-        [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {},
+        [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
           {validate_termini[:success] => :"save.task_wrap", validate_termini[:failure] => :failure}
         ],
-        [:"save.task_wrap", save_tw_pipe, Trailblazer::Activity::Circuit::Processor::Scoped, {},
+        [:"save.task_wrap", save_tw_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ], # check that we don't have circuit_options anymore here?
-        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface],
-        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface],
+        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}, Trailblazer::Activity::Circuit::Node::Processor],
+        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}, Trailblazer::Activity::Circuit::Node::Processor],
 
         termini: [:success, :failure]
       )
@@ -319,8 +301,8 @@ puts
     ctx = {params: {song: nil}, slug: 666}
 
     class MyTrace
-      def self.capture_before(ctx, lib_ctx, circuit_options, signal, stack:, **) # FIXME: we need circuit_options for the {:task}.
-        task = circuit_options[:task] or raise
+      def self.capture_before(ctx, lib_ctx, signal, stack:, task:, **) # FIXME: we need circuit_options for the {:task}.
+        # task = circuit_options[:task] or raise
 
         stack << [:before, task, ctx.to_h.inspect]
 
@@ -345,8 +327,9 @@ puts
 
       # DISCUSS: should we use @invoker.() in Processor to make it better injectable?
       module InvokeTask
-        def invoke_task(node, ctx, lib_ctx, circuit_options, signal)
-          wrap_runtime = circuit_options.fetch(:wrap_runtime)
+        def invoke_task(node, ctx, lib_ctx, signal)
+          # wrap_runtime = lib_ctx.fetch(:wrap_runtime)
+          wrap_runtime = lib_ctx[:wrap_runtime] or raise
 
           id, task, invoker, circuit_options_to_merge = node
           # Currently, don't add tw nodes inside a circuit (it would work!), rather
@@ -368,7 +351,7 @@ puts "@@@@@ #{id.inspect}"
             node = extend_task_wrap_pipeline(wrap_runtime, id, node)
           end
 
-          super(node, ctx, lib_ctx, circuit_options, signal)
+          super(node, ctx, lib_ctx, signal)
         end
 
         def extend_task_wrap_pipeline(wrap_runtime, id, node)
@@ -421,9 +404,10 @@ puts "@@@@@ #{id.inspect}"
     ctx, lib_ctx, signal = my_wrap_runtime_processor.(
       canonical_pipe,
       ctx,
-      {stack: []},
       {
+        stack: [],
         wrap_runtime: Hash.new(my_tw_extension)
+
       },
       nil
     )
@@ -613,16 +597,18 @@ require "benchmark/ips"
 
 #  Benchmark.ips do |x|
 #    x.report("cix") {
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_input_pipe,
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(model_input_pipe,
     {params: {song: {}}, noise: true, slug: "0x666"},
-    {},
-    # exec_context: create_instance = Create.new,
-    {
-      exec_context:  IO___.new,
-      copy_to_outer_ctx: [:original_application_ctx].freeze,
+    {exec_context:  IO___.new},
+    nil,
+    # copy_to_outer_ctx: [:original_application_ctx],
+  )
 
-    },
-    nil
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.process_node(
+    [:my_model, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:original_application_ctx]}],
+    {params: {song: {}}, noise: true, slug: "0x666"},
+    {exec_context:  IO___.new},
+    nil,
   )
  # }
  #   x.compare! # 43.6 -45.2k
@@ -636,18 +622,24 @@ require "benchmark/ips"
   assert_equal ctx.class, Trailblazer::Context # our In pipe's creation!
   assert_equal ctx[:more], "0x666" # the more_model_input was called.
   assert_equal lib_ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
-  assert_equal lib_ctx.keys, [:original_application_ctx]
+  assert_equal lib_ctx.keys, [:exec_context, :original_application_ctx]
   assert_equal CU.inspect(ctx), %(#<struct Trailblazer::Context shadowed={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"}, mutable={}>)
 
   # this is what happens in the actual {:model} step.
   ctx[:model] = Object
 
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_output_pipe,
+  # ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Scoped.(model_output_pipe,
+  #   ctx,
+  #   lib_ctx,
+  #   {copy_to_outer_ctx: [],
+  #       exec_context: IO___.new,},
+  #   nil
+  # )
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.process_node(
+    [:my_model, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
     ctx,
     lib_ctx,
-    {copy_to_outer_ctx: [],
-        exec_context: IO___.new,},
-    nil
+    nil,
   )
 
 # FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
@@ -675,21 +667,21 @@ require "benchmark/ips"
 
 puts "ciiii"
   # validation error:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, {}, nil)
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, nil) # FIXME: use process_node/canonical invoke?
 
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, []
   assert_equal signal, create_termini[:failure]
-
+puts "ywiiii"
   # success:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {}, nil)
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}.freeze, nil)
 
   assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal lib_ctx.keys, []
   assert_equal signal, create_termini[:success]
 
   def call_me(create_circuit)
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}, {}, nil)
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil)
   end
 
   Benchmark.ips do |x|

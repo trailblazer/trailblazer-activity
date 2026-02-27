@@ -28,12 +28,14 @@ module Trailblazer
 end
 
 require "trailblazer/activity/circuit"
+require "trailblazer/activity/circuit/node/processor"
 require "trailblazer/activity/circuit/pipeline"
 require "trailblazer/activity/circuit/processor"
 require "trailblazer/activity/terminus"
 require "trailblazer/activity/task/invoker"
 require "trailblazer/activity/circuit/builder"
 require "trailblazer/activity/circuit/step" # ComputeBinarySignal.
+require "trailblazer/activity/circuit/adds"
 
 # require "trailblazer/activity/deprecate"
 require "trailblazer/activity/structures"
@@ -44,7 +46,6 @@ require "trailblazer/activity/structures"
 # require "trailblazer/activity/task_wrap"
 # require "trailblazer/activity/task_wrap/runner"
 # require "trailblazer/activity/task_wrap/extension"
-# require "trailblazer/activity/adds"
 # require "trailblazer/activity/introspect/render"
 # require "trailblazer/activity/option"
 # require "trailblazer/activity/circuit/step"

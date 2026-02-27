@@ -3,15 +3,15 @@
     class Task
       module Invoker
         class LibInterface
-          def self.call(task, ctx, lib_ctx, circuit_options, _)
+          def self.call(task, ctx, lib_ctx, _)
             # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
             task.(ctx, lib_ctx, **lib_ctx) # DISCUSS: do we want circuit_options?
           end
 
           class InstanceMethod
             # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
-            def self.call(task, ctx, lib_ctx, circuit_options, _)
-              exec_context = circuit_options.fetch(:exec_context)
+            def self.call(task, ctx, lib_ctx, _)
+              exec_context = lib_ctx[:exec_context] or raise
 
               # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
               exec_context.send(task, ctx, lib_ctx, **lib_ctx) # DISCUSS: do we want circuit_options?
@@ -20,8 +20,9 @@
 
           class InstanceMethod____withSignal_FIXME
             # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
-            def self.call(task, ctx, lib_ctx, circuit_options, signal)
-              exec_context = circuit_options.fetch(:exec_context)
+            def self.call(task, ctx, lib_ctx, signal)
+              # puts "@@@@@ ?#{task.inspect}"
+              exec_context = lib_ctx[:exec_context] or raise # FIXME: kwargs?
 
               # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
               exec_context.send(task, ctx, lib_ctx, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
@@ -30,11 +31,11 @@
 
           class InstanceMethod____withSignal_FIXME_and_Circuitoptions
             # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
-            def self.call(task, ctx, lib_ctx, circuit_options, signal)
-              exec_context = circuit_options.fetch(:exec_context)
+            def self.call(task, ctx, lib_ctx, signal)
+              exec_context = lib_ctx[:exec_context] or raise # FIXME: kwargs?
 
               # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
-              exec_context.send(task, ctx, lib_ctx, circuit_options, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
+              exec_context.send(task, ctx, lib_ctx, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
             end
           end
 
@@ -50,8 +51,8 @@
         end
 
         class CircuitInterface
-          def self.call(task, ctx, lib_ctx, circuit_options, _) # FIXME: should the circuit interface have ctx.to_h? what will normalizers do? they neither use lib_ctx nor circuit_options? do we need a low level invoker or can it be the task itself?
-            task.(ctx, lib_ctx, circuit_options, **ctx.to_h) # DISCUSS: technically, this is repeating code here, see InstanceMethod!
+          def self.call(task, ctx, lib_ctx, signal)
+            task.(ctx, lib_ctx, signal)
           end
 
           class InstanceMethod # DISCUSS: should we remove this? users can use a callable if they really need the circuit interface.
@@ -66,10 +67,10 @@
 
         # The step interface is only used on the application level.
         class StepInterface
-          def self.call(task, ctx, lib_ctx, circuit_options, _)
+          def self.call(task, ctx, lib_ctx, _)
             # target_ctx = ctx[:application_ctx]
 
-            result = run_step(task, ctx, circuit_options)
+            result = run_step(task, ctx, lib_ctx)
             # pp application_ctx
 
             lib_ctx[:value] = result
@@ -82,8 +83,8 @@
           end
 
           class InstanceMethod < StepInterface
-            def self.run_step(task, ctx, circuit_options)
-              exec_context = circuit_options.fetch(:exec_context)
+            def self.run_step(task, ctx, lib_ctx)
+              exec_context = lib_ctx[:exec_context] or raise # FIXME: use kwargs
 
               exec_context.send(task, ctx, **ctx.to_h)
             end
