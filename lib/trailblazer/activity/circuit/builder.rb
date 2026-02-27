@@ -5,13 +5,20 @@ module Trailblazer
       module Builder
         # Pipeline is just another circiut, where each step has only one output.
         def self.Pipeline(*task_cfgs, **default_circuit_options)
+          raise if default_circuit_options.any?
           # task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, circuit_options = {}|
-          task_cfgs = task_cfgs.collect do |id, task, invoker = Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, circuit_options = {}|
+          task_cfgs = task_cfgs.collect do |id, task, invoker = Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, merge_to_lib_ctx = {}, node_processor = nil, node_processor_options = {}|
+            if node_processor.nil?
+              node_processor = merge_to_lib_ctx.any? ? Node::Processor::Scoped : Node::Processor # FIXME: test me
+            end
+
             [
               id,
               task,
               invoker,
-              default_circuit_options.merge(circuit_options)
+              merge_to_lib_ctx,
+              node_processor,
+              node_processor_options,
             ]
           end
 
@@ -25,8 +32,8 @@ module Trailblazer
             ]
           end.to_h
 
-          config = task_cfgs.collect do |(id, task, invoker, options)|
-            [id, [id, task, invoker, options]]
+          config = task_cfgs.collect do |(id, task, invoker, merge_to_lib_ctx, node_processor, node_processor_options)|
+            [id, [id, task, invoker, merge_to_lib_ctx, node_processor, node_processor_options]]
           end.to_h
 
           Activity::Circuit::Pipeline.build(
@@ -37,24 +44,27 @@ module Trailblazer
 
         def self.Circuit(*task_cfgs, termini:)
         # TODO: use code from above.
-          task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, circuit_options = {}, options = {}|
+          task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, merge_to_lib_ctx = {}, node_processor = nil, node_processor_options = {}, connections = {}|
             # outputs = options[:outputs] || {Activity::Right => } # defaults to {nil}.
+            # if node_processor.nil?
+            #   node_processor = merge_to_lib_ctx.any? ? Node::Processor::Scoped : Node::Processor # FIXME: test me
+            # end # FIXME! redundant!
 
             [
-              id, task, invoker, circuit_options, options
+              id, task, invoker, merge_to_lib_ctx, node_processor, node_processor_options, connections
             ]
           end
 
         # FIXME: use code from above.
-          config = task_cfgs.collect do |(id, task, invoker, options)|
-            [id, [id, task, invoker, options]]
+          config = task_cfgs.collect do |a,b,c,d,e,f|
+            [a, [a,b,c,d,e,f]]
           end.to_h
 
           outputs = termini.collect do |semantic|
             [semantic, config[semantic][1]]
           end.to_h
 
-          map = task_cfgs.collect do |id, task, invoker, circuit_options, connections|
+          map = task_cfgs.collect do |id, b,c,d,e,f,connections|
             [id, connections]
           end.to_h
 
