@@ -219,7 +219,7 @@ puts
       model_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
 # [:bla, ->(ctx, lib_ctx, signal) { puts "@@@@@ #{lib_ctx.to_h.inspect}"; return ctx, lib_ctx, signal }, Trailblazer::Activity::Task::Invoker::CircuitInterface],
         [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true}], # change {:application_ctx}.
-        [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Create.new}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
+        [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
         [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {return_outer_signal: true}],
       # [:bla, ->(ctx, lib_ctx, signal, **) { raise signal.inspect }, Trailblazer::Activity::Task::Invoker::LibInterface::A____withSignal_FIXME],
       )
@@ -258,7 +258,7 @@ puts
        # raise
 
       validate_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
-        [:"task_wrap.call_task", validate_circuit, Trailblazer::Activity::Circuit::Processor, {exec_context: Validate.new.freeze}],
+        [:"task_wrap.call_task", validate_circuit, Trailblazer::Activity::Circuit::Processor, {}],
       )
       # result = Trailblazer::Activity::Circuit::Processor.(
       #   validate_tw_pipe,
@@ -279,7 +279,7 @@ puts
         [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Create.new.freeze}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
           {Trailblazer::Activity::Right => :"validate.task_wrap", Trailblazer::Activity::Left => :failure}
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-        [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
+        [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Validate.new.freeze}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
           {validate_termini[:success] => :"save.task_wrap", validate_termini[:failure] => :failure}
         ],
         [:"save.task_wrap", save_tw_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
@@ -588,6 +588,20 @@ puts "@@@@@ #{id.inspect}"
     assert_equal signal, Trailblazer::Activity::Right
   end
 
+  require "ruby-prof"
+  it "ruby-prof" do
+    create_circuit, create_termini, model_input_pipe, model_output_pipe = Fixtures.fixtures()
+    # profile the code
+    result = RubyProf::Profile.profile do
+      puts call_me(create_circuit)
+    end
+
+    # print a graph profile to text
+    printer = RubyProf::FlatPrinter.new(result)
+    printer.print(STDOUT)
+  end
+
+
 require "benchmark/ips"
   it do
     create_circuit, create_termini, model_input_pipe, model_output_pipe = Fixtures.fixtures()
@@ -680,9 +694,7 @@ puts "ywiiii"
   assert_equal lib_ctx.keys, []
   assert_equal signal, create_termini[:success]
 
-  def call_me(create_circuit)
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil)
-  end
+
 
   Benchmark.ips do |x|
     x.report("cix") {
@@ -691,6 +703,10 @@ puts "ywiiii"
     x.compare!
   end
 end
+
+  def call_me(create_circuit)
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil)
+  end
   # 1.
   #   5.648k vs 19.834k how is that so slow?
   # 2. circuit map now is based on ID symbols and not [id, task, invoker, ...] which was obviously very slow to compute the key every time
