@@ -218,9 +218,9 @@ puts
 
       model_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
 # [:bla, ->(ctx, lib_ctx, signal) { puts "@@@@@ #{lib_ctx.to_h.inspect}"; return ctx, lib_ctx, signal }, Trailblazer::Activity::Task::Invoker::CircuitInterface],
-        [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true}], # change {:application_ctx}.
+        [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true, copy_from_outer_ctx: []}], # change {:application_ctx}.
         [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
-        [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {return_outer_signal: true}],
+        [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {return_outer_signal: true, copy_from_outer_ctx: [:original_application_ctx]}],
       # [:bla, ->(ctx, lib_ctx, signal, **) { raise signal.inspect }, Trailblazer::Activity::Task::Invoker::LibInterface::A____withSignal_FIXME],
       )
 
@@ -230,18 +230,18 @@ puts
       run_checks_pipe      = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:run_checks)
       title_length_ok_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:title_length_ok?)
 
-      success_pipe = pipeline_circuit([:success, success = Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface])
-      failure_pipe = pipeline_circuit([:failure, failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface])
+      success_pipe = pipeline_circuit([:success, success = Trailblazer::Activity::Terminus::Success.new(semantic: :success), nil, {}, Trailblazer::Activity::Terminus])
+      failure_pipe = pipeline_circuit([:failure, failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), nil, {}, Trailblazer::Activity::Terminus])
 
       validate_termini = {
         success: success, failure: failure
       }
 
       validate_circuit, ___validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-        [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
+        [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_from_outer_ctx: [:exec_context]},
           {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :failure}
         ],
-        [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
+        [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_from_outer_ctx: [:exec_context]},
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ],
         # FIXME: taskwrap for termini sucks.
@@ -276,7 +276,7 @@ puts
       )
 
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-        [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Create.new.freeze}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
+        [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Create.new.freeze}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_from_outer_ctx: []},
           {Trailblazer::Activity::Right => :"validate.task_wrap", Trailblazer::Activity::Left => :failure}
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
         [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Validate.new.freeze}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
@@ -285,8 +285,8 @@ puts
         [:"save.task_wrap", save_tw_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {},
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ], # check that we don't have circuit_options anymore here?
-        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}, Trailblazer::Activity::Circuit::Node::Processor],
-        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface, {}, Trailblazer::Activity::Circuit::Node::Processor],
+        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), nil, {}, Trailblazer::Activity::Terminus],
+        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), nil, {}, Trailblazer::Activity::Terminus],
 
         termini: [:success, :failure]
       )
@@ -304,19 +304,21 @@ puts
       def self.capture_before(ctx, lib_ctx, signal, stack:, task:, **) # FIXME: we need circuit_options for the {:task}.
         # task = circuit_options[:task] or raise
 
-        stack << [:before, task, ctx.to_h.inspect]
+        # stack << [:before, task, ctx.to_h.inspect]
+        stack += [:before, task, ctx.to_h.inspect] # treat stack as an immutable object
 
-        return ctx, lib_ctx, signal
+        return ctx, lib_ctx.merge(stack: stack), signal
       end
 
       def self.capture_after(ctx, lib_ctx, circuit_options, signal, stack:, **) # FIXME: we need circuit_options for the {:task}.
         task = circuit_options[:task] or raise
 
-        stack << [:after, task, ctx.to_h.inspect, signal]
+        # stack << [:after, task, ctx.to_h.inspect, signal]
+        stack += [:after, task, ctx.to_h.inspect, signal]
 
         # puts "@@@@@ CA, #{task} #{signal.inspect}"
 
-        return ctx, lib_ctx, signal
+        return ctx, lib_ctx.merge(stack: stack), signal
       end
     end
 
@@ -327,7 +329,8 @@ puts
 
       # DISCUSS: should we use @invoker.() in Processor to make it better injectable?
       module InvokeTask
-        def invoke_task(node, ctx, lib_ctx, signal)
+        def process_node(node, ctx, lib_ctx, signal)
+          raise
           # wrap_runtime = lib_ctx.fetch(:wrap_runtime)
           wrap_runtime = lib_ctx[:wrap_runtime] or raise
 
@@ -405,7 +408,7 @@ puts "@@@@@ #{id.inspect}"
       canonical_pipe,
       ctx,
       {
-        stack: [],
+        stack: [].freeze,
         wrap_runtime: Hash.new(my_tw_extension)
 
       },
@@ -413,7 +416,7 @@ puts "@@@@@ #{id.inspect}"
     )
 
     assert_equal ctx, {:params=>{:song=>nil}, slug: 666, :model=>"Object  / {:more=>666}", :errors=>["Object  / {:more=>666}", :song]}
-    assert_equal lib_ctx.keys, [:stack]
+    assert_equal lib_ctx.keys, [:stack, :wrap_runtime]
     assert_equal signal, create_termini[:failure]
 
     pp lib_ctx[:stack]
