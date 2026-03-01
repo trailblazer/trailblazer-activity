@@ -619,13 +619,15 @@ require "benchmark/ips"
     {exec_context:  IO___.new},
     nil,
     # copy_to_outer_ctx: [:original_application_ctx],
+    runner:  _A::Circuit::Processor::Node::Runner
   )
 
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.process_node(
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Node::Runner.(
     [:my_model, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:original_application_ctx]}],
     {params: {song: {}}, noise: true, slug: "0x666"},
     {exec_context:  IO___.new},
     nil,
+    runner:  _A::Circuit::Processor::Node::Runner
   )
  # }
  #   x.compare! # 43.6 -45.2k
@@ -652,13 +654,13 @@ require "benchmark/ips"
   #       exec_context: IO___.new,},
   #   nil
   # )
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.process_node(
-    [:my_model, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Node::Runner.(
+    [:my_model, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {}],
     ctx,
     lib_ctx,
     nil,
+    runner:  _A::Circuit::Processor::Node::Runner
   )
-
 # FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
   assert_equal ctx.inspect, %({:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object})
 
@@ -684,14 +686,14 @@ require "benchmark/ips"
 
 puts "ciiii"
   # validation error:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, nil) # FIXME: use process_node/canonical invoke?
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, nil, runner: _A::Circuit::Processor::Node::Runner) # FIXME: use process_node/canonical invoke?
 
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, []
   assert_equal signal, create_termini[:failure]
 puts "ywiiii"
   # success:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}.freeze, nil)
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}.freeze, nil, runner: _A::Circuit::Processor::Node::Runner)
 
   assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal lib_ctx.keys, []
@@ -708,7 +710,7 @@ puts "ywiiii"
 end
 
   def call_me(create_circuit)
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil)
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil, runner: _A::Circuit::Processor::Node::Runner)
   end
   # 1.
   #   5.648k vs 19.834k how is that so slow?

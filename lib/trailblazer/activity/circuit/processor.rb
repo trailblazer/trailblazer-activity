@@ -6,7 +6,7 @@
       # keyed by a signal.
       class Processor
         # TODO: this can still be optimized for runtime speed, even though I spent days on it already.
-        def self.call(circuit, ctx, lib_ctx, signal) # FIXME: allow {:start_task}.
+        def self.call(circuit, ctx, lib_ctx, signal, runner:, **circuit_options) # FIXME: allow {:start_task}.
           # puts "@@@@@??? #{circuit.inspect}"
           # id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
           node = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
@@ -14,7 +14,7 @@
           loop do
           # id = node.first # TODO: it always should be [id, node]
             # puts ">>>Processor #{node[0].inspect}"
-            ctx, lib_ctx, signal = process_node(node, ctx, lib_ctx, signal)
+            ctx, lib_ctx, signal = runner.(node, ctx, lib_ctx, signal, **circuit_options, runner: runner)
 
             node = circuit.resolve(node, signal)
 
@@ -27,13 +27,23 @@
         end
 
         # DISCUSS: this could, when overridden, allow wrap_runtime?
-        def self.process_node(node, ctx, lib_ctx, signal)
-          id, task, invoker, _, process, node_process_options = node
+        # This is the only overridable part of Processor where we know,
+        # at runtime, what is the next step.
 
-          # raise node_process_options.inspect
-          # puts " process_node [#{id}]: #{process.inspect} invoker: #{invoker}"
+        class Node
+          class Runner
+            def self.call(node, ctx, lib_ctx, signal, **circuit_options)
+              id, task, invoker, _, process, node_process_options = node
 
-          process.(node, ctx, lib_ctx, signal, **node_process_options)
+              # raise node_process_options.inspect
+              # puts " process_node [#{id}]: #{process.inspect} invoker: #{invoker}"
+
+# puts "@@@@@ #{id} > #{node_process_options.inspect} === #{circuit_options}"
+
+              process.(node, ctx, lib_ctx, signal, **node_process_options, **circuit_options)
+            end
+
+          end
         end
       end
     end # Circuit

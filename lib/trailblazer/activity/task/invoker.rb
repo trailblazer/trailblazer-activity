@@ -3,14 +3,14 @@
     class Task
       module Invoker
         class LibInterface
-          def self.call(task, ctx, lib_ctx, _)
+          def self.call(task, ctx, lib_ctx, _, **)
             # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
             task.(ctx, lib_ctx, **lib_ctx) # DISCUSS: do we want circuit_options?
           end
 
           class InstanceMethod
             # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
-            def self.call(task, ctx, lib_ctx, _)
+            def self.call(task, ctx, lib_ctx, _, **)
               exec_context = lib_ctx[:exec_context] or raise
 
               # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
@@ -20,7 +20,7 @@
 
           class InstanceMethod____withSignal_FIXME
             # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
-            def self.call(task, ctx, lib_ctx, signal)
+            def self.call(task, ctx, lib_ctx, signal, **)
               # puts "@@@@@ ?#{task.inspect}"
               exec_context = lib_ctx[:exec_context] or raise # FIXME: kwargs?
 
@@ -67,7 +67,7 @@
 
         # The step interface is only used on the application level.
         class StepInterface
-          def self.call(task, ctx, lib_ctx, _)
+          def self.call(task, ctx, lib_ctx, _, **)
             # target_ctx = ctx[:application_ctx]
 
             result = run_step(task, ctx, lib_ctx)
