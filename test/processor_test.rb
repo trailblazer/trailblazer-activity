@@ -1,5 +1,5 @@
 require "test_helper"
-
+require "ruby-prof"
 
 class Processor_Scoped_Test < Minitest::Spec
   it "what" do
@@ -49,10 +49,80 @@ class InvokerTest < Minitest::Spec
     return ctx, lib_ctx, signal
   end
 
-  it "un-scoped node processor" do
-    process_node_called_from_process_task = _A::Circuit::Node::Processor.new # scope lib_ctx, call interface.
+  class MyExecContext
+    def self.my_capture_lib_ctx(ctx, lib_ctx, signal, **kwargs)
+      ctx[:captured] = [
+        CU.inspect(lib_ctx),
+        kwargs.keys
+      ]
 
-    node = [:my_input, :my_input, process_node_called_from_process_task, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {}] # it doesn't make sense to use an un-scoped node processor while passing lib_ctx options?
+      return ctx, lib_ctx, signal
+    end
+  end
+
+  it "scoping: without In(), we get a Context wrapping another Context" do
+    outer_lib_ctx = Trailblazer::Context(value: 1, exec_context: MyExecContext)
+    outer_lib_ctx[:sun] = true
+
+    node = [:my_capture_lib_ctx, :my_capture_lib_ctx, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {}, _A::Circuit::Node::Processor::Scoped, {}]
+
+    ctx, lib_ctx, signal = nil
+    result = RubyProf::Profile.profile do
+      ctx, lib_ctx, signal = _A::Circuit::Processor.process_node(node, {}, outer_lib_ctx, nil)
+    end
+    printer = RubyProf::FlatPrinter.new(result)
+    printer.print(STDOUT)
+    #  6.89      0.000     0.000     0.000     0.000        2  *Trailblazer::Context#to_h
+    #  2.93      0.000     0.000     0.000     0.000        1   Trailblazer::Context#decompose
+    #  3.10      0.000     0.000     0.000     0.000        5   #<Class:0x000078f6c38cb2d8>#shadowed
+    #  2.78      0.000     0.000     0.000     0.000        5   #<Class:0x000078f6c38cb2d8>#mutable
+
+
+    assert_equal ctx,
+      {
+        captured: [
+          %(#<struct Trailblazer::Context shadowed=#<struct Trailblazer::Context shadowed={:value=>1, :exec_context=>InvokerTest::MyExecContext}, mutable={:sun=>true}>, mutable={}>),
+          [:value, :exec_context, :sun]
+        ],
+      }
+    # the original Context instance from above.
+    assert_equal CU.inspect(lib_ctx), %(#<struct Trailblazer::Context shadowed={:value=>1, :exec_context=>InvokerTest::MyExecContext}, mutable={:sun=>true}>)
+    assert_nil signal
+  end
+
+  it "scoping: with {:copy_from_outer_ctx}, we get one Context without wrapping inside" do
+    outer_lib_ctx = Trailblazer::Context(value: 1, exec_context: MyExecContext)
+    outer_lib_ctx[:sun] = true
+
+    node = [:my_capture_lib_ctx, :my_capture_lib_ctx, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {}, _A::Circuit::Node::Processor::Scoped, {copy_from_outer_ctx: [:sun, :exec_context]}]
+
+    ctx, lib_ctx, signal = nil
+    # result = RubyProf::Profile.profile do
+      ctx, lib_ctx, signal = _A::Circuit::Processor.process_node(node, {}, outer_lib_ctx, nil)
+    # end
+    # printer = RubyProf::FlatPrinter.new(result)
+    # printer.print(STDOUT)
+    #  6.89      0.000     0.000     0.000     0.000        2  *Trailblazer::Context#to_h
+    #  2.93      0.000     0.000     0.000     0.000        1   Trailblazer::Context#decompose
+    #  3.10      0.000     0.000     0.000     0.000        5   #<Class:0x000078f6c38cb2d8>#shadowed
+    #  2.78      0.000     0.000     0.000     0.000        5   #<Class:0x000078f6c38cb2d8>#mutable
+
+    assert_equal ctx,
+      {
+        captured: [
+          # %(#<struct Trailblazer::Context shadowed=#<struct Trailblazer::Context shadowed={:value=>1, :exec_context=>InvokerTest::MyExecContext}, mutable={:sun=>true}>, mutable={}>),
+          %(#<struct Trailblazer::Context shadowed={:sun=>true, :exec_context=>InvokerTest::MyExecContext}, mutable={}>),
+          [:sun, :exec_context]
+        ],
+      }
+    # the original Context instance from above.
+    assert_equal CU.inspect(lib_ctx), %(#<struct Trailblazer::Context shadowed={:value=>1, :exec_context=>InvokerTest::MyExecContext}, mutable={:sun=>true}>)
+    assert_nil signal
+  end
+
+  # FIXME: test properly
+  it "{Processor#process_node}" do
+    node = [:my_input, :my_input, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {}, _A::Circuit::Node::Processor, {}] # it doesn't make sense to use an un-scoped node processor while passing lib_ctx options?
 
     result = _A::Circuit::Processor.process_node(node, {}, {exec_context: self}, nil)
 
@@ -68,14 +138,7 @@ class InvokerTest < Minitest::Spec
       ]
   end
 
-  it "what" do
-
-
-
-
-  # scoping
-    # process_node_called_from_process_task = _A::Circuit::Node::Processor::Scope.new([:value]) # scope lib_ctx, call interface.
-
+  let(:node_producing_value) do
     node = [:my_input, :my_input,
       _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, # how to run the actual task with the correct interface
       {exec_context: my_exec_context}, # how to change lib_ctx, starting from Node::Processor::Scoped
@@ -83,8 +146,11 @@ class InvokerTest < Minitest::Spec
       _A::Circuit::Node::Processor::Scoped, # how to invoke the logic for this node?
       {copy_to_outer_ctx: [:value]} # FIXME: can we extend this at runtime? e.g. tracing needs :stack # options for
     ]
+  end
 
-    result = _A::Circuit::Processor.process_node(node, {}, {exec_context: "outer"}, nil)
+  it "what" do
+  # scoping
+    result = _A::Circuit::Processor.process_node(node_producing_value, {}, {exec_context: "outer"}, nil)
 
     assert_equal result,
       [
@@ -96,9 +162,36 @@ class InvokerTest < Minitest::Spec
         },
         nil
       ]
-
-
   end
+
+  it "#process_node with a real Circuit, we can not pass options_for_node_runner, but assign them in the node" do
+    pipeline = Trailblazer::Activity::Circuit::Builder.Pipeline(
+      node_producing_value
+    )
+
+    # pp pipeline
+    circuit_node = [
+      :my_task_wrap,
+      pipeline,
+      _A::Circuit::Processor,       {},
+      _A::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:value, :bogus]}
+    ]
+
+    result = _A::Circuit::Processor.process_node(circuit_node, {}, {exec_context: "outer"}, nil)
+
+    assert_equal result,
+      [
+        {},
+        {
+          exec_context: "outer", # original value.
+          value: :my_exec_context, # context change!
+          # and a clean {lib_ctx}.
+          bogus: nil,
+        },
+        nil
+      ]
+  end
+
 
   it "is possible to implement wrap_runtime easily" do
 
