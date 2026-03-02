@@ -3,22 +3,12 @@
     class Task
       module Invoker
         class LibInterface
-          def self.call(task, ctx, lib_ctx, _, **)
+          def self.call(task, ctx, lib_ctx, signal, **)
             # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
-            task.(ctx, lib_ctx, **lib_ctx) # DISCUSS: do we want circuit_options?
+            task.(ctx, lib_ctx, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
           end
 
           class InstanceMethod
-            # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
-            def self.call(task, ctx, lib_ctx, _, **)
-              exec_context = lib_ctx[:exec_context] or raise
-
-              # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
-              exec_context.send(task, ctx, lib_ctx, **lib_ctx) # DISCUSS: do we want circuit_options?
-            end
-          end
-
-          class InstanceMethod____withSignal_FIXME
             # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
             def self.call(task, ctx, lib_ctx, signal, **)
               # puts "@@@@@ ?#{task.inspect}"
@@ -26,26 +16,6 @@
 
               # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
               exec_context.send(task, ctx, lib_ctx, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
-            end
-          end
-
-          class InstanceMethod____withSignal_FIXME_and_Circuitoptions
-            # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
-            def self.call(task, ctx, lib_ctx, signal)
-              exec_context = lib_ctx[:exec_context] or raise # FIXME: kwargs?
-
-              # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
-              exec_context.send(task, ctx, lib_ctx, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
-            end
-          end
-
-
-          class A____withSignal_FIXME
-            # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
-            def self.call(task, ctx, lib_ctx, circuit_options, signal)
-
-              # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
-              task.(ctx, lib_ctx, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
             end
           end
         end

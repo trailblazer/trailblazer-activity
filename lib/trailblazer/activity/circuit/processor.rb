@@ -40,7 +40,8 @@
 
 # puts "@@@@@ #{id} > #{node_process_options.inspect} === #{circuit_options}"
 
-              process.(node, ctx, lib_ctx, signal, **node_process_options, **circuit_options)
+# raise "we're leaking config into children calls here. because node contains options that are hardcore-mixed with circuit_options"
+              process.(node, ctx, lib_ctx, signal, circuit_options, **node_process_options) # FIXME: we're leaking config into children calls here.
             end
 
           end

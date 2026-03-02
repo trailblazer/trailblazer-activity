@@ -5,7 +5,7 @@ module Trailblazer
     module Terminus
       # Called from #process_node, this is a Runner that doesn't run the terminus,
       # but simly returns it as the signal.
-      def self.call(node, ctx, lib_ctx, _, **)
+      def self.call(node, ctx, lib_ctx, *)
         return ctx, lib_ctx, node[1]
       end
 

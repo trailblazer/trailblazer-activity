@@ -7,7 +7,7 @@ module Trailblazer
         def self.Pipeline(*task_cfgs, **default_circuit_options)
           raise if default_circuit_options.any?
           # task_cfgs = task_cfgs.collect do |id, task, invoker = Trailblazer::Activity::Task::Invoker::CircuitInterface, circuit_options = {}|
-          task_cfgs = task_cfgs.collect do |id, task, invoker = Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, merge_to_lib_ctx = {}, node_processor = nil, node_processor_options = {}|
+          task_cfgs = task_cfgs.collect do |id, task, invoker = Activity::Task::Invoker::LibInterface::InstanceMethod, merge_to_lib_ctx = {}, node_processor = nil, node_processor_options = {}|
             if node_processor.nil?
               node_processor = merge_to_lib_ctx.any? ? Node::Processor::Scoped : Node::Processor # FIXME: test me
             end

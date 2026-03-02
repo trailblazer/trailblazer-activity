@@ -5,7 +5,7 @@ module Trailblazer
         # DISCUSS: should this be an instance method, too?
         class ComputeBinarySignal
           # Lib interface.
-          def self.call(ctx, lib_ctx, value:, **)
+          def self.call(ctx, lib_ctx, signal, value:, **)
             signal = value ? Trailblazer::Activity::Right : Trailblazer::Activity::Left
 
             return ctx, lib_ctx, signal

@@ -25,7 +25,7 @@ require "test_helper"
     end
 
     # Lib interface.
-    def swap___(ctx, lib_ctx, original_application_ctx:, aggregate:, **)
+    def swap___(ctx, lib_ctx, signal, original_application_ctx:, aggregate:, **)
       # new_application_ctx = original_application_ctx.merge(aggregate) # DISCUSS: how to write on outer ctx?
       aggregate.each do |k, v|
         original_application_ctx[k] = v # FIXME: should we use Context#merge here? do we want a new ctx?
@@ -34,14 +34,14 @@ require "test_helper"
 
       new_ctx = original_application_ctx
 
-      return new_ctx, lib_ctx, nil
+      return new_ctx, lib_ctx, signal
     end
 
 
-    def create_application_ctx(ctx, lib_ctx, aggregate:, **)
+    def create_application_ctx(ctx, lib_ctx, signal, aggregate:, **)
       new_ctx = Trailblazer::Context(aggregate)
 
-      return new_ctx, lib_ctx, nil
+      return new_ctx, lib_ctx, signal
     end
   end
 
@@ -384,8 +384,8 @@ puts "@@@@@ #{id.inspect}"
     # DISCUSS: how to merge multiple runtime extensions? canonical invoke!
     my_tw_extension = WrapRuntime::Extension.new(
       [
-        [[:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: MyTrace}], :before],
-        [[:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME_and_Circuitoptions, {exec_context: MyTrace}], :after],
+        [[:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace}], :before],
+        [[:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace}], :after],
       ]
     )
 
