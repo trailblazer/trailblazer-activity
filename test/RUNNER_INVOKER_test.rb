@@ -208,8 +208,8 @@ puts
 
       # !!! requires: {exec_context: io}
       model_output_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
-        [:init_aggregate, :init_aggregate],
-        [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor],     # user filter.
+        [:init_aggregate, :init_aggregate],                          # DISCUSS: why do we need Scoped for my_model_output?
+        [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],     # user filter.
         [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod],
       )
 
@@ -270,7 +270,7 @@ puts
       save_call_task_pipe = Trailblazer::Activity::Circuit::Builder::Step.Callable(Save)
 
       save_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
-        [:"task_wrap.call_task", save_call_task_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
+        [:"task_wrap.call_task", save_call_task_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped,],
       )
 
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
@@ -290,12 +290,12 @@ puts
         termini: [:success, :failure]
       )
 
-      return create_circuit, create_termini, model_input_pipe, model_output_pipe, validate_termini, save_call_task_pipe
+      return create_circuit, create_termini, model_input_pipe, model_output_pipe, validate_termini, save_tw_pipe
     end
   end
 
   it "wrap_runtime prototyping" do
-    create_circuit, create_termini, _, _, validate_termini, save_call_task_pipe = Fixtures.fixtures
+    create_circuit, create_termini, _, _, validate_termini, save_tw_pipe = Fixtures.fixtures
 
     ctx = {params: {song: nil}, slug: 666}
 
@@ -383,16 +383,14 @@ puts
 
         raise "no scope_options set in #{id}" if scope_options.nil?
 
-        in_ = scope_options[:copy_from_outer_ctx] || []
+        in_ = scope_options[:copy_from_outer_ctx]
         out_ = scope_options[:copy_to_outer_ctx] || []
 
-        # if in_.any? || out_.any?
-          # scope_options = scope_options.merge(copy_from_outer_ctx: in_ + [:stack, :task], copy_to_outer_ctx: out_ + [:stack, :task])
-# raise
-        # end
-
-        # if in_ = scope_options[:copy_from_outer_ctx]
-        # end
+        # using :copy_from_outer_ctx is whitelisting (once you use it), and [] means "don't pass anything in"
+        if in_.is_a?(Array)
+          in_ += [:stack]
+          scope_options = scope_options.merge(copy_from_outer_ctx: in_)
+        end
 
         if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
 puts "+++++++++=extending #{id}"
@@ -415,7 +413,7 @@ puts "+++++++++=extending #{id}"
         id, extended_task, invoker, lib_options_to_merge, processor, options = tw_extension.(*node.to_a) # DISCUSS: pass runtime options here, too?
 
         lib_options = lib_options_to_merge.merge(task: id)
-        raise if processor == Trailblazer::Activity::Circuit::Node::Processor
+        raise id.inspect if processor == Trailblazer::Activity::Circuit::Node::Processor
 
 
         pp extended_task.map.keys
@@ -427,17 +425,11 @@ puts "+++++++++=extending #{id}"
 
 # DEBUGGING
 
-save_call_task_pipe_node = [
-  :save_call_task_pipe, save_call_task_pipe,
-  Trailblazer::Activity::Circuit::Processor, {},
-  Trailblazer::Activity::Circuit::Node::Processor::Scoped, # we need scoped to merge {task: id}
-  {
-    # this is now done by tw::Runner
-    # copy_to_outer_ctx: [:stack]
-  }
-]
+# call save's taskWrap:
+save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
+
     ctx, lib_ctx, signal = my_wrap_runtime_runner.(
-      save_call_task_pipe_node,
+      save_call_task_node,
       {model: Object},
       {
         stack: [].freeze,
@@ -448,7 +440,42 @@ save_call_task_pipe_node = [
     )
 
     assert_equal lib_ctx[:stack],
-      [[:before, :save_call_task_pipe, "{:model=>Object}"], [:after, :save_call_task_pipe, "{:model=>Object, :save=>Object}", nil]]
+      [[:before, :"task_wrap.call_task", "{:model=>Object}"], [:after, :"task_wrap.call_task", "{:model=>Object, :save=>Object}", nil]]
+
+# call Model's taskWrap:
+    model_tw_node = create_circuit.config[:"model.task_wrap"]
+puts "yo"
+    ctx, lib_ctx, signal = my_wrap_runtime_runner.(
+      model_tw_node,
+      {params: {}, slug: "0x999"},
+      {
+        stack: [].freeze,
+      },
+      nil,
+      runner: my_wrap_runtime_runner,
+      wrap_runtime: Hash.new(my_tw_extension),
+    )
+
+
+    assert_equal lib_ctx[:stack], [
+
+      [:before, :"model.task_wrap", "{:params=>{}, :slug=>\"0x999\"}"],
+      [:before, :input, "{:params=>{}, :slug=>\"0x999\"}"],
+      [:before, :my_model_input, "{:params=>{}, :slug=>\"0x999\"}"],
+      [:after, :my_model_input, "{:params=>{}, :slug=>\"0x999\"}", nil],
+      [:before, :more_model_input, "{:params=>{}, :slug=>\"0x999\"}"],
+      [:after, :more_model_input, "{:params=>{}, :slug=>\"0x999\"}", nil],
+      [:after, :input, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\"}", nil],
+      [:before, :"task_wrap.call_task", "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\"}"],
+      [:after, :"task_wrap.call_task", "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", nil],
+      [:before, :output, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}"],
+      [:before, :my_model_output, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}"],
+      [:after, :my_model_output, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", nil],
+      [:after, :output, "{:params=>{}, :slug=>\"0x999\"}", nil],
+      [:after, :"model.task_wrap", "{:params=>{}, :slug=>\"0x999\"}", nil]]
+
+
+
 raise "wooohoo"
 
 
