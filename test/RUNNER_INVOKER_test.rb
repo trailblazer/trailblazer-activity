@@ -304,13 +304,13 @@ puts
         # task = circuit_options[:task] or raise
         # stack << [:before, task, ctx.to_h.inspect]
         stack += [[:before, task, ctx.to_h.inspect]] # treat stack as an immutable object
-puts "         ~~~ trace in #{task.inspect}: #{stack}"
+# puts "         ~~~ trace in #{task.inspect}: #{stack}"
 
         return ctx, lib_ctx.merge(stack: stack), signal
       end
 
       def self.capture_after(ctx, lib_ctx, signal, stack:, task:, **) # FIXME: we need circuit_options for the {:task}.
-        puts "     @@@@@ #{stack.inspect}"
+        # puts "     @@@@@ #{stack.inspect}"
         # stack << [:after, task, ctx.to_h.inspect, signal]
         stack += [[:after, task, ctx.to_h.inspect, signal]]
 
@@ -327,34 +327,6 @@ puts "         ~~~ trace in #{task.inspect}: #{stack}"
 
       # DISCUSS: should we use @invoker.() in Processor to make it better injectable?
       module InvokeTask
-        def process_node(node, ctx, lib_ctx, signal)
-          raise
-          # wrap_runtime = lib_ctx.fetch(:wrap_runtime)
-          wrap_runtime = lib_ctx[:wrap_runtime] or raise
-
-          id, task, invoker, circuit_options_to_merge = node
-          # Currently, don't add tw nodes inside a circuit (it would work!), rather
-          # do that on the pipe around it, if there is any. That being said, it's kinda funny
-          # how the tW now is something we "agree" upon, not hardwired as in 2.1
-          if task.is_a?(Trailblazer::Activity::Circuit) # Circuit + Pipeline
-            # raise task.inspect
-            invoker = Class.new(invoker) do
-              extend WrapRuntime::InvokeTask
-            end
-
-            node = [id, task, invoker, circuit_options_to_merge]
-          end
-
-          # TODO: this part should be configurable, not blindly extending {Pipeline}s.
-          if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
-puts "@@@@@ #{id.inspect}"
-            # puts "i will wrap #{id.inspect}"
-            node = extend_task_wrap_pipeline(wrap_runtime, id, node)
-          end
-
-          super(node, ctx, lib_ctx, signal)
-        end
-
         def extend_task_wrap_pipeline(wrap_runtime, id, node)
           tw_extension = wrap_runtime[id] # FIXME: this should be looked up by path, not ID.
 
@@ -384,8 +356,6 @@ puts "@@@@@ #{id.inspect}"
     my_tw_extension = WrapRuntime::Extension.new(
       [
         [[:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace},
-          Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:stack]}], :before],
-        [[:___capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace},
           Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:stack]}], :before],
         [[:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace},
           Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:stack]}], :after],
@@ -424,13 +394,13 @@ puts "@@@@@ #{id.inspect}"
         # if in_ = scope_options[:copy_from_outer_ctx]
         # end
 
-        # if out_ = scope_options[:copy_to_outer_ctx]
-        #   scope_options = scope_options.merge(copy_to_outer_ctx: out_ + [:stack])
-        # end
+        if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
+puts "+++++++++=extending #{id}"
+        new_out = out_ + [:stack]
+        scope_options = scope_options.merge(copy_to_outer_ctx: new_out)
 
         node = [id, task, interface, lib_options_to_merge, scope, scope_options]
 
-        if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
   # puts "@@@@@ #{id.inspect}"
               # puts "i will wrap #{id.inspect}"
           node = extend_task_wrap_pipeline(wrap_runtime, id, node)
@@ -443,7 +413,7 @@ puts "@@@@@ #{id.inspect}"
         tw_extension = wrap_runtime[id] # FIXME: this should be looked up by path, not ID.
 
         id, extended_task, invoker, lib_options_to_merge, processor, options = tw_extension.(*node.to_a) # DISCUSS: pass runtime options here, too?
-puts "@@@@@ #{processor.inspect}"
+
         lib_options = lib_options_to_merge.merge(task: id)
         raise if processor == Trailblazer::Activity::Circuit::Node::Processor
 
@@ -461,7 +431,10 @@ save_call_task_pipe_node = [
   :save_call_task_pipe, save_call_task_pipe,
   Trailblazer::Activity::Circuit::Processor, {},
   Trailblazer::Activity::Circuit::Node::Processor::Scoped, # we need scoped to merge {task: id}
-  {copy_to_outer_ctx: [:stack]}
+  {
+    # this is now done by tw::Runner
+    # copy_to_outer_ctx: [:stack]
+  }
 ]
     ctx, lib_ctx, signal = my_wrap_runtime_runner.(
       save_call_task_pipe_node,
@@ -475,8 +448,8 @@ save_call_task_pipe_node = [
     )
 
     assert_equal lib_ctx[:stack],
-      [1,2]
-
+      [[:before, :save_call_task_pipe, "{:model=>Object}"], [:after, :save_call_task_pipe, "{:model=>Object, :save=>Object}", nil]]
+raise "wooohoo"
 
 
     # validation error:
