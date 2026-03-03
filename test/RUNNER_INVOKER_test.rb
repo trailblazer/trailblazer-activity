@@ -209,7 +209,7 @@ puts
       # !!! requires: {exec_context: io}
       model_output_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
         [:init_aggregate, :init_aggregate],                          # DISCUSS: why do we need Scoped for my_model_output?
-        [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],     # user filter.
+        [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
         [:swap___, :swap___, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod],
       )
 
@@ -363,7 +363,7 @@ puts
     )
 
     tw_create_pipe = Fixtures.pipeline_circuit(
-      [:"tw.call_task", create_circuit, Trailblazer::Activity::Circuit::Processor, {}]
+      [:"tw.call_task", create_circuit, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {}]
     )
 
     canonical_pipe = Fixtures.pipeline_circuit( # DISCUSS: we could directly use {Processor.invoke_task} here?
@@ -444,7 +444,6 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
 
 # call Model's taskWrap:
     model_tw_node = create_circuit.config[:"model.task_wrap"]
-puts "yo"
     ctx, lib_ctx, signal = my_wrap_runtime_runner.(
       model_tw_node,
       {params: {}, slug: "0x999"},
@@ -476,12 +475,13 @@ puts "yo"
 
 
 
-raise "wooohoo"
-
+# raise "wooohoo"
+    canonical_node = [:Create, tw_create_pipe, Trailblazer::Activity::Circuit::Processor, {}, _A::Circuit::Node::Processor::Scoped, {}]
+puts "yo"
 
     # validation error:
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(
-      canonical_pipe,
+    ctx, lib_ctx, signal = my_wrap_runtime_runner.( # we don't need another circuit around the OP tw, do we?
+      canonical_node,
       ctx,
       {
         stack: [].freeze,
@@ -730,6 +730,9 @@ require "benchmark/ips"
   #       exec_context: IO___.new,},
   #   nil
   # )
+  ctx = ctx.to_h
+  puts :yoo
+
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Node::Runner.(
     [:my_model, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {}],
     ctx,
