@@ -21,10 +21,11 @@ module Trailblazer
               end
 
               lib_ctx = Trailblazer::Context.new(new_lib_ctx, merge_to_lib_ctx.dup) # FIXME: add tests where we make sure we're dupping here, otherwise it starts bleeding!
-
+puts "))) before #{id}: #{lib_ctx}"
               ctx, lib_ctx, signal = super(node, ctx, lib_ctx, signal, circuit_options, **options)
 
               lib_ctx, signal = unscope(lib_ctx, outer_lib_ctx, signal, outer_signal, return_outer_signal: return_outer_signal, copy_to_outer_ctx: copy_to_outer_ctx)
+                puts "@@@@ after #{id}!@ #{lib_ctx.inspect}"
 
               return ctx, lib_ctx, signal
             end
@@ -36,8 +37,11 @@ module Trailblazer
 
                   copy_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
                     # DISCUSS: is merge! and slice faster? no it's not.
-                    outer_ctx[key] = mutable[key] # if the task didn't write anything, we need to ask to big scoped ctx.
+                    # outer_ctx[key] = mutable[key] # if the task didn't write anything, we need to ask to big scoped ctx.
+                    outer_ctx[key] = lib_ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
                   end
+
+                  # raise "some pipes don't update :stack, that's why it is nil in mutable[:stack]"
 
                     lib_ctx = outer_ctx
                   # puts "@@@@@ ++++ #{id} #{copy_to_outer_ctx.inspect} #{mutable}"

@@ -217,11 +217,9 @@ puts
       model_instance_method_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:model)
 
       model_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
-# [:bla, ->(ctx, lib_ctx, signal) { puts "@@@@@ #{lib_ctx.to_h.inspect}"; return ctx, lib_ctx, signal }, Trailblazer::Activity::Task::Invoker::CircuitInterface],
         [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true, copy_from_outer_ctx: []}], # change {:application_ctx}.
         [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
         [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {return_outer_signal: true, copy_from_outer_ctx: [:original_application_ctx]}],
-      # [:bla, ->(ctx, lib_ctx, signal, **) { raise signal.inspect }, Trailblazer::Activity::Task::Invoker::LibInterface::A____withSignal_FIXME],
       )
 
       # ctx = {params: {song: nil}, slug: "0x666"}
@@ -276,6 +274,7 @@ puts
       )
 
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
+        # [:bla, ->(ctx, lib_ctx, signal, **) { raise lib_ctx.inspect }, Trailblazer::Activity::Task::Invoker::LibInterface, {}, Trailblazer::Activity::Circuit::Node::Processor, {}],
         [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Create.new.freeze}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_from_outer_ctx: []},
           {Trailblazer::Activity::Right => :"validate.task_wrap", Trailblazer::Activity::Left => :failure}
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
@@ -291,30 +290,29 @@ puts
         termini: [:success, :failure]
       )
 
-      return create_circuit, create_termini, model_input_pipe, model_output_pipe, validate_termini
+      return create_circuit, create_termini, model_input_pipe, model_output_pipe, validate_termini, save_call_task_pipe
     end
   end
 
   it "wrap_runtime prototyping" do
-    create_circuit, create_termini, _, _, validate_termini = Fixtures.fixtures
+    create_circuit, create_termini, _, _, validate_termini, save_call_task_pipe = Fixtures.fixtures
 
     ctx = {params: {song: nil}, slug: 666}
 
     class MyTrace
       def self.capture_before(ctx, lib_ctx, signal, stack:, task:, **) # FIXME: we need circuit_options for the {:task}.
         # task = circuit_options[:task] or raise
-
         # stack << [:before, task, ctx.to_h.inspect]
-        stack += [:before, task, ctx.to_h.inspect] # treat stack as an immutable object
+        stack += [[:before, task, ctx.to_h.inspect]] # treat stack as an immutable object
+puts "         ~~~ trace in #{task.inspect}: #{stack}"
 
         return ctx, lib_ctx.merge(stack: stack), signal
       end
 
-      def self.capture_after(ctx, lib_ctx, circuit_options, signal, stack:, **) # FIXME: we need circuit_options for the {:task}.
-        task = circuit_options[:task] or raise
-
+      def self.capture_after(ctx, lib_ctx, signal, stack:, task:, **) # FIXME: we need circuit_options for the {:task}.
+        puts "     @@@@@ #{stack.inspect}"
         # stack << [:after, task, ctx.to_h.inspect, signal]
-        stack += [:after, task, ctx.to_h.inspect, signal]
+        stack += [[:after, task, ctx.to_h.inspect, signal]]
 
         # puts "@@@@@ CA, #{task} #{signal.inspect}"
 
@@ -363,6 +361,7 @@ puts "@@@@@ #{id.inspect}"
           id, extended_task, invoker, circuit_options_to_merge = tw_extension.(*node.to_a) # DISCUSS: pass runtime options here, too?
 
           circuit_options = circuit_options_to_merge.merge(task: id)
+
           pp extended_task.map.keys
 
           _node = [id, extended_task, invoker, circuit_options]
@@ -371,12 +370,12 @@ puts "@@@@@ #{id.inspect}"
 
       # Extension for a particular node in Processor#call.
       class Extension < Struct.new(:adds_instructions) # "taskWrap" extension.
-        def call(id, task_circuit, invoker, circuit_options)
-          # puts "~~~ @@@@@ #{id.inspect} #{task_circuit}"
+        def call(id, task_circuit, invoker, *args)
+          # puts "~~~ @@@@@ #{id.inspect} #{args}"/
           # NOTE: here, we create an extended circuit for the "task".
           task_circuit = Trailblazer::Activity::Circuit::Adds.(task_circuit, *adds_instructions)
 
-          return id, task_circuit, invoker, circuit_options
+          return id, task_circuit, invoker, *args
         end
       end
     end
@@ -384,8 +383,12 @@ puts "@@@@@ #{id.inspect}"
     # DISCUSS: how to merge multiple runtime extensions? canonical invoke!
     my_tw_extension = WrapRuntime::Extension.new(
       [
-        [[:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace}], :before],
-        [[:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace}], :after],
+        [[:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace},
+          Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:stack]}], :before],
+        [[:___capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace},
+          Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:stack]}], :before],
+        [[:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace},
+          Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:stack]}], :after],
       ]
     )
 
@@ -394,29 +397,102 @@ puts "@@@@@ #{id.inspect}"
     )
 
     canonical_pipe = Fixtures.pipeline_circuit( # DISCUSS: we could directly use {Processor.invoke_task} here?
-      [:Create, tw_create_pipe, Trailblazer::Activity::Circuit::Processor, {}]
+      [:Create, tw_create_pipe, Trailblazer::Activity::Circuit::Processor, {}, _A::Circuit::Node::Processor::Scoped]
     )
 
     # in wtf?, we have to replacce the outer Processor as we WANT the {:wrap_runtime} feature.
     # this is cool since it's normally not applied, which is hopefully faster.
-    my_wrap_runtime_processor = Class.new(Trailblazer::Activity::Circuit::Processor) do
-      extend WrapRuntime::InvokeTask # FIXME: super slow!
+    # my_wrap_runtime_processor = Class.new(Trailblazer::Activity::Circuit::Processor) do
+    #   extend WrapRuntime::InvokeTask # FIXME: super slow!
+    # end
+
+    my_wrap_runtime_runner = Class.new(_A::Circuit::Processor::Node::Runner) do
+      def self.call(node, ctx, lib_ctx, signal, wrap_runtime:, **circuit_options)
+        # raise lib_ctx[:task].inspect
+        id, task, interface, lib_options_to_merge, scope, scope_options = node
+
+        raise "no scope_options set in #{id}" if scope_options.nil?
+
+        in_ = scope_options[:copy_from_outer_ctx] || []
+        out_ = scope_options[:copy_to_outer_ctx] || []
+
+        # if in_.any? || out_.any?
+          # scope_options = scope_options.merge(copy_from_outer_ctx: in_ + [:stack, :task], copy_to_outer_ctx: out_ + [:stack, :task])
+# raise
+        # end
+
+        # if in_ = scope_options[:copy_from_outer_ctx]
+        # end
+
+        # if out_ = scope_options[:copy_to_outer_ctx]
+        #   scope_options = scope_options.merge(copy_to_outer_ctx: out_ + [:stack])
+        # end
+
+        node = [id, task, interface, lib_options_to_merge, scope, scope_options]
+
+        if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
+  # puts "@@@@@ #{id.inspect}"
+              # puts "i will wrap #{id.inspect}"
+          node = extend_task_wrap_pipeline(wrap_runtime, id, node)
+        end
+
+        super#(node, ctx, lib_ctx, signal, wrap_runtime: wrap_runtime, **circuit_options)
+      end
+
+      def self.extend_task_wrap_pipeline(wrap_runtime, id, node)
+        tw_extension = wrap_runtime[id] # FIXME: this should be looked up by path, not ID.
+
+        id, extended_task, invoker, lib_options_to_merge, processor, options = tw_extension.(*node.to_a) # DISCUSS: pass runtime options here, too?
+puts "@@@@@ #{processor.inspect}"
+        lib_options = lib_options_to_merge.merge(task: id)
+        raise if processor == Trailblazer::Activity::Circuit::Node::Processor
+
+
+        pp extended_task.map.keys
+        # puts "@@@@@? #{extended_task.config[:capture_before][3].inspect}"
+
+        _node = [id, extended_task, invoker, lib_options, processor, options]
+      end
     end
 
+# DEBUGGING
+
+save_call_task_pipe_node = [
+  :save_call_task_pipe, save_call_task_pipe,
+  Trailblazer::Activity::Circuit::Processor, {},
+  Trailblazer::Activity::Circuit::Node::Processor::Scoped, # we need scoped to merge {task: id}
+  {copy_to_outer_ctx: [:stack]}
+]
+    ctx, lib_ctx, signal = my_wrap_runtime_runner.(
+      save_call_task_pipe_node,
+      {model: Object},
+      {
+        stack: [].freeze,
+      },
+      nil,
+      runner: my_wrap_runtime_runner,
+      wrap_runtime: Hash.new(my_tw_extension),
+    )
+
+    assert_equal lib_ctx[:stack],
+      [1,2]
+
+
+
     # validation error:
-    ctx, lib_ctx, signal = my_wrap_runtime_processor.(
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(
       canonical_pipe,
       ctx,
       {
         stack: [].freeze,
-        wrap_runtime: Hash.new(my_tw_extension)
-
       },
-      nil
+      nil,
+      runner: my_wrap_runtime_runner,
+      wrap_runtime: Hash.new(my_tw_extension),
     )
 
     assert_equal ctx, {:params=>{:song=>nil}, slug: 666, :model=>"Object  / {:more=>666}", :errors=>["Object  / {:more=>666}", :song]}
-    assert_equal lib_ctx.keys, [:stack, :wrap_runtime]
+    assert_equal lib_ctx.keys, [:stack]
     assert_equal signal, create_termini[:failure]
 
     pp lib_ctx[:stack]

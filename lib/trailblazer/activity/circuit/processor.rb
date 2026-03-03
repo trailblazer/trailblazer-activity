@@ -13,7 +13,7 @@
 
           loop do
           # id = node.first # TODO: it always should be [id, node]
-            # puts ">>>Processor #{node[0].inspect}"
+            puts ">>>Processor #{node[0].inspect} #{node[3]}"
             ctx, lib_ctx, signal = runner.(node, ctx, lib_ctx, signal, **circuit_options, runner: runner)
 
             node = circuit.resolve(node, signal)
@@ -35,10 +35,10 @@
             def self.call(node, ctx, lib_ctx, signal, **circuit_options)
               id, task, invoker, _, process, node_process_options = node
 
-              # raise node_process_options.inspect
+# pp node[2..6]
               # puts " process_node [#{id}]: #{process.inspect} invoker: #{invoker}"
 
-# puts "@@@@@ #{id} > #{node_process_options.inspect} === #{circuit_options}"
+# puts ">>>>>>> @@@@@ #{id} > #{node_process_options.inspect} === #{circuit_options},,,,,,,,,,,,,, #{node[4]}"
 
 # raise "we're leaking config into children calls here. because node contains options that are hardcore-mixed with circuit_options"
               process.(node, ctx, lib_ctx, signal, circuit_options, **node_process_options) # FIXME: we're leaking config into children calls here.

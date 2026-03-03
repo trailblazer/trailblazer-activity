@@ -17,7 +17,7 @@ class Trailblazer::Activity
 
         # this pipeline is "wrapped around" the actual `task`.
         task_wrap_pipeline = merge_static_with_runtime(task, **circuit_options) || raise
-
+puts "tw Processor"
         ctx, flow_options, signal, wrap_ctx = Circuit::Processor.(task_wrap_pipeline, ctx, flow_options, circuit_options, wrap_ctx)
 
         return ctx, flow_options, signal
