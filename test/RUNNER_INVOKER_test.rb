@@ -456,6 +456,8 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
     )
 
 
+    assert_equal lib_ctx[:stack][8], [:after, :"task_wrap.call_task", "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", Trailblazer::Activity::Right]
+
     assert_equal lib_ctx[:stack], [
 
       [:before, :"model.task_wrap", "{:params=>{}, :slug=>\"0x999\"}"],
@@ -470,9 +472,9 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
       [:before, :output, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}"],
       [:before, :my_model_output, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}"],
       [:after, :my_model_output, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", nil],
-      [:after, :output, "{:params=>{}, :slug=>\"0x999\"}", nil],
-      [:after, :"model.task_wrap", "{:params=>{}, :slug=>\"0x999\"}", nil]]
-
+      [:after, :output, "{:params=>{}, :slug=>\"0x999\", :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", nil],
+      [:after, :"model.task_wrap", "{:params=>{}, :slug=>\"0x999\", :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", Trailblazer::Activity::Right]
+    ]
 
 
 # raise "wooohoo"
@@ -770,6 +772,7 @@ puts "ciiii"
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, []
   assert_equal signal, create_termini[:failure]
+
 puts "ywiiii"
   # success:
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}.freeze, nil, runner: _A::Circuit::Processor::Node::Runner)
