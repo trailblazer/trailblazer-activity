@@ -322,7 +322,7 @@ puts
         # stack << [:after, task, ctx.to_h.inspect, signal]
         stack += [[:after, task, ctx.to_h.inspect, signal]]
 
-        puts "@@@@@ CA, #{task} #{signal.inspect}"
+        # puts "@@@@@ CA, #{task} #{signal.inspect}"
 
         return ctx, lib_ctx.merge(stack: stack), signal
       end
@@ -378,6 +378,7 @@ puts
       def self.call(node, ctx, lib_ctx, signal, wrap_runtime:, **circuit_options)
         # raise lib_ctx[:task].inspect
         id, task, interface, lib_options_to_merge, scope, scope_options = node
+        puts "@@@@@____ #{id.inspect} #{task.class}"
 
         raise "no scope_options set in #{id}" if scope_options.nil?
 
@@ -390,15 +391,23 @@ puts
           scope_options = scope_options.merge(copy_from_outer_ctx: in_)
         end
 
-        if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
-puts "+++++++++=extending #{id}"
-        new_out = out_ + [:stack]
-        scope_options = scope_options.merge(copy_to_outer_ctx: new_out)
 
-        node = [id, task, interface, lib_options_to_merge, scope, scope_options]
+        if task.is_a?(Trailblazer::Activity::Circuit)
+          if scope == Trailblazer::Activity::Circuit::Node::Processor
+            scope = Trailblazer::Activity::Circuit::Node::Processor::Scoped
+            # raise id.inspect
+            # problem is, a non-Scoped simply drops everything from the inside. However, we need :stack, so we need to change the Node::Processor here.
+          end
+puts "+++++++++=extending #{id}"
+          new_out = out_ + [:stack]
+          scope_options = scope_options.merge(copy_to_outer_ctx: new_out)
+
+          node = [id, task, interface, lib_options_to_merge, scope, scope_options]
+        end
 
   # puts "@@@@@ #{id.inspect}"
               # puts "i will wrap #{id.inspect}"
+        if task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
           node = extend_task_wrap_pipeline(wrap_runtime, id, node)
         end
 
@@ -411,7 +420,6 @@ puts "+++++++++=extending #{id}"
         id, extended_task, invoker, lib_options_to_merge, processor, options = tw_extension.(*node.to_a) # DISCUSS: pass runtime options here, too?
 
         lib_options = lib_options_to_merge.merge(task: id)
-        raise id.inspect if processor == Trailblazer::Activity::Circuit::Node::Processor
 
 
         pp extended_task.map.keys
@@ -442,6 +450,7 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
 
 # call Model's taskWrap:
     model_tw_node = create_circuit.config[:"model.task_wrap"]
+
     ctx, lib_ctx, signal = my_wrap_runtime_runner.(
       model_tw_node,
       {params: {}, slug: "0x999"},
@@ -475,8 +484,13 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
 
 
 # raise "wooohoo"
+tw_create_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
+      [:"task_wrap.call_task", create_circuit, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped]
+    )
+
     canonical_node = [:Create, tw_create_pipe, Trailblazer::Activity::Circuit::Processor, {}, _A::Circuit::Node::Processor::Scoped, {}]
 puts "yo"
+    ctx = {params: {song: nil}, slug: 666}
 
     # validation error:
     ctx, lib_ctx, signal = my_wrap_runtime_runner.( # we don't need another circuit around the OP tw, do we?
