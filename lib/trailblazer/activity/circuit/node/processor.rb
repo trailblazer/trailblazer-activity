@@ -5,7 +5,6 @@ module Trailblazer
         class Processor # DISCUSS: name?
           def self.call(node, ctx, lib_ctx, signal, circuit_options, **)
             id, task, interface_invoker, merge_to_lib_ctx = node
-
             interface_invoker.(task, ctx, lib_ctx, signal, **circuit_options) # DISCUSS: could we pass node_processor_options to Processor.() to set a differing start task?
           end
 
@@ -21,11 +20,12 @@ module Trailblazer
               end
 
               lib_ctx = Trailblazer::Context.new(new_lib_ctx, merge_to_lib_ctx.dup) # FIXME: add tests where we make sure we're dupping here, otherwise it starts bleeding!
-puts "))) before #{id}: #{lib_ctx}"
-              ctx, lib_ctx, signal = super(node, ctx, lib_ctx, signal, circuit_options, **options)
+# puts "))) before #{id}: #{lib_ctx}"
+# puts "calling #{id} with signal <<<#{signal}"
+              ctx, lib_ctx, signal = super(node, ctx, lib_ctx, outer_signal, circuit_options, **options)
 
+                puts "@@@@ after #{id}!@ #{signal.inspect}"
               lib_ctx, signal = unscope(lib_ctx, outer_lib_ctx, signal, outer_signal, return_outer_signal: return_outer_signal, copy_to_outer_ctx: copy_to_outer_ctx)
-                puts "@@@@ after #{id}!@ #{lib_ctx.inspect}"
 
               return ctx, lib_ctx, signal
             end

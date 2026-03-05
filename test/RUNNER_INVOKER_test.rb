@@ -216,6 +216,14 @@ puts
 
       model_instance_method_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:model)
 
+      # model_instance_method_pipe = Trailblazer::Activity::Circuit::Adds.(model_instance_method_pipe,
+
+      # [
+      # :after]
+      #   )
+      # [:bla, ->(ctx, lib_ctx, signal, **) { raise signal.inspect }, Trailblazer::Activity::Task::Invoker::LibInterface, {}, Trailblazer::Activity::Circuit::Node::Processor, {}],
+
+
       model_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
         [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true, copy_from_outer_ctx: []}], # change {:application_ctx}.
         [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped],
@@ -314,7 +322,7 @@ puts
         # stack << [:after, task, ctx.to_h.inspect, signal]
         stack += [[:after, task, ctx.to_h.inspect, signal]]
 
-        # puts "@@@@@ CA, #{task} #{signal.inspect}"
+        puts "@@@@@ CA, #{task} #{signal.inspect}"
 
         return ctx, lib_ctx.merge(stack: stack), signal
       end
@@ -327,17 +335,7 @@ puts
 
       # DISCUSS: should we use @invoker.() in Processor to make it better injectable?
       module InvokeTask
-        def extend_task_wrap_pipeline(wrap_runtime, id, node)
-          tw_extension = wrap_runtime[id] # FIXME: this should be looked up by path, not ID.
 
-          id, extended_task, invoker, circuit_options_to_merge = tw_extension.(*node.to_a) # DISCUSS: pass runtime options here, too?
-
-          circuit_options = circuit_options_to_merge.merge(task: id)
-
-          pp extended_task.map.keys
-
-          _node = [id, extended_task, invoker, circuit_options]
-        end
       end
 
       # Extension for a particular node in Processor#call.
@@ -440,7 +438,7 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
     )
 
     assert_equal lib_ctx[:stack],
-      [[:before, :"task_wrap.call_task", "{:model=>Object}"], [:after, :"task_wrap.call_task", "{:model=>Object, :save=>Object}", nil]]
+      [[:before, :"task_wrap.call_task", "{:model=>Object}"], [:after, :"task_wrap.call_task", "{:model=>Object, :save=>Object}", Trailblazer::Activity::Right]]
 
 # call Model's taskWrap:
     model_tw_node = create_circuit.config[:"model.task_wrap"]
@@ -459,7 +457,6 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
     assert_equal lib_ctx[:stack][8], [:after, :"task_wrap.call_task", "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", Trailblazer::Activity::Right]
 
     assert_equal lib_ctx[:stack], [
-
       [:before, :"model.task_wrap", "{:params=>{}, :slug=>\"0x999\"}"],
       [:before, :input, "{:params=>{}, :slug=>\"0x999\"}"],
       [:before, :my_model_input, "{:params=>{}, :slug=>\"0x999\"}"],
@@ -468,7 +465,7 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
       [:after, :more_model_input, "{:params=>{}, :slug=>\"0x999\"}", nil],
       [:after, :input, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\"}", nil],
       [:before, :"task_wrap.call_task", "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\"}"],
-      [:after, :"task_wrap.call_task", "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", nil],
+      [:after, :"task_wrap.call_task", "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", Trailblazer::Activity::Right],
       [:before, :output, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}"],
       [:before, :my_model_output, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}"],
       [:after, :my_model_output, "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", nil],
