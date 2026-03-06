@@ -332,12 +332,6 @@ puts
     # extend the circuit at runtime.
     # class WrapRuntime < Struct.new(:original_invoker)
     class WrapRuntime #< Trailblazer::Activity::Circuit::Processor
-
-      # DISCUSS: should we use @invoker.() in Processor to make it better injectable?
-      module InvokeTask
-
-      end
-
       # Extension for a particular node in Processor#call.
       class Extension < Struct.new(:adds_instructions) # "taskWrap" extension.
         def call(id, task_circuit, invoker, *args)
@@ -374,7 +368,7 @@ puts
     #   extend WrapRuntime::InvokeTask # FIXME: super slow!
     # end
 
-    my_wrap_runtime_runner = Class.new(_A::Circuit::Processor::Node::Runner) do
+    my_wrap_runtime_runner = Class.new(_A::Circuit::Node::Runner) do
       def self.call(node, ctx, lib_ctx, signal, wrap_runtime:, **circuit_options)
         # raise lib_ctx[:task].inspect
         id, task, interface, lib_options_to_merge, scope, scope_options = node
@@ -708,15 +702,15 @@ require "benchmark/ips"
     {exec_context:  IO___.new},
     nil,
     # copy_to_outer_ctx: [:original_application_ctx],
-    runner:  _A::Circuit::Processor::Node::Runner
+    runner:  _A::Circuit::Node::Runner
   )
 
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Node::Runner.(
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Node::Runner.(
     [:my_model, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {copy_to_outer_ctx: [:original_application_ctx]}],
     {params: {song: {}}, noise: true, slug: "0x666"},
     {exec_context:  IO___.new},
     nil,
-    runner:  _A::Circuit::Processor::Node::Runner
+    runner:  _A::Circuit::Node::Runner
   )
  # }
  #   x.compare! # 43.6 -45.2k
@@ -746,12 +740,12 @@ require "benchmark/ips"
   ctx = ctx.to_h
   puts :yoo
 
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor::Node::Runner.(
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Node::Runner.(
     [:my_model, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {}],
     ctx,
     lib_ctx,
     nil,
-    runner:  _A::Circuit::Processor::Node::Runner
+    runner:  _A::Circuit::Node::Runner
   )
 # FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
   assert_equal ctx.inspect, %({:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object})
@@ -778,7 +772,7 @@ require "benchmark/ips"
 
 puts "ciiii"
   # validation error:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, nil, runner: _A::Circuit::Processor::Node::Runner) # FIXME: use process_node/canonical invoke?
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, nil, runner: _A::Circuit::Node::Runner) # FIXME: use process_node/canonical invoke?
 
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, []
@@ -786,7 +780,7 @@ puts "ciiii"
 
 puts "ywiiii"
   # success:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}.freeze, nil, runner: _A::Circuit::Processor::Node::Runner)
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}.freeze, nil, runner: _A::Circuit::Node::Runner)
 
   assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal lib_ctx.keys, []
@@ -803,7 +797,7 @@ puts "ywiiii"
 end
 
   def call_me(create_circuit)
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil, runner: _A::Circuit::Processor::Node::Runner)
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil, runner: _A::Circuit::Node::Runner)
   end
   # 1.
   #   5.648k vs 19.834k how is that so slow?
