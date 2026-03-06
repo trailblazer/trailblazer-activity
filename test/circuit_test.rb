@@ -69,26 +69,11 @@ class LibPipelineTest < Minitest::Spec
       flow_ary.to_h
     end
 
-    def insert_before_via_hash(flow_map, inserted, before, signal_to_repoint)
-      # flow_map =  flow_map.dup
-      to_merge = {}
 
-      flow_map.each do |id, connections|
+    pp insert_after(flow_map, :d, :b, "Right")
 
-        target = connections[signal_to_repoint]
-
-        if target == before
-          to_merge.merge!(id => connections.merge(signal_to_repoint => inserted))
-          break
-        end
-      end
-
-      flow_map.merge(**to_merge, inserted => {signal_to_repoint => before})
-    end
-
-    pp insert_before_via_ary(flow_map, :d, :b, "Right")
-    pp insert_before_via_hash(flow_map, :d, :b, "Right")
-
+    pp insert_before_via_hash({})
+raise
     require "benchmark/ips"
 
     Benchmark.ips do |x|
@@ -182,42 +167,42 @@ end
 # Test that we can build something like the Each() macro,
 # where we dynamically iterate over a dataset, as if it was a circuit 1 --> 2 --> 3].
 class Circuit_dynamicResolving_for_Each_Test < Minitest::Spec
-  def my_task_a(ctx, lib_ctx, value:, index:, **)
+  def my_task_a(ctx, lib_ctx, signal, value:, index:, **)
     ctx[:seq] << [index, value]
 
-    return ctx, lib_ctx, nil
+    return ctx, lib_ctx, signal
   end
 
   class MyEach
-    def self.init(ctx, lib_ctx, **)
+    def self.init(ctx, lib_ctx, signal, **)
       dataset = ctx.fetch(:dataset)
 
       return ctx, lib_ctx.merge(
         enumerator: dataset.each_with_index,
-      ), nil
+      ), signal
     end
 
-    def self.fetch_value_from_dataset(ctx, lib_ctx, enumerator:, **)
+    def self.fetch_value_from_dataset(ctx, lib_ctx, signal, enumerator:, **)
       value, index = enumerator.next
 
-      return ctx, lib_ctx.merge(value: value, index: index), nil
+      return ctx, lib_ctx.merge(value: value, index: index), signal
 
     rescue StopIteration
       # DISCUSS: is there any other way to detect when an enumerator reached the end?
       return ctx, lib_ctx, "done"
     end
 
-    def self.finished(ctx, lib_ctx, **) # TODO: this isn't really necessary.
-      return ctx, lib_ctx, nil
+    def self.finished(ctx, lib_ctx, signal, **) # TODO: this isn't really necessary.
+      return ctx, lib_ctx, signal
     end
   end
 
   it do
     config = {
-      init: [:init, :init, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyEach}],
-      fetch_value_from_dataset: [:fetch_value_from_dataset, :fetch_value_from_dataset, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyEach}],
-      a: [:a, :my_task_a, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}],
-      finished: [:finished, :finished, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyEach}],
+      init: [:init, :init, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}, Trailblazer::Activity::Circuit::Node::Processor, {}],
+      fetch_value_from_dataset: [:fetch_value_from_dataset, :fetch_value_from_dataset, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}, Trailblazer::Activity::Circuit::Node::Processor, {}],
+      a: [:a, :my_task_a, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: self}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {}],
+      finished: [:finished, :finished, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}, Trailblazer::Activity::Circuit::Node::Processor, {}],
     }
 
     map = {
@@ -234,12 +219,12 @@ class Circuit_dynamicResolving_for_Each_Test < Minitest::Spec
       termini: [:finished]
     )
 
-    ctx, signal = Trailblazer::Activity::Circuit::Processor.(
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(
       circuit,
       {seq: [], dataset: [1,2,3]},
-      {},
-      {exec_context: self}, # applies to all the pipeline's steps
-      nil
+      {exec_context: MyEach}, # applies to all the pipeline's steps
+      nil,
+      runner: Trailblazer::Activity::Circuit::Node::Runner
     )
 
     assert_equal ctx[:seq], [[0, 1], [1, 2], [2, 3]]
