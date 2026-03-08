@@ -52,11 +52,14 @@ Minitest::Spec.class_eval do
   include AssertRun
 
   let(:_A) { Trailblazer::Activity }
+
+  def Pipeline(*args)
+    Trailblazer::Activity::Circuit::Builder.Pipeline(*args)
+  end
 end
 
 
-
-
+# TODO: Context#freeze
 module Trailblazer
   class Context < Struct.new(:shadowed, :mutable)
     def []=(key, value)
@@ -87,6 +90,30 @@ module Trailblazer
 
     def to_hash # implicit conversion to Hash.
       to_h
+    end
+
+    def self.scope_FIXME(outer_ctx, whitelisted_variables, mutable)
+      new_ctx = outer_ctx
+
+      if whitelisted_variables
+        new_ctx = whitelisted_variables.collect { |key| [key, outer_ctx[key]] }.to_h
+      end
+
+      Trailblazer::Context.new(new_ctx, mutable.dup) # FIXME: add tests where we make sure we're dupping here, otherwise it starts bleeding!
+    end
+
+    def self.unscope_FIXME!(outer_ctx, ctx, copy_to_outer_ctx)
+      _FIXME_outer_ctx, mutable = ctx.decompose
+
+                  copy_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
+                    # DISCUSS: is merge! and slice faster? no it's not.
+                    # outer_ctx[key] = mutable[key] # if the task didn't write anything, we need to ask to big scoped ctx.
+                    outer_ctx[key] = ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
+                  end
+
+                  # raise "some pipes don't update :stack, that's why it is nil in mutable[:stack]"
+
+      outer_ctx
     end
   end
 

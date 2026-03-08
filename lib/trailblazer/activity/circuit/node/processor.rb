@@ -13,13 +13,9 @@ module Trailblazer
               id, task, _, merge_to_lib_ctx = node
               # puts "@@@@@ ??? #{merge_to_lib_ctx.inspect}"
 
-              new_lib_ctx = outer_lib_ctx
-              # FIXME: slice or something
-              if copy_from_outer_ctx
-                new_lib_ctx = copy_from_outer_ctx.collect { |key| [key, outer_lib_ctx[key]] }.to_h
-              end
 
-              lib_ctx = Trailblazer::Context.new(new_lib_ctx, merge_to_lib_ctx.dup) # FIXME: add tests where we make sure we're dupping here, otherwise it starts bleeding!
+              lib_ctx = Trailblazer::Context.scope_FIXME(outer_lib_ctx, copy_from_outer_ctx, merge_to_lib_ctx)
+
 # puts "))) before #{id}: #{lib_ctx}"
 # puts "calling #{id} with signal <<<#{signal}"
               ctx, lib_ctx, signal = super(node, ctx, lib_ctx, outer_signal, **circuit_options)
@@ -32,18 +28,8 @@ module Trailblazer
 
             # @private
             def self.unscope(lib_ctx, outer_ctx, signal, outer_signal, return_outer_signal:, copy_to_outer_ctx:)
-              # outer_ctx, mutable = lib_ctx.decompose
-              _FIXME_outer_ctx, mutable = lib_ctx.decompose
-
-                  copy_to_outer_ctx.each do |key| # FIXME: use logic from variable-mapping here.
-                    # DISCUSS: is merge! and slice faster? no it's not.
-                    # outer_ctx[key] = mutable[key] # if the task didn't write anything, we need to ask to big scoped ctx.
-                    outer_ctx[key] = lib_ctx[key] # if the task didn't write anything, we need to ask to big scoped ctx.
-                  end
-
-                  # raise "some pipes don't update :stack, that's why it is nil in mutable[:stack]"
-
-                    lib_ctx = outer_ctx
+              # Per default, we do NOT copy anything to {outer_ctx}.
+              lib_ctx = Trailblazer::Context.unscope_FIXME!(outer_ctx, lib_ctx, copy_to_outer_ctx)
                   # puts "@@@@@ ++++ #{id} #{copy_to_outer_ctx.inspect} #{mutable}"
 
                   # public_variables = mutable.slice(*copy_to_outer_ctx) # it only makes sense to publish variables if they're "new".
