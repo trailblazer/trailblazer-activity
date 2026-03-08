@@ -13,7 +13,7 @@ class Processor_Scoped_Test < Minitest::Spec
     end.new
 
     pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
-      [:my_input, :my_input, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}],
+      [:my_input, :my_input, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: my_exec_context}],
     )
 
     ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(
@@ -64,11 +64,11 @@ class InvokerTest < Minitest::Spec
     outer_lib_ctx = Trailblazer::Context(value: 1, exec_context: MyExecContext)
     outer_lib_ctx[:sun] = true
 
-    node = [:my_capture_lib_ctx, :my_capture_lib_ctx, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {}, _A::Circuit::Node::Processor::Scoped, {}]
+    node = [:my_capture_lib_ctx, :my_capture_lib_ctx, _A::Task::Invoker::LibInterface::InstanceMethod, {}, _A::Circuit::Node::Processor::Scoped, {}]
 
     ctx, lib_ctx, signal = nil
     result = RubyProf::Profile.profile do
-      ctx, lib_ctx, signal = _A::Circuit::Processor.process_node(node, {}, outer_lib_ctx, nil)
+      ctx, lib_ctx, signal = _A::Circuit::Node::Runner.(node, {}, outer_lib_ctx, nil)
     end
     printer = RubyProf::FlatPrinter.new(result)
     printer.print(STDOUT)
@@ -94,11 +94,11 @@ class InvokerTest < Minitest::Spec
     outer_lib_ctx = Trailblazer::Context(value: 1, exec_context: MyExecContext)
     outer_lib_ctx[:sun] = true
 
-    node = [:my_capture_lib_ctx, :my_capture_lib_ctx, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {}, _A::Circuit::Node::Processor::Scoped, {copy_from_outer_ctx: [:sun, :exec_context]}]
+    node = [:my_capture_lib_ctx, :my_capture_lib_ctx, _A::Task::Invoker::LibInterface::InstanceMethod, {}, _A::Circuit::Node::Processor::Scoped, {copy_from_outer_ctx: [:sun, :exec_context]}]
 
     ctx, lib_ctx, signal = nil
     # result = RubyProf::Profile.profile do
-      ctx, lib_ctx, signal = _A::Circuit::Processor.process_node(node, {}, outer_lib_ctx, nil)
+      ctx, lib_ctx, signal = _A::Circuit::Node::Runner.(node, {}, outer_lib_ctx, nil)
     # end
     # printer = RubyProf::FlatPrinter.new(result)
     # printer.print(STDOUT)
@@ -122,7 +122,7 @@ class InvokerTest < Minitest::Spec
 
   # FIXME: test properly
   it "{Processor#process_node}" do
-    node = [:my_input, :my_input, _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {}, _A::Circuit::Node::Processor, {}] # it doesn't make sense to use an un-scoped node processor while passing lib_ctx options?
+    node = [:my_input, :my_input, _A::Task::Invoker::LibInterface::InstanceMethod, {}, _A::Circuit::Node::Processor, {}] # it doesn't make sense to use an un-scoped node processor while passing lib_ctx options?
 
     result = _A::Circuit::Processor.process_node(node, {}, {exec_context: self}, nil)
 
@@ -140,7 +140,7 @@ class InvokerTest < Minitest::Spec
 
   let(:node_producing_value) do
     node = [:my_input, :my_input,
-      _A::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, # how to run the actual task with the correct interface
+      _A::Task::Invoker::LibInterface::InstanceMethod, # how to run the actual task with the correct interface
       {exec_context: my_exec_context}, # how to change lib_ctx, starting from Node::Processor::Scoped
       # this used to sit in Circuit::Processor::Scoping
       _A::Circuit::Node::Processor::Scoped, # how to invoke the logic for this node?
@@ -201,7 +201,39 @@ class InvokerTest < Minitest::Spec
 
   end
 
-  it "is possible to change a start_task" do
+  it "{Runner.call}" do
+    my_pipe = Pipeline(
+      [:a, :a, _A::Task::Invoker::StepInterface::InstanceMethod],
+      [:b, :b, _A::Task::Invoker::StepInterface::InstanceMethod],
+      [:c, :c, _A::Task::Invoker::StepInterface::InstanceMethod],
+    )
 
+    my_pipe_node = [:my_pipe_node, my_pipe, _A::Circuit::Processor, {}, _A::Circuit::Node::Processor::Scoped, {}]
+    runner = _A::Circuit::Node::Runner
+
+    my_exec_context = T.def_steps(:a, :b, :c)
+
+    ctx, lib_ctx, signal = runner.(my_pipe_node, {seq: []}, {exec_context: my_exec_context}, nil, runner: runner)
+
+    assert_equal ctx[:seq], [:a, :b, :c]
+  end
+
+  it "accepts {:start_node}" do
+    my_pipe = Pipeline(
+      [:a, :a, _A::Task::Invoker::StepInterface::InstanceMethod],
+      [:b, :b, _A::Task::Invoker::StepInterface::InstanceMethod],
+      [:c, :c, _A::Task::Invoker::StepInterface::InstanceMethod],
+    )
+
+    my_pipe_node = [:my_pipe_node, my_pipe, _A::Circuit::Processor, {}, _A::Circuit::Node::Processor::Scoped, {}]
+    runner = _A::Circuit::Node::Runner
+
+    my_exec_context = T.def_steps(:a, :b, :c)
+
+    ctx, lib_ctx, signal = runner.(my_pipe_node, {seq: []}, {exec_context: my_exec_context}, nil, runner: runner,
+      start_node: my_pipe.config[:b]
+    )
+
+    assert_equal ctx[:seq], [:b, :c]
   end
 end
