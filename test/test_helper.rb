@@ -126,7 +126,7 @@ module Trailblazer
     def self.scope_FIXME(outer_ctx, whitelisted_variables, variables_to_merge)
       new_ctx =
         if whitelisted_variables
-          outer_ctx.slice(*whitelisted_variables)
+          outer_ctx.slice(*whitelisted_variables) # NOTE: feel free to improve runtime performance here, see benchmark # FIXME: insert link
         else
           outer_ctx
         end
@@ -136,6 +136,31 @@ module Trailblazer
 
     def self.unscope_FIXME!(outer_ctx, ctx, copy_to_outer_ctx)
       new_variables = ctx.slice(*copy_to_outer_ctx)
+
+      outer_ctx.merge(new_variables)
+    end
+  end
+
+  class MyContext_No_Slice
+    def self.scope_FIXME(outer_ctx, whitelisted_variables, variables_to_merge)
+      new_ctx =
+        if whitelisted_variables
+          whitelisted_variables.collect do |k|
+            [k, outer_ctx[k]]
+          end.to_h
+          # outer_ctx.slice(*whitelisted_variables) # NOTE: feel free to improve runtime performance here, see benchmark # FIXME: insert link
+        else
+          outer_ctx
+        end
+
+      new_ctx.merge(variables_to_merge)
+    end
+
+    def self.unscope_FIXME!(outer_ctx, ctx, copy_to_outer_ctx)
+      # new_variables = ctx.slice(*copy_to_outer_ctx)
+      new_variables = copy_to_outer_ctx.collect do |k|
+        [k, ctx[k]]
+      end.to_h
 
       outer_ctx.merge(new_variables)
     end
