@@ -437,6 +437,7 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
       nil,
       runner: my_wrap_runtime_runner,
       wrap_runtime: Hash.new(my_tw_extension),
+      context_implementation: Trailblazer::MyContext,
     )
 
     assert_equal lib_ctx[:stack],
@@ -454,6 +455,7 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
       nil,
       runner: my_wrap_runtime_runner,
       wrap_runtime: Hash.new(my_tw_extension),
+      context_implementation: Trailblazer::MyContext,
     )
 
 
@@ -496,6 +498,7 @@ puts "yo"
       nil,
       runner: my_wrap_runtime_runner,
       wrap_runtime: Hash.new(my_tw_extension),
+      context_implementation: Trailblazer::MyContext,
     )
 
     assert_equal ctx, {:params=>{:song=>nil}, slug: 666, :model=>"Object  / {:more=>666}", :errors=>["Object  / {:more=>666}", :song]}
