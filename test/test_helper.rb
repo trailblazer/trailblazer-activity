@@ -120,4 +120,24 @@ module Trailblazer
   def self.Context(shadowed)
     Context.new(shadowed, {})
   end
+
+
+  class MyContext
+    def self.scope_FIXME(outer_ctx, whitelisted_variables, variables_to_merge)
+      new_ctx =
+        if whitelisted_variables
+          outer_ctx.slice(*whitelisted_variables)
+        else
+          outer_ctx
+        end
+
+      new_ctx.merge(variables_to_merge)
+    end
+
+    def self.unscope_FIXME!(outer_ctx, ctx, copy_to_outer_ctx)
+      new_variables = ctx.slice(*copy_to_outer_ctx)
+
+      outer_ctx.merge(new_variables)
+    end
+  end
 end

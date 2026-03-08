@@ -692,6 +692,8 @@ require "benchmark/ips"
   it do
     create_circuit, create_termini, model_input_pipe, model_output_pipe = Fixtures.fixtures()
 
+    # context_implementation = Trailblazer::Context
+    context_implementation = Trailblazer::MyContext
 
 # TEST I/O
 
@@ -702,7 +704,8 @@ require "benchmark/ips"
     {exec_context:  IO___.new},
     nil,
     # copy_to_outer_ctx: [:original_application_ctx],
-    runner:  _A::Circuit::Node::Runner
+    runner:  _A::Circuit::Node::Runner,
+    context_implementation: context_implementation,
   )
 
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Node::Runner.(
@@ -710,7 +713,8 @@ require "benchmark/ips"
     {params: {song: {}}, noise: true, slug: "0x666"},
     {exec_context:  IO___.new},
     nil,
-    runner:  _A::Circuit::Node::Runner
+    runner:  _A::Circuit::Node::Runner,
+    context_implementation: context_implementation,
   )
  # }
  #   x.compare! # 43.6 -45.2k
@@ -745,7 +749,8 @@ require "benchmark/ips"
     ctx,
     lib_ctx,
     nil,
-    runner:  _A::Circuit::Node::Runner
+    runner:  _A::Circuit::Node::Runner,
+    context_implementation: context_implementation,
   )
 # FIXME!!!!!!!!!!!!!!!!!!!!!! original_application_ctx shooouldn't contain {model}?
   assert_equal ctx.inspect, %({:params=>{:song=>{}}, :noise=>true, :slug=>"0x666", :model=>Object})
@@ -772,7 +777,7 @@ require "benchmark/ips"
 
 puts "ciiii"
   # validation error:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, nil, runner: _A::Circuit::Node::Runner) # FIXME: use process_node/canonical invoke?
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, ctx, {}, nil, runner: _A::Circuit::Node::Runner, context_implementation: context_implementation,) # FIXME: use process_node/canonical invoke?
 
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, []
@@ -780,24 +785,43 @@ puts "ciiii"
 
 puts "ywiiii"
   # success:
-  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}.freeze, nil, runner: _A::Circuit::Node::Runner)
+  ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}, {}.freeze, nil,
+    runner: _A::Circuit::Node::Runner,
+    context_implementation: context_implementation,
+  )
 
   assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal lib_ctx.keys, []
   assert_equal signal, create_termini[:success]
 
-
-
-  Benchmark.ips do |x|
-    x.report("cix") {
-      ctx, signal = call_me(create_circuit)
-    }
-    x.compare!
-  end
 end
 
+  it "run benchmark" do
+    create_circuit, = Fixtures.fixtures()
+
+    Benchmark.ips do |x|
+      x.report("cix") {
+        ctx, signal = call_me(create_circuit)
+      }
+      x.report("hash Contextt") {
+        ctx, signal = call_me_with_simpler_context(create_circuit)
+      }
+      x.compare!
+    end
+  end
+
   def call_me(create_circuit)
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil, runner: _A::Circuit::Node::Runner)
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil,
+      runner: _A::Circuit::Node::Runner,
+      context_implementation: Trailblazer::Context,
+    )
+  end
+
+  def call_me_with_simpler_context(create_circuit)
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil,
+      runner: _A::Circuit::Node::Runner,
+      context_implementation: Trailblazer::MyContext,
+    )
   end
   # 1.
   #   5.648k vs 19.834k how is that so slow?
