@@ -694,6 +694,7 @@ require "benchmark/ips"
 
     # context_implementation = Trailblazer::Context
     context_implementation = Trailblazer::MyContext
+    context_implementation = Trailblazer::MyContext_No_Slice
 
 # TEST I/O
 
@@ -800,11 +801,25 @@ end
     create_circuit, = Fixtures.fixtures()
 
     Benchmark.ips do |x|
+      x.report("simple hash Context") {
+        ctx, signal = call_me_with_simpler_context(create_circuit)
+      }
+      x.compare!
+    end
+  end
+
+  it "run benchmark for different {:context_implementation}" do
+    create_circuit, = Fixtures.fixtures()
+
+    Benchmark.ips do |x|
       x.report("cix") {
         ctx, signal = call_me(create_circuit)
       }
       x.report("hash Contextt") {
         ctx, signal = call_me_with_simpler_context(create_circuit)
+      }
+      x.report("hash Contextt no slice") {
+        ctx, signal = call_me_with_simpler_context_and_no_slice(create_circuit)
       }
       x.compare!
     end
@@ -821,6 +836,13 @@ end
     ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil,
       runner: _A::Circuit::Node::Runner,
       context_implementation: Trailblazer::MyContext,
+    )
+  end
+
+  def call_me_with_simpler_context_and_no_slice(create_circuit)
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil,
+      runner: _A::Circuit::Node::Runner,
+      context_implementation: Trailblazer::MyContext_No_Slice,
     )
   end
   # 1.
