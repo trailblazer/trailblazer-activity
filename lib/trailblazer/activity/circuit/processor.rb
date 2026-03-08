@@ -13,7 +13,7 @@
 
           loop do
           # id = node.first # TODO: it always should be [id, node]
-            puts ">>>Processor #{node[0].inspect} <<<#{signal.inspect}>>> #{runner}"
+            puts ">>>Processor #{node[0].inspect} <<<#{signal.inspect}>>> #{}"
             ctx, lib_ctx, signal = runner.(node, ctx, lib_ctx, signal, **circuit_options, runner: runner)
 
             node = circuit.resolve(node, signal)
