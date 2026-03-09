@@ -236,24 +236,29 @@ puts
       run_checks_pipe      = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:run_checks)
       title_length_ok_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:title_length_ok?)
 
-      success_pipe = pipeline_circuit([:success, success = Trailblazer::Activity::Terminus::Success.new(semantic: :success), nil, {}, Trailblazer::Activity::Terminus])
-      failure_pipe = pipeline_circuit([:failure, failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), nil, {}, Trailblazer::Activity::Terminus])
+      success_pipe = pipeline_circuit([:success, node: success = Trailblazer::Activity::Terminus::Success.new(semantic: :success)])
+      failure_pipe = pipeline_circuit([:failure, node: failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)])
 
       validate_termini = {
         success: success, failure: failure
       }
 
       validate_circuit, ___validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-        [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_from_outer_ctx: [:exec_context]},
+        [
+          [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_from_outer_ctx: [:exec_context]}],
           {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :failure}
         ],
-        [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_from_outer_ctx: [:exec_context]},
+        [
+          [:title_length_ok?, title_length_ok_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_from_outer_ctx: [:exec_context]}],
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ],
         # FIXME: taskwrap for termini sucks.
-        [:success, success_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
-        [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
-        # [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Task::Invoker::CircuitInterface],
+        [
+          [:success, success_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
+        ],
+        [
+          [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
+        ],
 
         termini: [:success, :failure]
       )
@@ -283,17 +288,24 @@ puts
 
       create_circuit, create_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
         # [:bla, ->(ctx, lib_ctx, signal, **) { raise lib_ctx.inspect }, Trailblazer::Activity::Task::Invoker::LibInterface, {}, Trailblazer::Activity::Circuit::Node, {}],
-        [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Create.new.freeze}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_from_outer_ctx: []},
+        [
+          [:"model.task_wrap", model_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Create.new.freeze}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_from_outer_ctx: []}],
           {Trailblazer::Activity::Right => :"validate.task_wrap", Trailblazer::Activity::Left => :failure}
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
-        [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Validate.new.freeze}, Trailblazer::Activity::Circuit::Node::Scoped, {},
+        [
+          [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Validate.new.freeze}, Trailblazer::Activity::Circuit::Node::Scoped, {}],
           {validate_termini[:success] => :"save.task_wrap", validate_termini[:failure] => :failure}
         ],
-        [:"save.task_wrap", save_tw_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {},
+        [
+          [:"save.task_wrap", save_tw_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {}],
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ], # check that we don't have circuit_options anymore here?
-        [:success, Trailblazer::Activity::Terminus::Success.new(semantic: :success), nil, {}, Trailblazer::Activity::Terminus],
-        [:failure, Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), nil, {}, Trailblazer::Activity::Terminus],
+        [
+          [:success, node: Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
+        ],
+        [
+          [:failure, node: Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
+        ],
 
         termini: [:success, :failure]
       )

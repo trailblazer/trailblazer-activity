@@ -199,10 +199,10 @@ class Circuit_dynamicResolving_for_Each_Test < Minitest::Spec
 
   it do
     config = {
-      init: [:init, :init, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}, Trailblazer::Activity::Circuit::Node::Processor, {}],
-      fetch_value_from_dataset: [:fetch_value_from_dataset, :fetch_value_from_dataset, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}, Trailblazer::Activity::Circuit::Node::Processor, {}],
-      a: [:a, :my_task_a, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: self}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {}],
-      finished: [:finished, :finished, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}, Trailblazer::Activity::Circuit::Node::Processor, {}],
+      init: Trailblazer::Activity::Circuit::Node[:init, :init, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}, {}],
+      fetch_value_from_dataset: Trailblazer::Activity::Circuit::Node[:fetch_value_from_dataset, :fetch_value_from_dataset, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}, {}],
+      a: Trailblazer::Activity::Circuit::Node::Scoped[:a, :my_task_a, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: self}, {}],
+      finished: Trailblazer::Activity::Circuit::Node[:finished, :finished, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {}, {}],
     }
 
     map = {
@@ -224,7 +224,8 @@ class Circuit_dynamicResolving_for_Each_Test < Minitest::Spec
       {seq: [], dataset: [1,2,3]},
       {exec_context: MyEach}, # applies to all the pipeline's steps
       nil,
-      runner: Trailblazer::Activity::Circuit::Node::Runner
+      runner: Trailblazer::Activity::Circuit::Node::Runner,
+      context_implementation: Trailblazer::MyContext,
     )
 
     assert_equal ctx[:seq], [[0, 1], [1, 2], [2, 3]]
