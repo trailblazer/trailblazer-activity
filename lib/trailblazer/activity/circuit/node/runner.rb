@@ -12,17 +12,7 @@
         # (e.g. for tracing).
         class Runner
           def self.call(node, ctx, lib_ctx, signal, **circuit_options)
-            return node.(ctx, lib_ctx, signal, **circuit_options) # NOTE: runner calls node with the circuit interface.
-
-            id, task, invoker, _, scope, local_circuit_options = node # {local_circuit_options}: eg. {copy_to_outer_ctx: []}
-
-# FIXME: to inject :start_task, we'd have to merge into circuit_options, not local_circuit_options, but also only for one particular "level"/node.
-
-            # DISCUSS: not entirely sure that the Runner will be the abstraction/component where we merge circuit_options etc.
-            # DISCUSS: which place is the correct place to embrace Node details?
-
-# raise "we're leaking config into children calls here. because node contains options that are hardcore-mixed with circuit_options"
-            scope.(node, ctx, lib_ctx, signal, **circuit_options, **local_circuit_options) # FIXME: we're leaking config into children calls here.
+            node.(ctx, lib_ctx, signal, **circuit_options) # NOTE: runner calls node with the circuit interface.
           end
         end
       end
