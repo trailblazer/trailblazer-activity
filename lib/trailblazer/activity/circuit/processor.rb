@@ -13,10 +13,10 @@
           id, node = start_node
 
           loop do
-            # puts ">>>Processor #{id.inspect} <<<#{signal.inspect}>>> #{node.class}"
+            puts ">>>Processor #{id.inspect} <<<#{signal.inspect}>>> #{node.class}"
             ctx, lib_ctx, signal = runner.(node, ctx, lib_ctx, signal, **circuit_options, runner: runner)
 
-            id, node = circuit.resolve(id, signal)
+            id, node = circuit.resolve(id, signal) # DISCUSS: pass id and node?
 
             return ctx, lib_ctx, signal unless node
             # unless ()
