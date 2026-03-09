@@ -10,14 +10,13 @@
           # puts "@@@@@??? #{circuit.inspect}"
           # id, task, invoker, circuit_options_to_merge = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
           # node = circuit.to_a_FIXME # we absolutely safely know that we want the start_task here.
-          node = start_node
+          id, node = start_node
 
           loop do
-          # id = node.first # TODO: it always should be [id, node]
-            puts ">>>Processor #{node[0].inspect} <<<#{signal.inspect}>>> #{}"
+            # puts ">>>Processor #{id.inspect} <<<#{signal.inspect}>>> #{node.class}"
             ctx, lib_ctx, signal = runner.(node, ctx, lib_ctx, signal, **circuit_options, runner: runner)
 
-            node = circuit.resolve(node, signal)
+            id, node = circuit.resolve(id, signal)
 
             return ctx, lib_ctx, signal unless node
             # unless ()

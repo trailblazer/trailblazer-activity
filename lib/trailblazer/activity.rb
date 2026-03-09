@@ -28,8 +28,8 @@ module Trailblazer
 end
 
 require "trailblazer/activity/circuit"
+require "trailblazer/activity/circuit/node"
 require "trailblazer/activity/circuit/node/runner"
-require "trailblazer/activity/circuit/node/processor"
 require "trailblazer/activity/circuit/pipeline"
 require "trailblazer/activity/circuit/processor"
 require "trailblazer/activity/terminus"

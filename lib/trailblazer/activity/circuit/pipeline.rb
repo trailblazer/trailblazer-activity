@@ -4,12 +4,10 @@ module Trailblazer
       # Pipeline is a Circuit which, in #resolve, simply ignores the actual signal
       # when looking up the next step.
       class Pipeline < Circuit
-        def resolve(current_task, signal)
-          current_task_id = current_task[0]
-
+        def resolve(current_task_id, signal)
           next_task_id = map[current_task_id][nil]
 
-          return config[next_task_id]
+          return next_task_id, config[next_task_id]
         end
       end
     end # Circuit

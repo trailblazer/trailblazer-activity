@@ -34,9 +34,13 @@ end
 # TODO: move me to core-utils. test me.
 module AssertRun
   def assert_run(circuit, processor: Trailblazer::Activity::Circuit::Processor, exec_context: nil, terminus: nil, seq:, **ctx)
-    circuit_options = exec_context ? {exec_context: exec_context} : {}
+    lib_ctx = {}
+    lib_ctx = exec_context ? lib_ctx.merge(exec_context: exec_context) : lib_ctx
+    circuit_options = {}
+    circuit_options = circuit_options.merge(runner: Trailblazer::Activity::Circuit::Node::Runner)
+    circuit_options = circuit_options.merge(context_implementation: Trailblazer::MyContext) # FIXME: remove
 
-    ctx, lib_ctx, signal = processor.(circuit, ctx.merge(seq: []), {}, circuit_options, nil)
+    ctx, lib_ctx, signal = processor.(circuit, ctx.merge(seq: []), lib_ctx, nil, **circuit_options)
 
     assert_equal signal, terminus
     assert_equal ctx[:seq], seq # FIXME: test all ctx variables.
@@ -152,7 +156,7 @@ module Trailblazer
         else
           outer_ctx
         end
-
+# FIXME: test that we ALWAYS return a new hash instance.
       new_ctx.merge(variables_to_merge)
     end
 
