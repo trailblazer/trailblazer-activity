@@ -30,6 +30,10 @@ class NodeScopedTest < Minitest::Spec
       :return_outer_signal=>true
     }
   end
+
+  it "{#to_h}" do
+    # this is currently tested implicitely above :D
+  end
 end
 
 class NodeRunnerTest < Minitest::Spec
