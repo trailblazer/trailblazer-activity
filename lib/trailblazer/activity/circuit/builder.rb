@@ -28,8 +28,9 @@ module Trailblazer
         module Pipeline
           module_function
 
+          # Produces a set of {Node}s, currently called "config".
           def build_config_from_dsl(task_cfgs)
-            task_cfgs.collect do |id, task, invoker = Activity::Task::Invoker::LibInterface::InstanceMethod, merge_to_lib_ctx = {}, node_class = nil, node_processor_options = {}|
+            task_cfgs.collect do |id, task, invoker = Activity::Task::Invoker::LibInterface::InstanceMethod, merge_to_lib_ctx = {}, node_class = nil, options_for_node = {}|
               node =
                 if task.is_a?(Hash)
                   task.fetch(:node)
@@ -40,7 +41,7 @@ module Trailblazer
                     task: task,
                     interface: invoker,
                     merge_to_lib_ctx: merge_to_lib_ctx,
-                    local_circuit_options: node_processor_options,
+                    options_for_node: options_for_node,
                   )
                 end
 
@@ -48,12 +49,12 @@ module Trailblazer
             end.to_h
           end
 
-          def build_node_for(node_class:, id:, task:, interface:, merge_to_lib_ctx:, local_circuit_options:)
+          def build_node_for(node_class:, id:, task:, interface:, merge_to_lib_ctx:, options_for_node:)
             if node_class.nil?
               node_class = merge_to_lib_ctx.any? ? Node::Scoped : Node # FIXME: test me
             end
 
-            node_class[id, task, interface, merge_to_lib_ctx, local_circuit_options]
+            node_class[id: id, task: task, interface: interface, merge_to_lib_ctx: merge_to_lib_ctx, **options_for_node]
           end
         end
 

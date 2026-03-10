@@ -346,12 +346,12 @@ puts
     class WrapRuntime #< Trailblazer::Activity::Circuit::Processor
       # Extension for a particular node in Processor#call.
       class Extension < Struct.new(:adds_instructions) # "taskWrap" extension.
-        def call(id, task_circuit, invoker, *args)
+        def call(task:, **node_attrs)
           # puts "~~~ @@@@@ #{id.inspect} #{args}"/
           # NOTE: here, we create an extended circuit for the "task".
-          task_circuit = Trailblazer::Activity::Circuit::Adds.(task_circuit, *adds_instructions)
+          extended_task = Trailblazer::Activity::Circuit::Adds.(task, *adds_instructions)
 
-          return id, task_circuit, invoker, *args
+          return( {task: extended_task, **node_attrs})
         end
       end
     end
@@ -359,10 +359,10 @@ puts
     # DISCUSS: how to merge multiple runtime extensions? canonical invoke!
     my_tw_extension = WrapRuntime::Extension.new(
       [
-        [Trailblazer::Activity::Circuit::Node::Scoped[:capture_before, :capture_before, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace},
-          {copy_to_outer_ctx: [:stack]}], :before],
-        [Trailblazer::Activity::Circuit::Node::Scoped[:capture_after, :capture_after, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, {exec_context: MyTrace},
-          {copy_to_outer_ctx: [:stack]}], :after],
+        [Trailblazer::Activity::Circuit::Node::Scoped[id: :capture_before, task: :capture_before, interface: Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, merge_to_lib_ctx: {exec_context: MyTrace},
+          copy_to_outer_ctx: [:stack]], :before],
+        [Trailblazer::Activity::Circuit::Node::Scoped[id: :capture_after, task: :capture_after, interface: Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod, merge_to_lib_ctx: {exec_context: MyTrace},
+          copy_to_outer_ctx: [:stack]], :after],
       ]
     )
 
@@ -383,68 +383,42 @@ puts
     my_wrap_runtime_runner = Class.new(_A::Circuit::Node::Runner) do
       def self.call(node, ctx, lib_ctx, signal, wrap_runtime:, **circuit_options)
 
-        local_circuit_options = {}
+        node_attrs = node.to_h
 
-        if node.instance_of?(Trailblazer::Activity::Circuit::Node::Scoped)
-          local_circuit_options = node.local_circuit_options
+        copy_from_outer_ctx = node_attrs[:copy_from_outer_ctx]
+        copy_from_outer_ctx = copy_from_outer_ctx + [:stack] if copy_from_outer_ctx # only add to whitelist if there is a whitelist.
+        copy_to_outer_ctx = Array(node_attrs[:copy_to_outer_ctx]) + [:stack]
 
-          raise "no scope_options set in #{node}" if local_circuit_options.nil?
-
-
-
-          in_ = local_circuit_options[:copy_from_outer_ctx]
-          out_ = local_circuit_options[:copy_to_outer_ctx] || []
-
-          # using :copy_from_outer_ctx is whitelisting (once you use it), and [] means "don't pass anything in"
-          if in_.is_a?(Array)
-            in_ += [:stack]
-            local_circuit_options = local_circuit_options.merge(copy_from_outer_ctx: in_)
-          end
-        end
-
-
-        # if node.task.is_a?(Trailblazer::Activity::Circuit)
-                    # FIXME: we need this for Terminus.
-        if node.is_a?(Trailblazer::Activity::Circuit::Node) && node.task.is_a?(Trailblazer::Activity::Circuit)
-          if out_.nil?
-            # raise node.inspect
-            out_ = []
-
-            # FIXME: {validate.tw.call_task} is a non Scoped node.
-          end
-          # if scope == Trailblazer::Activity::Circuit::Node::Processor
-          #   # raise id.inspect
-          #   # problem is, a non-Scoped simply drops everything from the inside. However, we need :stack, so we need to change the Node::Processor here.
-          # end
-# puts "+++++++++=extending #{id}"
-          new_out = out_ + [:stack]
-          local_circuit_options = local_circuit_options.merge(copy_to_outer_ctx: new_out)
-
-          node = Trailblazer::Activity::Circuit::Node::Scoped[node.id, node.task, node.interface, node.merge_to_lib_ctx, local_circuit_options]
-        end
+        node_attrs = node_attrs.merge(
+          copy_from_outer_ctx: copy_from_outer_ctx,
+          copy_to_outer_ctx: copy_to_outer_ctx
+        )
 
   # puts "@@@@@ #{id.inspect}"
               # puts "i will wrap #{id.inspect}"
         if node.is_a?(Trailblazer::Activity::Circuit::Node) && node.task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
-          node = extend_task_wrap_pipeline(wrap_runtime, node.id, node)
+
+          node_attrs = extend_task_wrap_pipeline(wrap_runtime, node_attrs[:id], node, node_attrs)
+        else
+          # node = node = node.class[**node_attrs]
         end
 
-        super#(node, ctx, lib_ctx, signal, wrap_runtime: wrap_runtime, **circuit_options)
+        node = node.class[**node_attrs]
+
+        super
       end
 
-      def self.extend_task_wrap_pipeline(wrap_runtime, id, node)
+      def self.extend_task_wrap_pipeline(wrap_runtime, id, node, node_attrs)
         tw_extension = wrap_runtime[id] # FIXME: this should be looked up by path, not ID.
         # FIXME: we need id here, where do we get it from?
 
-        id, extended_task, invoker, lib_options_to_merge, options = tw_extension.(*node.to_a) # DISCUSS: pass runtime options here, too?
+        extended_node_attrs = tw_extension.(**node_attrs) # DISCUSS: pass runtime options here, too?
 
-        lib_options = lib_options_to_merge.merge(task: id)
+        extended_node_attrs[:merge_to_lib_ctx] = extended_node_attrs.fetch(:merge_to_lib_ctx).merge(task: id)
 
+        pp extended_node_attrs[:task].map.keys
 
-        pp extended_task.map.keys
-        # puts "@@@@@? #{extended_task.config[:capture_before][3].inspect}"
-
-        _node = node.class[id, extended_task, invoker, lib_options, options]
+        extended_node_attrs
       end
     end
 
@@ -509,7 +483,7 @@ tw_create_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
       [:"task_wrap.call_task", create_circuit, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped]
     )
 
-    canonical_node = Trailblazer::Activity::Circuit::Node::Scoped[:Create, tw_create_pipe, Trailblazer::Activity::Circuit::Processor, {}, {}]
+    canonical_node = Trailblazer::Activity::Circuit::Node::Scoped[id: :Create, task: tw_create_pipe, interface: Trailblazer::Activity::Circuit::Processor]
 puts "yo"
     ctx = {params: {song: nil}, slug: 666}
 
@@ -532,6 +506,7 @@ puts "yo"
 
     pp lib_ctx[:stack]
 
+    raise ":task in failure is wrong"
     assert_equal lib_ctx[:stack], [
       [:before, :Create, "{:params=>{:song=>nil}, :slug=>666}"],
       [:before, :"model.task_wrap", "{:params=>{:song=>nil}, :slug=>666}"],
@@ -722,7 +697,7 @@ require "benchmark/ips"
 
     # context_implementation = Trailblazer::Context
     context_implementation = Trailblazer::MyContext
-    context_implementation = Trailblazer::MyContext_No_Slice
+    # context_implementation = Trailblazer::MyContext_No_Slice
 
 
 # pp model_input_pipe
@@ -740,7 +715,7 @@ require "benchmark/ips"
   )
 
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Node::Runner.(
-    Trailblazer::Activity::Circuit::Node::Scoped[:my_model, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {}, {copy_to_outer_ctx: [:original_application_ctx]}],
+    Trailblazer::Activity::Circuit::Node::Scoped[id: :my_model, task: model_input_pipe, interface: Trailblazer::Activity::Circuit::Processor, copy_to_outer_ctx: [:original_application_ctx]],
     {params: {song: {}}, noise: true, slug: "0x666"},
     {exec_context:  IO___.new},
     nil,
@@ -776,7 +751,7 @@ require "benchmark/ips"
   puts :yoo
 
   ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Node::Runner.(
-    Trailblazer::Activity::Circuit::Node::Scoped[:my_model, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, {}],
+    Trailblazer::Activity::Circuit::Node::Scoped[id: :my_model, task: model_output_pipe, interface: Trailblazer::Activity::Circuit::Processor],
     ctx,
     lib_ctx,
     nil,
