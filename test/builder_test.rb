@@ -55,6 +55,10 @@ class PipelineBuilderTest < Minitest::Spec
     assert_equal lib_ctx, {exec_context: exec_context_for_d, :value=>true}
   end
 
+  it "accepts options for the Node itself" do
+    raise
+  end
+
   # it "accepts kwargs as circuit_options defaults" do
   #   circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
 
