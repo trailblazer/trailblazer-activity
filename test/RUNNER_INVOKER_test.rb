@@ -187,7 +187,7 @@ puts
       )
 
       more_model_input_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
-        [:invoke_callable, Create::MoreModelInput, Trailblazer::Activity::Task::Invoker::StepInterface],
+        [:invoke_callable, Create::MoreModelInput, Trailblazer::Activity::Task::Invoker::StepInterface], # FIXME: problem here is, we're writing to lib_ctx[:value]
         [:add_value_to_aggregate, :add_value_to_aggregate],
       )
 
@@ -300,11 +300,18 @@ puts
           [:"save.task_wrap", save_tw_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {}],
           {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}
         ], # check that we don't have circuit_options anymore here?
+        # [
+        #   [:success, node: Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
+        # ],
+        # [
+        #   [:failure, node: Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
+        # ],
+        # FIXME: taskwrap for termini sucks. but it allows proper task wrap extending, and after all, a Terminus is a higher level concept
         [
-          [:success, node: Trailblazer::Activity::Terminus::Success.new(semantic: :success)],
+          [:success, success_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
         ],
         [
-          [:failure, node: Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)],
+          [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
         ],
 
         termini: [:success, :failure]
@@ -414,6 +421,7 @@ puts
 
         extended_node_attrs = tw_extension.(**node_attrs) # DISCUSS: pass runtime options here, too?
 
+# FIXME: when extending tw for tracing, we cannot pass the "task" via :merge_to_lib_ctx because that will only work for Scoped nodes, which eg Terminus is not. with tracing making its own pipe around everything, this would work, though.
         extended_node_attrs[:merge_to_lib_ctx] = extended_node_attrs.fetch(:merge_to_lib_ctx).merge(task: id)
 
         pp extended_node_attrs[:task].map.keys
@@ -502,11 +510,11 @@ puts "yo"
 
     assert_equal ctx, {:params=>{:song=>nil}, slug: 666, :model=>"Object  / {:more=>666}", :errors=>["Object  / {:more=>666}", :song]}
     assert_equal lib_ctx.keys, [:stack]
-    assert_equal signal, create_termini[:failure]
+    assert_equal signal, create_termini[:failure].task.config[:failuren]
 
     pp lib_ctx[:stack]
 
-    raise ":task in failure is wrong"
+    # raise ":task in failure is wrong "
     assert_equal lib_ctx[:stack], [
       [:before, :Create, "{:params=>{:song=>nil}, :slug=>666}"],
       [:before, :"model.task_wrap", "{:params=>{:song=>nil}, :slug=>666}"],
@@ -787,7 +795,7 @@ puts "ciiii"
 
   assert_equal ctx, {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, []
-  assert_equal signal, create_termini[:failure]
+  assert_equal signal, create_termini[:failure].task.config[:failure]
 
 puts "ywiiii"
   # success:
@@ -798,7 +806,7 @@ puts "ywiiii"
 
   assert_equal ctx, {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal lib_ctx.keys, []
-  assert_equal signal, create_termini[:success]
+  assert_equal signal, create_termini[:success].task.config[:success]
 
 end
 
