@@ -5,13 +5,13 @@
         class LibInterface
           def self.call(task, ctx, lib_ctx, signal, **)
             # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
-            task.(ctx, lib_ctx, signal, **lib_ctx) # DISCUSS: do we want circuit_options?
+            task.(ctx, lib_ctx, signal, **ctx) # DISCUSS: do we want circuit_options?
           end
 
           class InstanceMethod
             # lib_ctx is the first positional and gets kwarged. DISCUSS: ctx is barely used.
             def self.call(task, ctx, lib_ctx, signal, **)
-              # puts "@@@@@ ?#{task.inspect}"
+              # puts "?????????????????????? ?#{task.inspect} #{signal}"
               exec_context = lib_ctx[:exec_context] or raise # FIXME: kwargs?
 
               # puts "@@@@@ #{ctx.inspect}, LIB  #{lib_ctx}"
@@ -37,26 +37,23 @@
 
         # The step interface is only used on the application level.
         class StepInterface
-          def self.call(task, ctx, lib_ctx, _, **)
-            # target_ctx = ctx[:application_ctx]
+          def self.call(task, ctx, flow_options, _, **)
+            target_ctx = flow_options[:application_ctx]
 
-            result = run_step(task, ctx, lib_ctx)
-            # pp application_ctx
+            result = run_step(task, target_ctx, **ctx)
 
-            lib_ctx[:value] = result
+            ctx[:value] = result
 
-            return ctx, lib_ctx, nil # DISCUSS: value. FIXME: redundant to INVOKER___STEP_INTERFACE_ON_EXEC_CONTEXT
+            return ctx, flow_options, nil # DISCUSS: value.
           end
 
-          def self.run_step(task, ctx, _)
-            task.(ctx, **ctx.to_h)
+          def self.run_step(task, target_ctx, _)
+            task.(target_ctx, **target_ctx.to_h)
           end
 
           class InstanceMethod < StepInterface
-            def self.run_step(task, ctx, lib_ctx)
-              exec_context = lib_ctx[:exec_context] or raise # FIXME: use kwargs
-
-              exec_context.send(task, ctx, **ctx.to_h)
+            def self.run_step(task, target_ctx, exec_context:, **)
+              exec_context.send(task, target_ctx, **target_ctx.to_h)
             end
           end
         end # StepInterface
