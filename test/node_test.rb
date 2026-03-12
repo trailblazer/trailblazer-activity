@@ -69,9 +69,9 @@ end
 class NodeRunnerTest < Minitest::Spec
   it "{Runner.call}" do
     my_pipe = Pipeline(
-      [:a, :a, _A::Task::Invoker::StepInterface::InstanceMethod],
-      [:b, :b, _A::Task::Invoker::StepInterface::InstanceMethod],
-      [:c, :c, _A::Task::Invoker::StepInterface::InstanceMethod],
+      [:a, :a, _A::Circuit::Task::Adapter::StepInterface::InstanceMethod],
+      [:b, :b, _A::Circuit::Task::Adapter::StepInterface::InstanceMethod],
+      [:c, :c, _A::Circuit::Task::Adapter::StepInterface::InstanceMethod],
     )
 
     my_pipe_node = _A::Circuit::Node::Scoped[id: :my_pipe_node, task: my_pipe, interface: _A::Circuit::Processor]
@@ -79,20 +79,20 @@ class NodeRunnerTest < Minitest::Spec
 
     my_exec_context = T.def_steps(:a, :b, :c)
 
-    ctx, lib_ctx, signal = runner.(my_pipe_node, {seq: []}, {exec_context: my_exec_context}, nil,
+    lib_ctx, flow_options = runner.(my_pipe_node, {exec_context: my_exec_context}, {application_ctx: {seq: []}}, nil,
       runner: runner,
       context_implementation: Trailblazer::MyContext,
     )
 
-    assert_equal ctx[:seq], [:a, :b, :c]
+    assert_equal flow_options[:application_ctx][:seq], [:a, :b, :c]
   end
 
   # TODO: this tests Processor.
   it "accepts {:start_node}" do
     my_pipe = Pipeline(
-      [:a, :a, _A::Task::Invoker::StepInterface::InstanceMethod],
-      [:b, :b, _A::Task::Invoker::StepInterface::InstanceMethod],
-      [:c, :c, _A::Task::Invoker::StepInterface::InstanceMethod],
+      [:a, :a, _A::Circuit::Task::Adapter::StepInterface::InstanceMethod],
+      [:b, :b, _A::Circuit::Task::Adapter::StepInterface::InstanceMethod],
+      [:c, :c, _A::Circuit::Task::Adapter::StepInterface::InstanceMethod],
     )
 
     my_pipe_node = _A::Circuit::Node::Scoped[id: :my_pipe_node, task: my_pipe, interface: _A::Circuit::Processor]
@@ -100,11 +100,11 @@ class NodeRunnerTest < Minitest::Spec
 
     my_exec_context = T.def_steps(:a, :b, :c)
 
-    ctx, lib_ctx, signal = runner.(my_pipe_node, {seq: []}, {exec_context: my_exec_context}, nil, runner: runner,
+    lib_ctx, flow_options, signal = runner.(my_pipe_node, {exec_context: my_exec_context}, {application_ctx: {seq: []}}, nil, runner: runner,
       start_node: [:b, my_pipe.config[:b]],
       context_implementation: Trailblazer::MyContext,
     )
 
-    assert_equal ctx[:seq], [:b, :c]
+    assert_equal flow_options[:application_ctx][:seq], [:b, :c]
   end
 end
