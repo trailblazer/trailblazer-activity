@@ -40,12 +40,14 @@ module AssertRun
     circuit_options = circuit_options.merge(runner: Trailblazer::Activity::Circuit::Node::Runner)
     circuit_options = circuit_options.merge(context_implementation: Trailblazer::MyContext) # FIXME: remove
 
-    ctx, lib_ctx, signal = processor.(circuit, ctx.merge(seq: []), lib_ctx, nil, **circuit_options)
+    flow_options = {application_ctx: {seq: []}}
+
+    lib_ctx, flow_options, signal = processor.(circuit, lib_ctx, flow_options, nil, **circuit_options)
 
     assert_equal signal, terminus
-    assert_equal ctx[:seq], seq # FIXME: test all ctx variables.
+    assert_equal flow_options[:application_ctx][:seq], seq # FIXME: test all ctx variables.
 
-    return ctx, lib_ctx, signal
+    return lib_ctx, flow_options, signal
   end
 end
 

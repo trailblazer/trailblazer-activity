@@ -33,7 +33,7 @@ require "trailblazer/activity/circuit/node/runner"
 require "trailblazer/activity/circuit/pipeline"
 require "trailblazer/activity/circuit/processor"
 require "trailblazer/activity/terminus"
-require "trailblazer/activity/task/invoker"
+require "trailblazer/activity/circuit/task/adapter"
 require "trailblazer/activity/circuit/builder"
 require "trailblazer/activity/circuit/step" # ComputeBinarySignal.
 require "trailblazer/activity/circuit/adds"

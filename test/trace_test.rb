@@ -17,7 +17,7 @@ class TracePrototypeTest < Minitest::Spec
   it "single LibInterface" do
     pipe = Builder.Pipeline(
       # DISCUSS: could we configure scoping to not even scope as we don't touch the {ctx}, only {flow_options}?
-      [:capture_before, method(:capture), Task::Invoker::LibInterface, {}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: []], # only write to trace_ctx
+      [:capture_before, method(:capture), Node::Adapter::LibInterface, {}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: []], # only write to trace_ctx
     )
 
     pipe_node = Circuit::Node::Scoped[id: :my_model, task: pipe, interface: Circuit::Processor,
@@ -56,10 +56,11 @@ class TracePrototypeTest < Minitest::Spec
 
     pipe = Builder.Pipeline(
       # here, we need scoping as we're merging {:task} into {ctx}.
-      [:capture_before, method(:capture), Task::Invoker::LibInterface, {task_id: "invoke_instance_method -> compute_binary_signal"}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: []], # only write to trace_ctx
+      [:capture_before, method(:capture), Node::Adapter::LibInterface, {task_id: "invoke_instance_method -> compute_binary_signal"}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: []], # only write to trace_ctx
 
       # "invoke_instance_method -> compute_binary_signal"
-      [:invoke_instance_method, :my_model_step, Task::Invoker::StepInterface::InstanceMethod, {exec_context: my_step_interface_exec_context}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: [:value]],
+      [:invoke_instance_method, :my_model_step, Node::Adapter::StepInterface::InstanceMethod, {exec_context: my_step_interface_exec_context}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: [:value]],
+      [:compute_binary_signal, Circuit::Step::ComputeBinarySignal, Node::Adapter::LibInterface],
     )
 
     pipe_node = Circuit::Node::Scoped[id: :my_model, task: pipe, interface: Circuit::Processor,
@@ -70,11 +71,8 @@ class TracePrototypeTest < Minitest::Spec
       pipe_node,
       {aggregate: []}, # let's assume this is part of the local processing pipeline and from one of the recent steps.
       {
-        application_ctx: {
-          params: {id: 1},
-          model: Model.new(1),
-        },
-        trace_ctx: {stack: []},
+        application_ctx:  {params: {id: 1}},
+        trace_ctx:        {stack: []},
       },
       nil,
       runner:  _A::Circuit::Node::Runner,
@@ -105,11 +103,10 @@ skip
     # here, we do not want :task from tW, and we do not want :stack around!
     model_pipe = Builder.Pipeline(
       # this step changes {application_ctx} and adds lib_ctx[:value]
-      [:capture_before, method(:capture), Task::Invoker::LibInterface, {}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: []],
+      [:capture_before, method(:capture), Node::Adapter::LibInterface, {}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: []],
 
-      # [:invoke_instance_method, :my_model_step, Task::Invoker::StepInterface::InstanceMethod, {exec_context: my_step_interface_exec_context}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: [:value]], # FIXME: implement that we reuse and "older" exec_context. for now, i ignore that for designing.
+      # [:invoke_instance_method, :my_model_step, Node::Adapter::StepInterface::InstanceMethod, {exec_context: my_step_interface_exec_context}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: [:value]], # FIXME: implement that we reuse and "older" exec_context. for now, i ignore that for designing.
 
-      # [:compute_binary_signal, Circuit::Step::ComputeBinarySignal, Task::Invoker::LibInterface],
     )
 
     # pp model_pipe

@@ -3,10 +3,10 @@ require "test_helper"
 class PipelineBuilderTest < Minitest::Spec
   let(:exec_context_for_d) do
     Class.new do
-      def self.d(ctx, lib_ctx, circuit_options, signal)
-        ctx[:seq] << :d
+      def self.d(lib_ctx, flow_options, circuit_options, signal)
+        flow_options[:application_ctx][:seq] << :d
 
-        return ctx, lib_ctx, Trailblazer::Activity::Right
+        return lib_ctx, flow_options, Trailblazer::Activity::Right
       end
     end
   end
@@ -20,23 +20,23 @@ class PipelineBuilderTest < Minitest::Spec
     my_tasks = T.def_tasks(:d)
 
     my_node_with_circuit_interface = Class.new do
-      def self.call(ctx, lib_ctx, signal, **circuit_options)
-        ctx[:seq] << :e
+      def self.call(lib_ctx, flow_options, signal, **circuit_options)
+        flow_options[:application_ctx][:seq] << :e
 
-        return ctx, lib_ctx, signal
+        return lib_ctx, flow_options, signal
       end
     end
 
     c_circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
-      [:c, my_steps.method(:c), Trailblazer::Activity::Task::Invoker::StepInterface]
+      [:c, my_steps.method(:c), Trailblazer::Activity::Circuit::Task::Adapter::StepInterface]
     )
 
     circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
       # instance method with step interface.
-      [:a, :a, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: exec_context_for_a}],
+      [:a, :a, Trailblazer::Activity::Circuit::Task::Adapter::StepInterface::InstanceMethod, {exec_context: exec_context_for_a}],
 
       # callable with step interface, we don't get defaulting here.
-      [:b, my_steps.method(:b), Trailblazer::Activity::Task::Invoker::StepInterface],
+      [:b, my_steps.method(:b), Trailblazer::Activity::Circuit::Task::Adapter::StepInterface],
 
       # defaulting for circuit_options for the nested pipe.
       [:c, c_circuit, Trailblazer::Activity::Circuit::Processor],
@@ -48,7 +48,7 @@ class PipelineBuilderTest < Minitest::Spec
       [:e, node: my_node_with_circuit_interface],
     )
 
-    _, lib_ctx = assert_run circuit, terminus: Trailblazer::Activity::Right, # last signal is from {:d}.
+    lib_ctx, _ = assert_run circuit, terminus: Trailblazer::Activity::Right, # last signal is from {:d}.
       seq: [:a, :b, :c, :d, :e],
       exec_context: exec_context_for_d
 
@@ -63,7 +63,7 @@ class PipelineBuilderTest < Minitest::Spec
   #   circuit = Trailblazer::Activity::Circuit::Builder.Pipeline(
 
   #     # we can manually override the {circuit_options}:
-  #     [:a, :a, Trailblazer::Activity::Task::Invoker::StepInterface::InstanceMethod, {exec_context: exec_context_for_a}],
+  #     [:a, :a, Trailblazer::Activity::Circuit::Task::Adapter::StepInterface::InstanceMethod, {exec_context: exec_context_for_a}],
 
   #     # or use the pipe-wide default, see two lines below.
   #     [:d, :d],
@@ -79,8 +79,8 @@ class CircuitBuilderTest < Minitest::Spec
     my_tasks = T.def_tasks(:c, :d)
 
     c_circuit, termini = Trailblazer::Activity::Circuit::Builder.Circuit(
-      [[:c, my_tasks.method(:c), Trailblazer::Activity::Task::Invoker::LibInterface, {}], {Trailblazer::Activity::Right => :d, Trailblazer::Activity::Left => :failure}],
-      [[:d, my_tasks.method(:d), Trailblazer::Activity::Task::Invoker::LibInterface, {}], {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}],
+      [[:c, my_tasks.method(:c), Trailblazer::Activity::Circuit::Task::Adapter::LibInterface, {}], {Trailblazer::Activity::Right => :d, Trailblazer::Activity::Left => :failure}],
+      [[:d, my_tasks.method(:d), Trailblazer::Activity::Circuit::Task::Adapter::LibInterface, {}], {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}],
       [[:failure, node: failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)]],
       [[:success, node: success = Trailblazer::Activity::Terminus::Success.new(semantic: :success)]],
 

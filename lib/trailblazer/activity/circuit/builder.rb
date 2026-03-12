@@ -30,7 +30,7 @@ module Trailblazer
 
           # Produces a set of {Node}s, currently called "config".
           def build_config_from_dsl(task_cfgs)
-            task_cfgs.collect do |id, task, invoker = Activity::Task::Invoker::LibInterface::InstanceMethod, merge_to_lib_ctx = {}, node_class = nil, options_for_node = {}|
+            task_cfgs.collect do |id, task, invoker = Activity::Circuit::Task::Adapter::LibInterface::InstanceMethod, merge_to_lib_ctx = {}, node_class = nil, options_for_node = {}|
               node =
                 if task.is_a?(Hash)
                   task.fetch(:node)
@@ -98,15 +98,15 @@ module Trailblazer
         module Step
           def self.InstanceMethod(method_name)
             Builder.Pipeline(
-              [:invoke_instance_method, method_name, Task::Invoker::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
-              [:compute_binary_signal, Circuit::Step::ComputeBinarySignal, Task::Invoker::LibInterface],
+              [:invoke_instance_method, method_name, Node::Adapter::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
+              [:compute_binary_signal, Circuit::Step::ComputeBinarySignal, Node::Adapter::LibInterface],
             )
           end
 
           def self.Callable(callable)
             Builder.Pipeline(
-              [:invoke_callable, callable, Trailblazer::Activity::Task::Invoker::StepInterface],
-              [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Task::Invoker::LibInterface],
+              [:invoke_callable, callable, Trailblazer::Activity::Circuit::Task::Adapter::StepInterface],
+              [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Circuit::Task::Adapter::LibInterface],
             )
           end
         end
