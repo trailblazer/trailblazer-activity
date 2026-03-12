@@ -82,7 +82,7 @@ class TracePrototypeTest < Minitest::Spec
     assert_equal ctx, {aggregate: []}
     assert_equal flow_options, {
       :application_ctx=>{:params=>{:id=>1}, model: Model.new(1)},
-      :trace_ctx=>{:stack=>[flow_options = %({:aggregate=>[], :task_id=>"invoke_instance_method -> compute_binary_signal"}), flow_options]}
+      :trace_ctx=>{:stack=>[_flow_options = %({:aggregate=>[], :task_id=>"invoke_instance_method -> compute_binary_signal"}), _flow_options]}
     }
   end
 

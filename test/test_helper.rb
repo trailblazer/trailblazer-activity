@@ -33,14 +33,14 @@ end
 
 # TODO: move me to core-utils. test me.
 module AssertRun
-  def assert_run(circuit, processor: Trailblazer::Activity::Circuit::Processor, exec_context: nil, terminus: nil, seq:, **ctx)
+  def assert_run(circuit, processor: Trailblazer::Activity::Circuit::Processor, exec_context: nil, terminus: nil, seq:, **application_ctx)
     lib_ctx = {}
     lib_ctx = exec_context ? lib_ctx.merge(exec_context: exec_context) : lib_ctx
     circuit_options = {}
     circuit_options = circuit_options.merge(runner: Trailblazer::Activity::Circuit::Node::Runner)
     circuit_options = circuit_options.merge(context_implementation: Trailblazer::MyContext) # FIXME: remove
 
-    flow_options = {application_ctx: {seq: []}}
+    flow_options = {application_ctx: {seq: [], **application_ctx}}
 
     lib_ctx, flow_options, signal = processor.(circuit, lib_ctx, flow_options, nil, **circuit_options)
 

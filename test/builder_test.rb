@@ -89,14 +89,14 @@ class CircuitBuilderTest < Minitest::Spec
 
     assert_equal termini, {success: success, failure: failure}
 
-    ctx, lib_ctx = assert_run c_circuit, terminus: termini[:success], seq: [:c, :d]
+    lib_ctx, flow_options = assert_run c_circuit, terminus: termini[:success], seq: [:c, :d]
     assert_equal lib_ctx, {}
 
-    ctx, lib_ctx = assert_run c_circuit, terminus: termini[:failure], seq: [:c], c: Trailblazer::Activity::Left
+    lib_ctx, flow_options = assert_run c_circuit, terminus: termini[:failure], seq: [:c], c: Trailblazer::Activity::Left
     assert_equal lib_ctx, {}
 
 
-    ctx, lib_ctx = assert_run c_circuit, terminus: termini[:failure], seq: [:c, :d], d: Trailblazer::Activity::Left
+    lib_ctx, flow_options = assert_run c_circuit, terminus: termini[:failure], seq: [:c, :d], d: Trailblazer::Activity::Left
     assert_equal lib_ctx, {}
   end
 end
