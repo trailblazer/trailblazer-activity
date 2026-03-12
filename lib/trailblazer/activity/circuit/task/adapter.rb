@@ -30,7 +30,7 @@
               return ctx, flow_options, nil # DISCUSS: value.
             end
 
-            def self.run_step(task, target_ctx, _)
+            def self.run_step(task, target_ctx, **)
               task.(target_ctx, **target_ctx.to_h)
             end
 
