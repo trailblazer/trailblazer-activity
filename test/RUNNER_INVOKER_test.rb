@@ -255,10 +255,10 @@ puts
         ],
         # FIXME: taskwrap for termini sucks.
         [
-          [:success, success_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
+          [:success, success_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped],
         ],
         [
-          [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
+          [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped],
         ],
 
         termini: [:success, :failure]
@@ -309,10 +309,10 @@ puts
         # ],
         # FIXME: taskwrap for termini sucks. but it allows proper task wrap extending, and after all, a Terminus is a higher level concept
         [
-          [:success, success_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
+          [:success, success_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped],
         ],
         [
-          [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node],
+          [:failure, failure_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped],
         ],
 
         termini: [:success, :failure]
@@ -328,23 +328,25 @@ puts
     ctx = {params: {song: nil}, slug: 666}
 
     class MyTrace
-      def self.capture_before(ctx, lib_ctx, signal, stack:, task:, **) # FIXME: we need circuit_options for the {:task}.
+      def self.capture_before(lib_ctx, flow_options, signal, task:, **) # FIXME: we need circuit_options for the {:task}.
+        stack = flow_options.fetch(:stack)
         # task = circuit_options[:task] or raise
         # stack << [:before, task, ctx.to_h.inspect]
-        stack += [[:before, task, ctx.to_h.inspect]] # treat stack as an immutable object
-# puts "         ~~~ trace in #{task.inspect}: #{stack}"
+        stack += [[:before, task, flow_options[:application_ctx].to_h.inspect]] # treat stack as an immutable object
+# puts "         ~~~ trace in #{task.inspect}: #{}"
 
-        return ctx, lib_ctx.merge(stack: stack), signal
+        return lib_ctx, flow_options.merge(stack: stack), signal
       end
 
-      def self.capture_after(ctx, lib_ctx, signal, stack:, task:, **) # FIXME: we need circuit_options for the {:task}.
+      def self.capture_after(lib_ctx, flow_options, signal, task:, **) # FIXME: we need circuit_options for the {:task}.
+        stack = flow_options.fetch(:stack)
         # puts "     @@@@@ #{stack.inspect}"
         # stack << [:after, task, ctx.to_h.inspect, signal]
-        stack += [[:after, task, ctx.to_h.inspect, signal]]
+        stack += [[:after, task, flow_options[:application_ctx].to_h.inspect, signal]]
 
         # puts "@@@@@ CA, #{task} #{signal.inspect}"
 
-        return ctx, lib_ctx.merge(stack: stack), signal
+        return lib_ctx, flow_options.merge(stack: stack), signal
       end
     end
 
@@ -389,7 +391,7 @@ puts
     # end
 
     my_wrap_runtime_runner = Class.new(_A::Circuit::Node::Runner) do
-      def self.call(node, ctx, lib_ctx, signal, wrap_runtime:, **circuit_options)
+      def self.call(node, lib_ctx, flow_options, signal, wrap_runtime:, **circuit_options)
 
         node_attrs = node.to_h
 
@@ -438,8 +440,9 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
 
     ctx, lib_ctx, signal = my_wrap_runtime_runner.(
       save_call_task_node,
-      {model: Object},
+      {},
       {
+        application_ctx: {model: Object},
         stack: [].freeze,
       },
       nil,
@@ -454,10 +457,11 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
 # call Model's taskWrap:
     model_tw_node = create_circuit.config[:"model.task_wrap"]
 
-    ctx, lib_ctx, signal = my_wrap_runtime_runner.(
+    lib_ctx, flow_options, signal = my_wrap_runtime_runner.(
       model_tw_node,
-      {params: {}, slug: "0x999"},
+      {},
       {
+        application_ctx: {params: {}, slug: "0x999"},
         stack: [].freeze,
       },
       nil,
@@ -467,9 +471,9 @@ save_call_task_node = save_tw_pipe.config[:"task_wrap.call_task"]
     )
 
 
-    assert_equal lib_ctx[:stack][8], [:after, :"task_wrap.call_task", "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", Trailblazer::Activity::Right]
+    assert_equal flow_options[:stack][8], [:after, :"task_wrap.call_task", "{:params=>{:slug=>\"0x999\"}, :more=>\"0x999\", :spam=>false, :model=>\"Object  / {:more=>\\\"0x999\\\"}\"}", Trailblazer::Activity::Right]
 
-    assert_equal lib_ctx[:stack], [
+    assert_equal flow_options[:stack], [
       [:before, :"model.task_wrap", "{:params=>{}, :slug=>\"0x999\"}"],
       [:before, :input, "{:params=>{}, :slug=>\"0x999\"}"],
       [:before, :my_model_input, "{:params=>{}, :slug=>\"0x999\"}"],
@@ -497,10 +501,11 @@ puts "yo"
     ctx = {params: {song: nil}, slug: 666}
 
     # validation error:
-    ctx, lib_ctx, signal = my_wrap_runtime_runner.( # we don't need another circuit around the OP tw, do we?
+    lib_ctx, flow_options, signal = my_wrap_runtime_runner.( # we don't need another circuit around the OP tw, do we?
       canonical_node,
-      ctx,
+      {},
       {
+        application_ctx: ctx,
         stack: [].freeze,
       },
       nil,
@@ -509,14 +514,44 @@ puts "yo"
       context_implementation: Trailblazer::MyContext,
     )
 
-    assert_equal ctx, {:params=>{:song=>nil}, slug: 666, :model=>"Object  / {:more=>666}", :errors=>["Object  / {:more=>666}", :song]}
-    assert_equal lib_ctx.keys, [:stack]
-    assert_equal signal, create_termini[:failure].task.config[:failuren]
+    assert_equal flow_options[:application_ctx], {:params=>{:song=>nil}, slug: 666, :model=>"Object  / {:more=>666}", :errors=>["Object  / {:more=>666}", :song]}
+    assert_equal lib_ctx.keys, []
+    assert_equal flow_options.keys, [:application_ctx, :stack]
+    assert_equal signal, create_termini[:failure].task.config[:failure]
 
-    pp lib_ctx[:stack]
+    pp flow_options[:stack]
+
+ #    [[:before, :Create, "{:params=>{:song=>nil}, :slug=>666}"],
+ # [:before, :"model.task_wrap", "{:params=>{:song=>nil}, :slug=>666}"],
+ # [:before, :input, "{:params=>{:song=>nil}, :slug=>666}"],
+ # [:before, :my_model_input, "{:params=>{:song=>nil}, :slug=>666}"],
+ # [:after, :my_model_input, "{:params=>{:song=>nil}, :slug=>666}", nil],
+ # [:before, :more_model_input, "{:params=>{:song=>nil}, :slug=>666}"],
+ # [:after, :more_model_input, "{:params=>{:song=>nil}, :slug=>666}", nil],
+ # [:after, :input, "{:params=>{:song=>nil, :slug=>666}, :more=>666}", nil],
+ # [:before, :"task_wrap.call_task", "{:params=>{:song=>nil, :slug=>666}, :more=>666}"],
+ # [:after, :"task_wrap.call_task", "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
+ # [:before, :output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
+ # [:before, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
+ # [:after, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", nil],
+ # [:after, :output, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", nil],
+ # [:after, :"model.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
+ # [:before, :"validate.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
+ # [:before, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
+ # [:after, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", Trailblazer::Activity::Left],
+ # [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
+ # [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", #<struct Trailblazer::Activity::Terminus::Failure semantic=:failure>],
+ # [:after,
+ #  :"validate.task_wrap",
+ #  "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}",
+ #  #<struct Trailblazer::Activity::Terminus::Failure semantic=:failure>],
+ # [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
+ # [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", #<struct Trailblazer::Activity::Terminus::Failure semantic=:failure>],
+ # [:after, :Create, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", #<struct Trailblazer::Activity::Terminus::Failure semantic=:failure>]]
+
 
     # raise ":task in failure is wrong "
-    assert_equal lib_ctx[:stack], [
+    assert_stack flow_options[:stack], [
       [:before, :Create, "{:params=>{:song=>nil}, :slug=>666}"],
       [:before, :"model.task_wrap", "{:params=>{:song=>nil}, :slug=>666}"],
       [:before, :input, "{:params=>{:song=>nil}, :slug=>666}"],
@@ -539,9 +574,19 @@ puts "yo"
         [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
         [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
         [:after, :"validate.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
-        [:after, :Create, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", create_termini[:failure]]
+        [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
+        [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
+        [:after, :Create, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]]
     ]
 
+  end
+
+  def assert_stack(actual, expected)
+    assert_equal actual.size, expected.size
+
+    actual.each_with_index do |capture, i|
+      assert_equal capture, expected[i]
+    end
   end
 
   def lib_pipeline(*args, **kws)
