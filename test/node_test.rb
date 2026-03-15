@@ -36,6 +36,96 @@ class NodeScopedTest < Minitest::Spec
   end
 end
 
+class NodeCallTest < Minitest::Spec
+
+  def capture_args(lib_ctx, flow_options, signal, **kwargs)
+    flow_options = flow_options.merge(
+      captured: [
+        lib_ctx.clone,
+        flow_options.clone,
+        signal,
+        kwargs
+      ]
+    )
+
+    lib_ctx = lib_ctx.merge(c: 3)
+
+    return lib_ctx, flow_options, signal
+  end
+
+  it "in: [], out: []" do
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+      copy_from_outer_ctx: [],
+      copy_to_outer_ctx: []
+    ]
+
+    lib_ctx, flow_options, signal = my_node.(
+      {a: 1},
+      {b: 2},
+      Object,
+      context_implementation: Trailblazer::Activity::Circuit::Context
+    )
+
+    assert_equal lib_ctx, {a: 1} # nothing merged into lib_ctx
+    assert_equal flow_options, {:b=>2, :captured=>[{}, {:b=>2}, Object, {}]}
+    assert_equal signal, Object
+  end
+
+  it "in: [:a], out: []" do
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+      copy_from_outer_ctx: [:a],
+      copy_to_outer_ctx: []
+    ]
+
+    lib_ctx, flow_options, signal = my_node.(
+      {a: 1, y: true},
+      {b: 2},
+      Object,
+      context_implementation: Trailblazer::Activity::Circuit::Context
+    )
+
+    assert_equal lib_ctx, {a: 1, y: true} # nothing merged into lib_ctx
+    assert_equal flow_options, {:b=>2, :captured=>[{a: 1}, {:b=>2}, Object, {a: 1}]} # we can see {:a} inside.
+    assert_equal signal, Object
+  end
+
+  it "in: [], out: [:c]" do
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+      copy_from_outer_ctx: [],
+      copy_to_outer_ctx: [:c]
+    ]
+
+    lib_ctx, flow_options, signal = my_node.(
+      {a: 1, y: true},
+      {b: 2},
+      Object,
+      context_implementation: Trailblazer::Activity::Circuit::Context
+    )
+
+    assert_equal lib_ctx, {a: 1, y: true, c: 3} # {:c} merged into lib_ctx
+    assert_equal flow_options, {:b=>2, :captured=>[{}, {:b=>2}, Object, {}]} # we cannot see anything inside.
+    assert_equal signal, Object
+  end
+
+  it "in: [:a], out: [:c]" do
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+      copy_from_outer_ctx: [:a],
+      copy_to_outer_ctx: [:c]
+    ]
+
+    lib_ctx, flow_options, signal = my_node.(
+      {a: 1, y: true},
+      {b: 2},
+      Object,
+      context_implementation: Trailblazer::Activity::Circuit::Context
+    )
+
+    assert_equal lib_ctx, {a: 1, y: true, c: 3} # {:c} merged into lib_ctx
+    assert_equal flow_options, {:b=>2, :captured=>[{a: 1}, {:b=>2}, Object, {a: 1}]} # we cannot see anything inside.
+    assert_equal signal, Object
+  end
+end
+
 class TerminusNodeTest < Minitest::Spec
   it "Success#call" do
     success = Trailblazer::Activity::Terminus::Success[semantic: :success]
@@ -81,7 +171,7 @@ class NodeRunnerTest < Minitest::Spec
 
     lib_ctx, flow_options = runner.(my_pipe_node, {exec_context: my_exec_context}, {application_ctx: {seq: []}}, nil,
       runner: runner,
-      context_implementation: Trailblazer::MyContext,
+      context_implementation: Trailblazer::Activity::Circuit::Context,
     )
 
     assert_equal flow_options[:application_ctx][:seq], [:a, :b, :c]
@@ -102,7 +192,7 @@ class NodeRunnerTest < Minitest::Spec
 
     lib_ctx, flow_options, signal = runner.(my_pipe_node, {exec_context: my_exec_context}, {application_ctx: {seq: []}}, nil, runner: runner,
       start_node: [:b, my_pipe.config[:b]],
-      context_implementation: Trailblazer::MyContext,
+      context_implementation: Trailblazer::Activity::Circuit::Context,
     )
 
     assert_equal flow_options[:application_ctx][:seq], [:b, :c]
