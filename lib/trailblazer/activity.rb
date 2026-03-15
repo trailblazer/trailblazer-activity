@@ -37,6 +37,8 @@ require "trailblazer/activity/circuit/task/adapter"
 require "trailblazer/activity/circuit/builder"
 require "trailblazer/activity/circuit/step" # ComputeBinarySignal.
 require "trailblazer/activity/circuit/adds"
+require "trailblazer/activity/circuit/wrap_runtime/runner"
+require "trailblazer/activity/circuit/wrap_runtime/extension"
 
 # require "trailblazer/activity/deprecate"
 require "trailblazer/activity/structures"
