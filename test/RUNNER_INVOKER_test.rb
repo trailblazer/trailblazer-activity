@@ -350,24 +350,8 @@ puts
       end
     end
 
-    # Since a Processor is only called for Circuit instances, we can simply
-    # extend the circuit at runtime.
-    # class WrapRuntime < Struct.new(:original_invoker)
-    class WrapRuntime #< Trailblazer::Activity::Circuit::Processor
-      # Extension for a particular node in Processor#call.
-      class Extension < Struct.new(:adds_instructions) # "taskWrap" extension.
-        def call(task:, **node_attrs)
-          # puts "~~~ @@@@@ #{id.inspect} #{args}"/
-          # NOTE: here, we create an extended circuit for the "task".
-          extended_task = Trailblazer::Activity::Circuit::Adds.(task, *adds_instructions)
-
-          return( {task: extended_task, **node_attrs})
-        end
-      end
-    end
-
     # DISCUSS: how to merge multiple runtime extensions? canonical invoke!
-    my_tw_extension = WrapRuntime::Extension.new(
+    my_tw_extension = _A::Circuit::WrapRuntime::Extension.new(
       [
         [Trailblazer::Activity::Circuit::Node::Scoped[id: :capture_before, task: :capture_before, interface: Trailblazer::Activity::Circuit::Task::Adapter::LibInterface::InstanceMethod, merge_to_lib_ctx: {exec_context: MyTrace},
           copy_to_outer_ctx: [:stack]], :before],
@@ -390,45 +374,7 @@ puts
     #   extend WrapRuntime::InvokeTask # FIXME: super slow!
     # end
 
-    my_wrap_runtime_runner = Class.new(_A::Circuit::Node::Runner) do
-      def self.call(node, lib_ctx, flow_options, signal, wrap_runtime:, **circuit_options)
-
-        node_attrs = node.to_h
-
-        copy_from_outer_ctx = node_attrs[:copy_from_outer_ctx]
-        copy_from_outer_ctx = copy_from_outer_ctx + [:stack] if copy_from_outer_ctx # only add to whitelist if there is a whitelist.
-        copy_to_outer_ctx = Array(node_attrs[:copy_to_outer_ctx]) + [:stack]
-
-        node_attrs = node_attrs.merge(
-          copy_from_outer_ctx: copy_from_outer_ctx,
-          copy_to_outer_ctx: copy_to_outer_ctx
-        )
-
-        if node.task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
-          node_attrs = extend_task_wrap_pipeline(wrap_runtime, node_attrs[:id], node, node_attrs)
-        else
-          # node = node = node.class[**node_attrs]
-        end
-
-        node = node.class[**node_attrs]
-
-        super
-      end
-
-      def self.extend_task_wrap_pipeline(wrap_runtime, id, node, node_attrs)
-        tw_extension = wrap_runtime[id] # FIXME: this should be looked up by path, not ID.
-        # FIXME: we need id here, where do we get it from?
-
-        extended_node_attrs = tw_extension.(**node_attrs) # DISCUSS: pass runtime options here, too?
-
-# FIXME: when extending tw for tracing, we cannot pass the "task" via :merge_to_lib_ctx because that will only work for Scoped nodes, which eg Terminus is not. with tracing making its own pipe around everything, this would work, though.
-        extended_node_attrs[:merge_to_lib_ctx] = extended_node_attrs.fetch(:merge_to_lib_ctx).merge(task: id)
-
-        pp extended_node_attrs[:task].map.keys
-
-        extended_node_attrs
-      end
-    end
+    my_wrap_runtime_runner = _A::Circuit::WrapRuntime::Runner
 
 # DEBUGGING
 
