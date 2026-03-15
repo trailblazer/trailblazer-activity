@@ -41,6 +41,23 @@ module AssertRun
   end
 end
 
+class Capture < Struct.new(:name)
+  def call(lib_ctx, flow_options, signal, **kwargs)
+    flow_options = flow_options.merge(
+      name => [
+        lib_ctx.clone,
+        flow_options.clone,
+        signal,
+        kwargs
+      ]
+    )
+
+    lib_ctx = lib_ctx.merge(c: 3)
+
+    return lib_ctx, flow_options, signal
+  end
+end
+
 Minitest::Spec.class_eval do
   require "trailblazer/core"
   CU = Trailblazer::Core::Utils

@@ -38,23 +38,8 @@ end
 
 # Test calling Scoped.
 class NodeScopedCallTest < Minitest::Spec
-  def capture_args(lib_ctx, flow_options, signal, **kwargs)
-    flow_options = flow_options.merge(
-      captured: [
-        lib_ctx.clone,
-        flow_options.clone,
-        signal,
-        kwargs
-      ]
-    )
-
-    lib_ctx = lib_ctx.merge(c: 3)
-
-    return lib_ctx, flow_options, signal
-  end
-
   it "in: [], out: []" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [],
       copy_to_outer_ctx: []
     ]
@@ -72,7 +57,7 @@ class NodeScopedCallTest < Minitest::Spec
   end
 
   it "in: [:a], out: []" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [:a],
       copy_to_outer_ctx: []
     ]
@@ -90,7 +75,7 @@ class NodeScopedCallTest < Minitest::Spec
   end
 
   it "in: [], out: [:c]" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [],
       copy_to_outer_ctx: [:c]
     ]
@@ -108,7 +93,7 @@ class NodeScopedCallTest < Minitest::Spec
   end
 
   it "in: [:a], out: [:c]" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [:a],
       copy_to_outer_ctx: [:c]
     ]
@@ -126,7 +111,7 @@ class NodeScopedCallTest < Minitest::Spec
   end
 
   it "in: [], out: [], merge_to_lib_ctx: {z: []}" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [],
       copy_to_outer_ctx: [],
       merge_to_lib_ctx: {z: Module}
@@ -145,7 +130,7 @@ class NodeScopedCallTest < Minitest::Spec
   end
 
   it "in: [:a], out: [], merge_to_lib_ctx: {z: []}" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [:a],
       copy_to_outer_ctx: [],
       merge_to_lib_ctx: {z: Module}
@@ -164,7 +149,7 @@ class NodeScopedCallTest < Minitest::Spec
   end
 
   it "in: [:a], out: [:c], merge_to_lib_ctx: {z: []}" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: method(:capture_args), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [:a],
       copy_to_outer_ctx: [:c],
       merge_to_lib_ctx: {z: Module}
