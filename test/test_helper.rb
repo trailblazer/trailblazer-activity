@@ -3,16 +3,6 @@ require "trailblazer/activity"
 require "minitest/autorun"
 # require "trailblazer/developer"
 
-require "amazing_print"
-AmazingPrint.defaults = {
-  :indent => -2,
-  :color => {
-    :hash  => :red,
-    :class => :gray,
-    :array => :blue,
-  }
-}
-
 Minitest::Spec.class_eval do
   def assert_equal(asserted, expected, *args)
     super(expected, asserted, *args)
@@ -38,7 +28,7 @@ module AssertRun
     lib_ctx = exec_context ? lib_ctx.merge(exec_context: exec_context) : lib_ctx
     circuit_options = {}
     circuit_options = circuit_options.merge(runner: Trailblazer::Activity::Circuit::Node::Runner)
-    circuit_options = circuit_options.merge(context_implementation: Trailblazer::MyContext) # FIXME: remove
+    circuit_options = circuit_options.merge(context_implementation: Trailblazer::Activity::Circuit::Context) # FIXME: remove
 
     flow_options = {application_ctx: {seq: [], **application_ctx}}
 
@@ -127,26 +117,6 @@ module Trailblazer
     Context.new(shadowed, {})
   end
 
-
-  class MyContext
-    def self.scope_FIXME(outer_ctx, whitelisted_variables, variables_to_merge)
-      new_ctx =
-        if whitelisted_variables
-          outer_ctx.slice(*whitelisted_variables) # NOTE: feel free to improve runtime performance here, see benchmark # FIXME: insert link
-        else
-          outer_ctx
-        end
-
-      new_ctx.merge(variables_to_merge)
-    end
-
-    def self.unscope_FIXME!(outer_ctx, ctx, copy_to_outer_ctx)
-      new_variables = ctx.slice(*copy_to_outer_ctx)
-
-      outer_ctx.merge(new_variables)
-    end
-  end
-
   class MyContext_No_Slice
     def self.scope_FIXME(outer_ctx, whitelisted_variables, variables_to_merge)
       new_ctx =
@@ -158,7 +128,7 @@ module Trailblazer
         else
           outer_ctx
         end
-# FIXME: test that we ALWAYS return a new hash instance.
+# FIXME: -test that we ALWAYS return a new hash instance.
       new_ctx.merge(variables_to_merge)
     end
 

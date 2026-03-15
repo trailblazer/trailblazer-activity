@@ -224,7 +224,7 @@ require "benchmark/ips"
     create_circuit, create_outputs, model_input_pipe, model_output_pipe = Fixtures.fixtures()
 
     # context_implementation = Trailblazer::Context
-    context_implementation = Trailblazer::MyContext
+    context_implementation = Trailblazer::Activity::Circuit::Context
     # context_implementation = Trailblazer::MyContext_No_Slice
 
 
@@ -261,7 +261,7 @@ require "benchmark/ips"
   # raise ctx.inspect
   ctx = flow_options[:application_ctx]
   assert_equal ctx.class, Trailblazer::Context # our In pipe's creation!
-  assert_equal ctx[:more], "0x666" # the more_model_input was called.
+  assert_equal ctx[:more], "0x666" # the more_model_input was called.p
   assert_equal lib_ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
   assert_equal lib_ctx.keys, [:exec_context, :original_application_ctx]
   assert_equal CU.inspect(ctx), %(#<struct Trailblazer::Context shadowed={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"}, mutable={}>)
@@ -368,7 +368,7 @@ end
   def call_me_with_simpler_context(create_circuit)
     ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, {}, {application_ctx: {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}}, nil,
       runner: _A::Circuit::Node::Runner,
-      context_implementation: Trailblazer::MyContext,
+      context_implementation: Trailblazer::Activity::Circuit::Context,
     )
   end
 
