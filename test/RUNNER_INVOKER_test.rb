@@ -210,7 +210,7 @@ puts
     create_circuit, create_termini, model_input_pipe, model_output_pipe = Fixtures.fixtures()
     # profile the code
     result = RubyProf::Profile.profile do
-      puts call_me(create_circuit)
+      call_me_with_simpler_context(create_circuit)
     end
 
     # print a graph profile to text
@@ -366,7 +366,7 @@ end
   end
 
   def call_me_with_simpler_context(create_circuit)
-    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, _ctx = {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"} , {}, nil,
+    ctx, lib_ctx, signal = Trailblazer::Activity::Circuit::Processor.(create_circuit, {}, {application_ctx: {params: {song: {title: "Uwe"}, id: 1}, slug: "0x666"}}, nil,
       runner: _A::Circuit::Node::Runner,
       context_implementation: Trailblazer::MyContext,
     )

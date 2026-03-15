@@ -17,8 +17,7 @@ class WrapRuntimeTest < Minitest::Spec
     class MyTrace
       def self.capture_before(lib_ctx, flow_options, signal, task:, **) # FIXME: we need circuit_options for the {:task}.
         stack = flow_options.fetch(:stack)
-        # task = circuit_options[:task] or raise
-        # stack << [:before, task, ctx.to_h.inspect]
+
         stack += [[:before, task, flow_options[:application_ctx].to_h.inspect]] # treat stack as an immutable object
 # puts "         ~~~ trace in #{task.inspect}: #{}"
 
@@ -27,8 +26,7 @@ class WrapRuntimeTest < Minitest::Spec
 
       def self.capture_after(lib_ctx, flow_options, signal, task:, **) # FIXME: we need circuit_options for the {:task}.
         stack = flow_options.fetch(:stack)
-        # puts "     @@@@@ #{stack.inspect}"
-        # stack << [:after, task, ctx.to_h.inspect, signal]
+
         stack += [[:after, task, flow_options[:application_ctx].to_h.inspect, signal]]
 
         # puts "@@@@@ CA, #{task} #{signal.inspect}"
@@ -46,20 +44,6 @@ class WrapRuntimeTest < Minitest::Spec
           copy_to_outer_ctx: [:stack]], :after],
       ]
     )
-
-    # tw_create_pipe = Fixtures.pipeline_circuit(
-    #   [:"tw.call_task", create_circuit, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Processor::Scoped, {}]
-    # )
-
-    # canonical_pipe = Fixtures.pipeline_circuit( # DISCUSS: we could directly use {Processor.invoke_task} here?
-    #   [:Create, tw_create_pipe, Trailblazer::Activity::Circuit::Processor, {}, _A::Circuit::Node::Processor::Scoped]
-    # )
-
-    # in wtf?, we have to replacce the outer Processor as we WANT the {:wrap_runtime} feature.
-    # this is cool since it's normally not applied, which is hopefully faster.
-    # my_wrap_runtime_processor = Class.new(Trailblazer::Activity::Circuit::Processor) do
-    #   extend WrapRuntime::InvokeTask # FIXME: super slow!
-    # end
 
     my_wrap_runtime_runner = _A::Circuit::WrapRuntime::Runner
 
