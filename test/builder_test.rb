@@ -81,22 +81,25 @@ class CircuitBuilderTest < Minitest::Spec
     c_circuit, termini = Trailblazer::Activity::Circuit::Builder.Circuit(
       [[:c, my_tasks.method(:c), Trailblazer::Activity::Circuit::Task::Adapter::LibInterface, {}], {Trailblazer::Activity::Right => :d, Trailblazer::Activity::Left => :failure}],
       [[:d, my_tasks.method(:d), Trailblazer::Activity::Circuit::Task::Adapter::LibInterface, {}], {Trailblazer::Activity::Right => :success, Trailblazer::Activity::Left => :failure}],
-      [[:failure, node: failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)]],
-      [[:success, node: success = Trailblazer::Activity::Terminus::Success.new(semantic: :success)]],
+      [[:failure, failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), _A::Circuit::Task::Adapter::LibInterface]],
+      [[:success, success = Trailblazer::Activity::Terminus::Success.new(semantic: :success), _A::Circuit::Task::Adapter::LibInterface]],
 
       termini: [:failure, :success],
     )
 
-    assert_equal termini, {success: success, failure: failure}
+    success_node = c_circuit.config[:success]
+    failure_node = c_circuit.config[:failure]
 
-    lib_ctx, flow_options = assert_run c_circuit, terminus: termini[:success], seq: [:c, :d]
+    assert_equal termini, {success: success_node, failure: failure_node}
+
+    lib_ctx, flow_options = assert_run c_circuit, terminus: termini[:success].task, seq: [:c, :d]
     assert_equal lib_ctx, {}
 
-    lib_ctx, flow_options = assert_run c_circuit, terminus: termini[:failure], seq: [:c], c: Trailblazer::Activity::Left
+    lib_ctx, flow_options = assert_run c_circuit, terminus: termini[:failure].task, seq: [:c], c: Trailblazer::Activity::Left
     assert_equal lib_ctx, {}
 
 
-    lib_ctx, flow_options = assert_run c_circuit, terminus: termini[:failure], seq: [:c, :d], d: Trailblazer::Activity::Left
+    lib_ctx, flow_options = assert_run c_circuit, terminus: termini[:failure].task, seq: [:c, :d], d: Trailblazer::Activity::Left
     assert_equal lib_ctx, {}
   end
 end
