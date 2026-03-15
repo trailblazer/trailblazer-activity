@@ -32,7 +32,7 @@ class TracePrototypeTest < Minitest::Spec
       },
       nil,
       runner:  _A::Circuit::Node::Runner,
-      context_implementation: Trailblazer::MyContext,
+      context_implementation: Trailblazer::Activity::Circuit::Context,
     )
 
     assert_equal signal, nil
@@ -75,7 +75,7 @@ class TracePrototypeTest < Minitest::Spec
       },
       nil,
       runner:  _A::Circuit::Node::Runner,
-      context_implementation: Trailblazer::MyContext,
+      context_implementation: Trailblazer::Activity::Circuit::Context,
     )
 
     assert_equal signal, Trailblazer::Activity::Right
@@ -123,7 +123,7 @@ skip
       },
       nil,
       runner:  _A::Circuit::Node::Runner,
-      context_implementation: Trailblazer::MyContext,
+      context_implementation: Trailblazer::Activity::Circuit::Context,
     )
 
     assert_equal signal, Trailblazer::Activity::Right

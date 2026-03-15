@@ -45,7 +45,7 @@ class AdapterTest < Minitest::Spec
       },
       nil,
       runner: _A::Circuit::Node::Runner,
-      context_implementation: Trailblazer::MyContext,
+      context_implementation: Trailblazer::Activity::Circuit::Context,
     )
 
     assert_equal signal, nil
@@ -70,7 +70,7 @@ class AdapterTest < Minitest::Spec
       },
       nil,
       runner: _A::Circuit::Node::Runner,
-      context_implementation: Trailblazer::MyContext,
+      context_implementation: Trailblazer::Activity::Circuit::Context,
     )
 
     assert_equal signal, nil
