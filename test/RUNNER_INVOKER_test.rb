@@ -234,7 +234,7 @@ require "benchmark/ips"
 #  Benchmark.ips do |x|
 #    x.report("cix") {
   lib_ctx, flow_options, signal = Trailblazer::Activity::Circuit::Processor.(model_input_pipe,
-    {exec_context:  IO___.new},
+    {exec_context:  IO___.new, aggregate: {}},
     {application_ctx: {params: {song: {}}, noise: true, slug: "0x666"}},
     nil,
     # copy_to_outer_ctx: [:original_application_ctx],
@@ -244,7 +244,7 @@ require "benchmark/ips"
 
   lib_ctx, flow_options, signal = Trailblazer::Activity::Circuit::Node::Runner.(
     Trailblazer::Activity::Circuit::Node::Scoped[id: :my_model, task: model_input_pipe, interface: Trailblazer::Activity::Circuit::Processor, copy_to_outer_ctx: [:original_application_ctx]],
-    {exec_context:  IO___.new},
+    {exec_context:  IO___.new, aggregate: {}},
     {application_ctx: {params: {song: {}}, noise: true, slug: "0x666"}},
     nil,
     runner:  _A::Circuit::Node::Runner,
@@ -263,7 +263,7 @@ require "benchmark/ips"
   assert_equal ctx.class, Trailblazer::Context # our In pipe's creation!
   assert_equal ctx[:more], "0x666" # the more_model_input was called.p
   assert_equal lib_ctx[:original_application_ctx].class, Hash # the OG ctx is a Hash.
-  assert_equal lib_ctx.keys, [:exec_context, :original_application_ctx]
+  assert_equal lib_ctx.keys, [:exec_context, :aggregate, :original_application_ctx]
   assert_equal CU.inspect(ctx), %(#<struct Trailblazer::Context shadowed={:params=>{:song=>{}, :slug=>\"0x666\"}, :more=>\"0x666\"}, mutable={}>)
 
   # this is what happens in the actual {:model} step.

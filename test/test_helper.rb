@@ -162,11 +162,11 @@ end
 
 class IO___
   # Lib interface.
-  def init_aggregate(lib_ctx, flow_options, signal, **)
-    lib_ctx[:aggregate] = {}
+  # def init_aggregate(lib_ctx, flow_options, signal, **)
+  #   lib_ctx[:aggregate] = {}
 
-    return lib_ctx, flow_options, signal
-  end
+  #   return lib_ctx, flow_options, signal
+  # end
 
   # Lib interface.
   def add_value_to_aggregate(lib_ctx, flow_options, signal, value:, aggregate:, **)
@@ -297,7 +297,7 @@ module Fixtures
     # !!! requires: {exec_context: io}
     model_input_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
       [:save_original_application_ctx, :save_original_application_ctx],
-      [:init_aggregate, :init_aggregate],
+      # [:init_aggregate, :init_aggregate],
       [:my_model_input, my_model_input_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
       [:more_model_input, more_model_input_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_to_outer_ctx: [:aggregate]}], # user filter.
 
@@ -306,7 +306,7 @@ module Fixtures
 
     # !!! requires: {exec_context: io}
     model_output_pipe = Trailblazer::Activity::Circuit::Builder.Pipeline(
-      [:init_aggregate, :init_aggregate],                          # DISCUSS: why do we need Scoped for my_model_output?
+      # [:init_aggregate, :init_aggregate],                          # DISCUSS: why do we need Scoped for my_model_output?
       [:my_model_output, my_model_output_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_to_outer_ctx: [:aggregate]}],     # user filter.
       [:swap___, :swap___, Trailblazer::Activity::Circuit::Task::Adapter::LibInterface::InstanceMethod],
     )
@@ -323,9 +323,9 @@ module Fixtures
 
 
     model_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
-      [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true, copy_from_outer_ctx: []}], # change {:application_ctx}.
+      [:input, model_input_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io, aggregate: {}.freeze}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_to_outer_ctx: [:original_application_ctx], return_outer_signal: true, copy_from_outer_ctx: []}], # change {:application_ctx}.
       [:"task_wrap.call_task", model_instance_method_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped],
-      [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io}, Trailblazer::Activity::Circuit::Node::Scoped, {return_outer_signal: true, copy_from_outer_ctx: [:original_application_ctx]}],
+      [:output, model_output_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: io, aggregate: {}.freeze}, Trailblazer::Activity::Circuit::Node::Scoped, {return_outer_signal: true, copy_from_outer_ctx: [:original_application_ctx]}],
     )
 
     # ctx = {params: {song: nil}, slug: "0x666"}
