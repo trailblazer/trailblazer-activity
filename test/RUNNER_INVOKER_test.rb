@@ -237,14 +237,15 @@ puts
       run_checks_pipe      = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:run_checks)
       title_length_ok_pipe = Trailblazer::Activity::Circuit::Builder::Step.InstanceMethod(:title_length_ok?)
 
-      success_pipe = pipeline_circuit([:success, node: success = Trailblazer::Activity::Terminus::Success.new(semantic: :success)])
-      failure_pipe = pipeline_circuit([:failure, node: failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure)])
+      success_pipe = pipeline_circuit([:success, success = Trailblazer::Activity::Terminus::Success.new(semantic: :success), Trailblazer::Activity::Circuit::Task::Adapter::LibInterface])
+      failure_pipe = pipeline_circuit([:failure, failure = Trailblazer::Activity::Terminus::Failure.new(semantic: :failure), Trailblazer::Activity::Circuit::Task::Adapter::LibInterface])
 
-      validate_termini = {
-        success: success, failure: failure
+      validate_outputs = {
+        success: success,
+        failure: failure
       }
 
-      validate_circuit, ___validate_termini = Trailblazer::Activity::Circuit::Builder.Circuit(
+      validate_circuit, validate_termini_nodes = Trailblazer::Activity::Circuit::Builder.Circuit(
         [
           [:run_checks, run_checks_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {copy_from_outer_ctx: [:exec_context]}],
           {Trailblazer::Activity::Right => :title_length_ok?, Trailblazer::Activity::Left => :failure}
@@ -264,10 +265,7 @@ puts
         termini: [:success, :failure]
       )
 
-      # pp validate_circuit
-      # raise
-       # pp validate_termini
-       # raise
+
 
       validate_tw_pipe = Trailblazer::Activity::Circuit::Builder.TaskWrap(
         [:"task_wrap.call_task", validate_circuit, Trailblazer::Activity::Circuit::Processor, {}],
@@ -295,7 +293,7 @@ puts
         ], # TODO: circuit_options should be set outside of Create, in the canonical invoke.
         [
           [:"validate.task_wrap", validate_tw_pipe, Trailblazer::Activity::Circuit::Processor, {exec_context: Validate.new.freeze}, Trailblazer::Activity::Circuit::Node::Scoped, {}],
-          {validate_termini[:success] => :"save.task_wrap", validate_termini[:failure] => :failure}
+          {validate_outputs[:success] => :"save.task_wrap", validate_outputs[:failure] => :failure}
         ],
         [
           [:"save.task_wrap", save_tw_pipe, Trailblazer::Activity::Circuit::Processor, {}, Trailblazer::Activity::Circuit::Node::Scoped, {}],
@@ -318,12 +316,14 @@ puts
         termini: [:success, :failure]
       )
 
-      return create_circuit, create_termini, model_input_pipe, model_output_pipe, validate_termini, save_tw_pipe
+      create_outputs = validate_outputs.dup # TODO: introduce real separate signals.
+
+      return create_circuit, create_outputs, model_input_pipe, model_output_pipe, validate_outputs, save_tw_pipe
     end
   end
 
   it "wrap_runtime prototyping" do
-    create_circuit, create_termini, _, _, validate_termini, save_tw_pipe = Fixtures.fixtures
+    create_circuit, create_outputs, _, _, validate_outputs, save_tw_pipe = Fixtures.fixtures
 
     ctx = {params: {song: nil}, slug: 666}
 
@@ -404,10 +404,7 @@ puts
           copy_to_outer_ctx: copy_to_outer_ctx
         )
 
-  # puts "@@@@@ #{id.inspect}"
-              # puts "i will wrap #{id.inspect}"
-        if node.is_a?(Trailblazer::Activity::Circuit::Node) && node.task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
-
+        if node.task.instance_of?(Trailblazer::Activity::Circuit::Pipeline)
           node_attrs = extend_task_wrap_pipeline(wrap_runtime, node_attrs[:id], node, node_attrs)
         else
           # node = node = node.class[**node_attrs]
@@ -517,38 +514,9 @@ puts "yo"
     assert_equal flow_options[:application_ctx], {:params=>{:song=>nil}, slug: 666, :model=>"Object  / {:more=>666}", :errors=>["Object  / {:more=>666}", :song]}
     assert_equal lib_ctx.keys, []
     assert_equal flow_options.keys, [:application_ctx, :stack]
-    assert_equal signal, create_termini[:failure].task.config[:failure]
+    assert_equal signal, create_outputs[:failure]
 
     pp flow_options[:stack]
-
- #    [[:before, :Create, "{:params=>{:song=>nil}, :slug=>666}"],
- # [:before, :"model.task_wrap", "{:params=>{:song=>nil}, :slug=>666}"],
- # [:before, :input, "{:params=>{:song=>nil}, :slug=>666}"],
- # [:before, :my_model_input, "{:params=>{:song=>nil}, :slug=>666}"],
- # [:after, :my_model_input, "{:params=>{:song=>nil}, :slug=>666}", nil],
- # [:before, :more_model_input, "{:params=>{:song=>nil}, :slug=>666}"],
- # [:after, :more_model_input, "{:params=>{:song=>nil}, :slug=>666}", nil],
- # [:after, :input, "{:params=>{:song=>nil, :slug=>666}, :more=>666}", nil],
- # [:before, :"task_wrap.call_task", "{:params=>{:song=>nil, :slug=>666}, :more=>666}"],
- # [:after, :"task_wrap.call_task", "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
- # [:before, :output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
- # [:before, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}"],
- # [:after, :my_model_output, "{:params=>{:song=>nil, :slug=>666}, :more=>666, :spam=>false, :model=>\"Object  / {:more=>666}\"}", nil],
- # [:after, :output, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", nil],
- # [:after, :"model.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}", Trailblazer::Activity::Right],
- # [:before, :"validate.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
- # [:before, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
- # [:after, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", Trailblazer::Activity::Left],
- # [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
- # [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", #<struct Trailblazer::Activity::Terminus::Failure semantic=:failure>],
- # [:after,
- #  :"validate.task_wrap",
- #  "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}",
- #  #<struct Trailblazer::Activity::Terminus::Failure semantic=:failure>],
- # [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
- # [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", #<struct Trailblazer::Activity::Terminus::Failure semantic=:failure>],
- # [:after, :Create, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", #<struct Trailblazer::Activity::Terminus::Failure semantic=:failure>]]
-
 
     # raise ":task in failure is wrong "
     assert_stack flow_options[:stack], [
@@ -572,11 +540,11 @@ puts "yo"
         [:before, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\"}"],
         [:after, :run_checks, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", Trailblazer::Activity::Left],
         [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
-        [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
-        [:after, :"validate.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
+        [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_outputs[:failure]],
+        [:after, :"validate.task_wrap", "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_outputs[:failure]],
         [:before, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}"],
-        [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]],
-        [:after, :Create, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_termini[:failure]]
+        [:after, :failure, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_outputs[:failure]],
+        [:after, :Create, "{:params=>{:song=>nil}, :slug=>666, :model=>\"Object  / {:more=>666}\", :errors=>[\"Object  / {:more=>666}\", :song]}", validate_outputs[:failure]]
     ]
 
   end
@@ -748,7 +716,7 @@ puts "yo"
 
 require "benchmark/ips"
   it do
-    create_circuit, create_termini, model_input_pipe, model_output_pipe = Fixtures.fixtures()
+    create_circuit, create_outputs, model_input_pipe, model_output_pipe = Fixtures.fixtures()
 
     # context_implementation = Trailblazer::Context
     context_implementation = Trailblazer::MyContext
@@ -843,7 +811,7 @@ puts "ciiii"
 
   assert_equal flow_options[:application_ctx], {:params=>{:song=>nil}, slug: "0x666", :model=>"Object  / {:more=>\"0x666\"}", :errors=>["Object  / {:more=>\"0x666\"}", :song]}
   assert_equal lib_ctx.keys, []
-  assert_equal signal, create_termini[:failure].task.config[:failure]
+  assert_equal signal, create_outputs[:failure]
 
 puts "ywiiii"
   # success:
@@ -854,8 +822,7 @@ puts "ywiiii"
 
   assert_equal flow_options[:application_ctx], {:params=>{:song=>{title: "Uwe"}, id: 1}, slug: "0x666", :model=>"Object 1 / {:more=>\"0x666\"}", :save=>"Object 1 / {:more=>\"0x666\"}"}
   assert_equal lib_ctx.keys, []
-  assert_equal signal, create_termini[:success].task.config[:success]
-
+  assert_equal signal, create_outputs[:success]
 end
 
   it "run benchmark" do

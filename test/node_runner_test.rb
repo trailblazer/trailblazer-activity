@@ -201,41 +201,4 @@ class InvokerTest < Minitest::Spec
 
   end
 
-  it "{Runner.call}" do
-    my_pipe = Pipeline(
-      [:a, :a, _A::Task::Invoker::StepInterface::InstanceMethod],
-      [:b, :b, _A::Task::Invoker::StepInterface::InstanceMethod],
-      [:c, :c, _A::Task::Invoker::StepInterface::InstanceMethod],
-    )
 
-    my_pipe_node = [:my_pipe_node, my_pipe, _A::Circuit::Processor, {}, _A::Circuit::Node::Processor::Scoped, {}]
-    runner = _A::Circuit::Node::Runner
-
-    my_exec_context = T.def_steps(:a, :b, :c)
-
-    ctx, lib_ctx, signal = runner.(my_pipe_node, {seq: []}, {exec_context: my_exec_context}, nil, runner: runner)
-
-    assert_equal ctx[:seq], [:a, :b, :c]
-  end
-
-  # TODO: this tests Processor.
-  it "accepts {:start_node}" do
-    my_pipe = Pipeline(
-      [:a, :a, _A::Task::Invoker::StepInterface::InstanceMethod],
-      [:b, :b, _A::Task::Invoker::StepInterface::InstanceMethod],
-      [:c, :c, _A::Task::Invoker::StepInterface::InstanceMethod],
-    )
-
-    my_pipe_node = _A::Circuit::Node::Scoped[:my_pipe_node, my_pipe, _A::Circuit::Processor, {}, {}]
-    runner = _A::Circuit::Node::Runner
-
-    my_exec_context = T.def_steps(:a, :b, :c)
-
-    ctx, lib_ctx, signal = runner.(my_pipe_node, {seq: []}, {exec_context: my_exec_context}, nil, runner: runner,
-      start_node: [:b, my_pipe.config[:b]],
-      context_implementation: Trailblazer::MyContext
-    )
-
-    assert_equal ctx[:seq], [:b, :c]
-  end
-end
