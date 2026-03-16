@@ -96,19 +96,19 @@ module Trailblazer
 
         # DISCUSS: should that sit in Activity? it's higher level than Circuit.
         # TODO: test me.
-        # DISCUSS: this is a "std-lib" component.
+        # DISCUSS: this is a "std-lib" component. move this to {activity}.
         module Step
           def self.InstanceMethod(method_name)
             Builder.Pipeline(
               [:invoke_instance_method, method_name, Task::Adapter::StepInterface::InstanceMethod], # FIXME: we're currenly assuming that exec_context is passed down.
-              [:compute_binary_signal, Circuit::Step::ComputeBinarySignal, Task::Adapter::LibInterface],
+              [:compute_binary_signal, Activity::Step::ComputeBinarySignal, Task::Adapter::LibInterface],
             )
           end
 
           def self.Callable(callable)
             Builder.Pipeline(
               [:invoke_callable, callable, Trailblazer::Activity::Circuit::Task::Adapter::StepInterface],
-              [:compute_binary_signal, Trailblazer::Activity::Circuit::Step::ComputeBinarySignal, Trailblazer::Activity::Circuit::Task::Adapter::LibInterface],
+              [:compute_binary_signal, Activity::Step::ComputeBinarySignal, Trailblazer::Activity::Circuit::Task::Adapter::LibInterface],
             )
           end
         end

@@ -59,7 +59,7 @@ class TracePrototypeTest < Minitest::Spec
 
       # "invoke_instance_method -> compute_binary_signal"
       [:invoke_instance_method, :my_model_step, Circuit::Task::Adapter::StepInterface::InstanceMethod, {exec_context: my_step_interface_exec_context}, Trailblazer::Activity::Circuit::Node::Scoped, copy_to_outer_ctx: [:value]],
-      [:compute_binary_signal, Circuit::Step::ComputeBinarySignal, Circuit::Task::Adapter::LibInterface],
+      [:compute_binary_signal, _A::Step::ComputeBinarySignal, Circuit::Task::Adapter::LibInterface],
     )
 
     pipe_node = Circuit::Node::Scoped[id: :my_model, task: pipe, interface: Circuit::Processor,

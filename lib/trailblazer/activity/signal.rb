@@ -1,5 +1,11 @@
 module Trailblazer
   class Activity
+    class Signal; end
+
+    class Right < Signal; end
+
+    class Left < Signal; end
+
     # Generic run-time structures that are built via the DSL.
 
     # Any instance of subclass of End will halt the circuit's execution when hit.
@@ -34,11 +40,7 @@ module Trailblazer
       end
     end
 
-    class Signal; end
 
-    class Right < Signal; end
-
-    class Left < Signal; end
 
     # signal:   actual signal emitted by the task
     # color:    the mapping, where this signal will travel to. This can be e.g. Left=>:success. The polarization when building the graph.

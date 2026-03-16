@@ -10,10 +10,10 @@ module Trailblazer
         #
         # Feel free to benchmark and optimize this!
         def self.call(circuit, *instructions)
+          # TODO: evaluate if we can us  https://rubyapi.org/3.4/o/array#method-i-assoc
           blaaaaaa_FIXME = circuit.to_h
           flow_map = blaaaaaa_FIXME[:map]
           config = blaaaaaa_FIXME[:config]
-
           signal_to_reconnect = nil
 
           # Passing around start_id and last_id is for internal "caching" and part of this algorithm, not of the Circuit building.
