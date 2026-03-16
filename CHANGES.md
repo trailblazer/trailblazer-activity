@@ -1,12 +1,51 @@
-# 0.18.0
+# 1.0.0
 
-* Allow `:replace` in ADDS friendly interface.
-* `TaskWrap::INITIAL_wRAP_STATIC` is now `::INITIAL_TASK_WRAP`.
+## TaskAdapter
+
+Step: filters can now return true or false which can be directly wired as a signal.
+
+## TaskWrap
+
+* positional circuit interface even in Pipeline.
+* :return_args is now :return_ctx, since flow_options are passed through the pipeline anyway, thanks to the consistency introduced in this version.
+
+===> :application_ctx
+     :application_circuit_options
+
+## Positional circuit interface™
+
+* pipes can now, theoretically, be traced, too.
+* simpler! all executables have the same signature.
+* return ctx, flow_options, signal
+
+## Pipeline / ADDS
+
+Pipeline.call now behaves like just another circuit.
+pipeline tasks: circuit interface, returned signal is ignored.
+
+* Remove (depracate) `Pipeline::Row` as a row is always an [ID, Object] tuple.
+* It's now `Activity::Pipeline` as this concept is used for many other cases.
+* The `Activity.Pipeline()` method is the only way to create a Pipeline instance.
+
+* Move `Activity::TaskWrap::Pipeline` to `Activity::Pipeline`
+* Deprecate `Pipeline.new`
+* Remove {:row} option from ADDS as we're not wrapping anything anymore.
+
 * Remove `TaskWrap::Extension::WrapStatic`. We only use `TaskWrap::Extension` now. Note that presently, you
   cannot add options to the `config` field anymore via an extension.
-* Internals: we don't use `Compiler` in tests anymore as this is a concept moved to `trailblazer-workflow`.
-* Remove `Trailblazer::Activity::TaskBuilder.Binary()` deprecation.`
-* Introduce `Adds.call` as the canonical entry point for altering pipelines.
+* Remove `Trailblazer::Activity::TaskBuilder.Binary()` deprecation. This results in `Trailblazer::Activity::TaskBuilder` now being
+  `Trailblazer::Activity::Circuit::TaskAdapter`.
+* Introduce `Activity::Adds.call` as the canonical entry point for altering pipelines.
+* Allow `:replace` in ADDS friendly interface.
+* `Adds.call` accepts a `:row` option.
+* Rename `:end_events` to `:termini` in `Circuit#to_h`.
+* Remove `Activity.call` for the sake of the new canonical invoke. Use `Railway.__(activity, ctx)` instead.
+
+## Internals
+
+* `TaskWrap::INITIAL_wRAP_STATIC` is now `::INITIAL_TASK_WRAP`.
+* Remove `#def_steps` and `#assert_invoke` and move it to to `trailblazer-core-utils`.
+* We don't use `Compiler` in tests anymore as this is a concept moved to `trailblazer-workflow`.
 
 # 0.17.0
 

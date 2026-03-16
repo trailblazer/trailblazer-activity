@@ -1,5 +1,11 @@
 module Trailblazer
   class Activity
+    class Signal; end
+
+    class Right < Signal; end
+
+    class Left < Signal; end
+
     # Generic run-time structures that are built via the DSL.
 
     # Any instance of subclass of End will halt the circuit's execution when hit.
@@ -12,8 +18,8 @@ module Trailblazer
         @options = options.merge(semantic: semantic)
       end
 
-      def call(args, **)
-        return self, args
+      def call(ctx, flow_options, circuit_options)
+        return ctx, flow_options, self
       end
 
       def to_h
@@ -27,17 +33,14 @@ module Trailblazer
       alias inspect to_s
     end
 
+    # DISCUSS: we actually don't need this here anymore, this is only good for modeling in the DSL.
     class Start < End
-      def call(args, **)
-        return Activity::Right, args
+      def call(ctx, flow_options, circuit_options)
+        return ctx, flow_options, Activity::Right
       end
     end
 
-    class Signal; end
 
-    class Right < Signal; end
-
-    class Left < Signal; end
 
     # signal:   actual signal emitted by the task
     # color:    the mapping, where this signal will travel to. This can be e.g. Left=>:success. The polarization when building the graph.

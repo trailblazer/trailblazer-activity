@@ -1,103 +1,49 @@
 module Trailblazer
   class Activity
-    # Running a Circuit instance will run all tasks sequentially depending on the former's result.
-    # Each task is called and retrieves the former task's return values.
-    #
-    # Note: Please use #Activity as a public circuit builder.
-    #
-    # @param map         [Hash] Defines the wiring.
-    # @param termini [Array] Tasks that stop execution of the circuit.
-    #
-    #   result = circuit.(start_at, *args)
-    #
-    # @see Activity
-    # @api semi-private
-    #
-    # This is the "pipeline operator"'s implementation.
-    class Circuit
-      def initialize(map, termini, start_task:, name: nil)
-        @map         = map
-        @termini     = termini
-        @name        = name
-        @start_task  = start_task
+    # A circuit is run using {Circuit::Processor}.
+    class Circuit < Struct.new(:map, :start_task_id, :termini, :config, keyword_init: true)
+      # DISCUSS: do we need a config after all? or can we infer such thing from the flow_map?
+      def self.build(flow_map:, config:)
+        # Init logic, done when compiling Activitys and
+        # when extending ciruits via :wrap_runtime.
+        ids           = flow_map.keys
+        start_task_id = ids[0]
+        termini       = [ids[-1]] # FIXME: test that!
+
+        new(
+          map:            flow_map,
+          config:         config,
+          start_task_id:  start_task_id,
+          termini:        termini,
+        )
       end
 
-      # @param args [Array] all arguments to be passed to the task's `call`
-      # @param task [callable] task to call
-      Runner = ->(task, args, **circuit_options) { task.(args, **circuit_options) }
+      # Find the next step for {current_node_id => signal}.
+      # This is called in {Circuit::Processor.call}.
+      def resolve(current_node_id, signal)
+        return if termini.include?(current_node_id) # this is faster than any other trick I tried, with {terminus => nil} etc.
 
-      # Runs the circuit until we hit a stop event.
-      #
-      # This method throws exceptions when the returned value of a task doesn't match
-      # any wiring.
-      #
-      # @param task An event or task of this circuit from where to start
-      # @param options anything you want to pass to the first task
-      # @param flow_options Library-specific flow control data
-      # @return [last_signal, options, flow_options, *args]
-      #
-      # NOTE: returned circuit_options are discarded when calling the runner.
-      def call(args, start_task: @start_task, runner: Runner, **circuit_options)
-        circuit_options = circuit_options.merge(runner: runner) # TODO: set the :runner option via arguments_for_call to save the merge?
-        task            = start_task
+        # This lookup will always succeed unless something is entirely wrong.
+        signal_map = map[current_node_id] # assumption: ID must always be a symbol.
+# puts "circuit ~~~~~~ current_node_id #{current_node_id.inspect}, Signal<#{signal.inspect}> #{signal_map}"
+        # return if signal_map == :terminus
 
-        loop do
-          last_signal, args, _discarded_circuit_options = runner.(
-            task,
-            args,
-            **circuit_options
-          )
+        next_task_id = signal_map[signal] or raise "#{current_node_id}===>#{signal.inspect} @ #{signal_map}".inspect # this will be nil for a terminus.
 
-          # Stop execution of the circuit when we hit a terminus.
-          return [last_signal, args] if @termini.include?(task)
-
-          if (next_task = next_for(task, last_signal))
-            task = next_task
-          else
-            raise IllegalSignalError.new(
-              task,
-              signal: last_signal,
-              outputs: @map[task],
-              exec_context: circuit_options[:exec_context] # passed at run-time from DSL
-            )
-          end
-        end
+        return next_task_id, config[next_task_id] # TODO: can we save this lookup and optimize the map directly?
       end
 
-      # Returns the circuit's components.
-      def to_h
-        {
-          map: @map,
-          end_events: @termini, # TODO: deprecate {:end_events} and name it {:termini}.
-          start_task: @start_task
-        }
+
+
+      # def start_for
+      #   return termini, *config[start_task_id]
+      # end
+
+      def to_a_FIXME
+        return start_task_id, config[start_task_id] # FIXME: is map.first faster?
       end
-
-      private
-
-      def next_for(last_task, signal)
-        outputs = @map[last_task]
-        outputs[signal]
-      end
-
-      # Common reasons to raise IllegalSignalError are when returning signals from
-      #   * macros which are not registered
-      #   * subprocesses where parent process have not registered that signal
-      #   * ciruit interface steps, for example: `step task: method(:validate)`
-      class IllegalSignalError < RuntimeError
-        attr_reader :task, :signal
-
-        def initialize(task, signal:, outputs:, exec_context:)
-          @task = task
-          @signal = signal
-
-          message = "#{exec_context.class}:\n" \
-            "\e[31mUnrecognized signal `#{signal.inspect}` returned from #{task.inspect}. Registered signals are:\e[0m\n" \
-            "\e[32m#{outputs.keys.map(&:inspect).join("\n")}\e[0m"
-
-          super(message)
-        end
-      end
-    end
+    end # Circuit
   end
 end
+# TODO: map should be named flow_map
+# config => tasks_attributes?
