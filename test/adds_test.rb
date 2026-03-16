@@ -5,12 +5,13 @@ class CircuitAddsTest < Minitest::Spec
 
   let(:model_tw_pipe) do
     Trailblazer::Activity::Circuit::Builder.Pipeline(
-      [:a, :a],
-      [:b, :b],
-      [:c, :c],
-      exec_context: my_exec_context
+      [:a, :a, _A::Circuit::Task::Adapter::LibInterface::InstanceMethod, exec_context: my_exec_context],
+      [:b, :b, _A::Circuit::Task::Adapter::LibInterface::InstanceMethod, exec_context: my_exec_context],
+      [:c, :c, _A::Circuit::Task::Adapter::LibInterface::InstanceMethod, exec_context: my_exec_context],
     )
   end
+
+  let(:node_options) { {interface: Trailblazer::Activity::Circuit::Task::Adapter::LibInterface::InstanceMethod, merge_to_lib_ctx: {exec_context: my_exec_context}} }
 
   after do
     # No mutation on original circuit.
@@ -40,8 +41,8 @@ class CircuitAddsTest < Minitest::Spec
   it "{before, nil, before, nil} adds to the beginning, the last becomes the first" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :before],
-      [[:y, :y, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :before],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :before],
+      [_A::Circuit::Node::Scoped[id: :y, task: :y, **node_options], :before],
     )
 
     assert_run extended_tw_pipe, seq: [:y, :z, :a, :b, :c], terminus: Trailblazer::Activity::Right
@@ -50,7 +51,7 @@ class CircuitAddsTest < Minitest::Spec
   it "{before, :b}" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :before, :b],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :before, :b],
     )
 
     assert_run extended_tw_pipe, seq: [:a, :z, :b, :c], terminus: Trailblazer::Activity::Right
@@ -59,7 +60,7 @@ class CircuitAddsTest < Minitest::Spec
   it "{after, :b}" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :after, :b],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :after, :b],
     )
 
     assert_run extended_tw_pipe, seq: [:a, :b, :z, :c], terminus: Trailblazer::Activity::Right
@@ -68,8 +69,8 @@ class CircuitAddsTest < Minitest::Spec
   it "{after, :b}, {after: :b}" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :after, :b],
-      [[:y, :y, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :after, :b],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :after, :b],
+      [_A::Circuit::Node::Scoped[id: :y, task: :y, **node_options], :after, :b],
     )
 
     assert_run extended_tw_pipe, seq: [:a, :b, :y, :z, :c], terminus: Trailblazer::Activity::Right
@@ -78,8 +79,8 @@ class CircuitAddsTest < Minitest::Spec
   it "{after, nil}, {after: nil}" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :after],
-      [[:y, :y, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :after],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :after],
+      [_A::Circuit::Node::Scoped[id: :y, task: :y, **node_options], :after],
     )
 
     assert_run extended_tw_pipe, seq: [:a, :b, :c, :z, :y], terminus: Trailblazer::Activity::Right
@@ -88,7 +89,7 @@ class CircuitAddsTest < Minitest::Spec
   it ":delete, first node" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :delete, :a],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :delete, :a],
     )
 
     assert_run extended_tw_pipe, seq: [:b, :c], terminus: Trailblazer::Activity::Right
@@ -97,7 +98,7 @@ class CircuitAddsTest < Minitest::Spec
   it ":delete middle" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :delete, :b],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :delete, :b],
     )
 
     assert_run extended_tw_pipe, seq: [:a, :c], terminus: Trailblazer::Activity::Right
@@ -106,7 +107,7 @@ class CircuitAddsTest < Minitest::Spec
   it ":delete, last" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :delete, :c],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :delete, :c],
     )
 
     assert_run extended_tw_pipe, seq: [:a, :b], terminus: Trailblazer::Activity::Right
@@ -115,7 +116,7 @@ class CircuitAddsTest < Minitest::Spec
   it ":replace first" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :replace, :a],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :replace, :a],
     )
 
     assert_run extended_tw_pipe, seq: [:z, :b, :c], terminus: Trailblazer::Activity::Right
@@ -126,7 +127,7 @@ class CircuitAddsTest < Minitest::Spec
   it ":replace middle" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :replace, :b],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :replace, :b],
     )
 
     assert_run extended_tw_pipe, seq: [:a, :z, :c], terminus: Trailblazer::Activity::Right
@@ -137,7 +138,7 @@ class CircuitAddsTest < Minitest::Spec
   it ":replace last" do
     extended_tw_pipe = Trailblazer::Activity::Circuit::Adds.(
       model_tw_pipe,
-      [[:z, :z, Trailblazer::Activity::Task::Invoker::LibInterface::InstanceMethod____withSignal_FIXME, {exec_context: my_exec_context}], :replace, :c],
+      [_A::Circuit::Node::Scoped[id: :z, task: :z, **node_options], :replace, :c],
     )
 
     assert_run extended_tw_pipe, seq: [:a, :b, :z], terminus: Trailblazer::Activity::Right
