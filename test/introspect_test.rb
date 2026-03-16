@@ -2,87 +2,40 @@ require "test_helper"
 
 class IntrospectionTest < Minitest::Spec
   describe "Introspect.find_path" do
-    it "#find_path" do
-      flat_activity = Fixtures.flat_activity # [b, c]
+    def fixtures
+      my_nested_pipe = Pipeline(
+        [:d, :d],
+        [:e, :e],
+      )
 
-      middle_tasks = Fixtures.default_tasks("b" => flat_activity)
-      middle_activity = Fixtures.flat_activity(tasks: middle_tasks) # [b, [b, c]]
+      my_pipe = Pipeline(
+        [:a, :a],
+        [:b, my_nested_pipe, _A::Circuit::Processor],
+        [:c, :c],
+      )
 
-      tasks = Fixtures.default_tasks("b" => middle_activity)
-      activity = Fixtures.flat_activity(tasks: tasks) # [b, [b, [b,c]]]
+      top_node = _A::Circuit::Node[id: :Create, task: my_pipe, interface: _A::Circuit::Processor]
 
-
-      #@ find top-activity which returns a special Node.
-      node, host_activity, _graph = Trailblazer::Activity::Introspect.find_path(activity, [])
-      assert_equal node.class, Trailblazer::Activity::Schema::Nodes::Attributes
-      assert_equal node[:task], activity
-      assert_equal host_activity, Trailblazer::Activity::TaskWrap.container_activity_for(activity)
-
-      #@ one element path
-      node, host_activity, _graph = Trailblazer::Activity::Introspect.find_path(activity, ["b"])
-      assert_equal node.class, Trailblazer::Activity::Schema::Nodes::Attributes
-      assert_equal node[:task], middle_activity
-      assert_equal host_activity, activity
-
-      #@ nested element
-      node, host_activity, _graph = Trailblazer::Activity::Introspect.find_path(activity, ["b", "b", "c"])
-      assert_equal node.class, Trailblazer::Activity::Schema::Nodes::Attributes
-      assert_equal node[:task], Implementing.method(:c)
-      assert_equal host_activity, flat_activity
-
-      #@ non-existent element
-      assert_nil Trailblazer::Activity::Introspect.find_path(activity, [:c])
-      assert_nil Trailblazer::Activity::Introspect.find_path(activity, ["flat_activity", :c])
-    end
-  end
-
-  describe "Introspect.Nodes()" do
-    let(:task_map) { Trailblazer::Activity::Introspect.Nodes(Fixtures.flat_activity)  } # [B, C]
-
-    it "returns Nodes that looks like a Hash" do
-      assert_equal task_map.class, Trailblazer::Activity::Schema::Nodes
+      return top_node, my_pipe, my_nested_pipe
     end
 
-    it "exposes #[] to find by task" do
-      attributes = task_map[Implementing.method(:b)]
-      assert_equal attributes.id,   "b"
-      assert_equal attributes.task, Implementing.method(:b)
+    it "root node" do
+      top_node, _ = fixtures
 
-      #@ non-existent
-      assert_nil task_map[nil]
+      assert_equal _A::Circuit::Node::Introspect.find_path(top_node, []), nil
+      # DISCUSS: do we need to cover this?
     end
 
-    it "exposes #fetch to find by task" do
-      assert_equal task_map.fetch(Implementing.method(:b)).id, "b"
+    it "[:a]" do
+      top_node, top_pipe = fixtures
 
-      #@ non-existent
-      assert_raises KeyError do task_map.fetch(nil) end
+      assert_equal _A::Circuit::Node::Introspect.find_path(top_node, [:a]), top_pipe.config[:a]
     end
 
-    it "accepts {:id} option" do
-      attrs = Trailblazer::Activity::Introspect.Nodes(Fixtures.flat_activity, id: "b")
+    it "[:a, :e]" do
+      top_node, _, my_nested_pipe = fixtures
 
-      assert_equal attrs.id, "b"
-      assert_equal attrs.task, Implementing.method(:b)
-    end
-
-    it "accepts {id: nil}" do
-      flat_activity = Fixtures.flat_activity
-
-      container_activity = Trailblazer::Activity::TaskWrap.container_activity_for(flat_activity)
-
-      attrs = Trailblazer::Activity::Introspect.Nodes(container_activity, id: nil)
-
-
-      assert_equal attrs.id, nil
-      assert_equal attrs.task, flat_activity
-    end
-
-    it "accepts {:task} option" do
-      attrs = Trailblazer::Activity::Introspect.Nodes(Fixtures.flat_activity, task: Implementing.method(:b))
-
-      assert_equal attrs.id, "b"
-      assert_equal attrs.task, Implementing.method(:b)
+      assert_equal _A::Circuit::Node::Introspect.find_path(top_node, [:b, :e]), my_nested_pipe.config[:e]
     end
   end
 end
