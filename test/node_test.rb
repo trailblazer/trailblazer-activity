@@ -40,8 +40,36 @@ end
 class NodeScopedCallTest < Minitest::Spec
   let(:capture_task) { Capture.new(:captured, {pollute: 3}) }
 
-  it "{:return_outer_signal}" do
-    raise
+  it "scoping defaults to all get in, nothing gets out" do
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: capture_task, interface: _A::Circuit::Task::Adapter::LibInterface]
+
+    lib_ctx, flow_options, signal = my_node.(
+      {a: 1},
+      {b: 2},
+      Object,
+      context_implementation: Trailblazer::Activity::Circuit::Context
+    )
+
+    assert_equal lib_ctx, {a: 1} # nothing merged into lib_ctx
+    assert_equal flow_options, {:b=>2, :captured=>[{a: 1}, {:b=>2}, Object, {a: 1}]}
+    assert_equal signal, Object
+  end
+
+  it "{:return_outer_signal} overrides local node's signal" do
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured, {pollute: 3}, Trailblazer::Activity::Left), interface: _A::Circuit::Task::Adapter::LibInterface,
+      return_outer_signal: true
+    ]
+
+    lib_ctx, flow_options, signal = my_node.(
+      {a: 1},
+      {b: 2},
+      Object,
+      context_implementation: Trailblazer::Activity::Circuit::Context
+    )
+
+    assert_equal lib_ctx, {a: 1} # nothing merged into lib_ctx
+    assert_equal flow_options, {:b=>2, :captured=>[{a: 1}, {:b=>2}, Object, {a: 1}]}
+    assert_equal signal, Object
   end
 
   it "in: [], out: []" do

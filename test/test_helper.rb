@@ -41,7 +41,13 @@ module AssertRun
   end
 end
 
-class Capture < Struct.new(:name, :pollute)
+class Capture < Struct.new(:name, :pollute, :return_signal)
+  Undefined = Class.new
+
+  def initialize(name, pollute = nil, return_signal = Undefined)
+    super
+  end
+
   def call(lib_ctx, flow_options, signal, **kwargs)
     flow_options = flow_options.merge(
       name => [
@@ -53,6 +59,8 @@ class Capture < Struct.new(:name, :pollute)
     )
 
     lib_ctx = lib_ctx.merge(pollute) if pollute
+
+    signal = return_signal unless return_signal == Undefined
 
     return lib_ctx, flow_options, signal
   end
