@@ -40,6 +40,10 @@ end
 class NodeScopedCallTest < Minitest::Spec
   let(:capture_task) { Capture.new(:captured, {pollute: 3}) }
 
+  it "{:return_outer_signal}" do
+    raise
+  end
+
   it "in: [], out: []" do
     my_node = _A::Circuit::Node::Scoped[id: :a, task: capture_task, interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [],
