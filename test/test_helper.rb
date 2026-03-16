@@ -41,7 +41,7 @@ module AssertRun
   end
 end
 
-class Capture < Struct.new(:name)
+class Capture < Struct.new(:name, :pollute)
   def call(lib_ctx, flow_options, signal, **kwargs)
     flow_options = flow_options.merge(
       name => [
@@ -52,7 +52,7 @@ class Capture < Struct.new(:name)
       ]
     )
 
-    lib_ctx = lib_ctx.merge(c: 3)
+    lib_ctx = lib_ctx.merge(pollute) if pollute
 
     return lib_ctx, flow_options, signal
   end

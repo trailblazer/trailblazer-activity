@@ -38,8 +38,10 @@ end
 
 # Test calling Scoped.
 class NodeScopedCallTest < Minitest::Spec
+  let(:capture_task) { Capture.new(:captured, {pollute: 3}) }
+
   it "in: [], out: []" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: capture_task, interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [],
       copy_to_outer_ctx: []
     ]
@@ -57,7 +59,7 @@ class NodeScopedCallTest < Minitest::Spec
   end
 
   it "in: [:a], out: []" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: capture_task, interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [:a],
       copy_to_outer_ctx: []
     ]
@@ -74,10 +76,10 @@ class NodeScopedCallTest < Minitest::Spec
     assert_equal signal, Object
   end
 
-  it "in: [], out: [:c]" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
+  it "in: [], out: [:c], expose an internally set variable" do
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: capture_task, interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [],
-      copy_to_outer_ctx: [:c]
+      copy_to_outer_ctx: [:pollute]
     ]
 
     lib_ctx, flow_options, signal = my_node.(
@@ -87,15 +89,15 @@ class NodeScopedCallTest < Minitest::Spec
       context_implementation: Trailblazer::Activity::Circuit::Context
     )
 
-    assert_equal lib_ctx, {a: 1, y: true, c: 3} # {:c} merged into lib_ctx
+    assert_equal lib_ctx, {a: 1, y: true, pollute: 3} # {:pollute} internally merged into lib_ctx
     assert_equal flow_options, {:b=>2, :captured=>[{}, {:b=>2}, Object, {}]} # we cannot see anything inside.
     assert_equal signal, Object
   end
 
   it "in: [:a], out: [:c]" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: capture_task, interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [:a],
-      copy_to_outer_ctx: [:c]
+      copy_to_outer_ctx: [:pollute]
     ]
 
     lib_ctx, flow_options, signal = my_node.(
@@ -105,13 +107,13 @@ class NodeScopedCallTest < Minitest::Spec
       context_implementation: Trailblazer::Activity::Circuit::Context
     )
 
-    assert_equal lib_ctx, {a: 1, y: true, c: 3} # {:c} merged into lib_ctx
+    assert_equal lib_ctx, {a: 1, y: true, pollute: 3} # {:pollute} internally merged into lib_ctx
     assert_equal flow_options, {:b=>2, :captured=>[{a: 1}, {:b=>2}, Object, {a: 1}]} # we cannot see anything inside.
     assert_equal signal, Object
   end
 
   it "in: [], out: [], merge_to_lib_ctx: {z: []}" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: capture_task, interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [],
       copy_to_outer_ctx: [],
       merge_to_lib_ctx: {z: Module}
@@ -130,7 +132,7 @@ class NodeScopedCallTest < Minitest::Spec
   end
 
   it "in: [:a], out: [], merge_to_lib_ctx: {z: []}" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: capture_task, interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [:a],
       copy_to_outer_ctx: [],
       merge_to_lib_ctx: {z: Module}
@@ -149,9 +151,9 @@ class NodeScopedCallTest < Minitest::Spec
   end
 
   it "in: [:a], out: [:c], merge_to_lib_ctx: {z: []}" do
-    my_node = _A::Circuit::Node::Scoped[id: :a, task: Capture.new(:captured), interface: _A::Circuit::Task::Adapter::LibInterface,
+    my_node = _A::Circuit::Node::Scoped[id: :a, task: capture_task, interface: _A::Circuit::Task::Adapter::LibInterface,
       copy_from_outer_ctx: [:a],
-      copy_to_outer_ctx: [:c],
+      copy_to_outer_ctx: [:pollute],
       merge_to_lib_ctx: {z: Module}
     ]
 
@@ -162,7 +164,7 @@ class NodeScopedCallTest < Minitest::Spec
       context_implementation: Trailblazer::Activity::Circuit::Context
     )
 
-    assert_equal lib_ctx, {a: 1, y: true, c: 3} # original lib_ctx
+    assert_equal lib_ctx, {a: 1, y: true, pollute: 3} # original lib_ctx
     assert_equal flow_options, {:b=>2, :captured=>[{a: 1, z: Module}, {:b=>2}, Object, {a: 1, z: Module}]} # we can see :a and :z.
     assert_equal signal, Object
   end
