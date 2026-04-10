@@ -36,7 +36,7 @@ class StepTest < Minitest::Spec
       def a(ctx, seq:, **)
         seq << :a
 
-        {my_value: Hash}
+        {my_value: Hash} # this will be {:value} in lib_ctx.
       end
     end.new
 

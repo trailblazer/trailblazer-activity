@@ -11,11 +11,13 @@ module Trailblazer
           # this step isn't necessary because a step, per definition, mutates the target_ctx. This is the
           # opposite of clean, but it's the API we introduced and that proved to be super handy.
           # [:unset_target_ctx, Step.method(:unset_target_ctx)], # write the mutated target_ctx back to where it came from originally.
-        ]
 
-        steps << [:compute_binary_signal, Step.method(:compute_binary_signal)] if binary
+          binary ? [:compute_binary_signal, Step.method(:compute_binary_signal)] : nil,
+        ].compact
 
-        my_pipe = Trailblazer::Circuit::Builder.Pipeline(*steps)
+        pipe = Trailblazer::Circuit::Builder.Pipeline(*steps)
+
+        return pipe
       end
 
       def self.build(provider, id: :invoke_step, binary: true, **options_for_node)
@@ -30,6 +32,8 @@ module Trailblazer
         return lib_ctx, flow_options, signal
       end
 
+      # DISCUSS: this could be done by Node::Scoped::TargetCtx or whatever but currently
+      #          i feel this is okay as a separate step.
       def self.set_target_ctx(lib_ctx, flow_options, signal, **)
         lib_ctx = lib_ctx.merge(target_ctx: flow_options.fetch(:application_ctx))
 
