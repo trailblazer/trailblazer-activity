@@ -49,6 +49,21 @@ class StepTest < Minitest::Spec
     assert_equal lib_ctx, {exec_context: my_exec_context, value: {my_value: Hash}}
   end
 
+  it "{can_return_signal: true}" do
+    my_signal = Class.new(Trailblazer::Activity::Signal)
+
+    my_provider = ->(ctx, signals:, **) do
+      signals[1]
+    end
+
+    my_node = Trailblazer::Activity::Step.build(my_provider, binary: true)
+
+    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
+      terminus: my_signal,
+      seq: nil,
+      flow_options: {application_ctx: {signals: [0, my_signal, 2]}}
+  end
+
   it "doesn't rely on {application_ctx} mutability and writes the {target_ctx} back to {flow_options}" do
 
   end
