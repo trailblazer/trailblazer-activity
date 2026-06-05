@@ -31,25 +31,25 @@ class StepTest < Minitest::Spec
       terminus: Trailblazer::Activity::Left
   end
 
-  it "{binary: false} only sets {:value} on internal {lib_ctx}" do
+  it "{binary: false} only returns value-on-signal" do
     my_exec_context = Class.new do
       def a(ctx, seq:, **)
         seq << :a
 
-        {my_value: Hash} # this will be {:value} in lib_ctx.
+        {my_value: Hash} # this will be the returned "signal" (value-on-signal).
       end
     end.new
 
-    my_node = Trailblazer::Activity::Step.build(:a, binary: false, copy_to_outer_ctx: [:value])
+    my_node = Trailblazer::Activity::Step.build(:a, binary: false)
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
       exec_context: my_exec_context,
-      terminus: nil
+      terminus: {my_value: Hash}
 
-    assert_equal lib_ctx, {exec_context: my_exec_context, value: {my_value: Hash}}
+    assert_equal lib_ctx, {exec_context: my_exec_context}
   end
 
-  it "{can_return_signal: true}" do
+  it "we can return any signal. currently, the {is_signal?} step is added per default" do
     my_signal = Class.new(Trailblazer::Activity::Signal)
 
     my_provider = ->(ctx, signals:, **) do
@@ -58,7 +58,7 @@ class StepTest < Minitest::Spec
 
     my_node = Trailblazer::Activity::Step.build(my_provider, binary: true)
 
-    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
+    lib_ctx, flow_options, signal = assert_run my_node, node: true,
       terminus: my_signal,
       seq: nil,
       flow_options: {application_ctx: {signals: [0, my_signal, 2]}}
