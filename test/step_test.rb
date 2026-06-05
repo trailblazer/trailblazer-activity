@@ -31,6 +31,16 @@ class StepTest < Minitest::Spec
       terminus: Trailblazer::Activity::Left
   end
 
+  it "callable providers don't get Scoped" do
+    skip "we currently set lib_ctx[:target_ctx] and hence need scoping :)"
+    my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
+
+    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
+      terminus: Trailblazer::Activity::Right
+
+    assert_equal lib_ctx, {a: 1}
+  end
+
   it "{binary: false} only returns value-on-signal" do
     my_exec_context = Class.new do
       def a(ctx, seq:, **)
