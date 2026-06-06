@@ -4,15 +4,11 @@ module Trailblazer
 
       module Resolver # FIXME: move to {circuit}?
         module ValueOnSignal
-          class Conditional < Struct.new(:known_signals, :id_for_known_signal, :id_for_else)
+          class Conditional < Circuit::Resolver::Conditional
             def fetch(signal)
               decider_signal, value = signal
 
-              if known_signals.include?(decider_signal)
-                return id_for_known_signal, value
-              end
-# raise "do we want such complex Resolvers?"
-              return id_for_else, value
+              super(decider_signal, value)
             end
           end
         end
