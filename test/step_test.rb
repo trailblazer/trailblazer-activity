@@ -9,11 +9,11 @@ class StepTest < Minitest::Spec
     my_node = Trailblazer::Activity::Step.build(:a)
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      exec_context: my_exec_context,
+      circuit_options: {exec_context: my_exec_context},
       terminus: Trailblazer::Activity::Right
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      exec_context: my_exec_context,
+      circuit_options: {exec_context: my_exec_context},
       flow_options: {application_ctx: {seq: [], a: false}},
       terminus: Trailblazer::Activity::Left
   end
@@ -22,11 +22,11 @@ class StepTest < Minitest::Spec
     my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      exec_context: my_exec_context,
+      circuit_options: {exec_context: my_exec_context},
       terminus: Trailblazer::Activity::Right
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      exec_context: my_exec_context,
+      circuit_options: {exec_context: my_exec_context},
       flow_options: {application_ctx: {seq: [], a: false}},
       terminus: Trailblazer::Activity::Left
   end
@@ -53,10 +53,10 @@ class StepTest < Minitest::Spec
     my_node = Trailblazer::Activity::Step.build(:a, binary: false)
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      exec_context: my_exec_context,
+      circuit_options: {exec_context: my_exec_context},
       terminus: {my_value: Hash}
 
-    assert_equal lib_ctx, {exec_context: my_exec_context}
+    assert_equal lib_ctx, {}
   end
 
   it "we can return any signal. currently, the {is_signal?} step is added per default" do

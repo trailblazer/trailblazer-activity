@@ -12,8 +12,6 @@ module Trailblazer
             end
           end
         end
-
-
       end
 
       def self.build_circuit(provider, binary:) # DISCUSS: allow handing in {:my_signal_fixme} ?
