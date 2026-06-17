@@ -20,7 +20,7 @@ module Trailblazer
         lib_interface = Circuit::Task::Adapter::LibInterface
 
         steps = [
-          [:set_target_ctx, Step.method(:set_target_ctx), lib_interface, connections: Circuit::Resolver::Fixed.new(:invoke_provider)], # DISCUSS: the target_ctx related steps might be changed. They're currently the cleanest way to "configure" {invoke_provider}.
+          [:target_ctx_as_signal, Step.method(:target_ctx_as_signal), lib_interface, connections: Circuit::Resolver::Fixed.new(:invoke_provider)], # DISCUSS: the target_ctx related steps might be changed. They're currently the cleanest way to "configure" {invoke_provider}.
           [:invoke_provider, provider, adapter, connections: Circuit::Resolver::Fixed.new(:is_signal?)],
 
           # this step isn't necessary because a step, per definition, mutates the target_ctx. This is the
@@ -47,10 +47,11 @@ module Trailblazer
         return lib_ctx, flow_options, [false, value] # DISCUSS: false implies "we have to go to compute_binary_signal"
       end
 
-      def self.build(provider, id: :invoke_step, binary: true, **options_for_node)
+      # TODO: how could we use Node wrapping? Do we need that?
+      def self.build(provider, id: :invoke_step, binary: true, node_class: Circuit::Node::MergeToCircuitOptions, **options_for_node)
         pipe =  build_circuit(provider, binary: binary)
 
-        Circuit::Node::Scoped[id, pipe, Circuit::Processor, **options_for_node] # DISCUSS: do we need Scoped for the provider invocation?
+        node_class[id, pipe, Circuit::Processor, options_for_node]
       end
 
       def self.compute_binary_signal(lib_ctx, flow_options, value, **)
@@ -61,11 +62,10 @@ module Trailblazer
 
       # DISCUSS: this could be done by Node::Scoped::TargetCtx or whatever but currently
       #          i feel this is okay as a separate step.
-      # DISCUSS: could we save writing to lib_ctx here so we can save the Scoped?
-      def self.set_target_ctx(lib_ctx, flow_options, signal, **)
-        lib_ctx = lib_ctx.merge(target_ctx: flow_options.fetch(:application_ctx))
+      def self.target_ctx_as_signal(lib_ctx, flow_options, signal, **)
+        target_ctx = flow_options.fetch(:application_ctx)
 
-        return lib_ctx, flow_options, signal
+        return lib_ctx, flow_options, target_ctx # DISCUSS: The next node needs to be aware of the signal being the target_ctx. this is usually a provider with StepInterface.
       end
 
       # In a world where the step interface mutates the target_ctx, we actually don't "need"

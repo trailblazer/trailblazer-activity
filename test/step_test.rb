@@ -5,6 +5,28 @@ class StepTest < Minitest::Spec
 
   let(:my_exec_context) { T.def_steps(:a) }
 
+  it "doesn't change {:lib_ctx}" do
+    my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
+
+    lib_ctx, _ = assert_run my_node, node: true, seq: [:a], terminus: Trailblazer::Activity::Right,
+      a: 1 # something for {lib_ctx}.
+
+    assert_equal lib_ctx, {a: 1}
+  end
+
+  it "doesn't change the incoming signal when configured (does that mean {binary: false}???)" do
+    # that would mean we want return_outer_signal and *not* return the signal from the step/provider.
+  end
+
+  it "allows, at compile-time, setting the {:exec_context} for the provider instance method" do
+    my_node = Trailblazer::Activity::Step.build(:a, exec_context: my_exec_context) # This implies MergeToCircuitOptions.
+
+    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a], terminus: Trailblazer::Activity::Right,
+      a: 1 # something for {lib_ctx}.
+
+    assert_equal lib_ctx, {a: 1}
+  end
+
   it "uses flow_options[:application_ctx] as target_ctx and returns a binary signal" do
     my_node = Trailblazer::Activity::Step.build(:a)
 
