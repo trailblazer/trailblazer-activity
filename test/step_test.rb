@@ -9,9 +9,10 @@ class StepTest < Minitest::Spec
     my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
 
     lib_ctx, _ = assert_run my_node, node: true, seq: [:a], terminus: Trailblazer::Activity::Right,
-      a: 1 # something for {lib_ctx}.
+      a: 1, # something for {lib_ctx}.
+      use_application_ctx: false
 
-    assert_equal lib_ctx, {a: 1}
+    assert_equal lib_ctx, {a: 1, target_ctx: {seq: [:a]}}
   end
 
   it "doesn't change the incoming signal when configured (does that mean {binary: false}???)" do
@@ -22,9 +23,10 @@ class StepTest < Minitest::Spec
     my_node = Trailblazer::Activity::Step.build(:a, exec_context: my_exec_context) # This implies MergeToCircuitOptions.
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a], terminus: Trailblazer::Activity::Right,
-      a: 1 # something for {lib_ctx}.
+      a: 1, # something for {lib_ctx}.
+      use_application_ctx: false
 
-    assert_equal lib_ctx, {a: 1}
+    assert_equal lib_ctx, {a: 1, target_ctx: {seq: [:a]}}
   end
 
   it "uses flow_options[:application_ctx] as target_ctx and returns a binary signal" do
@@ -32,12 +34,14 @@ class StepTest < Minitest::Spec
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
       circuit_options: {exec_context: my_exec_context},
-      terminus: Trailblazer::Activity::Right
+      terminus: Trailblazer::Activity::Right,
+      use_application_ctx: false
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
       circuit_options: {exec_context: my_exec_context},
-      flow_options: {application_ctx: {seq: [], a: false}},
-      terminus: Trailblazer::Activity::Left
+      target_ctx: {a: false, seq: []},
+      terminus: Trailblazer::Activity::Left,
+      use_application_ctx: false
   end
 
   it "can invoke callables" do
@@ -45,12 +49,14 @@ class StepTest < Minitest::Spec
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
       circuit_options: {exec_context: my_exec_context},
-      terminus: Trailblazer::Activity::Right
+      terminus: Trailblazer::Activity::Right,
+      use_application_ctx: false
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
       circuit_options: {exec_context: my_exec_context},
-      flow_options: {application_ctx: {seq: [], a: false}},
-      terminus: Trailblazer::Activity::Left
+      target_ctx: {seq: [], a: false},
+      terminus: Trailblazer::Activity::Left,
+      use_application_ctx: false
   end
 
   it "callable providers don't get Scoped" do
@@ -76,9 +82,10 @@ class StepTest < Minitest::Spec
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
       circuit_options: {exec_context: my_exec_context},
-      terminus: {my_value: Hash}
+      terminus: {my_value: Hash},
+      use_application_ctx: false
 
-    assert_equal lib_ctx, {}
+    assert_equal lib_ctx, {target_ctx: {seq: [:a]}}
   end
 
   it "we can return any signal. currently, the {is_signal?} step is added per default" do
@@ -93,7 +100,8 @@ class StepTest < Minitest::Spec
     lib_ctx, flow_options, signal = assert_run my_node, node: true,
       terminus: my_signal,
       seq: nil,
-      flow_options: {application_ctx: {signals: [0, my_signal, 2]}}
+      target_ctx: {signals: [0, my_signal, 2]},
+      use_application_ctx: false
   end
 
   it "doesn't rely on {application_ctx} mutability and writes the {target_ctx} back to {flow_options}" do
