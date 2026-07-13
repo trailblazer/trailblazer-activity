@@ -21,7 +21,7 @@ module Trailblazer
 
         steps = [
           # [:target_ctx_as_signal, Step.method(:target_ctx_as_signal), lib_interface, connections: Circuit::Resolver::Fixed.new(:invoke_provider)], # DISCUSS: the target_ctx related steps might be changed. They're currently the cleanest way to "configure" {invoke_provider}.
-          [:invoke_provider, provider, adapter, connections: Circuit::Resolver::Fixed.new(:is_signal?)],
+          [:invoke_provider, provider, adapter, connections: Circuit::Resolver::Fixed.new(:is_signal?)], # FIXME: is_signal? only when we want it
 
           # this step isn't necessary because a step, per definition, mutates the target_ctx. This is the
           # opposite of clean, but it's the API we introduced and that proved to be super handy.

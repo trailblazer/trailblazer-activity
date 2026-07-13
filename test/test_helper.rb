@@ -6,4 +6,5 @@ Minitest::Spec.class_eval do
   include Trailblazer::Core::Utils::AssertRun
   include Trailblazer::Core::Utils::AssertEqual
   T = Trailblazer::Core
+  CU = Trailblazer::Core::Utils
 end
