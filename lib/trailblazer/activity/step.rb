@@ -51,7 +51,7 @@ module Trailblazer
       def self.build(provider, id: :invoke_step, binary: true, node_class: Circuit::Node::MergeToCircuitOptions, **options_for_node)
         pipe =  build_circuit(provider, binary: binary)
 
-        node_class[id, pipe, Circuit::Processor, options_for_node]
+        node_class[pipe, Circuit::Processor, options_for_node]
       end
 
       def self.compute_binary_signal(lib_ctx, flow_options, value, **)
