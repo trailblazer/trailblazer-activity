@@ -48,10 +48,12 @@ module Trailblazer
       end
 
       # TODO: how could we use Node wrapping? Do we need that?
-      def self.build(provider, id: :invoke_step, binary: true, node_class: Circuit::Node::MergeToCircuitOptions, **options_for_node)
+      def self.build(provider, id: :invoke_step, binary: true, node_class: Circuit::Node::MergeToCircuitOptions, exec_context: nil, **options_for_node)
         pipe =  build_circuit(provider, binary: binary)
 
-        node_class[pipe, Circuit::Processor, options_for_node]
+        options_for_node = options_for_node.merge(merge_to_circuit_options: {exec_context: exec_context}) unless exec_context.nil? # DISCUSS: this only applies to node_class: MergeToCircuitOptions
+
+        node_class[pipe, Circuit::Processor, **options_for_node]
       end
 
       def self.compute_binary_signal(lib_ctx, flow_options, value, **)
