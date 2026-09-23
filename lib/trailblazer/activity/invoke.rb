@@ -35,6 +35,7 @@ module Trailblazer
         )
       end
 
+      # DISCUSS: we could do that at compile time.
       def build_activity_node(lib_ctx, flow_options, circuit_options, **)
         circuit = circuit_options.fetch(:circuit)
 
@@ -43,6 +44,7 @@ module Trailblazer
         return lib_ctx, flow_options, circuit_options.merge(node: activity_node)
       end
 
+      # this is where we would usually add additional extensions from the operation/activity itself.
       def build_canonical_node(lib_ctx, flow_options, circuit_options, **)
         node = circuit_options.fetch(:node)
 
@@ -61,7 +63,9 @@ module Trailblazer
       # DISCUSS: location?
       # DISCUSS: this is generic for the WrapRuntime layer, not for trace/wtf, only.
       def produce_wrap_runtime(lib_ctx, flow_options, circuit_options, **)
-        extensions = circuit_options.fetch(:extensions)
+        extensions = circuit_options.fetch(:extensions) # DISCUSS: this could be named :default_extensions
+        # conditions = circuit_options.fetch(:conditions) # DISCUSS: this could be named :default_conditions
+        conditions = circuit_options[:conditions] || [] # DISCUSS: this could be named :default_conditions
 
         extensions = Circuit::WrapRuntime::Extension::Set.new(
           [
@@ -70,7 +74,12 @@ module Trailblazer
           ]
         )
 
-        wrap_runtime = Circuit::WrapRuntime::Extension::NodeWrap::Resolver.new(extensions)
+        conditions = [
+          Circuit::WrapRuntime::Extension::NodeWrap::Resolver::CONDITION, # DISCUSS: this could be a separate step?
+          *conditions
+        ]
+
+        wrap_runtime = Circuit::WrapRuntime::Extension::Resolver.new(default_extension_set: extensions, conditions: conditions)
 
         return lib_ctx, flow_options, circuit_options.merge(wrap_runtime: wrap_runtime) # NOTE: we don't pass on {:extensions} here.
       end
