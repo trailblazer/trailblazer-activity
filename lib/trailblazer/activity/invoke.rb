@@ -35,14 +35,16 @@ module Trailblazer
         )
       end
 
-      # DISCUSS: we could do that at compile time.
+      # DISCUSS: we could do that at compile time in the Activity/Topology.
       def build_activity_node(lib_ctx, flow_options, circuit_options, **)
         circuit = circuit_options.fetch(:circuit)
-
+                                                                                                  # FIXME: we currently need this to render the trace because we don't have a path.
         activity_node = Circuit::Node[circuit, Circuit::Processor] # DISCUSS: should that be done on the outside? should WTF pass the Node class here?
 
         return lib_ctx, flow_options, circuit_options.merge(node: activity_node)
       end
+
+      # The idea: canonical node is a task_wrap and call_task is the actual operation, as if it was a method or whatever.
 
       # this is where we would usually add additional extensions from the operation/activity itself.
       def build_canonical_node(lib_ctx, flow_options, circuit_options, **)
@@ -55,7 +57,7 @@ module Trailblazer
 
         # the canonical node usually represents some kind of task_wrap.
         # TODO: allow mixing in task_wrap_extensions a la Subprocess from the "circuit"
-        node = Circuit::Node[canonical_pipeline, Circuit::Processor]
+        node = Circuit::Node[canonical_pipeline, Circuit::Processor, options: {business_step: true}]
 
         return lib_ctx, flow_options, circuit_options.merge(node: node) # DISCUSS: introduce Adapter::Invoke ?
       end
@@ -65,7 +67,7 @@ module Trailblazer
       def produce_wrap_runtime(lib_ctx, flow_options, circuit_options, **)
         extensions = circuit_options.fetch(:extensions) # DISCUSS: this could be named :default_extensions
         # conditions = circuit_options.fetch(:conditions) # DISCUSS: this could be named :default_conditions
-        conditions = circuit_options[:conditions] || [] # DISCUSS: this could be named :default_conditions
+        conditions = circuit_options[:conditions] || [] # DISCUSS: this should be named :default_conditions
 
         extensions = Circuit::WrapRuntime::Extension::Set.new(
           [
