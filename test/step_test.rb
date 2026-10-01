@@ -31,11 +31,11 @@ class StepTest < Minitest::Spec
     my_node = Trailblazer::Activity::Step.build(:a)
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      circuit_options: {exec_context: my_exec_context},
+      circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       terminus: Trailblazer::Activity::Right
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      circuit_options: {exec_context: my_exec_context},
+      circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       target_ctx: {a: false, seq: []},
       terminus: Trailblazer::Activity::Left
   end
@@ -44,11 +44,11 @@ class StepTest < Minitest::Spec
     my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      circuit_options: {exec_context: my_exec_context},
+      circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       terminus: Trailblazer::Activity::Right
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      circuit_options: {exec_context: my_exec_context},
+      circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       target_ctx: {seq: [], a: false},
       terminus: Trailblazer::Activity::Left
   end
@@ -75,7 +75,7 @@ class StepTest < Minitest::Spec
     my_node = Trailblazer::Activity::Step.build(:a, binary: false)
 
     lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
-      circuit_options: {exec_context: my_exec_context},
+      circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       terminus: {my_value: Hash}
 
     assert_equal lib_ctx, {target_ctx: {seq: [:a]}}

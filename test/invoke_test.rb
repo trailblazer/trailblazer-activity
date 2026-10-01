@@ -24,15 +24,30 @@ class InvokeTest < Minitest::Spec
   end
 
   it "we can use a canonical pipe that might have preconfigured steps (in a more or less global way)" do
-    # wtf? can inject its extensions here, but no "global" canonical behavior.
+    my_create_lib_ctx = ->(lib_ctx, flow_options, circuit_options, **) do
+      lib_ctx = lib_ctx.merge(target_ctx: {seq: [1, 2, 3]})
+
+      return lib_ctx, flow_options, circuit_options
+    end
+
+    my_create_node = ->(lib_ctx, flow_options, circuit_options, **) do
+      return lib_ctx, flow_options, circuit_options.merge(node: Trailblazer::Circuit::Node[circuit_options.fetch(:circuit), Trailblazer::Circuit::Processor])
+    end
+
+    my_canonical_compiler = Trailblazer::Circuit::Builder.Pipeline(
+      [:create_lib_ctx, my_create_lib_ctx, Trailblazer::Circuit::Task::Adapter::LibInterface], # TODO: introduce Invoke::Interface
+      [:create_node, my_create_node, Trailblazer::Circuit::Task::Adapter::LibInterface] # TODO: introduce Invoke::Interface
+    )
+
     lib_ctx, flow_options, signal = Trailblazer::Activity::Invoke.(
       my_circuit,
-      {target_ctx: {seq: []}},
+      {},
       # extensions: [], id: :Create
       compiler: my_canonical_compiler,
+      wrap_runtime: {}
     )
 
     assert_equal signal, Trailblazer::Activity::Right
-    assert_equal lib_ctx[:target_ctx][:seq], [:a]
+    assert_equal lib_ctx[:target_ctx][:seq], [1, 2, 3, :a]
   end
 end
