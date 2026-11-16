@@ -17,8 +17,6 @@ module Trailblazer
       def self.build_circuit(provider, binary:) # DISCUSS: allow handing in {:my_signal_fixme} ?
         adapter = provider.is_a?(Symbol) ? Circuit::Task::Adapter::StepInterface::InstanceMethod : Circuit::Task::Adapter::StepInterface
 
-        lib_interface = Circuit::Task::Adapter::LibInterface
-
         steps = [
           # [:target_ctx_as_signal, Step.method(:target_ctx_as_signal), lib_interface, connections: Circuit::Resolver::Fixed.new(:invoke_provider)], # DISCUSS: the target_ctx related steps might be changed. They're currently the cleanest way to "configure" {invoke_provider}.
           [:invoke_provider, provider, adapter, connections: Circuit::Resolver::Fixed.new(:is_signal?)], # FIXME: is_signal? only when we want it
@@ -29,8 +27,8 @@ module Trailblazer
 
           # DISCUSS: we could  make is_signal? configurable. That would, however, imply that the user has to decide upfront
           #          whether or not they're returning a signal instead of a booleanizable value.
-          binary ? [:is_signal?, Step.method(:is_signal?), lib_interface, connections: Resolver::ValueOnSignal::Conditional.new([false], :compute_binary_signal, nil)] : nil,
-          binary ? [:compute_binary_signal, Step.method(:compute_binary_signal), lib_interface, connections: Circuit::Resolver::Fixed.new(nil)] : nil,
+          binary ? [:is_signal?, Step.method(:is_signal?), connections: Resolver::ValueOnSignal::Conditional.new([false], :compute_binary_signal, nil)] : nil,
+          binary ? [:compute_binary_signal, Step.method(:compute_binary_signal), connections: Circuit::Resolver::Fixed.new(nil)] : nil,
         ].compact
 
         circuit = Trailblazer::Circuit::Builder.Circuit(*steps)
