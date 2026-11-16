@@ -52,7 +52,7 @@ module Trailblazer
 
         # TODO: decide here if we add exec_context or not!
 
-        options_for_node = options_for_node.merge(merge_to_circuit_options: {exec_context: exec_context}, options: {instance_method: true}) unless exec_context.nil? # DISCUSS: this only applies to node_class: MergeToCircuitOptions
+        options_for_node = options_for_node.merge(merge_to_circuit_options: {exec_context: exec_context}, options: {requires_exec_context: true}) unless exec_context.nil? # DISCUSS: this only applies to node_class: MergeToCircuitOptions
 
         node_class[pipe, Circuit::Processor, **options_for_node]
       end

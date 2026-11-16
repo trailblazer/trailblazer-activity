@@ -63,11 +63,11 @@ class StepTest < Minitest::Spec
     assert_equal lib_ctx, {a: 1}
   end
 
-  it "we set {instance_method: true, exec_context: } for symbol providers, but not for callables" do
+  it "we set {requires_exec_context: true, exec_context: } for symbol providers, but not for callables" do
     assert_equal Trailblazer::Activity::Step.build(my_exec_context.method(:a)).options, {}
 
-    # :instance_method for :instance_method.
-    assert_equal Trailblazer::Activity::Step.build(:a, exec_context: Object).options, {instance_method: true}
+    # :requires_exec_context for :instance_method.
+    assert_equal Trailblazer::Activity::Step.build(:a, exec_context: Object).options, {requires_exec_context: true}
 
     # TODO: don't MergeToCircuitOptions for callables!
   end
