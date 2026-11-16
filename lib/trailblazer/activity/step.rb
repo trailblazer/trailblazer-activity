@@ -47,33 +47,18 @@ module Trailblazer
         return lib_ctx, flow_options, [false, value] # DISCUSS: false implies "we have to go to compute_binary_signal"
       end
 
-      # TODO: how could we use Node wrapping? Do we need that?
       def self.build(provider, id: :invoke_step, binary: true, node_class: Circuit::Node::MergeToCircuitOptions, exec_context: nil, **options_for_node)
         pipe =  build_circuit(provider, binary: binary)
 
-        options_for_node = options_for_node.merge(merge_to_circuit_options: {exec_context: exec_context}) unless exec_context.nil? # DISCUSS: this only applies to node_class: MergeToCircuitOptions
+        # TODO: decide here if we add exec_context or not!
+
+        options_for_node = options_for_node.merge(merge_to_circuit_options: {exec_context: exec_context}, options: {instance_method: true}) unless exec_context.nil? # DISCUSS: this only applies to node_class: MergeToCircuitOptions
 
         node_class[pipe, Circuit::Processor, **options_for_node]
       end
 
       def self.compute_binary_signal(lib_ctx, flow_options, value, **)
         signal = value ? Trailblazer::Activity::Right : Trailblazer::Activity::Left
-
-        return lib_ctx, flow_options, signal
-      end
-
-      # DISCUSS: this could be done by Node::Scoped::TargetCtx or whatever but currently
-      #          i feel this is okay as a separate step.
-      def self.target_ctx_as_signal(lib_ctx, flow_options, signal, **)
-        target_ctx = flow_options.fetch(:application_ctx)
-
-        return lib_ctx, flow_options, target_ctx # DISCUSS: The next node needs to be aware of the signal being the target_ctx. this is usually a provider with StepInterface.
-      end
-
-      # In a world where the step interface mutates the target_ctx, we actually don't "need"
-      # this step (in a bad way, mutation sucks).
-      def self.unset_target_ctx(lib_ctx, flow_options, signal, target_ctx:, **)
-        flow_options = flow_options.merge(application_ctx: target_ctx)
 
         return lib_ctx, flow_options, signal
       end

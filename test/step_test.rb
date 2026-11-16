@@ -63,6 +63,15 @@ class StepTest < Minitest::Spec
     assert_equal lib_ctx, {a: 1}
   end
 
+  it "we set {instance_method: true, exec_context: } for symbol providers, but not for callables" do
+    assert_equal Trailblazer::Activity::Step.build(my_exec_context.method(:a)).options, {}
+
+    # :instance_method for :instance_method.
+    assert_equal Trailblazer::Activity::Step.build(:a, exec_context: Object).options, {instance_method: true}
+
+    # TODO: don't MergeToCircuitOptions for callables!
+  end
+
   it "{binary: false} only returns value-on-signal" do
     my_exec_context = Class.new do
       def a(ctx, seq:, **)
