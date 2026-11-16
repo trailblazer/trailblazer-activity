@@ -44,7 +44,7 @@ class InvokeTest < Minitest::Spec
       {},
       # extensions: [], id: :Create
       compiler: my_canonical_compiler,
-      wrap_runtime: {}
+      wrap_runtime: ->(*args) { return *args }
     )
 
     assert_equal signal, Trailblazer::Activity::Right

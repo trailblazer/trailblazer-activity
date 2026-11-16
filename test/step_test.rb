@@ -8,7 +8,7 @@ class StepTest < Minitest::Spec
   it "doesn't change {:lib_ctx}" do
     my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
 
-    lib_ctx, _ = assert_run my_node, node: true, seq: [:a], terminus: Trailblazer::Activity::Right,
+    lib_ctx, _ = assert_run node: my_node, seq: [:a], terminus: Trailblazer::Activity::Right,
       a: 1 # something for {lib_ctx}
 
     assert_equal lib_ctx, {a: 1, target_ctx: {seq: [:a]}}
@@ -21,7 +21,7 @@ class StepTest < Minitest::Spec
   it "allows, at compile-time, setting the {:exec_context} for the provider instance method" do
     my_node = Trailblazer::Activity::Step.build(:a, exec_context: my_exec_context) # This implies MergeToCircuitOptions.
 
-    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a], terminus: Trailblazer::Activity::Right,
+    lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a], terminus: Trailblazer::Activity::Right,
       a: 1 # something for {lib_ctx}
 
     assert_equal lib_ctx, {a: 1, target_ctx: {seq: [:a]}}
@@ -30,11 +30,11 @@ class StepTest < Minitest::Spec
   it "uses flow_options[:application_ctx] as target_ctx and returns a binary signal" do
     my_node = Trailblazer::Activity::Step.build(:a)
 
-    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
+    lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a],
       circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       terminus: Trailblazer::Activity::Right
 
-    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
+    lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a],
       circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       target_ctx: {a: false, seq: []},
       terminus: Trailblazer::Activity::Left
@@ -43,11 +43,11 @@ class StepTest < Minitest::Spec
   it "can invoke callables" do
     my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
 
-    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
+    lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a],
       circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       terminus: Trailblazer::Activity::Right
 
-    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
+    lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a],
       circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       target_ctx: {seq: [], a: false},
       terminus: Trailblazer::Activity::Left
@@ -57,7 +57,7 @@ class StepTest < Minitest::Spec
     skip "we currently set lib_ctx[:target_ctx] and hence need scoping :)"
     my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
 
-    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
+    lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a],
       terminus: Trailblazer::Activity::Right
 
     assert_equal lib_ctx, {a: 1}
@@ -74,7 +74,7 @@ class StepTest < Minitest::Spec
 
     my_node = Trailblazer::Activity::Step.build(:a, binary: false)
 
-    lib_ctx, flow_options, signal = assert_run my_node, node: true, seq: [:a],
+    lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a],
       circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       terminus: {my_value: Hash}
 
@@ -90,7 +90,7 @@ class StepTest < Minitest::Spec
 
     my_node = Trailblazer::Activity::Step.build(my_provider, binary: true)
 
-    lib_ctx, flow_options, signal = assert_run my_node, node: true,
+    lib_ctx, flow_options, signal = assert_run node: my_node,
       terminus: my_signal,
       seq: nil,
       target_ctx: {signals: [0, my_signal, 2]}
