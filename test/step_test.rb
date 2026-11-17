@@ -64,7 +64,7 @@ class StepTest < Minitest::Spec
   end
 
   it "we set {requires_exec_context: true, exec_context: } for symbol providers, but not for callables" do
-    assert_equal Trailblazer::Activity::Step.build(my_exec_context.method(:a)).options, {}
+    assert_equal Trailblazer::Activity::Step.build(my_exec_context.method(:a)).options, {requires_exec_context: nil}
 
     # :requires_exec_context for :instance_method.
     assert_equal Trailblazer::Activity::Step.build(:a, exec_context: Object).options, {requires_exec_context: true}

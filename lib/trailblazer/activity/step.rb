@@ -14,9 +14,7 @@ module Trailblazer
         end
       end
 
-      def self.build_circuit(provider, binary:) # DISCUSS: allow handing in {:my_signal_fixme} ?
-        adapter = provider.is_a?(Symbol) ? Circuit::Task::Adapter::StepInterface::InstanceMethod : Circuit::Task::Adapter::StepInterface
-
+      def self.build_circuit(provider, adapter, binary:) # DISCUSS: allow handing in {:my_signal_fixme} ?
         steps = [
           # [:target_ctx_as_signal, Step.method(:target_ctx_as_signal), lib_interface, connections: Circuit::Resolver::Fixed.new(:invoke_provider)], # DISCUSS: the target_ctx related steps might be changed. They're currently the cleanest way to "configure" {invoke_provider}.
           [:invoke_provider, provider, adapter, connections: Circuit::Resolver::Fixed.new(:is_signal?)], # FIXME: is_signal? only when we want it
@@ -31,7 +29,7 @@ module Trailblazer
           binary ? [:compute_binary_signal, Step.method(:compute_binary_signal), connections: Circuit::Resolver::Fixed.new(nil)] : nil,
         ].compact
 
-        circuit = Trailblazer::Circuit::Builder.Circuit(*steps)
+        circuit = Circuit::Builder.Circuit(*steps)
 
         return circuit
       end
@@ -45,14 +43,17 @@ module Trailblazer
         return lib_ctx, flow_options, [false, value] # DISCUSS: false implies "we have to go to compute_binary_signal"
       end
 
-      def self.build(provider, id: :invoke_step, binary: true, node_class: Circuit::Node::MergeToCircuitOptions, exec_context: nil, **options_for_node)
-        pipe =  build_circuit(provider, binary: binary)
+      # FIXME: if we decide for **circuit_options, this shouldn't build MergeToCircuitOptions when no exec_context needed!
+      def self.build(provider, id: :invoke_step, binary: true, node_class: Circuit::Node::MergeToCircuitOptions, exec_context: nil, options: {}, **options_for_node)
+        adapter, requires_exec_context =
+          provider.is_a?(Symbol) ? [Circuit::Task::Adapter::StepInterface::InstanceMethod, true] : [Circuit::Task::Adapter::StepInterface]
 
-        # TODO: decide here if we add exec_context or not!
+        pipe = build_circuit(provider, adapter, binary: binary)
 
-        options_for_node = options_for_node.merge(merge_to_circuit_options: {exec_context: exec_context}, options: {requires_exec_context: true}) unless exec_context.nil? # DISCUSS: this only applies to node_class: MergeToCircuitOptions
+        options = options.merge(requires_exec_context: requires_exec_context)
 
-        node_class[pipe, Circuit::Processor, **options_for_node]
+        # Let the builder figure out whether we want a Node or a Node::MergeToCircuitOptions (depending on :exec_context).
+        Circuit::Builder.Node(pipe, Circuit::Processor, exec_context: exec_context, options: options, **options_for_node)
       end
 
       def self.compute_binary_signal(lib_ctx, flow_options, value, **)
