@@ -63,17 +63,18 @@ class StepTest < Minitest::Spec
     assert_equal lib_ctx, {a: 1}
   end
 
-  it "we set {requires_exec_context: true, exec_context: } for symbol providers, but not for callables" do
-    my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
-    assert_equal my_node.class, Trailblazer::Circuit::Node
-    assert_equal my_node.options, {requires_exec_context: nil}
-
+  it "we set {requires_exec_context: true, exec_context: } for :symbol providers" do
     # :requires_exec_context for :instance_method.
     my_node = Trailblazer::Activity::Step.build(:a, exec_context: Object)
     assert_equal my_node.class, Trailblazer::Circuit::Node::MergeToCircuitOptions
     assert_equal my_node.options, {requires_exec_context: true}
     assert_equal my_node.merge_to_circuit_options, {exec_context: Object}
-    # TODO: don't MergeToCircuitOptions for callables!
+  end
+
+  it "we don't set {:requires_exec_context} for callables" do
+    my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
+    assert_equal my_node.class, Trailblazer::Circuit::Node
+    assert_equal my_node.options, {requires_exec_context: nil}
   end
 
   it "{binary: false} only returns value-on-signal" do
