@@ -64,11 +64,15 @@ class StepTest < Minitest::Spec
   end
 
   it "we set {requires_exec_context: true, exec_context: } for symbol providers, but not for callables" do
-    assert_equal Trailblazer::Activity::Step.build(my_exec_context.method(:a)).options, {requires_exec_context: nil}
+    my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
+    assert_equal my_node.class, Trailblazer::Circuit::Node
+    assert_equal my_node.options, {requires_exec_context: nil}
 
     # :requires_exec_context for :instance_method.
-    assert_equal Trailblazer::Activity::Step.build(:a, exec_context: Object).options, {requires_exec_context: true}
-
+    my_node = Trailblazer::Activity::Step.build(:a, exec_context: Object)
+    assert_equal my_node.class, Trailblazer::Circuit::Node::MergeToCircuitOptions
+    assert_equal my_node.options, {requires_exec_context: true}
+    assert_equal my_node.merge_to_circuit_options, {exec_context: Object}
     # TODO: don't MergeToCircuitOptions for callables!
   end
 
