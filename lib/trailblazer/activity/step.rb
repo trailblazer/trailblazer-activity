@@ -27,12 +27,12 @@ module Trailblazer
           end
         end
 
-        pipe = build_circuit(provider, adapter, binary: binary) # TODO: only return array and let Builder() do the rest
+        pipe, adapter = build_circuit(provider, adapter, binary: binary) # TODO: only return array and let Builder() do the rest
 
         # Let the builder figure out whether we want a Node or a Node::Scoped (depending on :exec_context).
         Circuit::Builder.Node(
           pipe,
-          Circuit::Processor,
+          adapter,
           options: options,
           **options_for_node
         )
@@ -55,6 +55,8 @@ module Trailblazer
 
       # DISCUSS: if it's not binary, return a simple Node with one task, not a circuit!
       def self.build_circuit(provider, adapter, binary:) # DISCUSS: allow handing in {:my_signal_fixme} ?
+        return provider, adapter unless binary # we don't need a circuit if we just want to invoke the provider
+
         steps = [
           # [:target_ctx_as_signal, Step.method(:target_ctx_as_signal), lib_interface, connections: Circuit::Resolver::Fixed.new(:invoke_provider)], # DISCUSS: the target_ctx related steps might be changed. They're currently the cleanest way to "configure" {invoke_provider}.
           [:invoke_provider, provider, adapter, connections: Circuit::Resolver::Fixed.new(binary ? :is_signal? : nil)], # FIXME: is_signal? only when we want it, test that!
@@ -71,7 +73,7 @@ module Trailblazer
 
         circuit = Circuit::Builder.Circuit(*steps)
 
-        return circuit
+        return circuit, Circuit::Processor
       end
 
       module Runtime

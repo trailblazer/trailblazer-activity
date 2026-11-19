@@ -92,6 +92,12 @@ class StepTest < Minitest::Spec
     assert_equal lib_ctx, {target_ctx: {seq: [:a]}}
   end
 
+  it "{binary: false} produces a 1-step node, no circuit (quite shitty test)" do
+    my_node = Trailblazer::Activity::Step.build(:a, binary: false, exec_context: my_exec_context)
+    pp my_node
+    assert_equal my_node.task, :a # not a Circuit.
+  end
+
   it "we can return any signal. currently, the {is_signal?} step is added per default" do
     my_signal = Class.new(Trailblazer::Activity::Signal)
 
@@ -107,7 +113,7 @@ class StepTest < Minitest::Spec
       target_ctx: {signals: [0, my_signal, 2]}
   end
 
-  it "doesn't rely on {application_ctx} mutability and writes the {target_ctx} back to {flow_options}" do
+  it "doesn't rely on {target_ctx} mutability and writes the {target_ctx} back to {lib_ctx}" do
 
   end
 end
