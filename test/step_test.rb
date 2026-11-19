@@ -28,14 +28,12 @@ class StepTest < Minitest::Spec
   end
 
   it "uses flow_options[:application_ctx] as target_ctx and returns a binary signal" do
-    my_node = Trailblazer::Activity::Step.build(:a)
+    my_node = Trailblazer::Activity::Step.build(:a, exec_context: my_exec_context)
 
     lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a],
-      circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       terminus: Trailblazer::Activity::Right
 
     lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a],
-      circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       target_ctx: {a: false, seq: []},
       terminus: Trailblazer::Activity::Left
   end
@@ -66,15 +64,15 @@ class StepTest < Minitest::Spec
   it "we set {requires_exec_context: true, exec_context: } for :symbol providers" do
     # :requires_exec_context for :instance_method.
     my_node = Trailblazer::Activity::Step.build(:a, exec_context: Object)
-    assert_equal my_node.class, Trailblazer::Circuit::Node::MergeToCircuitOptions
+    assert_equal my_node.class, Trailblazer::Circuit::Node::Scoped
     assert_equal my_node.options, {requires_exec_context: true}
-    assert_equal my_node.merge_to_circuit_options, {exec_context: Object}
+    assert_equal my_node.merge_to_lib_ctx, {exec_context: Object}
   end
 
   it "we don't set {:requires_exec_context} for callables" do
     my_node = Trailblazer::Activity::Step.build(my_exec_context.method(:a))
     assert_equal my_node.class, Trailblazer::Circuit::Node
-    assert_equal my_node.options, {requires_exec_context: nil}
+    assert_equal my_node.options, {}
   end
 
   it "{binary: false} only returns value-on-signal" do
@@ -86,10 +84,9 @@ class StepTest < Minitest::Spec
       end
     end.new
 
-    my_node = Trailblazer::Activity::Step.build(:a, binary: false)
+    my_node = Trailblazer::Activity::Step.build(:a, binary: false, exec_context: my_exec_context)
 
     lib_ctx, flow_options, signal = assert_run node: my_node, seq: [:a],
-      circuit_options: {exec_context: my_exec_context, runner: Trailblazer::Circuit::Node::Runner},
       terminus: {my_value: Hash}
 
     assert_equal lib_ctx, {target_ctx: {seq: [:a]}}
