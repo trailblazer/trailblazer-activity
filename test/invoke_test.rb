@@ -23,28 +23,30 @@ class InvokeTest < Minitest::Spec
     # 4.
   end
 
-  it "we can use a canonical pipe that might have preconfigured steps (in a more or less global way)" do
-    my_create_lib_ctx = ->(lib_ctx, flow_options, circuit_options, **) do
-      lib_ctx = lib_ctx.merge(target_ctx: {seq: [1, 2, 3]})
+  it "we can use a canonical pipe that might have preconfigured steps (in a more or less global way)
+  it also tests {:runner_class}" do
+    my_create_lib_ctx = ->(lib_ctx, _, (ctx, runner), **) do
+      ctx = ctx.merge(target_ctx: {seq: [1, 2, 3]})
 
-      return lib_ctx, flow_options, circuit_options
+      return lib_ctx, _, [ctx, runner]
     end
 
-    my_create_node = ->(lib_ctx, flow_options, circuit_options, **) do
-      return lib_ctx, flow_options, circuit_options.merge(node: Trailblazer::Circuit::Node[circuit_options.fetch(:circuit), Trailblazer::Circuit::Processor])
+    my_create_node = ->(lib_ctx, flow_options, args, circuit:, **) do
+      return lib_ctx.merge(node: Trailblazer::Circuit::Node[circuit, Trailblazer::Circuit::Processor]), flow_options, args
     end
 
     my_canonical_compiler = Trailblazer::Circuit::Builder.Pipeline(
-      [:create_lib_ctx, my_create_lib_ctx, Trailblazer::Circuit::Task::Adapter::LibInterface], # TODO: introduce Invoke::Interface
-      [:create_node, my_create_node, Trailblazer::Circuit::Task::Adapter::LibInterface] # TODO: introduce Invoke::Interface
+      [:create_lib_ctx, my_create_lib_ctx],
+      [:create_node, my_create_node],
+      # [:produce_runner, Trailblazer::Activity::Invoke.method(:produce_runner)],
     )
 
-    lib_ctx, flow_options, signal = Trailblazer::Activity::Invoke.(
+    lib_ctx, _, signal = Trailblazer::Activity::Invoke.(
       my_circuit,
       {},
       # extensions: [], id: :Create
       compiler: my_canonical_compiler,
-      wrap_runtime: ->(*args) { return *args }
+      runner_class: Trailblazer::Circuit::Node::Runner
     )
 
     assert_equal signal, Trailblazer::Activity::Right
