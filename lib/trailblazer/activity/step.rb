@@ -14,13 +14,17 @@ module Trailblazer
         end
       end
 
-      # FIXME: if we decide for **circuit_options, this shouldn't build MergeToCircuitOptions when no exec_context needed!
-      def self.build(provider, id: :invoke_step, binary: true, options: {}, **options_for_node)
+      def self.build(provider, id: :invoke_step, binary: true, options: {}, dynamic_exec_context: false, **options_for_node)
         adapter, requires_exec_context =
           provider.is_a?(Symbol) ? [Circuit::Task::Adapter::StepInterface::InstanceMethod, true] : [Circuit::Task::Adapter::StepInterface]
 
         if requires_exec_context
-          options, options_for_node = Static.options_for(options, **options_for_node)
+          if dynamic_exec_context # FIXME: test this flag
+            # options, options_for_node =
+            options = {dynamic_exec_context: true}
+          else
+            options, options_for_node = options_for_static(options, **options_for_node)
+          end
         end
 
         pipe = build_circuit(provider, adapter, binary: binary) # TODO: only return array and let Builder() do the rest
@@ -34,30 +38,26 @@ module Trailblazer
         )
       end
 
-      # A "static" Step means we set the {:exec_context}.
-      module Static
-        module_function
+      # A "static" Step means we set the {:exec_context} at compile-time.
+      def self.options_for_static(options, exec_context:, **options_for_node)
+        options = options.merge(
+          requires_exec_context: true # TODO: {static_exec_context: true}
+        )
 
-        def options_for(options, exec_context:, **options_for_node)
-          options = options.merge(
-            requires_exec_context: true
-          )
+        options_for_node.merge!(
+          copy_from_outer_ctx: [:target_ctx], # TODO: if you want a "runtime exec_context", you need to add {:exec_context} here.
+          copy_to_outer_ctx: [:target_ctx],
+          exec_context: exec_context, # this will always scope the node.
+        )
 
-          options_for_node.merge!(
-            copy_from_outer_ctx: [:target_ctx], # TODO: if you want a "runtime exec_context", you need to add {:exec_context} here.
-            copy_to_outer_ctx: [:target_ctx],
-            exec_context: exec_context, # this will always scope the node.
-          )
-
-          return options, options_for_node
-        end
-
+        return options, options_for_node
       end
 
+      # DISCUSS: if it's not binary, return a simple Node with one task, not a circuit!
       def self.build_circuit(provider, adapter, binary:) # DISCUSS: allow handing in {:my_signal_fixme} ?
         steps = [
           # [:target_ctx_as_signal, Step.method(:target_ctx_as_signal), lib_interface, connections: Circuit::Resolver::Fixed.new(:invoke_provider)], # DISCUSS: the target_ctx related steps might be changed. They're currently the cleanest way to "configure" {invoke_provider}.
-          [:invoke_provider, provider, adapter, connections: Circuit::Resolver::Fixed.new(:is_signal?)], # FIXME: is_signal? only when we want it
+          [:invoke_provider, provider, adapter, connections: Circuit::Resolver::Fixed.new(binary ? :is_signal? : nil)], # FIXME: is_signal? only when we want it, test that!
 
           # this step isn't necessary because a step, per definition, mutates the target_ctx. This is the
           # opposite of clean, but it's the API we introduced and that proved to be super handy.
