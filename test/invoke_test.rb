@@ -52,4 +52,10 @@ class InvokeTest < Minitest::Spec
     assert_equal signal, Trailblazer::Activity::Right
     assert_equal lib_ctx[:target_ctx][:seq], [1, 2, 3, :a]
   end
+
+  it "uses the plain Node::Runner when no extensions are given" do
+    assert_equal Trailblazer::Activity::Invoke.default_runner_class(extensions: []), Trailblazer::Circuit::Node::Runner
+    assert_equal Trailblazer::Activity::Invoke.default_runner_class, Trailblazer::Circuit::Node::Runner
+    assert_equal Trailblazer::Activity::Invoke.default_runner_class(extensions: [Object.new]), Trailblazer::Circuit::WrapRuntime::Runner
+  end
 end
