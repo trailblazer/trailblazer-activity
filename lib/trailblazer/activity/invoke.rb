@@ -17,7 +17,8 @@ module Trailblazer
 
 # DISCUSS: compiler <> "normalizer"?
       # The canonical invoke. Usually used by the user when doing Operation.().
-      def call(circuit, lib_ctx_for_activity, compiler: Args::Compiler, runner_class: Circuit::WrapRuntime::Runner, id: nil, **options)
+      def call(circuit, lib_ctx_for_activity, compiler: Args::Compiler, runner_class: nil, id: nil, **options)
+        runner_class ||= default_runner_class(**options)
         runner = runner_class.new
 
         normalizer_lib_ctx = {circuit: circuit, **options}
@@ -57,6 +58,11 @@ module Trailblazer
         extensions_dispatcher_chain = Trailblazer::Circuit::WrapRuntime::Extension::Chain.new(extensions)
 
         return lib_ctx, _, [ctx, runner.merge(wrap_runtime: extensions_dispatcher_chain)]
+      end
+
+      # Without extensions, WrapRuntime::Runner only adds per-step overhead.
+      def default_runner_class(extensions: [], **)
+        extensions.empty? ? Circuit::Node::Runner : Circuit::WrapRuntime::Runner
       end
 
       def invoke_runner(lib_ctx, flow_options, signal, node, id)
